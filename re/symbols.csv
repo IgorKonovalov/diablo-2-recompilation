@@ -1560,11 +1560,13 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005A6830,func,sub_005A6830_MonDeathDrop,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A6920,func,sub_005A6920_MonRegenEvent,,C,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A6B10,func,sub_005A6B10_MonModeEveryFrame,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
+0x005A6DE0,func,sub_005A6DE0_MonFrameCancelEvents,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A6FF0,func,sub_005A6FF0_MonDeathEvent,,C,items/tc,docs/findings/items/0001-tc-resolution.md
 0x005A73E0,func,sub_005A73E0_MonModeStartNeutral,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A7670,func,sub_005A7670_MonAttackFrame,,I,combat/formulas,docs/findings/combat/0001-formulas.md
 0x005A77C0,func,sub_005A77C0_MonModeStartKnockback,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x005A78A0,func,sub_005A78A0_MonModeRecord,,C,items/quest-drops,docs/findings/items/0010-quest-drops.md
+0x005A7B30,func,sub_005A7B30_MonModeNullRecord,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A7BA0,func,sub_005A7BA0_MonModeFrameEvent,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A7BE0,func,sub_005A7BE0_MonModeEndEvent,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x005A7C20,func,sub_005A7C20_MonSetMode,,I,items/quest-drops,docs/findings/items/0010-quest-drops.md
@@ -2768,6 +2770,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006214A0,func,sub_006214A0_AnimRateIsMove,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x00621580,func,sub_00621580_AnimRateIsAttack,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x00621630,func,sub_00621630_AnimRateIsFixed,,I,anim/timing,docs/findings/anim/0002-rates.md
+0x00621680,func,sub_00621680_AnimModeIsGetHit,,I,anim/timing,docs/findings/anim/0002-rates.md
+0x006216B0,func,sub_006216B0_AnimModeIsBlock,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x006216E0,func,sub_006216E0_AnimRateIsCast,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x00621740,func,sub_00621740_AnimRateBonus,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x006217C0,func,UNIT_AnimAtEnd,,I,anim/timing,docs/findings/anim/0001-modes-frames.md

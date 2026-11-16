@@ -146,6 +146,7 @@ New names (subsystem `anim/timing`) and the existing ones this finding reads; al
 | `0x00541240` / `0x00540F60` / `0x00541060` / `0x00541320` | `sub_00541240_MissileEventsRun` / `sub_00540F60_PlayerEventsRun` / `sub_00541060_MonEventsRun` / `sub_00541320_ItemEventsRun` | the list runners (§ 6) | I |
 | `0x00581220` / `0x005A7F80` | `sub_00581220_PlayerEventDispatch` / `sub_005A7F80_MonEventDispatch` | `g_PlayerEventFuncs` / `g_MonEventFuncs` by kind | I |
 | `0x005811D0` / `0x005A7BA0` / `0x005A7BE0` | `sub_005811D0_PlayerModeFrameEvent` / `sub_005A7BA0_MonModeFrameEvent` / `sub_005A7BE0_MonModeEndEvent` | event 0 and 1 handlers | I |
+| `0x005A6DE0` / `0x005A7B30` | `sub_005A6DE0_MonFrameCancelEvents` / `sub_005A7B30_MonModeNullRecord` | the NU, GH, BL, S4, DD frame slot (`UNIT_CancelEvents(0, 0)`); the null-record path (clear the used skill, start neutral unless dead outside DT and DD; unit in ESI, mode in EDI), plan 0066 S6c | I |
 | `0x005A6B10` | `sub_005A6B10_MonModeEveryFrame` | is the monster mode every-frame? | I |
 | `0x005A8520` | `sub_005A8520_MonKnockbackEnd` | the monster knockback's end (§ 10; raised at the Phase 2 review: 541 logged ends, `kb-end`, [anim/0003's run section](0003-movement-gates.md#plan-0050-phase-2-run2026-10-27-anim)) | C |
 | `0x005A8030` / `0x005A8330` / `0x005A83E0` / `0x005A73E0` | `sub_005A8030_MonModeEndGeneric` / `sub_005A8330_MonModeEndToS1` / `sub_005A83E0_MonModeEndToS1b` / `sub_005A73E0_MonModeStartNeutral` | monster mode ends and the neutral start (§ 10) | I |
@@ -196,6 +197,13 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
   (`a`–`z`), takes the block `(sum of the bytes) & 0xFF`, fails fatally on a name or record longer than 8 characters,
   and compares the first two dwords of each 0xA0-byte record. (fn:ANIMDATA_Load@0x0066A770, 0x0066A80A, 0x0066A814,
   fn:ANIMDATA_Find@0x0066A8F0, 0x0066A92E, 0x0066A96A, data:g_pAnimData@0x0096C8A4)
+- *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* `ANIMDATA_Find` run whole on the stock file
+  ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family `find`, 7 705 cases, every test
+  separated): the uppercase of `a`–`z` in place, the block `& 0xFF`, the first record of two with one name (87 of 87
+  duplicate cases), the two-dword compare and none for an absent name are `[C]` as a map of the declared container.
+  **Refinement:** the name's length is tested inside the record loop (0x0066A941–0x0066A94B), so a name longer than 8
+  whose block is empty returns none with no fatal; the fatal needs a record in the block. The container's block
+  order and the fallback's values stay the loader's static reading `[I]` (the loader was not run).
 - [I] The record fields read: `+0x08` frames per direction (`+0x48 = +0x08 << 8` at every non-sequence init), `+0x0C`
   the speed that `UNIT_AnimSetRate` scales (anim/0002), `+0x10 + f` the event byte of frame `f`, read only for `f < 0x90`.
   (0x00624470, 0x006244F1, 0x00623E95, 0x00553A40)
@@ -223,6 +231,13 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
   `g_MonToPlrMode` (class 6 in mode 4 → 12). The record, the start frame and the rate all use the display values.
   (fn:UNIT_AnimTransform@0x00645270, fn:sub_00645190_PlrToMonMode@0x00645190, tbl:States.txt:gfxtype,
   tbl:States.txt:gfxclass, tbl:MonStats2.txt:mDT)
+  *2026-11-16, plan 0066 S6e part 2:* [C] this map holds whole under emulation, every callee run (`UNIT_HasState`,
+  `UNIT_TestStateBit`, `PlrToMonMode`): `PlrToMonMode` over the 20 player modes on all 734 stock MonStats classes
+  and 400 bound cases (15 080 of 15 080), `UNIT_AnimTransform` over 3 000 scratch transform lists (gfxtype 1 and 2,
+  players, monsters and other unit types, the class 6 mode 4 → 12 case among them), each named test separated; bit `m`
+  of the MonStats2 u16 at `+0xF0` is the `m<mode>` column (`mDT`…`mRN`) on all 609 rows. A form of the other kind
+  (gfxtype 1 on a monster, 2 on a player) sets the type and class and keeps the mode (0x00645367, 0x00645323).
+  (fn:sub_00645190_PlrToMonMode@0x00645190, fn:UNIT_AnimTransform@0x00645270, run:2026-11-16-sweep2-s6e-2)
 
 #### 2.1 The Phase 0 data questions (archivist, `lane/p50z`; folded into P1.1's *Done when* at its review)
 
@@ -288,6 +303,15 @@ return 0;                                    // same mode: no animation restart
   So a scheduled mode starts from `+0x44 = 0` whatever `UNIT_AnimInit` set; the schedule reads the start frame from
   `UNIT_AnimStartFrame` itself. (fn:SUNIT_AnimInit@0x005533D0)
 
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* `UNIT_AnimInit`'s missile and item branches hold as an ADR-0015
+map over 1 500 emulated cases (`ainit`, [run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3)): a missile with a row gets `+0x4C ← (i16 animrate << 8) ÷ 1024`
+truncating toward zero (0x0062464D–0x00624659; a floor divide fails 143 negative inexact cases) and `+0x48 ← AnimLen
+<< 8`, returns 1; a class below 0 or at the count returns 0 with `+0x48`/`+0x4C` untouched; an item in mode 3 or 5
+gets the stated constants, other modes nothing. `SUNIT_AnimInit` up to its first call (observed boundaries,
+ADR-0021): `+0x4E ← 0`, the sequence test only for a player in 18 or a monster in 14, otherwise `+0x30 ← 0` and
+`+0x44 ← 0` before the rate call (a path) or `UNIT_AnimSetRecord(unit, +0, +4, +0x10)` (no path), each `[C]` to the
+call. What the callees then write stays `[I]`.
+
 ### 4. The start frame
 
 ```c
@@ -306,6 +330,12 @@ return 0;
   added at the schedule's start and after each wrap of the per-frame advance; `SKILL_AttackStart` (`0x0056CA40`) is
   its fourth caller. (data:g_AttackStartFrames@0x006E8E60, data:g_ItemWeaponClassIndex@0x007446A0,
   `p50a-anim-scan.txt` `START`, `IWCLS`, `CALL UNIT_AnimStartFrame`)
+
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* the mode-15/16 half holds as an ADR-0015 map (`sf`, 905 cases,
+[run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3)): a type-0 unit in 15 or 16 reads `g_AttackStartFrames` (0x00623BED) only when `UNIT_CanDualWield` is true
+(classes 4 and 6), and the cell read is 0; without an inventory the weapon class is 0. With S6c's table dump (every
+class-4 and class-6 cell is 0) the half's return is 0 for any weapon class; the class an item gives (0x00629FE0) is
+not run.
 
 ### 5. Sequences
 
@@ -401,6 +431,13 @@ unit->animFrame = game->frame << 8;
   `T + N + 1` (`N ≥ 1` steps) or `T + 2` (`N = 0`), and no frame event shares its frame. Illustration (not a run):
   `L = 16·256`, `S = 0`, `r = 256`, an event byte at frame 8 → frames 0–1 at `T + 1`, frame 8 at `T + 8`, the end at
   `T + 16`.
+- *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* `SUNIT_ScheduleModeEvents` run whole with the queue
+  (`sub_005416B0_EventQueueAt` and its pool) on a declared image, start frame 0, no sequence
+  ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family `sched`, 1 300 cases): the queued
+  list and `+0x44` equal E1's model in every case, every test and strictness but the queue's own `frame ≤ T` strictness
+  separated; `r = 0` (kind 1 at `T + 1`), the `0x90` bound, the four-way event switch, the `t = T` bump and the derived
+  frame numbers above (1 115 closed-form cases, 128 with an event past the last step, 104 with no step and an event)
+  are `[C]` as maps. A start frame other than 0 and the sequence branch stay `[I]`.
 - [I] **Callers** (6): the player starts for get-hit (`0x0057FE30`), block (`0x0057FDC0`), the skill modes
   (`sub_0057FE90_PlrModeStartSkillXY`, `sub_0057FEF0_PlrModeStartSkillUnit`) and death (`sub_00580EC0_PlayerDeath`),
   and `MonSetMode` for a scheduled monster mode. Each first cancels the unit's events 0 and 1
@@ -453,6 +490,16 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
   consecutive frames; at 0x100 or more each frame is taken once. (0x00623E58–0x00623E6E)
 - [I] `UNIT_AnimAtEnd`: in a sequence `+0x48 < 1`; else `+0x48 ≤ +0x44 + +0x4C`, i.e. the next advance would reach the
   length. The every-frame monster frame functions call it after advancing. (fn:UNIT_AnimAtEnd@0x006217C0)
+- *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* `UNIT_AnimAtEnd`'s map (sequence `+0x48 ≤ 0`; else the `i16`
+  rate plus `+0x44`, a 32-bit add, signed `≥ +0x48`; a null unit fatal) is `[C]` by emulation
+  ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family `atend`, 600 cases, every test and
+  strictness separated). Which frame functions call it stays as read.
+
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* the wrap's start frame and the re-scan below `0x100` hold as an
+ADR-0015 map (`adv`, 4 000 cases, [run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3)): 478 wraps add `UNIT_AnimStartFrame << 8` (1, a player's
+hand-to-hand A1; control `sadd` 453); 604 cases with a rate below `0x100` take an event standing on the frame they
+started from (control `r100` 969). Reading, `[I]`: on a record whose frame count is at or below the start frame a
+wrap never ends (0x00623ED1–0x00623EE8; the development run's case 1369).
 
 ### 9. Player modes
 
@@ -522,6 +569,17 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
 | 15 | RN | `0x005A7550` | `0x005A84F0`: step; arrival → generic end | — | 1 |
 
 (data:g_MonModeRecords@0x006E2260, `p50a-anim-scan.txt` `MMODE`)
+
+- *2026-11-15, plan 0066 S6c (`lane/n66l`):* r2 reads the 21 records equal to the raw bytes and to `MMODE`, and the
+  frame and end functions' call sequences as this table gives them; `MonModeRecord`'s switch (r2, its two jump
+  tables) maps exactly the classes below; `MonSetMode`'s call order and its null-record call to 0x005A7B30, the
+  player starts' order, `g_PlayerEventFuncs[1]` = `PlayerModeEnd`, the 6 schedule call sites, and the machine's
+  draws (objdump walker over the p50a roots: one draw, 0x00624563) agree with §§ 6–11
+  ([experiments, S6c static addendum](experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l),
+  `workspace/logs/n66l/s6c/check.txt`). Not named elsewhere here: `MonSetMode` also calls `MonModeVelocity` and a second
+  `UNIT_SetUsedSkill(0)` between `SUNIT_AnimInit` and the cancels (0x005A7DBF, 0x005A7DDE); ten MonStats rows set
+  `SplGetModeChart` with no switch case (404, 546–550, 559, 571–573). (fn:sub_005A7C20_MonSetMode@0x005A7C20,
+  fn:sub_005A78A0_MonModeRecord@0x005A78A0, fn:sub_005A7B30_MonModeNullRecord@0x005A7B30)
 
 - [I] **Class overrides** (`sub_005A78A0_MonModeRecord`, only when MonStats `SplGetModeChart` is set): classes 243
   (`diablo`), 333 (`diabloclone`) and 705 (`uberdiablo`) take attack records for S3 (row 17) and S4 (row 16); 403

@@ -753,6 +753,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/n69e` check | 0069 P3a | architect-check | 83 519 | 19 | 1 | — | gave accept with fixes (Tier B) | 1: recount 1 (4th Tier B after the n66m audit; next gets Tier A audit) |
 | 2026-11-16 | `lane/n66p` | 0066 P1 S3b+S3c | reverser-static | 908 656 | 403 | 81 | ghidra-n66p | accept with fixes | 2: overclaim 2 (three parts: 303 040/116/22 + 300 343/137/35 + 305 273/150/24) |
 | 2026-11-16 | `lane/n66p` review | 0066 P1 S3b+S3c | architect-review | 167 076 | 69 | 8 | — | gave accept with fixes (Tier A) | audit of lane/n66p: overclaim 2; no reject-grade miss (5th Tier B after the n66m audit; count restarts) |
+| 2026-11-16 | `lane/n66l` | 0066 P1 S6c+S6e | reverser-static | 1 072 976 | 444 | 251 | ghidra-n66l | accept with fixes | 4: stale cross-reference 3, omission 1 (four parts: 327 661/111/23 + 248 297/100/167 incl. a 2 h stuck emulation + 237 507/100/15 + 259 511/133/46) |
+| 2026-11-16 | `lane/n66l` check | 0066 P1 S6c+S6e | architect-check | 183 164 | 54 | 5 | — | gave accept with fixes (Tier B) | 4: stale cross-reference 3, omission 1; first pass skipped checks 7/8, rerun on request (1st Tier B after the n66p audit) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

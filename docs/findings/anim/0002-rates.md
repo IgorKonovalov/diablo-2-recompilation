@@ -343,6 +343,10 @@ return s;
   (`idiv`, a fault); for `s < −k` it is positive and above `k` (14 520 at `s = −121`). (0x00621769–0x00621777,
   `p50b-bp.txt` `EDGE bonus`)
 
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* the negative half is separated by the kept `bonus` outputs: of
+the 832 negative-stat calls, an unsigned divide would change 798 and a floor divide 562, and the emulator matched
+none ([run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3), `bonus`). `s = −k` stays a reading.
+
 ### 3. The branches
 
 #### 3.1 Cast
@@ -459,6 +463,15 @@ r = (base * X) mod 2^32 / 100;                          // unsigned
   not change its pace, and a player sequence (mode 18, scheduled with `+0x3C`) is paced by the rate only through the
   cast or attack branch. (0x00624016, 0x006242FF, fn:UNIT_SeqInit@0x00621260; anim/0001 §§ 7–8)
 
+- *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* the four rate-class predicates and the two mode tests 0x00621680
+  (get-hit, fn:sub_00621680_AnimModeIsGetHit@0x00621680) and 0x006216B0 (block, fn:sub_006216B0_AnimModeIsBlock@0x006216B0) run whole over types 0–5, every mode, both class ranges, the `npc` bit and the
+  used skill's flags and record bytes ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family
+  `pred`); their maps over the image's mode-class tables are `[C]`, and the tables list as § 3 states, with one
+  refinement: monster SQ (14) carries the skill-move and skill-attack flags in both monster tables. What the bytes
+  read (MonStats `+0x0D` bit 0, Skills `+0x06` bit 3 and `+0x12`) are as columns (`npc`, `UseAttackRate`,
+  `seqtrans`) stays the table docs' reading `[I]`. Types other than 0 and 1 are fatal in `AnimRateIsMove` and
+  `AnimRateIsAttack` and give 0 in the others.
+
 ### 4. Where the stat terms come from
 
 Read only to the depth the rate needs; the writers are other findings' or specs'.
@@ -504,6 +517,10 @@ Read only to the depth the rate needs; the writers are other findings' or specs'
 function, 0x0057AD80 and 0x005D8EF0, being the callbacks that `COMBAT_ApplyCold` pushes at 0x0057B08C and Whirlwind's
 start stores at 0x005D91EC)
 
+- *2026-11-15, plan 0066 S6c (`lane/n66l`):* the 31 sites again from the raw bytes, each decoded by r2, equal to
+  objdump's and Ghidra's lists; 24 at or above 0x00520000; the 19 direct callees (r2) equal `p50b-setrate-callees.txt`
+  and the closure reaches no queue, cancel or scheduler (`check.txt` `setrate-sites`, `setrate-callees`;
+  fn:UNIT_AnimSetRate@0x00623F50).
 - [I] **No stat write calls it.** `ITEMS_DetachFromOwner` is not a caller, so unequipping an item leaves the rate
   until the next call (a mode start, typically). (`p50b-calls.txt`; fn:ITEMS_DetachFromOwner@0x0055C730)
 - [I] **A second `+0x4C` writer.** `0x00621780(unit, q)` (stdcall, unnamed) stores `q` floored at 0 and capped at
@@ -565,6 +582,11 @@ start stores at 0x005D91EC)
   ≥ 200 the same); `PAGHHTH` (5 frames): FHR 0, 7, 15, 27, 48, 86, 200 give 10, 9, 8, 7, 6, 5, 4; `AMA11HS` (16 frames, start 2,
   event at 10) at `X` 100 lasts 14 frames with its event at `T + 8`. (fn:SUNIT_ScheduleModeEvents@0x005539B0,
   `p50b-bp.txt`)
+
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* K3's attack form equals a brute-force search through J1 and J2
+over 1 297 362 targets (`k3`, [run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3)) with one refinement: a target `X_m` of 15, the clamp's floor, needs no IAS
+whatever `stat68 + terms` is (2 241 targets, all with `stat68 + terms` below 15), where K3 asks for `s_min(X_m −
+stat68 − terms)`.
 
 ## Draws
 

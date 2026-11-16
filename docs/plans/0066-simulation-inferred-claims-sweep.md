@@ -1564,6 +1564,171 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   a later Phase 1 batch, not a session. Totals after the one move: a-logs 627, a-run 340, b 447, c 390, c-emu 494, d-2c 59,
   d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 511, Phase 2 787 (sim-frame.md and README tables updated).
 
+### 2026-11-15 — Phase 1, batch S6c (reverser-static, `lane/n66l`): done, 35 of 35 settled; S6e not started (resume note)
+
+- **Done.** No game, no Ghidra. `main` `ccb26b81` is the lane's base (nothing to merge). New tool
+  `tools/sweep2_s6c.py` (`6cc8ebc1…`, section `static`): raw-byte xrefs decoded by r2, r2 table dumps and range reads,
+  `tools/sweep_s4b.py`'s objdump call-graph walker over the Ghidra RngCallGraph roots and stops, and full-table checks
+  through `tools/anim_survey.py`, each against the kept plan 0050 first-tool output (`p50a-anim-scan.txt`,
+  `p50b-setrate-xrefs.txt`, `p50b-setrate-callees.txt`, `p50d-calls.txt`, `p50a-rng-machine.txt`, `p50a-rng-modes.txt`).
+  One kept run under `systemd-run --user --scope -p MemoryMax=4G`: `workspace/logs/n66l/s6c/check.txt` (`8665c322…`,
+  114 lines, 26 checks, `S6C total bad=0`; a second run gives the same bytes), `manifest.sha256` (`6e2b20c2…`, passes
+  from that directory); development outputs under `workspace/logs/n66l/dev/manifest-dev.sha256`. Record:
+  [anim/experiments § Static addendum S6c](../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l);
+  dated notes in anim/0001 (after the record table), anim/0002 § 5, anim/0003 (the walk base, § 8). Every settled
+  row's *Route* cell carries its S6c note.
+- **S6c (35): raised 12, raised in part 22, contradicted in part 1, not raised 0, moved 0.** Raised: timing 50, 55,
+  65, 68, 71, 72, 94, 121; movement 12, 18, 37; README 5. In part (remainder in each cell): timing 14, 15, 27, 28, 31,
+  37, 47, 48, 64, 66, 69, 70, 74, 86, 93, 131; movement 16, 19, 20, 25; README 6, 7. Contradicted in part: timing 67
+  (§ I2 table, line 532: the GH and BL frame slot is 0x005A6DE0, `UNIT_CancelEvents(0, 0)`, not "—"). Two remainders go
+  to S6e: timing 86's negative-`s` arithmetic and movement 19's step arithmetic (c-emu).
+- **S6a remainders routed to S6c:** timing 4 (`g_PlayerEventFuncs[1]` = `PlayerModeEnd`), 39 (the schedule's 6 call
+  sites and their cancel-first order), 56 (`PlrModeStartNeutral` for modes 1 and 5), 63 (the get-hit, block and skill
+  start order) and 73 (`MonSetMode`'s order, the state-54 fatal, the mode-3 test) raised; 5's in part (each logged
+  start being `MonSetMode`'s needs `SUNIT_AnimInit`'s callers, not scanned). Not taken here (no static route found in
+  this lane's budget, cells unchanged): timing 6 and 107 (the town return and the kill branch), 75 (the code-2 drop: the
+  frame function gets no code, `MonModeFrameEvent` passes only ECX and EDX, 0x005A7BD2–0x005A7BD6, so the drop is
+  below `MON_MeleeHit` or in its gates, unread), 85 (the stat accessor), 103 (`+0xC4` bit 6's writers); movement 21, 26,
+  35; README 12.
+- **Backlog:** [`2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections.md)
+  (the contradiction and five refinements: S4/DD frame slot and S3's `ret` end, `MonSetMode`'s `MonModeVelocity` and
+  second `UNIT_SetUsedSkill`, the ten chart rows with no case, `MonStatsSpeeds` writing `i` back, `HandsRefresh`'s draws
+  under the mode end).
+- **Symbols:** two new `I` rows, `sub_005A6DE0_MonFrameCancelEvents` and `sub_005A7B30_MonModeNullRecord`, in
+  `re/symbols.csv` and anim/0001's Functions table. None raised: the batch compares static reads, not logged returns
+  (review-fixes 14's scope).
+- **Totals** from the 29 files' *Totals by class* at `ccb26b81`: a-logs 645, a-run 340, b 432, c 390, c-emu 491,
+  d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged: no row moved class (remainders in the *Route* cells).
+  README § 4's S6c row records the outcome.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Timing whole: 414, 455, 530, 533, 536, 537,
+  700, 927; split: 136, 141, 237, 243, 263, 324, 401, 407, 529, 531, 534, 535, 546, 644, 694, 979; 532 with the
+  correction; S6a rows now whole: 50, 335, 486, 504, 541. Movement whole: 131 (with the refinement), 182, 313; split:
+  151, 198, 202, 231. README whole: 89; split: 90, 101.
+- **Review:** Tier B (plan Phase 1). Judgment calls to check: (1) "client" for the sites below 0x00520000 is left to the
+  symbol names, `[I]`, so rows 14 and 93 are in part; (2) timing 67 filed as a contradiction (a scheduled mode's slot
+  runs) while 69 and 70 (schedule 0, never queued) are refinements; (3) movement 12 raised on two tools reading the
+  guard plus the full table, not moved to d-none; (4) movement 37 raised with `PathPlan` stopped, the replan's draws
+  being movement G1's `[C]` replan line; (5) README 6 in part over `HandsRefresh`'s draws, filed as a refinement, not a
+  contradiction.
+- **Resume note for S6e (a fresh lane; S6e not started).** 34 rows (timing 9–11, 16–20, 30, 32–34, 40, 41, 45, 80–84,
+  87, 89–91, 129; movement 4–6, 8, 13, 14, 22, 24, 43) plus the remainders routed to S6e: timing 21, 23, 24, 29, 36, 43,
+  44, 46, 49, 61, 62, 86, 88, 96, 98, 128, 130; movement 2, 15, 19, 23, 31. Method as S1e's (`tools/ai_s1e_emu.py`, one
+  `tools/ghidra.sh emuboundary` launch over all families, one memory spec, every test reversed alone as a control; R2:
+  no declared callee return). Start from `tools/anim_rates.py`'s p50b emulation (`workspace/logs/anim/p50b-emu`,
+  `bonus` and `advance` families) and `tools/animdata.py`. Families, cheapest first: `ANIMDATA_Find`/`Lookup` (absent
+  and the 29 duplicate names), `UNIT_AnimAtEnd`, `UNIT_AnimStartFrame`, the advance with a start frame ≠ 0,
+  `SUNIT_ScheduleModeEvents` (`UnitQueueEvent` an observed boundary; r = 0, no step, events past 0x90),
+  `UNIT_AnimSetRate`'s edges (floors 15/25, block 1, cap, wrap, no path; `UNIT_AnimSetRecord`, `WeaponListsRelink2`
+  and `PathSetSpeed` must run whole or the row returns to b), the four rate-class predicates, `HumanAttackFrames`,
+  `MonStatsSpeeds`, `PathStepCollide` (0x0064FF90's room read: declare or return to b), `PathVelocityStep`'s wrap.
+  The inventory README § 5 (anim) suggests splitting S6e into rate/schedule and animdata/seq/path if it runs long.
+  Ghidra project `workspace/ghidra-n66l` is in place.
+
+### 2026-11-16 — Phase 1, batch S6e part 1 of 2 (reverser-static, `lane/n66l`): 9 of 34 settled; resume note for part 2
+
+- **Done.** `main` `7a3ef52e` merged into the branch at `8580cdcb` (plan-log keep-both). New tool
+  `tools/anim_s6e_emu.py` (`5362890f…`), one `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66l` (`-Xmx3G`,
+  `MemoryMax=4G`), no observed boundary and no declared callee return (R2): every callee runs, the event queue and
+  its pool among them. Four families, 11 624 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 65 controls,
+  59 separating with `passed` 0, 6 with no observable (each named in the record). Record:
+  [run:2026-11-16-sweep2-s6e](../findings/anim/experiments.md#run2026-11-16-sweep2-s6e); `workspace/logs/n66l/s6e/run/`
+  (`check.txt` `fca5054c…`, `manifest.sha256` `0539fe07…`, 12 lines, passes from there; `cases` regenerates the case
+  file byte for byte); development run under `workspace/logs/n66l/s6e/dev/` (`manifest-dev.sha256`), not cited. Dated
+  notes in anim/0001 §§ 2, 7, 8 and anim/0002 § 3.
+- **Rows settled (9): raised 6, raised in part 3.** Raised: timing 10 (the `0x90` scan bound), 17 (B2, with a
+  refinement), 32 (`r = 0`), 33 (the bound and the full table), 34 (the `t = T` bump), 41 (F2). In part: 16 (none for
+  an absent name; the fallback's values stay the loader's), 19 (the earlier record wins; the block order and the
+  loaded file stay `[I]`), 89 (the predicates and the tables; the column names of the bytes read stay `[I]`).
+  **Remainders raised:** timing 21 (the schedule's bound), 36 and 96 (E2's `k_f ≤ N` drop and no-step case, 1 115
+  closed-form cases, 128 and 104 separating).
+- **Corrections (refinements, the spec's text is Phase 3's):** (1) `ANIMDATA_Find`'s length fatal is inside the record
+  loop: a long name in an empty block returns none; (2) monster SQ (14) is skill-dependent in both monster tables,
+  which J3 does not list; (3) `AnimRateIsMove` and `AnimRateIsAttack` are fatal for unit types other than 0 and 1. Routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md); anim/0001 § 2's "fails
+  fatally on a name … longer than 8" carries the dated refinement (rule 20; the spec's copy, timing line 157, is item 1).
+- **Symbols:** none raised (an ADR-0015/0021 emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* after the merge of `main` `7a3ef52e`: a-logs 628, a-run 340, b 446,
+  c 390, c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; no row moved class.
+- **Ready for Phase 3 (spec-writer), timing lines at `b5999f5e`, match by text.** Whole: 105, 156 (with correction 1),
+  286, 290, 296, 355. Split: 154 (the none branch `[C]`, the fallback's values `[I]`), 174 (the earlier record `[C]`,
+  the block order and the loaded file `[I]`), 660 (the predicates' maps and the tables `[C]`, with correction 2; the
+  column names `[I]`); remainder halves now `[C]`: 187 (the `0x90` bound), 319 and 721 (the `≤ N` clause and no-step
+  case).
+- **Review:** Tier B, together with S6c (the request is extended). Judgment calls: (1) row 33 raised on the emulated
+  bound plus a full-table read of the one record over 0x90 frames and the bytes past it; (2) row 17 raised whole with
+  the loop-placement refinement (every test B2 names is separated; the record-name fatal, which B2 does not state, is
+  unseparated on stock); (3) the six unseparated controls taken as inherent (equal table columns; no stock 8-character
+  record name; no queued frame at `T`); (4) row 9 left for part 2 rather than filed not raised (the fallback's values
+  need the loader or `ANIMDATA_Lookup` run whole).
+- **Resume note for S6e part 2 (a fresh lane on `lane/n66l`).** 25 rows left: timing 9, 11, 18, 20, 30, 40, 45,
+  80–84, 87, 90, 91, 129; movement 4–6, 8, 13, 14, 22, 24, 43; and the remainders routed to S6e: timing 23, 24, 29,
+  43, 44, 46, 49, 61, 62, 86, 88, 98, 128, 130; movement 2, 15, 19, 23, 31. Extend `tools/anim_s6e_emu.py` with new
+  families (keep part 1's families and seeds unchanged, write the new run to `workspace/logs/n66l/s6e/run2/`, one
+  launch). Cheapest first: `MonStatsSpeeds` 0x00650F00 (m13, m14), `HumanAttackFrames` 0x0062A710 (t91),
+  `PathVelocityStep` 0x006502D0 (m24), `PlrToMonMode` 0x00645190 (t20), `UNIT_AnimStartFrame` with
+  `SkillSrcDamWeapon` 0x00623990 declared (t30; then the advance with a start frame ≠ 0, t40, and the schedule with
+  S ≠ 0), `ANIMDATA_Lookup` with `COMPOSIT_BuildCofName` (t9, t16's rest, t18 via `COMPOSIT_WeaponClass`),
+  `PathStepCollide` (0x0064FF90's room read declared, m22, m43), `UnitSeqRecord` (t45); last `UNIT_AnimSetRate`
+  (19 callees: 0x00620F00, 0x00621360, 0x006213D0, 0x00621740, 0x00623C80, 0x00625480, 0x00629BB0, 0x0062A4E0,
+  0x00639DF0, 0x0063A7B0, 0x0063BDE0, 0x00645270, 0x00646170, 0x00648690 and the predicates; t11, t80–84, t87, t90,
+  t129, m4–6, m8), which may not fit and returns its rows to b if `UNIT_AnimSetRecord`, `WeaponListsRelink2` and
+  `PathSetSpeed` cannot run whole. Control loops need a step cap (a reversed loop test runs away; see the tool).
+  Ghidra project `workspace/ghidra-n66l` stays in place.
+
+### 2026-11-16 — Phase 1, batch S6e part 2 of 3 (reverser-static, `lane/n66l`): 18 rows settled, 16 of them moved; resume note for part 3
+
+- **Done.** `main` `19edd04f` merged into the branch at `32804b23` (plan-log keep-both, the inventory README's S6c/S6e
+  rows kept from the branch, S7a–S7d from `main`). New tool `tools/anim_s6e2_emu.py` (`51c04b41…`; part 1's tool and
+  seeds unchanged), one `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66l` (`-Xmx3G`, `MemoryMax=4G`),
+  no observed boundary and no declared return (R2). Three families, 21 144 cases, 0 mismatches,
+  0 stops, 0 unaccounted reads or writes; 68 controls, 63 separating with `passed` 0, 5 with no observable (named in
+  the record). Record: [run:2026-11-16-sweep2-s6e-2](../findings/anim/experiments.md#run2026-11-16-sweep2-s6e-2);
+  `workspace/logs/n66l/s6e/run2/` (`check.txt` `d37ef05c…`, `manifest.sha256` `d5d968e6…`, 6 lines, passes from
+  there; `cases` regenerates the case file byte for byte); development subset under `workspace/logs/n66l/s6e/dev2/`
+  (`manifest-dev.sha256`), not cited. Dated notes in anim/0001 § 2 (shapeshift display) and anim/0003 § Answer (the
+  per-frame step).
+- **Rows settled (18).** Raised: timing 20 (the fallback's steps, the gfxtype 2 map and the MonStats2 column names,
+  by `p2m`, `xform` and the `MS2COLS` full-table check). Raised in part: movement 24 (the wrap bound and no guard; the
+  `X` thresholds stay `[I]`). **Remainders raised:** timing 130 (the fallback chain), movement 19 (the step arithmetic
+  and the fifth-call acceleration). **Moved to b (proposed batch H6d), 16 rows:** timing 9, 11, 80–84, 87, 90, 91, 129
+  and movement 4–6, 8, 13, 14 (c-emu → b); timing 44 and movement 15 (a-logs → b, not raised in S6a); the remainders
+  of timing 88 and 128 also to H6d. Reason, the same for all: the route runs `COMPOSIT_BuildCofName`, which writes the
+  record name with USER32 `wsprintfA` (0x0064F9C2, 0x0064F9E9) — through `UNIT_AnimSetRate` → `UNIT_AnimSetRecord`
+  (0x00623FAF, every type below 4, before any branch) → `ANIMDATA_Lookup` (0x00620F3B), through `MonStatsSpeeds` →
+  `ANIMDATA_Lookup`, or directly from `HumanAttackFrames`; ADR-0029 admits no stand-in for a result a claim uses and
+  R2 no declared return (`dev2/callers.txt`). The fallback values of timing 9 are the loader's stores after a file
+  read, which no emulation runs either.
+- **Corrections (refinements; the spec's text is Phase 3's):** (4) B3 omits the gfxtype 2 exception (class 6 in mode
+  4 → 12), which anim/0001 states; (5) movement B6: −4096 wraps from 32 769. Routed by annotating
+  [the part 1 backlog entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* after the merge of `main` `19edd04f`: a-logs 625, a-run 340, b 466,
+  c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 492, Phase 2 806 (inventory
+  README § 1 tables, the S6e status, the H6d row and the moves note updated).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Timing 183 (whole, with correction 4),
+  977's fallback-chain half; movement 198's step arithmetic and acceleration half, 225 (the bound `[C]`, the `X`
+  thresholds `[I]`, with correction 5).
+- **Review:** the Tier B request
+  [`2026-11-15-reverser-architect-review-plan-0066-s6c`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6c.md)
+  is extended to this part. Judgment calls: (1) a new tool file rather than new families in part 1's tool, so part 1's
+  kept run stays reproducible unchanged; (2) the 18 `wsprintfA` rows moved to b rather than left for part 3: no
+  emulation route exists under ADR-0029 and R2 (H6d is a proposal; timing 91's absent name and the rate floors no
+  stock source reaches may be d-edit, the architect's call); (3) timing 20 raised whole: the column names rest on the
+  full-table `.txt`/`.bin` check, not on a reading; (4) `xform`'s two masked strictness controls (`scnt~`, `scnt2~`)
+  taken as inherent: one bound tested twice.
+- **Resume note for S6e part 3 (a fresh lane on `lane/n66l`).** Left: timing 18, 30, 40, 45; movement 22, 43; the
+  remainders of timing 23, 24, 29, 43, 46, 49, 61, 62, 86, 98 and movement 2, 23, 31. New tool file (as part 2), new
+  run directory `workspace/logs/n66l/s6e/run3/`, one launch. First check each route for `COMPOSIT_BuildCofName` /
+  `wsprintfA` and `UNIT_AnimSetRate` (`dev2/callers.py` scans callers; timing 24 and 29's `+0x44 ← 0` may be reachable
+  before `SUNIT_AnimInit`'s rate call with an observed boundary at that call, ADR-0021; timing 62's refused path and
+  movement 2/31's `PathLineFree` walk rooms, likely b by R2). Cheapest first: `UnitSeqRecord` 0x00663310 with
+  `SkillSeqIndex` 0x00643D00 (t45), `UNIT_SeqInit` 0x00621260 (t46), `UNIT_AnimAdvance` 0x00623E00 with a rate below
+  0x100 (t43) and a start frame ≠ 0 (t40, needs `UNIT_AnimStartFrame`'s weapon path:
+  `sub_00623990_SkillSrcDamWeapon`, nine callees, and 0x00629FE0; also t30), `AnimRateBonus` 0x00621740 at `s` from −k
+  (t86's negative arithmetic; t98's attack form) — check run:2026-10-27-anim-rates-emu's bonus family first, which
+  already reaches `s` −119, `PathStepCollide` with 0x0064FF90's room read declared (m22, m43), `COMPOSIT_WeaponClass`
+  0x0064F060 (t18; 12 callees, items). Ghidra project `workspace/ghidra-n66l` stays in place.
+
 ### 2026-11-16 — Phase 1, batch S3b (reverser-static, `lane/n66p`): done, 36 of 36 settled; S3c not started, resume note
 
 - **Done.** No game, no Ghidra. `main` is `19edd04f`, the lane's base (nothing to merge). New tool `tools/quests_s3b.py`
@@ -1766,6 +1931,84 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Ledger cell:** audit of lane/n66p: overclaim 2; no reject-grade miss (5th Tier B after the n66m audit; count
   restarts).
 
+### 2026-11-16 — Phase 1, batch S6e part 3 of 3 (reverser-static, `lane/n66l`): S6e closed; 3 rows raised, 2 moved, 5 remainders raised (2 of them in part), 5 named not settled
+
+- **Done.** `main` `1f507662` merged into the branch at `4ebce920` (plan-log keep-both; the inventory README's totals
+  recomputed from the 29 files). New tool `tools/anim_s6e3_emu.py` (`5a4b9681…`; parts 1 and 2's tools and seeds
+  unchanged), one kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66l` (`-Xmx3G`, `MemoryMax=4G`).
+  `sf`, `adv`, `ainit` run every callee whole; `sinit` stops at observed boundaries (ADR-0021) at
+  `UNIT_AnimSetRate`, `UNIT_AnimSetRecord` and `sub_006633B0_UnitAnimData`, its claim ending at the call (R2). Two
+  checks without the emulator: the kept p50b `bonus` outputs recounted, and K3 against a brute force. 7 216 cases,
+  0 mismatches; 33 emulated controls, 32 separating with `passed` 0 (`adv m1516`: the dual classes' cell is 0, `sf`
+  separates the test by its trace); `bonus` 2 and `k3` 1 controls separating, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s6e-3](../findings/anim/experiments.md#run2026-11-16-sweep2-s6e-3);
+  `workspace/logs/n66l/s6e/run3/` (`check.txt` `ab744e1a…`, `manifest.sha256` `1d84bce4…`, 6 lines, passes from
+  there; `cases` regenerates the case file byte for byte). The first launch looped in a case the generator should not
+  have drawn (an advance wrap on a record with frames ≤ the start frame; see corrections) and was stopped (killed by
+  pid, confirmed dead); it is kept with the route closures under `workspace/logs/n66l/s6e/dev3/`
+  (`manifest-dev.sha256`, 23 lines), not cited for a raise. Dated notes in anim/0001 §§ 3, 4, 8 and anim/0002 §§ 2, 7.
+- **Rows settled.** Raised: timing 30 (the mode-15/16 half reads a 0 cell, with S6c's table dump), 40 (the wrap adds
+  the start frame; 478 wraps), 43 (the re-scan below `0x100`; 604 separating cases). **Remainders raised:** timing 24
+  (`+0x44`/`+0x30 ← 0` and the no-path branch, to the call), 86 (the negative-`s` divide, from the kept outputs; `s = −k`
+  stays `[I]`), 98 (K3's attack form, with refinement 6). **Remainders raised in part:** timing 23 (the missile and
+  item branches; the shapeshifted calls → H6d), 29 (the store before the rate call; that it holds to the schedule →
+  H6d). **Moved to b:** movement 22 and 43 (c-emu → b, H6d): `PathStepCollide` walks rooms, which R2 sends to the
+  harness; remainders of timing 62 and movement 23 (room walks: `PathPlan`, `PathStop`) to H6d and of movement 2 and
+  31 (`PathLineFree`) to H6c. **Not settled, named (S6e closes with them; no ADR blocks any):** timing 18
+  (`COMPOSIT_WeaponClass`: a scratch inventory and item image, 28 functions), 45, 49 and the remainder of 46
+  (`UnitSeqRecord`: the same item image for a player's column and the `monseq` loader's table for a monster, 38–44
+  functions), the remainder of 61 (`PlayerModeEnd`'s hand refresh and mode-19 branch: observed boundaries at
+  0x00580310, 0x0057EEC0 and the Skills `durability` test). They stay in their class with the reason in the row; a
+  later static batch can take them as one family set (items and sequences), which did not fit this part's budget.
+- **Corrections (refinements and readings; the spec's text is Phase 3's):** (6) K3: `X_m = 15` needs no IAS;
+  (7) F1, `[I]`: a wrap on a record with frames ≤ the start frame never ends; (8) C2's missile divide truncates
+  toward zero; C3's no-path call passes the unit's own type, class and mode. Routed by annotating
+  [the part 1 backlog entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* after the merge of `main` `1f507662`: a-logs 623, a-run 341, b 469,
+  c 390, c-emu 475, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 488, Phase 2 810 (inventory
+  README § 1 tables, the S6e row, the H6c and H6d rows and the moves note updated; H6d proposed at 21 rows).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Timing 253 (D1's S3/S4 half), 351 (the
+  start frame's wrap, with reading 7), 368 (the re-scan); halves: 199 (C2's missile and item branches, with
+  correction 8), 219 (C3 up to its calls), 245 (C3's store), 644 (J1's negative divide), 730 (K3's attack form,
+  with correction 6).
+- **Review:** the Tier B request
+  [`2026-11-15-reverser-architect-review-plan-0066-s6c`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6c.md)
+  now covers S6c and S6e whole. Judgment calls: (1) timing 30 raised whole on the itemless emulation plus S6c's dump
+  of every class-4/6 cell, not on an item's weapon class (0x00629FE0 unrun); (2) timing 86's remainder raised from a
+  kept earlier emulation's outputs recounted with separating controls, not a new run; (3) timing 98's remainder
+  raised as a closed-form check (class c in substance) through J1 and J2, which are `[C]`; (4) movement 22/43 and
+  the room-walking remainders sent to the harness under R2's "walk rooms" clause, although plan 0054 emulated
+  room walks over declared images under ADR-0021 (the architect may prefer a static route); (5) five rows named
+  not settled rather than a part 4. The proposed batch H6d and the d-edit question for timing 91 stay the
+  architect's (H6d's wording now names the part 3 additions).
+
+### 2026-11-16 - Tier B check of S6c and S6e (architect, `lane/n66l`): accept with fixes (1)
+
+- **Rulings.** (a) **H6d accepted** as a harness batch: its routes cross `COMPOSIT_BuildCofName`'s `wsprintfA`
+  (0x0064F9C2, 0x0064F9E9), whose formatted name a claim uses; ADR-0029 (b) and (e) admit a stand-in only as a declared
+  input for a test that selects a fatal path, and R2 forbids a declared return, so no static route exists without a new
+  ADR. 21 rows counted by the check (timing 9, 11, 44, 80-84, 87, 90, 91, 129; movement 4-6, 8, 13-15, 22, 43).
+  (b) **Not d-edit yet** (timing 91 and the floors 15/25, block 1, the cap): d-edit (ADR-0010) needs "only edited data
+  reaches it", and the lane holds no kept scan for that. anim/0002's text says the floors are "reached by no call" in
+  the logs, a statement about the runs, not about stock sources (slows, negative FRW and FBR sources are not scanned);
+  and no scan shows that every stock class, mode and weapon name has an `ANIMDATA` record (timing 91). They stay in H6d;
+  a later static scan over the stock property blocks, skills and the name builder may move them to d-edit.
+  (c) **Static preferred for movement 22 and 43 and the room-walking remainders** (timing 62, movement 2, 23, 31): R2's
+  "walk rooms" sentence quotes ADR-0021's "kept as the route, not required" for `MissileCreate` and the spawns, which
+  allocate; `tools/path_emu1.py`, `path_emu2.py` and the `GroundDropCell` run (ADR-0029) emulate room reads over declared
+  images. Try that first (the read set of `PathStepCollide` 0x00650150, `sub_00463740_RoomAtSubtile` and
+  `DUNGEON_GetCollMap` is declarable if the room image is); the rows go to the harness only if the attempt shows a
+  callee that allocates or an import. No class change made now; H6d lists them as provisional. (d) **Yes:** a later
+  static batch (S6f) takes the five unsettled rows (timing 18, 45, 49, and the remainders of 46 and 61) as one family
+  set (scratch item image and `monseq` table), with the room-walk attempt of (c). No Tier A ruling or owner decision is
+  needed; widening ADR-0029 to `wsprintfA` would be an ADR and is not proposed.
+- **Fix (1, stale cross-reference/overclaim):** the H6d row said the floors were for the architect to send to d-edit;
+  it now records ruling (b) and (c) and the batch status "accepted".
+- **Checked.** 7 `[C]` lines added in the anim findings, all emulation runs with separating controls named; anchors
+  `COMPOSIT_BuildCofName` 0x0064F5B0, `ANIMDATA_Lookup` 0x0066A9B0, `MonModeNullRecord` 0x005A7B30 resolve to the
+  sentences; the two new symbol rows are `I`, not clashing; the corrections routes are in the diff.
+
 ### 2026-11-16 — Phase 1, batch S2c part 1 (reverser-static, `lane/n66q`): 47 of 69 settled; resume note for part 2
 
 - **Done.** No game, no Ghidra. `main` is `1f507662`, the lane's base (nothing to merge). New tool `tools/skills_s2c.py`
@@ -1823,3 +2066,4 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   - the Skills flag bits are read as `test byte [row+off], [0x006CE268 + 4·bit]` (`repeat` is `+0x05` bit 3, mask
     0x006CE274).
   A fresh lane on `lane/n66q`.
+

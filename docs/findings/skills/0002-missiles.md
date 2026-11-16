@@ -492,6 +492,7 @@ return 1;
   negative) and the counter restarts; then `s = (v · 0x400) >> 6` and the step is `(dir.x · s) >> 12`, `(dir.y · s) >> 12`
   (arithmetic shifts) added to the 16.16 position. `v` starts as the creation velocity, the maximum is `MaxVel << 8`
   and `accel` is the raw `Accel` (s16). (0x006502D0–0x0065034C, 0x00554CCF, fn:sub_00650840_PathStep@0x00650840)
+  *2026-11-16 (plan 0066 review):* the step and the acceleration are `[C]` for `k = 0x400` by emulation, with the ceiling clearing `+0x88` and the floor at 0 (anim/0003 § 11, run:2026-11-16-sweep2-s6e-2); this entry's tag is the earlier reading.
 - [I] **Do function 2** (4 rows: `poisonjav` …): when `SubMissile1` ≥ 0, evaluate `SrvCalc1` and call
   `sub_005A9720(SubMissile1, 0, value)`, which, when `0x006505C0(path)` is non-zero, creates the sub-missile at the
   parent's position with velocity 0 (flags 5), the parent as source, the parent's skill and level, and loops `2 · lvl −
