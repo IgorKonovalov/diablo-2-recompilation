@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/overview]
 consumed_by: [path/overview, anim/movement, skills/overview, skills/missiles, skills/catalogue, monsters/ai]
-tags: {C: 102, I: 36, L: 4}
-updated: 2026-11-04
+tags: {C: 117, I: 26, L: 4}
+updated: 2026-11-16
 ---
 
 # The planners: search, greedy, type 1, type 15, random walk, spiral and the rest
@@ -94,7 +94,7 @@ The context `ctx` and the record `path` are [overview § Runtime state](README.m
 | search store | 900 nodes, 10 000 tries a pass, 50 000 cells | 0x0067A77E, 0x0067A8EC, 0x0067AABC | [C] (controls `nodes`, `passes`, families `grid`, `over`, run:2026-11-03-path-emu-2) |
 | type 15 minimum limit under a target unit | 40 | 0x0067C348–0x0067C34C | [C] (control `lim40`, run:2026-11-03-path-emu-3) |
 | random walk step | 2 subtiles | 0x0067A352 | [C] (control `step1`, run:2026-11-03-path-emu-3) |
-| spiral | `r += 0x2580`, `a += 16`, 77 points | 0x0067A180–0x0067A233 | [I] (the structure agrees under the emulator's rounding, control `swap`, run:2026-11-03-path-emu-3) |
+| spiral | `r += 0x2580`, `a += 16`, 77 points | 0x0067A180–0x0067A233 | [C] (the structure reproduces all 260 stock type-14 plans; steps `0x2500`, `0x2600` and angles 15, 17 each fail all 260, run:2026-11-04-path, run:2026-11-04-path-2, [path/0004 § 10](../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m); it agrees under the emulator's rounding too, control `swap`, run:2026-11-03-path-emu-3) |
 
 ## Algorithm
 
@@ -127,7 +127,7 @@ PathDirRow(a, b)    ← the three of g_DirOctant[PathDirCell(a, b)]  [C] (fn:sub
 PathDirOctant(a, b) ← the first of them                            [C] (fn:sub_00678D10_PathDirOctant@0x00678D10, run:2026-11-03-path-emu-2)
 ```
 
-- A2. [I] `g_DirOctant` holds 0..7 only, so the assert 0x4C of a third direction 255 cannot fire from these callers. (data:g_DirOctant@0x006F1518, 0x006794BC)
+- A2. [C] `g_DirOctant` holds 0..7 only (75 dwords, read with a second tool), so the assert 0x4C of a third direction 255 cannot fire from these callers. (data:g_DirOctant@0x006F1518, 0x006794BC, [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o))
 
 #### A3. Distances
 
@@ -237,7 +237,7 @@ PathPlanGreedy(ctx) → n:                                           [C] (fn:sub
 - B. [C] **The first point is written twice when the walk turns at once**, since `cur` equals it and is not the start. (0x00679DDA–0x00679DF4, run:2026-11-03-path-emu-3)
 - B. [C] **A reversal ends the walk**, with the point reached written. (0x00679DB7–0x00679DBC, run:2026-11-03-path-emu-3, control `rev`, 2 cases; run:2026-11-04-path, 6; run:2026-11-04-path-2, 1)
 - B. [C] Limit 0 writes nothing past the line's end. **At most `ctx.limit + 1` points: 78 at limit 77**, every slot used, no write past it. (0x00679E2E, run:2026-11-03-path-emu-3, family `gbound`)
-- B. [I] Types 2 and 13 are one plan ([overview D4](README.md#d-the-17-types-planner-and-draws)). (data:g_PathTypeFlags@0x006EB690)
+- B. [C] Types 2 and 13 are one plan ([overview D4](README.md#d-the-17-types-planner-and-draws)). (data:g_PathTypeFlags@0x006EB690, [path/0001 § 16](../../findings/path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n))
 
 ### C. The `+0x98` walk: types 5 and 6
 
@@ -284,7 +284,7 @@ PathPlanGreedyNear(ctx) → n:                                       [C] (fn:sub
  7. return PathPlanGreedy(ctx)                                     ; rewrites the list; repeats the first greedy's aim
 ```
 
-- D. [I] 324 is 18 subtiles on an axis: (18, 0) passes, (18, 1) at 325 doesn't. A player plans this type, so a player's walk within 18 subtiles falls to type 1 when greedy stops short. (fn:sub_0057F090_PlrModeStartMove@0x0057F090)
+- D. [C] A player plans this type, and when greedy stops short within the bound the walk falls to type 1: of the players' type-7 plans greedy stopped short in 462, the 461 at `d²` ≤ 324 (all ≤ 317) switched to type 1, the 1 at `d²` > 360 did not. (run:2026-11-04-path, run:2026-11-04-path-2, [path/0004 § 10](../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m)) [I] 324 is 18 subtiles on an axis: (18, 0) passes, (18, 1) at 325 doesn't; no short plan fell at `d²` 318–360, so the edge itself is read, not logged. (fn:sub_0057F090_PlrModeStartMove@0x0057F090)
 - D. [C] In the game: 270 + 554 plans took the switch, of 2 725 + 4 355 that reached the planner. **The 324 boundary and the retry at step 7 separate no plan in either run** (`le325`, `noretry`): they rest on the emulation. (run:2026-11-04-path, run:2026-11-04-path-2)
 
 ### E. The knockback planner: type 8
@@ -492,7 +492,7 @@ T15Reduce(start, L, n) → count:                                    ; fn:sub_00
 - H. [C] **Most plans end at 0:** 2 273 of the second run's 3 309, the planner's own refusal or a free line of too few cells. (`2026-11-04-path-2-check.txt`, run:2026-11-04-path-2)
 - H. [C] **`T15Reduce` drops** a point whose step equals the last, and, with nothing dropped since, a point where both coordinates of the step change, after which the next point is kept. So E, S, E, S loses every other corner, and E, SE, E, SE, a line's own steps, which share a coordinate, loses none (`review-s54/literal.txt`). (0x0067C26A–0x0067C288, control `reduce`, run:2026-11-03-path-emu-3)
 - H. [I] A follower count of 0 reads as a point: `last` is then the stop word, as a point of (1, 0) or (0, 0). No control separates it. (0x0067C0E2–0x0067C13A)
-- H. [I] `lim` above 80 is reached only with bytes no writer gives (`lim50`, 4 emulated cases). A target unit with `+0x91` below 40 is a monster with its creation's 14, so its line reaches 39 subtiles where its other plans have 14. (0x0067C045, 0x0067C348)
+- H. [C] `lim` above 80 is reached only with bytes no path-module writer gives (`lim50`, 4 emulated cases): every path-module writer of `+0x91` and every immediate gives at most 77 ([path/0001 § 16](../../findings/path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n)). [I] That the 13 register dword stores at `+0x90` outside the path module (bases not traced) give no more is not read. A target unit with `+0x91` below 40 is a monster with its creation's 14, so its line reaches 39 subtiles where its other plans have 14. (0x0067C045, 0x0067C348)
 
 ### I. The random walk: type 10
 
@@ -525,14 +525,14 @@ PathPlanRandomWalk(path, seed) → n + 1:                            [C] (fn:sub
 
 - I. [C] **It is not a walk of accumulating turns:** every step is the first direction ±1 or straight. **The first point is the position itself. No grid and no room are read:** the missile's collision is its own. (0x0067A32E, control `accum`, run:2026-11-03-path-emu-3)
 - I. [C] `+0x91` of 0 or 1 draws nothing and has one point. (family `rwalk`, `draws:0` 42, 0x0067A2FE, run:2026-11-03-path-emu-3)
-- I. [I] A straight step has chance 10/32, each side 11/32. (0x0067A258–0x0067A2F3)
+- I. [C] A straight step has chance 10/32, each side 11/32: the turn map reproduces all 946 type-10 plans' points and seeds, a 12/32-straight variant fails all 851 it separates, and the game's steps are 10 616 straight of 33 500 (31.7 %). (0x0067A258–0x0067A2F3, run:2026-11-04-path, run:2026-11-04-path-2, [path/0004 § 10](../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m))
 - I. [C] In the game: 698 + 248 plans, return 39 in all at `+0x91` = 77, 654 creations of the skills runs. Worked example: [overview](README.md#worked-example). (run:2026-11-04-path, run:2026-11-04-path-2, run:2026-10-25-skills)
 - I. [I] At limit 77 the walk reaches 76 subtiles on an axis, so its u16 adds wrap only within 76 subtiles of 0 or 65 535. (0x0067A352)
 
 ### J. The spiral: type 14
 
 ```
-PathPlanSpiral(path) → 77:                                         [I] the structure, read (fn:sub_0067A140_PathPlanSpiral@0x0067A140, 0x0067A180–0x0067A233, all of J); [C] the products and the list below
+PathPlanSpiral(path) → 77:                                         [C] the structure, over all 260 stock type-14 plans (run:2026-11-04-path, run:2026-11-04-path-2, [path/0004 § 10](../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m)), and the products and the list below (fn:sub_0067A140_PathPlanSpiral@0x0067A140, 0x0067A180–0x0067A233, all of J)
  1. (fx, fy): u32 ← the 16.16 position;  (lx, ly) ← (fx, fy);  r: u32 ← 0;  a: i32 ← 0;  k: i32 ← 0
  2. loop:
  3.   r ← r + 0x2580;  a ← a + 16
@@ -549,9 +549,9 @@ PathPlanSpiral(path) → 77:                                         [I] the str
 - J. [C] **Truncation toward zero:** [overview § G4](README.md#g4-truncation). (0x0067A1A1, 0x0067A1CA, 0x0067A1AF, 0x0067A1E0, run:2026-11-04-path-2)
 - J. [C] The point list reproduces in 27 stock plans of the first run, which at a start fraction of `0x8000` on both axes are one list relative to the start, and in 233 natural plans of the second; `swap` separates them. (run:2026-11-04-path, run:2026-11-04-path-2)
 - J. [I] `g_SineTable` and `R` go on the x87 stack as f32, so the product has at most 48 mantissa bits and is exact in a double; `X` and `Y` are the low dwords of a 64-bit `FISTP`. The game's stored integers agree with the exact product ([overview § G4](README.md#g4-truncation)'s 43 804). (0x0067A196, 0x0067A1AC)
-- J. [I] No draw, no grid, neither `+0x90` nor `+0x91`. 94 iterations at the kept start, at most 95 in the emulator's cases; `r` would wrap at iteration 223 697. (0x0067A21D)
+- J. [C] No draw, no grid, neither `+0x90` nor `+0x91`: the seed, the grid (no dump) and both bytes unchanged in 260 of 260 plans. 94 iterations at the kept start `(0x8000, 0x8000)` in 233 of 233 plans, at most 95 in the emulator's cases; `r` would wrap at iteration 223 697 (the kept bound line). (0x0067A21D, run:2026-11-04-path, run:2026-11-04-path-2, [path/0004 § 10](../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m))
 - J. [I] The emulator's x87 can't test this: the p-code `FISTP` ignores the rounding field. So the list's tag rests on the game's plans. (0x0067A1A1, run:2026-11-03-path-emu-3)
-- J. [I] **The hammer at a wall:** this plan reads no grid; the end at a wall is the missile's own step, [skills/missiles § D3](../skills/missiles.md#d-each-frame), with [P12's entry](../../backlog/archive/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
+- J. [C] **The hammer at a wall:** this plan reads no grid (no grid dump in 260 of 260 plans, 123 of them passing through cells with the wall bit `0x04`, run:2026-11-04-path, run:2026-11-04-path-2, [path/0004 § 10](../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m)). [I] The end at a wall is the missile's own step, [skills/missiles § D3](../skills/missiles.md#d-each-frame), with [P12's entry](../../backlog/archive/2026-11-04-architect-reverser+spec-writer-0054-p12-missile-own-cell-bit0-vs-floor.md). (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0)
 
 ### K. The straight planner and type 4
 
@@ -649,7 +649,7 @@ Reduce(node, ctx) → n:                                             ; fn:sub_00
 - L2. [C] **With `b1C` at or below `h0`, type 0 has one pass at exactly `h0`:** only a route of the unblocked octile length is found. (0x0067AC3E–0x0067ACD4)
 - L2. [C] **A route of one segment returns 0,** so a straight or exactly diagonal free line is refused by this planner (`points<2:target` 9 of `real0`, 1 of `real16`, 3 of `stair`). The list ends at the node the walk ended on; the start is not in it. (0x0067AA6B–0x0067AA72)
 - L2. [C] Neither planner reads `ctx.limit`, `ctx.size` or `+0x10`, and neither reads the path but `+0x30` under type 16. (`traced=0` over 2 116 cases, run:2026-11-03-path-emu-2)
-- L2. [I] Bounds: at most 51 passes (`h0` ≥ 2, `b1C` ≤ 255), each at most 10 000 tries. (0x0067ACB0, 0x0067A77E)
+- L2. [C] Bounds: at most 51 passes for any `h0` (checked over `h0` 0..599 and `b1C` 0..255, types 0 and 16), each at most 10 000 tries; the loop also ends at a found node or a full node pool. (0x0067ACB0, 0x0067A77E, [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o))
 
 #### L3. The walk and the fan
 
@@ -711,7 +711,7 @@ The fan, as offsets from `d`, the parent's direction when the child was made (fo
 
 - L3. [C] Under type 0 the fan's order rests on 5 cases of `open` and 5 of `rect` that `row` and `tries` separate; under a tight bound the order doesn't show, and none of `real0`'s separates. (data:g_PathSearchTurnRows@0x006F17D8)
 - L3. [C] A node has one child slot, kept across a backtrack, so the allocated count is the deepest chain of the pass + 1. Reaching a node outside the rectangle returns a route one step outside it, short of the target. (0x0067A8E6–0x0067A938, 0x0067A796–0x0067A7C0, family `corr`)
-- L3. [I] The first try keeps the parent's direction in rows 0, 1, 2, 6 and 7: the walk runs straight until the bound or a wall turns it. (data:g_PathSearchTurnRows@0x006F17D8)
+- L3. [C] The first try keeps the parent's direction in rows 0, 1, 2, 6 and 7 (entry 0 is 0 in those rows): under the non-drawing types the walk runs straight until the bound or a wall turns it; under type 16 the turn adds a draw (step 18). (data:g_PathSearchTurnRows@0x006F17D8, [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o))
 
 #### L4. Type 16's draws
 
@@ -726,14 +726,14 @@ sequenceDiagram
 ```
 
 - L4. [C] The step is the game's LCG, inlined at three sites, step 18, `Advance`'s first line and its loop: `v = 0x6AC690C5 · lo + hi`. `dir = (dir + turn entry + g_PathSearchDrawAdd[lo & 31]) & 7` with the new low word. Control `draw` separates all 400 of `real16`; the exit seed is compared in every type-16 case, 994 022 draws there. A node's fifth try draws nothing. Type 0 draws nothing. (0x0067A983, 0x0067A6E1, 0x0067A641, data:g_PathSearchDrawAdd@0x006F18D8)
-- L4. [I] Type 16's reach: two unreferenced functions. (fn:sub_00663E00_PathPlanType16A@0x00663E00, fn:sub_00663ED0_PathPlanType16B@0x00663ED0)
+- L4. [C] Type 16's reach: two unreferenced functions ([path/0001 § 15](../../findings/path/0001-pathplan-register.md#15-plan-0066-batch-s7a-part-1-second-tool-scans-and-graphs-2026-11-16-lanen66n)). (fn:sub_00663E00_PathPlanType16A@0x00663E00, fn:sub_00663ED0_PathPlanType16B@0x00663ED0)
 
 #### L5. The limits
 
 - L5. [C] **Points: at most 77, against 78 slots.** A route of 78 corners fits `PathPlan`'s window: a staircase of `dx` 78, `dy` 39 has `g = h0 = 195`. `stair`: 77 returned, 78 refused. (0x0067ACE9)
 - L5. [I] **The node store is out of reach under `PathPlan`'s window:** `|dx|, |dy| ≤ 100` gives `h0 ≤ 300`, the last bound at most 300 (type 0) or 450 (type 16), the depth at most 150 or 225, so at most 151 or 226 nodes of 900. Past the window, `corr` reaches it: 899 steps fit, the 900th step's child returns 0 and ends the search. (fn:sub_00649970_PathPlan@0x00649970)
 - L5. [C] **The assert and the frame.** 50 000 passes; 50 001 asserts. But the clear covers `(w + 6)(h + 6)` cells and the frame holds 50 010 before the saved `EBP`: a clear of 50 011 cells zeroes the saved `EBP`, 50 012 the return address, 50 013 the context argument. So a rectangle can pass the assert and overrun: 217 × 217 fits, 218 × 218 overruns. The signed product wraps from 46 341². (0x0067AABC, 0x0067AAFB, families `grid`, `over`)
-- L5. [I] **No single stock room overruns:** the largest is 60 × 60 subtiles, a same-room rectangle 80 × 80, a clear of 7 396 cells. A pair on the near list's gap rule has a side of at most 145, a clear of at most 22 801. (0x0067AABC, [Levels § Largest room](../../tables/Levels.md#largest-room-a-stock-level-can-have-plan-0054-p12-follow-up), `tools/room_extent.py`)
+- L5. [C] **No single stock room overruns:** the largest is 60 × 60 subtiles, a same-room rectangle 80 × 80, a clear of 7 396 cells. A pair on the near list's gap rule has a side of at most 145, a clear of at most 22 801. (0x0067AABC, [Levels § Largest room](../../tables/Levels.md#largest-room-a-stock-level-can-have-plan-0054-p12-follow-up), `tools/room_extent.py` rerun byte-identical, `LvlMaze.txt` agreeing, [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o)) [I] That the builders make no room outside these extents (their room rule is not read).
 - L5. [I] `g` and `f` are u16 read as i16; under the store `g ≤ 2 697`, and no wrap is reached. (0x0067A88B–0x0067A8DD)
 
 ### M. The client-only slots: types 3, 11, 12
@@ -765,12 +765,12 @@ PathPlanType12(ctx): +0x24 ← 0;  +0x98 ← −4;  n ← PathWalkParam98(ctx); 
 | Spiral | 77, always | 77 | [C] (run:2026-11-04-path-2) |
 | Search | 77 | `stair` 77 | [C] (0x0067ACE9, run:2026-11-03-path-emu-2) |
 
-- N. [I] Limit 77 is the most any writer gives: `PathSetByte90` caps at 77, creation gives 73 or 14. Limit 78 would write `+0x1D4`; no server code path sets it, and the quest byte stores at the same offsets are not paths. (0x00648E7D, fn:QUESTS_FindById@0x00543640)
-- N. [I] `PathPlan` has no test of a count above 78: a planner returning one would overrun the record. No server planner passes 78. (0x00649BA1–0x00649C6E)
+- N. [C] Limit 77 is the most any path-module writer or immediate gives: `PathSetByte90` caps at 77, creation gives 73 or 14 ([path/0001 § 16](../../findings/path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n)). [I] That the 13 register dword stores at `+0x90` outside the path module (bases not traced) give no more is not read. Limit 78 would write `+0x1D4`; no server code path sets it, and the quest byte stores at the same offsets are not paths. (0x00648E7D, fn:QUESTS_FindById@0x00543640)
+- N. [C] `PathPlan` has no test of a count above 78: the return is stored at 0x00649BB8 and none of the tail's 8 compares holds 77 or 78, so a planner returning one would overrun the record. No server planner passes 78. (0x00649BA1–0x00649C6E, [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o))
 
 ## Outputs
 
-The point list at `+0x9C` (u32 words `x | y << 16`, in walking order), the return, and each planner's side writes: `+0x24`, `+0x28`, the aim of A5, knockback's target point and target unit, the seed under types 10 and 16. `PathPlan`'s tail then acts on them: [overview § C](README.md#c-pathplan). [I] (0x00649BA1–0x00649C6E)
+The point list at `+0x9C` (u32 words `x | y << 16`, in walking order), the return, and each planner's side writes: `+0x24`, `+0x28`, the aim of A5, knockback's target point and target unit, the seed under types 10 and 16. `PathPlan`'s tail then acts on them: [overview § C](README.md#c-pathplan). [C] the points, the return, `+0x24`, `+0x28`, the aim and the target words, and type 10's seed (946 plans) (run:2026-11-04-path, run:2026-11-04-path-2, [path/0004 § 10](../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m)). [I] the search's and type 16's side writes (no server plan) and knockback's own target point (not compared). (0x00649BA1–0x00649C6E)
 
 ## Worked example
 

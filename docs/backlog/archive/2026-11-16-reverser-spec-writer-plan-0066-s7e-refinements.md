@@ -2,16 +2,16 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../specs/sim/frame.md
-  - ../specs/drlg/collision.md
-  - ../specs/quests/travel.md
-  - ../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
-resolution: ""
+  - ../../specs/sim/frame.md
+  - ../../specs/drlg/collision.md
+  - ../../specs/quests/travel.md
+  - ../../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
+resolution: "Items 1 and 2 done 2026-11-16 in plan 0066 Phase 3, frame cluster (lane/n66pf): sim/frame D9 states the frame −2 null tail as the code's map ([I] for the game's fault) and the slot below the control; drlg/collision E4 returns 0x27 for a room with no map and reads a null cell pointer through ([I]); item 3 was done in the quests cluster [log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-frame-cluster-re-tagged-spec-writer-lanen66pf)"
 ---
 
-Plan 0066 batch S7e part 2 (`lane/n66u`, [run:2026-11-16-sweep2-s7e](../findings/frame/experiments.md#run2026-11-16-sweep2-s7e))
+Plan 0066 batch S7e part 2 (`lane/n66u`, [run:2026-11-16-sweep2-s7e](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e))
 found two readings and one scope the specs do not state. Not blocking. Both are maps of the code under emulation; what the game does at the
 faulting access stays `[I]` (ADR-0015 (5)).
 

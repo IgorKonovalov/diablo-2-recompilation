@@ -1323,7 +1323,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (`PresetUnitSpawn` in populate walks only, 286 separating). Not raised: 59 (the logged order is the breakpoints').
 - **No contradiction.** Phase 3 notes (PathReplan's callers, Leap's and vultures' test mask 0, E2's old mode, E3's
   wording, "oldest first" as list order) in
-  [`2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes.md).
+  [`2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes.md).
 - **Symbols:** `g_PathPlanFuncs` (data, the planner at 24 707 logged slot calls) and `PATH_MonTestMask` (the test mask
   of 21 099 monster plans; 21 126 until the review moved the 27 wraith plans to `PATH_DynamicCreate`'s branch) raised to C in `re/symbols.csv`, evidence path/0004, and in path/0004's Functions table
   (and drlg/0005's row for `PATH_MonTestMask`).
@@ -1404,7 +1404,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Contradicted in part 1: lifecycle 2.** `RoomActivateB`'s tenth call (0x0061B7CA) lies in a separate function,
   0x0061B7B0 (the room at coordinates, then the activation), reached from 0x0061A140 ← 0x00553790, the unit spawn at
   coordinates of lifecycle row 7: a fifth on-demand family beside the four the spec names. Backlog
-  [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../backlog/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
+  [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../backlog/archive/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
 - **Symbols:** two added, both I, in `re/symbols.csv` and drlg/0009's Functions table:
   `sub_0061A140_ActRoomAtCoordsActivate`, `sub_0061B7B0_RoomAtCoordsActivate`. None raised (no logged return compared).
 - **Totals** after merging `main` `997fb18d` (`totals-s7a.txt`, from the 29 files' *Totals by class*): a-logs 628, a-run
@@ -1450,7 +1450,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   base readings → d-none); path-search 14, 34 (13 register dword stores at `+0x90` → c; 14's "below 40 is a monster's
   14" → c); lifecycle 36 (whole-field writes → d-none).
 - **Contradicted in part 3**, one backlog entry
-  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md):
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md):
   path-README 17 (`UNIT_CollUnmarkRect` reads a monster's `SizeY` when `AiWussie` and `AiBaalToStairs` remove their
   unit); lifecycle 12 (four `ItemPlaceOnGround` callers missing: `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate`,
   `TargetBeltItemToGround`); frame 117 (`AutosaveTick` sends a one-byte `0xB0` through 0x0052B330 inside the frame,
@@ -1501,7 +1501,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (no near list in the frame logs), 97 (reader-internal; a rerun of the same tool). No row moved class.
 - **Contradicted in part (outside the batch):** frame row 33, D6 (H7b): town #2, a counted window, holds 86 rank-6 events,
   each before rank 7. With the J2, K4 owner and A1 notes in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections.md).
 - **Symbols:** none added or raised (no logged return compared).
 - **Totals** at `34271870` (`totals-s7b.txt`, the 29 files' *Totals by class*): a-logs 628, a-run 340, b 446, c 390,
   c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged (no row moved class); Phase 1 1 512, Phase 2 786,
@@ -1543,7 +1543,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   stores, as row 63 → d-none); path-search 30 (the builders' room rule → c); lifecycle 62 (the callee's "no new minions"
   → c), 64 (17 register stores to `[reg+0xC8]` → c), 70 (the spawn chain's flags and marks → c).
 - **None contradicted; no row moved class.** Refinements for Phase 3 in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
 - **Symbols:** none added or raised (no logged return compared). The two `g_UnitTypeEventList` helpers 0x00540B30 and
   0x00540B70 are left unnamed.
 - **Totals** after merging `main` `90022fb9` (`totals-s7f.txt`, the 29 files' *Totals by class*): a-logs 628, a-run 340,
@@ -2634,7 +2634,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   row); not settled 27, stay c-emu with a reason each (frame 57, 115, 121; path-README 20, 23, 25, 27–30, 52, 69, 74, 75;
   path-search 1, 6, 8, 13, 16, 22, 23, 25, 32, 33; lifecycle 9, 50, 60). S7e whole: 63 rows, 18 moved to b (11 in part
   1), 18 raised whole or in part, 27 not settled.
-- **New readings** (filed to spec-writer, [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7e-refinements.md)):
+- **New readings** (filed to spec-writer, [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7e-refinements.md)):
   at current frame −2 `EventQueueAt` raises a frame to −1 and takes a null tail, an access at address 0 (a fault in the
   game, `[I]`); `COLL_RectTest` does not test the map's cell pointer (drlg/collision E4). Also travel's B1 gained a scope
   bullet for sizes 0–4 and steps 1–5 (front matter and research map C 80), quests/0002's "(plan 0066 S3e, proposed)"
@@ -2645,3 +2645,55 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **For the owner:** none. The 27 not-settled statements could be a later static batch (no pool entry in 23 of them);
   whether that is worth a batch is the architect's call.
 - **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s7e`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7e.md), covering S7e whole.
+
+### 2026-11-16 — Phase 3, the frame cluster re-tagged (spec-writer, `lane/n66pf`)
+
+- **Done.** Branch from `main` `6e0ee2b7`. No game, no Ghidra, no slot. Sources: the S7a parts 1–2 (`lane/n66n`), S7b and
+  S7f (`lane/n66o`), S7c and S7d (`lane/n66m`, with the Tier A audit's wraith fix) and S7e parts 1–2 (`lane/n66u`, with the
+  Tier B check: frame 55, 56, 64, 65 b on reachability, kept) entries above, the five inventory files' *Route* cells and
+  the six spec-writer entries. Each raised statement carries its anchor: the kept path logs (run:2026-11-04-path,
+  -path-2) with [path/0004 § 10](../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m);
+  the lifecycle logs (run:2026-10-17-lifecycle, -h7a-lifecycle) with drlg/0009 § 11.5; the frame windows (run:2026-11-04-frame,
+  -frame2, -frame3) with frame/0007's S7b section and drlg/0009 § 14; the second tools' sections (frame/0001 §§ 8–10,
+  path/0001 §§ 15–17, drlg/0009 §§ 12, 13, 15, player/0002 § 12); run:2026-11-16-sweep2-s7e for the emulated maps.
+- **Front matter:** sim/frame C 67 / I 130 / L 5 → **C 144 / I 98 / L 5**; path/README C 85 / I 85 / L 13 → **C 119 / I 64 /
+  L 13**; path/search C 102 / I 36 / L 4 → **C 117 / I 26 / L 4**; drlg/lifecycle C 103 / I 78 / L 9 → **C 147 / I 52 / L 8**
+  (the minion-flag question struck); player/party C 47 / I 29 / L 3 → **C 51 / I 25 / L 3**. The five together C 404 / I 358 /
+  L 34 → C 578 / I 265 / L 33. Outside the inventory: drlg/collision C 183 / I 70 → **C 183 / I 71** (S7e refinement 2, E4's
+  cell pointer `[I]`); monsters/spawn C 137 / I 46 → **C 138 / I 46** (K1's gate tests, review-fixes 8); quirks C 401 / I 146 →
+  **C 407 / I 140**.
+- **Rows (345: frame 127, path/README 79, path/search 36, lifecycle 78, party 25 S7a-era rows):** `[C]` whole 95 (33, 21, 10,
+  27, 4); split 84 (43, 16, 6, 19, 0); corrected to the finding 5 (frame 33 and 117, path/README 17, lifecycle 2 and 12); kept
+  `[I]` 161 (49, 41, 20, 30, 21: H7a–H7d, deferred, the S7e moves to b, not settled, not raised, d-none, d-2c). The lists are
+  each inventory file's new *Phase 3* line; inventory README § 6 has the five rows.
+- **Corrections applied (six entries, closed):** S7a part 2 1–4 (`SizeY` read by `AiWussie`'s and `AiBaalToStairs`'
+  removals; `ItemPlaceOnGround`'s 12 calls; the one-byte `0xB0` send inside the frame, sim/frame Outputs; D4's flag `0x40`);
+  `RoomActivateB`'s fifth family (the spawn at coordinates through 0x0061B7B0, its reach `[I]`); S7b 1–4 (D6's rank 6 in town
+  #2, still `[I]`; J2's `RoomPopulate`; K4's owner counts 3 and 19 over the seven windows; A1's open-server flush and
+  `Sleep(30)`) and the D3 note (E5a's 658 cited, D3 kept `[I]`); S7c–S7d notes 1–6 (`PathReplan`'s four callers in the entry
+  row; Leap Attack's 0 / 0 and a vulture row; E3's direct 13 and `MonPathPlanType`'s fallback; E2's new mode; "oldest first"
+  as list order in § G and H2; the wraith as `PATH_DynamicCreate`'s branch); S7e items 1 and 2 (D9's null tail at frame −2 as
+  the code's map, the game's fault `[I]`; collision E4); S7f 1–6 (the type list's five readers; the monster record's `+0x20`
+  only with link type 1 and the two clears; the item record's unread `+0x08`; L2 for any `h0`; L3's type-16 draw; E4's 10
+  and 14).
+- **Also:** quirks Q275, Q487, Q500, Q502, Q523 and Q526 follow their notes to `[C]` (class table 402 / 136); Q500 now cites
+  sim/frame n8 alone and monsters/ai/README n1 moves to the Coverage table's *Weaker duplicate* column
+  ([entry](../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-monsters-ai-readme-note-1-after.md)). Research-map rows of
+  sim/frame, path (both), drlg/lifecycle, drlg/collision, monsters/spawn, player/party and quirks rewritten. Eight wiki pages
+  carry W4; a refresh entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-frame-re-tag.md)).
+  `tools/backlog.py close` rewrote the closed entries' links in three findings (drlg/0009, frame/0001, path/0001); no other
+  findings edit.
+- **Judgment calls for the review:** (1) five rows filed raised are counted split, under the binding overclaim rule: frame 37
+  (E2a: the emulation covers the dropped callback, not the caller's frame or the null-unit sentences), 79 and 85 (the J
+  table's ranks 1 and 15: the walker's stop is met, the route's condition past it is a reading), 95 and 99 (K3a's chained
+  sentences and K3e's code reading are not the recount's); lifecycle 75 likewise (the spawn is the emulation's boundary);
+  (2) monsters/spawn K1 raised beside lifecycle § I (review-fixes 8), though spawn has no 0066 inventory file and so no
+  *Phase 3* line; (3) lifecycle 15 and frame 91 keep two `[I]` remainders each, so their `I` falls by less than a whole row's;
+  (4) frame 33 (D6, a kept H7b row) and frame 117 are *corrected*, D6 still `[I]` with S7b's town #2 written in (the
+  combat review's README 29 precedent); (5) frame 32 (D3) stays kept with E5a's 658 cited, as the S7b note allowed, rather than
+  split on E5a; (6) the vulture row and the Leap cell are new text under path/README row 9's and 10's raises; (7) the H2 header
+  `[C]` is scoped to one act (the windows hold one act per game); (8) J table cells keep the first tool's function counts and
+  add the second walker's.
+- **Gate:** fast green (89 warnings; new: W4 on the eight wiki pages the refresh entry names); `--full` green (39 surveys);
+  `tools/quirks.py check` 0 errors.
+- **Review:** Tier A, [request](../backlog/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-frame-cluster.md).

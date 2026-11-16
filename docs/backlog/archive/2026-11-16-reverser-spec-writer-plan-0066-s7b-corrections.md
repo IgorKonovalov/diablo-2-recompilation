@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o
-  - ../findings/drlg/0009-room-lifecycle.md#14-plan-0066-batch-s7b-the-frame-windows-room-and-timer-lines-2026-11-16-lanen66o
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o
+  - ../../findings/drlg/0009-room-lifecycle.md#14-plan-0066-batch-s7b-the-frame-windows-room-and-timer-lines-2026-11-16-lanen66o
+resolution: "Done 2026-11-16 in plan 0066 Phase 3, frame cluster (lane/n66pf): sim/frame D6 rewritten to town #2's 86 rank-6 events (still [I]), J2 names RoomPopulate's game-seed steps, K4's owner row counts 3 and 19 over the seven windows, A1's open-server thread flushes (0, 0) after a tick and sleeps 30 ms; D3 cites E5a's 658 [log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-frame-cluster-re-tagged-spec-writer-lanen66pf)"
 ---
 
 Plan 0066 batch S7b (`lane/n66o`) contradicted one sim/frame statement in part and corrected three; each needs the spec
@@ -20,7 +20,7 @@ text changed after the review. Not blocking. Lines are `main` `b5999f5e`'s; matc
    town window named; D1's rank 6 is then placed by one window.
 2. **Correction: sim/frame J2, line 721**, kind (1) "the game seed: every unit creation …": `RoomPopulate`'s own loop steps
    the game seed (it loads `[game+0xD0]` at 0x0054ED90; 6 929 `XS` at 0x0054ED96 inside the windows' walks, each on the game
-   seed's low word), a drawer the sentence does not name; [chain § D5](../specs/chain/README.md) has it.
+   seed's low word), a drawer the sentence does not name; [chain § D5](../../specs/chain/README.md) has it.
 3. **Correction (scope): sim/frame § K4's owner row, line 834.** "4 hits" (`MonCritDouble` 0x005A55BA with a missile event
    open) and "22 times" (`COMBAT_ToHitRoll` 0x0057DB38) are counts over the nine windows with `XS` (the seven counted, 5505 #1
    and 5509 #1); over the seven counted windows the column header names they are 3 and 19 (2 more in monsters' own events in

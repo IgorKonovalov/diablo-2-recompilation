@@ -483,6 +483,11 @@ each cluster's re-tag.
 | combat (`lane/n66y`) | [combat/reductions](combat-reductions.md) | 25 | 18 | 0 | 2 | 5 | C 46 / I 25 / L 5 | C 58 / I 5 / L 4 |
 | combat (`lane/n66y`) | [combat/delivery](combat-delivery.md) | 67 | 23 | 14 | 2 | 28 | C 81 / I 67 / L 4 | C 114 / I 42 / L 4 |
 | combat (`lane/n66y`) | [player/party](player-party.md) (row 12 only) | 26 | 1 | 0 | 0 | 25 | C 46 / I 30 / L 3 | C 47 / I 29 / L 3 |
+| frame (`lane/n66pf`) | [sim/frame](sim-frame.md) | 127 | 33 | 43 | 2 | 49 | C 67 / I 130 / L 5 | C 144 / I 98 / L 5 |
+| frame (`lane/n66pf`) | [path/README](path-README.md) | 79 | 21 | 16 | 1 | 41 | C 85 / I 85 / L 13 | C 119 / I 64 / L 13 |
+| frame (`lane/n66pf`) | [path/search](path-search.md) | 36 | 10 | 6 | 0 | 20 | C 102 / I 36 / L 4 | C 117 / I 26 / L 4 |
+| frame (`lane/n66pf`) | [drlg/lifecycle](drlg-lifecycle.md) | 78 | 27 | 19 | 2 | 30 | C 103 / I 78 / L 9 | C 147 / I 52 / L 8 |
+| frame (`lane/n66pf`) | [player/party](player-party.md) (the S7a rows; row 12 the combat cluster's) | 26 | 4 | 0 | 0 | 21 | C 47 / I 29 / L 3 | C 51 / I 25 / L 3 |
 
 A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
 `[C]` count rises by more than the `[I]` count falls.
