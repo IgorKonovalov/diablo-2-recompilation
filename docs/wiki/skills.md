@@ -528,8 +528,9 @@ from the code). Two draws happen at creation:
 - **The critical roll, on the owner's seed.** A missile that takes a share of the weapon's damage rolls the owner's
   critical chain. Confirmed: one step of the owner's seed per such creation (984), none for any other missile
   (30 407): the chain's first roll **draws even when its chance is 0**. The second and third rolls,
-  after a non-zero chance, were never reached and are read from the code. This chain is not the melee build's (read
-  from the code: the order differs).
+  after a non-zero chance, were never reached in a game; the whole chain ran under emulation, the code's map, 3 000 cases. This chain
+  is not the melee build's, whose first two rolls draw only above a chance of 0; that the order differs too is read from the code
+  ([combat overview § B](../specs/combat/README.md#b-draw-order-per-event)).
 - **The pierce count, on a local seed.** For a missile that can pierce and an owner with a pierce chance, a local
   seed made from the owner's request counter (see the request above) is stepped up to four times while its roll is
   below the chance; the count of successes is the missile's pierce count. Confirmed over 1 066 creations, the owner's
