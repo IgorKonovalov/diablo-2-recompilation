@@ -1024,7 +1024,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Contradicted in part: states row 46** (line 467): the remove callback's closure reaches 122 drawing functions through
   `PetLimitRefresh` (0x0056E960 → `PetLimit` → `PetRemove` → `PetUnitRelease` → `MonSetMode` → `MonAttackStats`); the group
   clear, death purge and mode drop hold none. Whether an expiry takes the path stays `[I]` (→ c, part 2). Backlog for both
-  contradictions: [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+  contradictions: [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
 - **Symbols:** none raised. The run compares call sites, arguments, bytes and table cells, not a logged return of a named
   function (review-fixes 14's scope); judgment call (6) below.
 - **Totals** recomputed from the 29 inventory files' *Totals by class* after merging `main` `82eaa099`: a-logs 645, a-run 340, b 432,
@@ -1072,7 +1072,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   cases), aggregate 4 (the unit list's `0x2` is the drop-on-mode marker), aggregate 41 (the refresh's closure reaches 122
   drawing functions; no seed moved in 972 windows), aggregate 29 and 42 (136 the commonest gap in 22 of 28 logs, not
   every session); and states 5's remainder (`UNIT_HasState` answers for types 0, 1, 3: missiles, not objects). Backlog:
-  items 3–7 added to [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+  items 3–7 added to [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
 - **Part-1 remainders:** aggregate 34 raised (the swap's direct calls touch `bl` 4 and 5 only, 76 swaps); states 5
   contradicted in part, its `+0xC8` half raised; states 14 (the poison lists' shape raised; burn, cold, freeze → c, S4e)
   and 46 (`PetLimitRefresh` on every player expiry, 149 freeing expiries drew nothing; a pet's release → c, S4e) keep a
@@ -2720,7 +2720,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   between the two is kept (65 cases; the spec's threshold control fails 79); the rest raised with two refinements
   (the record argument and the extended bit; an absent entry unfloored). Remainder raised, no new run: 16 (op 7 on the
   running total, p51s's control). Correction and refinements routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part1-corrections.md).
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part1-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** after merging `main` `72f003c8`, from the 29 files' *Totals by class*: a-logs 623, a-run 334, b 507, c 390,
   c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 457, Phase 2 841. No row moved class
@@ -2767,7 +2767,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   unused; the caller half → c, part 5). **Moved c-emu → b (H4b): 8, 56** (`DropGoldAmount`'s loop crosses the
   free-cell search 0x0064E810 and the item creation 0x00559CE0, a unit allocation, before every next test).
   Refinements and the correction routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part2-corrections.md) (G3's caps are a player's
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part2-corrections.md) (G3's caps are a player's
   only; B3 after B2; 0xBBA; D5's ethereal test never decides; Encode 4's `x`; the timer has no floor).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' rows; `main` `72f003c8`): a-logs 623, a-run 334, b 509, c 390, c-emu 442,
@@ -3011,7 +3011,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   29 and 31 remainders raised (with refinements); 40 raised in part (lengths of `0x17`–`0x19` and `0x18`'s fields; the
   other handlers stay S4e part 4); 45, 99 raised in part (the page write before `InvPlaceItem`; its refusal → part 4,
   `place`); 64 raised in part (the walk after a blocked line → b H4c). No class move. Refinements routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part3-refinements.md): `PktPosFar`'s position
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part3-refinements.md): `PktPosFar`'s position
   rule and −2³¹; `0x26`'s test for a static-path unit; `PktOwnedItemBad`'s cursor alternative; `0x16`'s self refusal;
   `0x17`'s busy gate and `InteractIsPlayer`'s unread argument; `0x19`'s `NoManaMsg` and silent trade refusal and the
   trade test's map; `InvPlaceItem`'s ECX/EDX; I1's returns of 1 and `InteractWalkTo`; `GameFindUnit`'s type 5.
@@ -3373,7 +3373,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   5), 23 (the clamp and `InvGridPut`'s refusals; `InvGridFree` → part 5), 39 (to `BeltFreeSlot`; after it → part 5), 42
   (to `InvTakeItem`; after it → part 5); 45 and 99's remainder raised in part (refusals before `InvItemRemove`; one
   after it → part 5 with row 20). No class move. Refinements routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part4-refinements.md).
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part4-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' *Totals by class*; `main` `d74fcb6d`): a-logs 623, a-run 334, b 509,
   c 390, c-emu 442, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 455, Phase 2 843. README §§ 3, 4
@@ -3420,7 +3420,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   part: 87 (quality 9's `+45000`; "no stock path makes one" stays c, S4e continuation), 81 (`ItemPlaceOnGround`'s null
   room; `CursorDrop`'s and `DropCreateItem`'s tests → b, H4d, no class move). **Class move:** 63 c-emu → b (H4d): its
   claim is the room `GroundDropCell` returns to `CursorDrop`, past the search's pool allocation 0x0064DEE8 (ruling R2).
-  Refinements routed by [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5a-refinements.md).
+  Refinements routed by [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5a-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' rows and *Totals by class*; `main` `30e8a46c`): a-logs 623, a-run 334,
   b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. README
@@ -3470,7 +3470,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   c-emu, S4e continuation). items/inventory: 58 raised with refinement (a found non-item returns 0 with the flag
   clear). **Class move:** inventory 57 c-emu → b (H4d): each branch after the first `UnitSetStat` sends a stat message
   whose `ClientQueuePacket` allocates when the client's buffer has no room (0x0040B430 at 0x0053B2DD; ruling R2).
-  Refinements routed by [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5b-refinements.md).
+  Refinements routed by [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5b-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' rows and *Totals by class*; `main` `30e8a46c`): a-logs 623, a-run 334,
   b 511, c 390, c-emu 440, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 453, Phase 2 845. README
@@ -3800,7 +3800,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   message queue); use 22 (message `0x7C`, use returns other than 0 and 1) and 34 (the 1 after `UnitAddStat` /
   `STATLIST_SetStat`, both reaching `STATLIST_InsertEntry`) to H4c; use 22's "a test returning 0" to d-none (no stock
   entry's test returns 0, 0x005BE16F). Refinements routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5c-refinements.md).
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5c-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' rows and *Totals by class* after merging `main` `ac87a5f5`): a-logs 623,
   a-run 334, b 513, c 390, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 451, Phase 2 847.
@@ -3844,7 +3844,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   test, the registration on the fourth argument). **Class moves:** none. **Remainders routed without a move:**
   items/inventory 61 (the cursor clear, `InvSetCursor` at 0x00563CB8 after `GroundDropCell`'s and
   `ItemPlaceOnGround`'s allocations) to H4d, ruling R2. Refinements routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5d-refinements.md).
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5d-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image and objdump readings, review-fixes 14).
 - **Totals** (recomputed from the 29 files' *Totals by class* after merging `main` `31a4949c`): a-logs 623, a-run 334,
   b 513, c 390, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 451, Phase 2 847, unchanged.
@@ -3891,7 +3891,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   raised (refinement `[I]`: a found node blocks both events, a 0 frees every kind-2 node of the stat not in use);
   stats/states 14's remainder raised with refinement (the four remove callbacks: poison and burn 0x0056E900, cold
   0x0057AD80, freeze 0x0057B170). **Class moves:** none. Refinements routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5e-refinements.md), including the H3 evidence
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5e-refinements.md), including the H3 evidence
   that sits beside aggregate 27 (H4e, a-run; not moved).
 - **Symbols:** none raised (an emulation over a declared image and objdump readings, review-fixes 14).
 - **Totals** (the 29 files' *Totals by class* summed after this part, `main` `31a4949c`): a-logs 623, a-run 334, b 513,
@@ -3946,7 +3946,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   other `+0x38` writers, chains, keys, extended fields), 29 (the 136 as act index 3's bucket period), 31 ("only"
   over the flag's 19 other users), 41 (whether a stock refresh takes the draw; routed to H4e, no class move: an
   a-logs row, and the path crosses the allocator, 0x0057026C, 0x0056FFFD). Refinements routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5f-refinements.md); the table checks by
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5f-refinements.md); the table checks by
   [backlog](../backlog/2026-11-16-reverser-archivist-plan-0066-s4e-part5f-table-checks.md).
 - **Symbols:** none raised (objdump readings beside Ghidra readings; review-fixes 14).
 - **Totals** (the 29 files' *Totals by class* summed after this part, `main` `31a4949c`): a-logs 623, a-run 334, b 514,
@@ -4016,3 +4016,71 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Not settled rows (26):** every Route cell names a page, a calc pool, a room or a run; none lies wholly past an
   allocating call (rows 84, 127 and m63 corrected above).
 - **Gate:** fast green (68 warnings, none from the fixes). The review request stays open for the merge.
+
+### 2026-11-16 — Phase 3, the stats/items cluster re-tagged (spec-writer, `lane/n66si`)
+
+- **Done.** Branch from `main` `845aa88f`. No game, no Ghidra, no slot. Sources: the S4a/S4b entry and its Tier B check
+  (`lane/n66h`, fixes 1–3), the S4c/S4d entries (`lane/n66i`, Tier B accept, 0 fixes), the S4e parts 1–5f entries and
+  the S4e Tier B check (`lane/n66z`, accept with fixes 4: economy 46's caller half in items/0011, the idle-refresh
+  writer in stats/0001 § 6, aggregate 31's second source, use 22's no-test basis in items/0013 § 16), the six
+  inventory files' *Route* cells and twelve correction and refinement entries. Each raised statement carries its
+  anchor: the kept economy, inventory and stats logs with items/experiments §§ S4a/S4b, S4c and stats/experiments
+  §§ S4d parts 1–2; run:2026-11-16-sweep2-s4e-emu with items/0011 § S4e part 2, items/0013 §§ 12–19, stats/0001
+  §§ 11–14 and stats/0002 §§ 12–13; the second tools' readings (r2, objdump, the raw scan) beside the Ghidra readings.
+- **Front matter:** stats/aggregate C 65 / I 43 / L 4 → **C 102 / I 27 / L 4** (one `[I]` of plan 0068 P4, G3's `s16`
+  event registration, not in the inventory, raised beside G3 on stats/0001 § 12, review-fixes 8); stats/states
+  C 52 / I 54 / L 6 → **C 72 / I 48 / L 6**; stats/README C 16 / I 3 / L 3 → **C 17 / I 3 / L 3**; items/economy
+  C 127 / I 86 / L 12 → **C 183 / I 55 / L 12**; items/use C 52 / I 64 / L 9 → **C 80 / I 45 / L 9**; items/inventory
+  C 75 / I 105 / L 13 → **C 143 / I 58 / L 13** (one `[I]` of plan 0067, the trade note, not in the inventory). The six
+  together C 387 / I 355 / L 47 → C 597 / I 236 / L 47. Outside the inventory: quirks C 407 / I 140 → **C 411 / I 136**
+  (class table 402 / 136 → 406 / 132).
+- **Rows (350: aggregate 42, states 54, stats/README 3, economy 86, use 64, inventory 101):** `[C]` whole 122 (16, 7, 0,
+  32, 19, 48); split 70 (15, 7, 1, 22, 9, 16); corrected to the finding 6 (aggregate 20 and 42, states 5, economy 40 and
+  46, inventory 60); kept `[I]` 152 (9, 39, 2, 30, 36, 36: H4a–H4e, d-2c, d-none, the S4e moves to b, not settled). The
+  lists are each inventory file's new *Phase 3* line (a script checks each partitions its file); inventory README § 6
+  has the six rows.
+- **Corrections applied (eleven entries closed, one annotated):** S4a/S4b items 1–2 (economy F1's 13 `nodurability`
+  bases, 12 crossbows and `7cr`; H3's six `useAmmo` sites; item 3, ItemTypes.md, is the archivist's and keeps the entry
+  open); S4c/S4d items 1–7 and refinements (inventory § G's `0x22` return 3, discarded; states § H's remove-callback
+  row, A2's types 0, 1, 3 and B1's gate anchor 0x0056E9C7–0x0056EA08; aggregate's pickup unlink beside H2, flag `0x2`,
+  the requirement refresh's 122 drawing functions, 136 in 22 of 28 logs; J4's `RNG_` scan; B2's 19 callers; I3's each
+  occupied hand; C2's `PetLimitRefresh`; the stamina shrine's stat 28); S4e part 1 (F2's floor, C5, the getters and ops
+  3, 10, 12); part 2 items 1–8 (economy F, G3, B2 before B3, B6, D5, Encode 4, H7/H8's 32-bit `idiv` and none-queued
+  test, H2); parts 3–5f refinements (use and inventory: the handlers' lengths and refusals, the pickup, `StackMerge`,
+  the belt tests, `ItemAutoEquipSlot`, the ground expiry; aggregate: H3, H4, the links; economy: `D2S_WriteCorpses`'
+  arguments). Part 3 item 7 (`GameFindUnit`'s type-5 list) needs no text: no spec describes its per-type lists.
+- **Also:** quirks Q369, Q490 and Q514 follow their notes to `[C]`; Q391 is reworded to the act clock pass and `[C]`
+  with aggregate n6; Q49 stays `[I]` (economy n8 is split: the write of 0 `[C]`, the callers' clip `[I]`).
+  Aggregate's open question on what queues the 136-frame refresh is narrowed to whether 136 is act 3's period (L
+  unchanged). Research-map rows of stats/aggregate and stats (row 95), stats/states, items/economy, items/use and
+  items/inventory, and quirks rewritten. Three wiki pages carry W4 (stats-and-states, economy, inventory); a refresh
+  entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-stats-items-re.md)).
+  `tools/backlog.py close` rewrote the closed entries' links in two findings (items/experiments, stats/experiments); no
+  other findings edit. No Mermaid block changed; none disagrees with its text.
+- **Owner note, left as filed.** The move conventions of items/inventory 61 (the cursor clear routed to b, H4d, with no
+  class move), stats/states 46 (moved c → b, H4e) and stats/aggregate 41 (an a-logs row routed to H4e with no move)
+  differ. They are not resolved here: each row is bucketed by what the spec text now says (inventory 61 split,
+  states 46 split, aggregate 41 split; each remainder `[I]` on its H4d or H4e route), and each inventory line says the
+  difference is left as filed.
+- **Judgment calls for the review:** (1) rows filed raised and counted split under review-fixes 2, each keeping a
+  sentence no run covers: aggregate 11 (A3's client-dirty mark and parent propagation), 16 (D1's `BaseStat` floor and
+  the ops 4–5 shift); states 37 (`SHRINE_Stamina`'s other stats), 41 (B1's curse replacement), 42 (the skill shrine's
+  reader); economy 17 (the error routine's exit past 0xBBA), 18 ("none on stock data" unchecked), 26 (D5's ethereal
+  test never decides), 39 (F7's refills), 44 (the reach `[C]`, "draws nothing" `[I]`); use 18–20 (the flagged
+  refusal's 3, which the `0x26`/`0x27` rows did not state); (2) states 7 (the B1 gate, kept a-run H4e) raised whole on
+  row 13's static reading of the same gate (review-fixes 8); (3) economy 78's none-queued test and signed division
+  raised for the durability timer on row 11's S4e part 2 emulation (`r` −49 to 5 000), past S4a's a-run/d-none route
+  that predates it; the quantity timer stays `[I]` in a new H7 bullet (one new `[I]`); (4) the corrected rows whose
+  statement is now `[C]` in whole or part (aggregate 20, 42, states 5, economy 40, 46, inventory 60) counted corrected,
+  as the combat (README 29) and frame (path/README 17) precedents; (5) inventory 58 and 67 whole, each adding one `[I]`
+  the refinement entries name (the class compare at 0x0055E8A3; `EquipPairFlags`' unread ninth word); (6) use 1 and 2
+  `[C]` for the handler and its call only, the lengths and fields left to § B (the S4a/S4b Tier B fix 2); (7) use 52
+  whole at `GolemHealShare`'s branch (0x005C68AC), its "returns after the set" pointed at H5's existing `[I]`; (8)
+  inventory F4 and G4 headers scoped "to `InvItemRemove`" and "to `StackMerge`"; (9) states 25 (kept) reworded, its
+  "no tick count by mode" stale after row 23, with a new `[C]` E3 bullet for mode 3; (10) economy D3's "every stock row
+  has both non-zero" kept in the `[C]` on Npc.md's value ranges (`tbl:Npc.txt:sell mult`); (11) combat/delivery D2–D4
+  not touched for part 5e item 4, which the entry addressed to stats/states B2 (the four appliers' states and remove
+  callbacks are stated there); (12) aggregate's two `[L]` open questions reworded to drop the parts now emulated or read.
+- **Gate:** fast green (74 warnings; new: W4 on the three wiki pages the refresh entry names); `--full` green
+  (39 surveys); `tools/quirks.py check` 0 errors.
+- **Review:** Tier A, [request](../backlog/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-stats-items-cluster.md).

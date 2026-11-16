@@ -2,14 +2,16 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/items/0013-grids-belts-stacks.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/items/0013-grids-belts-stacks.md
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–6 in items/use and items/inventory; item 7 needs no text, no spec describes GameFindUnit's per-type lists [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 3 (`lane/n66z`, run:2026-11-16-sweep2-s4e-emu part 3) ran the item request handlers and
 `UnitInteract`'s item case under emulation to their first callee. Claims in
-[items/0013 § 12](../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu);
+[items/0013 § 12](../../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu);
 rows in the 0066 inventory (items/use 6, 18–20; items/inventory 1, 9, 10, 28–31, 40, 41, 43, 45, 64, 99). For Phase 3,
 not blocking. Refinements to carry into the specs (no contradiction):
 

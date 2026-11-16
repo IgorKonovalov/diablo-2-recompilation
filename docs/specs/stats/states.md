@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, stats/aggregate, rng, combat/delivery, data/calc, objects]
 consumed_by: [combat/delivery, combat/overview, objects]
-tags: {C: 52, I: 54, L: 6}
-updated: 2026-11-04
+tags: {C: 72, I: 48, L: 6}
+updated: 2026-11-16
 ---
 
 # States: the timed apply, expiry, the group clear, the regeneration tick, auras, shrines and wells
@@ -90,10 +90,13 @@ stateDiagram-v2
   carrying the state id at `+0x14`. `STATE_Set` writes the bit and the "changed" bit; most removers free the list and
   clear the bit together. (fn:STATE_Set@0x00639DB0, fn:UNIT_SetStateBit@0x00625A70, fn:UNIT_HasState@0x00639DF0,
   struct:StatList+0x14, run:2026-10-17-stats)
-- A2. [I] `UNIT_HasState` answers for players, monsters and objects; `STATE_Set` also keeps unit flag `+0xC8` bit 3
-  for a state with the `disguise` bit. The States flag columns are read through the loader's 40 bit-sets
-  (`curse` bit 11, `plrstaydeath` 13, `monstaydeath` 14, `exp` 30, `life` 32). (fn:UNIT_TestStateBit@0x00625B70,
-  fn:STATES_IsCurse@0x0063A420, fn:STATES_StaysOnDeath@0x0063A4A0, fn:STATES_IsExp@0x0063A6B0)
+- A2. [C] `UNIT_HasState` answers only for unit types 0, 1 and 3 (players, monsters, missiles) and 0 for any other
+  type, so an object answers 0; `UNIT_TestStateBit` has no type test. `UNIT_SetStateBit` sets unit flag `+0xC8` bit 3
+  when the States record's `+0x12` bit 0 (`disguise`) is set, and clears it only when no state with that bit is left.
+  The States flag columns are read through the loader's 40 bit-sets, bits 0..39 once each (`curse` bit 11,
+  `plrstaydeath` 13, `monstaydeath` 14, `exp` 30, `life` 32). Objdump and r2 beside the Ghidra reading.
+  (fn:UNIT_HasState@0x00639DF0, fn:UNIT_TestStateBit@0x00625B70, fn:UNIT_SetStateBit@0x00625A70,
+  fn:STATES_IsCurse@0x0063A420, fn:STATES_StaysOnDeath@0x0063A4A0, fn:STATES_IsExp@0x0063A6B0, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i), [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
 
 ### B. The timed apply
 
@@ -120,7 +123,7 @@ flowchart TD
 ```
 B1. STATE_ApplyTimed(req) → list or 0:                                 [C] (fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats, all of B1 but the lines marked [I])
       if req.state is out of range: return 0
-      if target is a monster refused by its MonStats/MonStats2 bits: return 0          [I] (0x0056E9A7–0x0056E9C3)
+      if target is a monster refused by its MonStats/MonStats2 bits: return 0          [C] (0x0056E9C7–0x0056EA08, objdump and the raw bytes: B1's step note)
       curse: bool ← States[req.state].curse
       if curse:
         r: i32 ← STATS_GetUnitStat(target, 109 curse_resistance)                       (0x0056E9C9–0x0056EA4A)
@@ -175,13 +178,23 @@ Step notes:
   lengths of the run (231, 3 024 and 2 016 exactly), so no case separates it from a truncating division. The refusal
   at `r` ≥ 100 and a negative `r` (a longer curse) are read from the code too: no stock source gives the player 100 or
   less than 0. (0x0056E9C9–0x0056EA4A, run:2026-10-21-shortfalls2)
-- B1. [I] The duration is in frames and is not rounded. The monster gate refuses every timed state on a monster whose
-  MonStats `+0x0D` bit 0 is set or whose MonStats2 `+0x05` bit 1 is clear (columns not named). (0x0056E9A7–0x0056E9C3,
-  fn:sub_00451FE0_MonStats2Rec@0x00451FE0)
-- B2. [I] **Callers.** Open wounds (state 62, 200 frames), prevent-heal, the aura target callback (§ F), the shrines
-  (§ G) and about twenty skill functions call B1; poison, burn, cold and freeze use their own appliers
-  ([combat/delivery](../combat/delivery.md)) with the same list shape. (fn:STATEVENT_OpenWounds@0x005BFE60,
-  fn:sub_0057D810_PreventHealHook@0x0057D810, fn:COMBAT_ApplyPoison@0x0057AC50)
+- B1. [C] The duration is in frames and is not rounded: end frame = frame + duration at 5 054 applies, 4 826 of them
+  not a multiple of 25. The monster gate refuses every timed state on a monster (type 1) whose MonStats `+0x0D` bit 0
+  is set or whose MonStats2 `+0x05` bit 1 is clear (columns not named): objdump, with the raw bytes agreeing at six
+  sites. (0x0056E9C7–0x0056EA08, fn:sub_00451FE0_MonStats2Rec@0x00451FE0, run:2026-10-17-stats,
+  run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)) The range 0x0056E9A7–0x0056E9C3 is the States bounds test.
+- B2. [C] **Callers.** `STATE_ApplyTimed` has 25 call sites in 25 functions and no abs32 reference: open wounds
+  (state 62, 200 frames), prevent-heal, the aura target callback (§ F), the shrines (§ G) and B1 itself once
+  (0x0056EC9E) among them, and 19 more functions, two of which are not skill functions (`UModElemDamage`,
+  `MonFleeFrom`) ([stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)). Poison, burn, cold and freeze use their own appliers
+  ([combat/delivery](../combat/delivery.md)) with the same list shape: each makes one plain list,
+  `STATLIST_Alloc(pool, 2, a length-derived end, the attacker's type, its guid)` (6 and −1 without an attacker), sets
+  its state (2, 115, 11, 1), a remove callback, and links it with damage; the 17 logged poison lists are plain, with
+  `0x2`, an end frame and `+0x08` 1 (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i); the four bodies with objdump, [stats/0002 § 12](../../findings/stats/0002-states.md#12-plan-0066-batch-s4e-part-5e-the-elemental-appliers-lists-run2026-11-16-sweep2-s4e-emu-static)). The remove
+  callbacks differ: poison and burn set `STATE_DefaultRemoveCB` (0x0056E900), cold 0x0057AD80, freeze 0x0057B170
+  (what the last two do at expiry was not read). (fn:STATEVENT_OpenWounds@0x005BFE60,
+  fn:sub_0057D810_PreventHealHook@0x0057D810, fn:COMBAT_ApplyPoison@0x0057AC50, fn:COMBAT_ApplyBurn@0x0057ADD0,
+  fn:COMBAT_ApplyCold@0x0057AF80, fn:COMBAT_ApplyFreeze@0x0057B230, run:2026-11-16-sweep2-s4e-emu)
 - B2. [C] **Prevent heal (state 52)** is applied by B1 for 120 000 frames with stat 31 = 0 to the defender in 86 of 918
   calls of the to-hit hook, exactly those with the player attacker's stat 117 non-zero, and the hook draws on neither
   seed ([skills/dispatch § K3](../skills/dispatch.md#k-stat-event-handlers)). **Open wounds** applies state 62 for
@@ -190,11 +203,12 @@ Step notes:
 - B2. [I] The hook's type and class tests (a monster defender outside 704–709) are not separated: every call had a
   player attacker and a monster defender outside that range. (fn:sub_0057D810_PreventHealHook@0x0057D810,
   run:2026-10-27-skills)
-- B3. [I] **Use kinds 6 and 9 only** (`sub_005BEDA0_ItemUseTimedState`: `yps`, `wms`, `vps`, `hrb`) run the group clear
+- B3. [C] **Use kinds 6 and 9 only** (`sub_005BEDA0_ItemUseTimedState`: `yps`, `wms`, `vps`, `hrb`) run the group clear
   (§ D) before they apply. Healing and mana potions do not: they are kind 3, `sub_005BE3F0_ItemUsePotion`, with no call
   of it. Of `STATE_GroupClear`'s nine call sites only `0x005BEE15` lies in the use entries (`0x005BE130..0x005BF3D0`).
   (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:STATE_GroupClear@0x0056C740,
-  0x005BEE15, [items/0012 § 9](../../findings/items/0012-use-inventory.md#9-corrections); the use kinds:
+  0x005BEE15, [items/0012 § 9](../../findings/items/0012-use-inventory.md#9-corrections); the nine sites and no abs32
+  reference, a second tool: [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i); the use kinds:
   [items/use § E](../items/use.md#e-the-kinds), a potion's amount and rate [§ F](../items/use.md#f-kinds-3-and-4-the-amount-and-the-two-draws))
 
 ### C. Expiry and removal
@@ -203,10 +217,12 @@ Step notes:
 C1. EVENT_TimedListExpire(unit) (unit event 12):                       [C] (fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-17-stats)
       for each counting child list c of the unit list (+0x3C):
         if c.flags & 0x2 and c.endFrame ≤ frame and c is not extended: free c   ; unlink, remove callback
-C2. STATE_DefaultRemoveCB(unit, state):                                [I] (fn:STATE_DefaultRemoveCB@0x0056E900)
-      if unit is dead and the state stays on death (plrstaydeath for players, monstaydeath otherwise): keep the bit
+C2. STATE_DefaultRemoveCB(unit, state):                                [C] (fn:STATE_DefaultRemoveCB@0x0056E900, run:2026-10-17-stats, the calls in this order, all of C2 but the line marked [I])
+      call 0x005C0B50                                                  ; the stat-event remove, aggregate § G3
+      if unit is dead and the state stays on death (plrstaydeath for players, monstaydeath otherwise): keep the bit   [I] (fn:STATES_StaysOnDeath@0x0063A4A0)
       else: STATE_Set(unit, state, off)
-      refresh the unit; SKILLS_RefreshPassivesInState(unit, state); a player gets a skill refresh
+      UNIT_AnimSetRate(unit); SKILLS_RefreshPassivesInState(unit, state)
+      if unit is a player (type 0): sub_00575900_PetLimitRefresh(unit)                 ; § H
 ```
 
 Step notes:
@@ -226,6 +242,10 @@ Step notes:
   states 100, 106 and 178–180 153, `poison` 49, `skilldelay` 48, `defense_curse` 42, the shrine states 133 and 134 4).
   (fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-17-stats,
   run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2)
+- C2. [C] The calls in C2's order are read with objdump and r2 beside the Ghidra reading, and the freed state's bit
+  was off at the next states line in 147 of 148 logged frees. (fn:STATE_DefaultRemoveCB@0x0056E900,
+  fn:STATE_Set@0x00639DB0, run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)) [I] The dead-unit branch, and the one free whose bit stayed on,
+  were not met.
 - C1. [I] The client copy calls the same function with frame 0, which counts `+0x18` down by one per call
   (presentation). (fn:UNIT_ExpireTimedLists@0x00627460)
 - C3. [I] **Death and mode.** Death frees every counting child that is not from an item (`+0x08` ≠ 4), has none of
@@ -295,7 +315,7 @@ E2. LifeTick:                                                          [C] (fn:s
 E3. StaminaTick:                                                       [C] (fn:PLAYER_StaminaRegenTick@0x00580500, run:2026-10-17-stats, all of E3 but the line marked [I])
       s: i32 ← stat 10;  b: i32 ← full stat 28 (staminarecoverybonus);  max ← full stat 11
       shift by the unit's mode (jump table 0x005805B8): 1, 5 → 8;  3, 4 and any mode outside 1..6 → none while b < 1000
-        6 → 9;  2 → 9, but none while s < 256;  3, 4 and any mode outside 1..6 with b ≥ 1000 → 8       [I] (0x0058054A–0x00580563)
+        6 → 9;  2 → 9, but none while s < 256;  3, 4 and any mode outside 1..6 with b ≥ 1000 → 8       [C] for mode 3 (E3's step note); [I] for mode 4 and the others (0x0058054A–0x00580563)
       if a shift applies and s < max:
         d: i32 ← max >> shift
         if b ≠ 0: d ← d + (d × b) ÷ 100                                ; signed, truncating
@@ -327,10 +347,12 @@ Step notes:
   (run:2026-10-21-shortfalls2).
   When their list ends (§ C) the stat leaves the cache and the tick stops changing life. (0x0058065B–0x0058066E,
   fn:sub_00580610_LifeRegenTick@0x00580610)
-- E3. [I] Modes 2 and 6 (walking) and the `b ≥ 1000` exception were not among the run's modes; the stamina shrine,
-  which sets `staminarecoverybonus` 1000 (§ G), was operated twice in run:2026-10-20-shortfalls (G6), but the record
-  does not count the ticks under its bonus by mode, so the exception stays a code reading. (0x00580565–0x005805AB,
-  jump table 0x005805B8)
+- E3. [C] **The `b ≥ 1000` exception in mode 3.** Under the stamina shrine's bonus (`staminarecoverybonus` 1000, § G;
+  operated twice in run:2026-10-20-shortfalls) all 81 911 ticks of that run equal E3, and in 4 326 of them a player in
+  mode 3 gained stamina that a reading without the exception leaves unchanged. (fn:PLAYER_StaminaRegenTick@0x00580500,
+  0x0058054A–0x00580563, run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
+- E3. [I] Modes 2 and 6 (walking) were not among the run's modes, and mode 4 with the bonus was not met, so they stay
+  a code reading. (0x00580565–0x005805AB, jump table 0x005805B8)
 - E5. [I] A monster's tick is `sub_005A6920_MonRegenEvent` ([combat/delivery § E4](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze));
   the life-orb byte stat 352 the player's life tick updates is presentation. (fn:sub_005A6920_MonRegenEvent@0x005A6920)
 
@@ -394,15 +416,20 @@ Step notes:
   17 times with neither partied and 28 times with the two hostile. Scope: one aura of the `0x12003` group, outside town;
   the offensive auras (`0x8000`) were not run. (fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0, run:2026-10-20-two-clients,
   [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
-- F3. [I] A run stops at the first blank `aurastat`, and a 0 value is never written, so an `aurastatcalc` with no stat
-  and an `aurastat` with no calc (a blank calc evaluates to 0) write nothing. Holy Shield and the progressive skills
-  use other skill functions (phase 3). (fn:SKILLS_EvalCalc@0x00646CA0, tbl:Skills.txt:aurastatcalc1)
-- F2. [I] `ITEMAURA_Start` (stat 151 gains a level for a skill with `aura` and an `aurastate`) cancels the item's
-  event 9 and queues it at F1. (fn:ITEMAURA_Start@0x005BF510, fn:ITEMAURA_Stop@0x005BF5D0)
+- F3. [C] In the Skills table no row has an `aurastat` after a blank one (79 rows with one); the six stats with no
+  calc are the `progressive_*` skills', the one calc with no stat is Holy Shield's (a full-table check, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)).
+  (tbl:Skills.txt:aurastatcalc1) [I] A run stops at the first blank `aurastat`, and a 0 value is never written, so an
+  `aurastatcalc` with no stat and an `aurastat` with no calc (a blank calc evaluates to 0) write nothing; Holy Shield
+  and the progressive skills use other skill functions (phase 3). (fn:SKILLS_EvalCalc@0x00646CA0)
+- F2. [C] `ITEMAURA_Start` (stat 151 gains a level for a skill with `aura` and an `aurastate`) cancels the item's
+  event 9 and queues it at F1: in 5 item-aura restarts the first tick came at `NextPeriodicFrame(restart)`, not
+  `restart + p`, and no frame held two item ticks. (fn:ITEMAURA_Start@0x005BF510, fn:ITEMAURA_Stop@0x005BF5D0,
+  run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
 
 ### G. Shrines and wells
 
-All of § G is inferred: run:2026-10-17-stats operated 7 shrines and 5 wells, run:2026-10-20-shortfalls 3 shrines
+§ G is inferred but for the effect table G2, the stamina shrine's stat 28 and remove callback, and the shrine
+lists' curse flag, which the step notes confirm: run:2026-10-17-stats operated 7 shrines and 5 wells, run:2026-10-20-shortfalls 3 shrines
 (codes 14 twice, 6 once) and no well, and run:2026-10-21-shortfalls2 6 shrines (codes 11 once, 12 three times, two
 recharges on a full player) and no well, every one predicted: 21 against the plan's 50 operates and the 20 that the
 draw-freedom check asks per kind. The count is final for plan 0047 as a slot-time ruling, not a stock-data limit: one
@@ -415,7 +442,7 @@ G1. OBJOP_Shrine(object, player):                                      [I] (fn:O
       set mode 1
       run g_ShrineEffects[Code].fn (SHRINE_Refill when none)
       if reset ≠ 0: queue object event 5 at frame + reset × 1200 + 1   ; re-arm
-G2. the table g_ShrineEffects, {fn, stat, state} by Shrines Code:      [I] (data:g_ShrineEffects@0x006E1850)
+G2. the table g_ShrineEffects, {fn, stat, state} by Shrines Code:      [C] (data:g_ShrineEffects@0x006E1850, read with r2 beside the Ghidra reading: G2's step note)
       6 armour → 171 skill_armor_percent, 128     7 combat → —, 129       8 fire → 39, 131
       9 cold → 43, 132                           10 lightning → 41, 130   11 poison → 45, 133
       12 skill → (11, not read), 134             13 recharge → 27, 135    14 stamina → 162, 136
@@ -426,7 +453,7 @@ G3. SHRINE_TimedStat: SHRINE_ApplyState(duration = Duration in frames, value, st
               otherwise stat × Arg0 ÷ 100 of the player
 G4. SHRINE_Combat: state 129 with 25 damagepercent = Arg1, then 19 tohit = SHRINE_StatValue(19)   [I] (fn:SHRINE_Combat@0x005839B0)
     SHRINE_Stamina: stamina ← max; state 136 with 162 = stat 162 × Arg0 ÷ 100, stat 10 = twice that,
-                    28 staminarecoverybonus = 1000; its own remove callback 0x00583A40           [I] (fn:SHRINE_Stamina@0x00583A70)
+                    28 staminarecoverybonus = 1000; its own remove callback 0x00583A40           [I] (fn:SHRINE_Stamina@0x00583A70); [C] stat 28 = 1000 and the callback (G2's step note)
     SHRINE_Skill: state 134 with stat 11 = 0, then a skill refresh                               [I] (fn:SHRINE_Skill@0x00583BF0)
 G5. recharge shrines (unsigned arithmetic):                            [I] (fn:SHRINE_Refill@0x005828E0, fn:SHRINE_HealthExchange@0x00582940, fn:SHRINE_ManaExchange@0x005829A0)
       1 refill: life and mana to max;  2: life to max;  3: mana to max
@@ -440,13 +467,21 @@ G6. a well (OperateFn 22, 0x00585720), with charges left (object data +0x04):   
 
 Step notes:
 
-- G2. [I] **Shrine states are curses.** States 128–137 carry the `curse` bit, so a shrine's list has flag `0x20` and
-  is "the" curse of B1: it replaces a monster's curse, and a curse replaces it. The 3 timed shrines of the run (codes
-  10 once, 8 twice) made lists with flags `0x22`, the duration `Duration in frames` and the table's stat with value
-  `Arg0`. (tbl:States.txt:curse, tbl:Shrines.txt:Duration in frames, run:2026-10-17-stats)
-- G2. [I] The state is not always the States row's `stat`: shrine 6 writes 171 although row 128 names `armorclass`.
-  The skill shrine's +2 skills come from a reader of state 134, not from a stat (open question). (data:g_ShrineEffects@0x006E1850,
-  tbl:States.txt:stat)
+- G2. [C] **The effect table.** `g_ShrineEffects` read with r2 gives codes 6..15 as G2, and no other code a state.
+  (data:g_ShrineEffects@0x006E1850, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i))
+- G2. [C] **Shrine states are curses.** States 128–137 carry the `curse` bit, so a shrine's list has flag `0x20`: the
+  6 logged shrine lists (states 128, 130, 131, 136) have flags `0x22` and their rows `curse` = 1; the 3 timed shrines
+  of run:2026-10-17-stats (codes 10 once, 8 twice) made lists with the duration `Duration in frames` and the table's
+  stat with value `Arg0`. (tbl:States.txt:curse, tbl:Shrines.txt:Duration in frames, run:2026-10-17-stats,
+  run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)) [I] So a shrine's list is "the" curse of B1: it replaces a monster's curse, and a
+  curse replaces it (B1's one-curse rule).
+- G2. [C] The state is not always the States row's `stat`: shrine 6 writes 171 with state 128 although row 128
+  (`shrine_armor`) names `armorclass` (the table read with r2, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)). (data:g_ShrineEffects@0x006E1850,
+  tbl:States.txt:stat) [I] The skill shrine's +2 skills come from a reader of state 134, not from a stat (open
+  question).
+- G4. [C] **The stamina shrine's state.** Both logged stamina-shrine applies set remove callback 0x00583A40 and stat
+  28 = 1 000; at its first dump the list held stat 28 alone. (fn:SHRINE_Stamina@0x00583A70, run:2026-10-20-shortfalls,
+  [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
 - G5. [I] The 4 recharge shrines of the run (codes 2 and 3) were all on a full player, so each changed nothing, as
   predicted: they decide none of G5. (fn:SHRINE_Refill@0x005828E0, run:2026-10-17-stats)
 - G6. [I] The 5 wells matched G6: `Parm1 · max >> 8` = 128/256 of each maximum, capped (raised life and mana 2, mana
@@ -464,7 +499,8 @@ Step notes:
 | tick (E1–E4) | none (54 719) | [C] (run:2026-10-17-stats) |
 | aura run (F) | none, except one `RNG_RangeB` on the caster's unit seed per drawing run of a damaging aura (2 763 runs unchanged, 865 drawing, 865 steps) | [C] (fn:SKILLS_RollElemDamage@0x0056E0C0, run:2026-10-17-stats) |
 | aura run (F), units per run | one draw per run whatever the number of units hit: the roll precedes the target pass and its packet is copied to each unit | [I] (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0) |
-| group clear (D), remove callback, death purge, mode drop | none found in the code | [I] (fn:STATE_GroupClear@0x0056C740) |
+| group clear (D), death purge, mode drop | none: their direct-call closures (463, 447 and 457 functions) hold no drawing function | [C] (fn:STATE_GroupClear@0x0056C740, objdump walker and r2's LCG sites, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)) |
+| remove callback (C2) | none in 149 logged freeing expiries; but on a player it calls `PetLimitRefresh`, whose closure reaches 122 drawing functions through a pet's release (`PetLimit` → `PetRemove` → `PetUnitRelease` → `UnitKilled`, `MonSetMode`) | [C] the call on every player expiry, the chain and the 149 seeds (0x0056E960, fn:sub_00575900_PetLimitRefresh@0x00575900, run:2026-10-17-stats, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i), [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i), [stats/0002 § 13](../../findings/stats/0002-states.md#13-plan-0066-batch-s4e-part-5f-the-pet-release-routed-run2026-11-16-sweep2-s4e-emu-static)); [I] whether a stock expiry releases a pet (unrun) |
 | shrine codes 0–15 (G1–G5), well (G6) | none found in the code; 16 and 5 events with the seeds unchanged over the three runs, under the floor of 20 | [I] (fn:OBJOP_Shrine@0x00583C70, run:2026-10-17-stats, run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2) |
 
 Step notes:
@@ -529,7 +565,9 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
 - **A lower level is refused, not queued**: a weaker aura of the same state from another caster does nothing while
   the stronger one holds. [C] (fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats)
 - **The group test is not in the apply.** Only the callers that run `STATE_GroupClear` (use kinds 6 and 9, not healing or
-  mana potions (B3); stat 98; five skills) exclude a group. [I] (fn:STATE_GroupClear@0x0056C740, fn:STATE_ApplyTimed@0x0056E970)
+  mana potions (B3); stat 98, two sites in `MonStatCallback`; five skill functions) exclude a group: its nine call sites,
+  and `STATE_ApplyTimed`'s closure does not hold it. [C] (fn:STATE_GroupClear@0x0056C740, fn:STATE_ApplyTimed@0x0056E970,
+  [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i))
 - **Shrines share the curse slot.** Taking a shrine removes the player's curse, and the next curse removes the
   shrine's state. [I] (tbl:States.txt:curse, fn:STATE_ApplyTimed@0x0056E970)
 - **The tick's floor is 256, not 0**, for players; a monster's tick can kill ([combat/delivery § E4](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze)).

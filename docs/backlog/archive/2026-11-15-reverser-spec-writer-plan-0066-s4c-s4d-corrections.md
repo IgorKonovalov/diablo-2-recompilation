@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-11-15
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
-  - ../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batch-s4c-new-checks-over-the-kept-inventory-logs-and-static-second-sources-lanen66i
-  - ../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
+  - ../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batch-s4c-new-checks-over-the-kept-inventory-logs-and-static-second-sources-lanen66i
+  - ../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): item 1 in items/inventory § G (the 0x22 handler returns 3, discarded; row 60 corrected), items 2 and 6 in stats/states (§ H's draw table row, A2 types 0, 1, 3 and B1's gate anchor), items 3–5 and 7 in stats/aggregate (the pickup's unlink beside H2, flag 0x2, the requirement refresh's 122 drawing functions, 136 in 22 of 28 logs) and stats/README's entry row; the refinements in items/inventory J4, stats/states B2, C2, G and stats/aggregate I3 [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Two corrections from plan 0066 batches S4c and S4d part 1 (`lane/n66i`), for Phase 3 to carry into the specs. Not
@@ -30,7 +30,7 @@ functions in them were not scanned" is now scanned (`MissDo18ChestSpawner` 2, `N
 stats/states B2's "about twenty skill functions" are 19 functions beside the six named, two of them not skill functions
 (`UModElemDamage`, `MonFleeFrom`), and `STATE_ApplyTimed` calls itself once (0x0056EC9E).
 
-**2026-11-15 (reverser, S4d part 2, `lane/n66i`).** Five more, each in [stats/experiments § Addendum S4d part 2](../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)
+**2026-11-15 (reverser, S4d part 2, `lane/n66i`).** Five more, each in [stats/experiments § Addendum S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)
 and the inventory rows' notes, with dated notes in stats/0001 and stats/0002:
 
 3. **stats/aggregate, Entry points "An item is equipped or unequipped" and stats/README's entry row.** The body-to-cursor
