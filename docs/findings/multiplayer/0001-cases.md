@@ -14,8 +14,8 @@
 - **32 cases: 29 stageable, 3 not.** The not stageable ones need more than two players in one party (MP02, MP03) or a
   player with no room, which no input holds open (MP05). Of the 29, three have no prediction yet: their code is not
   read (MP25 auras, MP31–MP32 trade and gold, plan 0043). *2026-10-27:* MP31 and MP32 have theirs now, from
-  [multiplayer/0002](0002-trade-and-party-gold.md) § 3 (plan 0051 Phase 1b, static reading, inferred). One depends on whether the stock client sends the packet
-  at all (MP18). Two may need owner play: MP17 (the Ancients) and MP14 (a joiner death in Andariel's level).
+  [multiplayer/0002](0002-trade-and-party-gold.md) § 3 (plan 0051 Phase 1b, static reading, inferred). One depended on whether the stock client sends the packet
+  at all (MP18: it does not while a trade is open, § 7). Two may need owner play: MP17 (the Ancients) and MP14 (a joiner death in Andariel's level).
   § 2 maps every source row to its cases.
 - **Coverage.** All 14 d-2c rows of plan 0038's inventory have a case, and so do the four partial halves (tc 27,
   sockets 22, quest-drops 25, player/creation 33). The other sources covered: the eight multiplayer open questions
@@ -442,9 +442,9 @@ readings each case reproduced:
 - [C] **MP30, the leave sequence** for a player holding a quest item: `QL0`, `QE9`, `QE10`, `QL1` in order, the leaver's lines only.
   [I] the e9 callback's count drop: not reached, the callback returned at one of its two early returns (0x00592C87, 0x00592C8D);
   it stays as § 2 reads it. (fn:sub_00543BD0_QuestsInvItemEvent@0x00543BD0, 0x00592C80, run:2026-11-15-sweep8-two-clients)
-- [C] **MP18: the stock client sends no `0x28` while a trade is open.** J's two clicks (rune, then cap) in an open trade gave `0x19`,
+- [C] **MP18, observed: the stock client sent no `0x28` while a trade was open.** J's two clicks (rune, then cap) in an open trade gave `0x19`,
   `0x1F`, `0x18` and no `0x28`, no `INSX`; the same clicks with no trade gave `0x19` then `0x28` and one insert (1 reproduced,
-  0 failed). The branch at 0x0054B6DB..0x0054B6F4 cannot be reached from a stock client: a shortfall (Phase 1 ruling e).
+  0 failed). One trade session, one pair of clicks, with its control live. [I] The branch at 0x0054B6DB..0x0054B6F4 cannot be reached from a stock client (other client inputs while a trade is open, such as a different click order, were not tried): a shortfall by Phase 1 ruling e.
   (fn:SOCK_PacketInsert@0x0054B650, run:2026-11-15-sweep8-two-clients)
 - [C] **0058 (a), MP16:** 54 mercenary kills, n = 2 in 23 and n = 1 in 31 (the other member beyond d2 6400 of the monster), 11 pairs
   the killer's distance and the monster's would decide differently, 1 pair within 800 inside the bound and 5 within 800 outside;
@@ -470,7 +470,7 @@ are in `re/types/save.h` (`lane/rbs2`). The two-client recipes are the archivist
   logs both directions. Narrowed by run:2026-10-20-two-clients: one withdrawal left `+0x160` unchanged (§ 6); the
   code is still not read.
 - [L] Whether `aurafilter`'s `0x8000` passes a hostile player (MP25 c with an offensive aura): not run (§ 6).
-- [C] The stock client sends no socket insert while a trade is open (§ 7, MP18; fn:SOCK_PacketInsert@0x0054B650, run:2026-11-15-sweep8-two-clients).
+- [C] The stock client sent no socket insert while a trade was open, in the one session run; [I] that it never can (§ 7, MP18; fn:SOCK_PacketInsert@0x0054B650, run:2026-11-15-sweep8-two-clients).
 - [L] Whether `slots.py stop` on the joiner (a dropped connection) takes the same server removal path as *Save and
   Exit* (MP07, MP08, MP30): log the removal's caller in both. In run:2026-10-20-two-clients MP07's two leaves went
   through the drop, MP08's and MP30's through *Save and Exit*; both reached the PIEND line (0x00555500).

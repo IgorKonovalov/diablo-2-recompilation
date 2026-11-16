@@ -23,5 +23,4 @@ dead killer, a player killing a player). The entry stays open for them.
 
 **2026-11-16 (plan 0065 Phase 2, `lane/n65i`), annotation, entry stays open.** (c) a player kills a player ran once (`pk`): the
 victim died, with 0 `XK0` and 0 `XC0`, so § 4's prediction is not met, tagged `[I]` for want of a control in the session
-(player/0002 § 12). (a) and (b) were not reached: the host with a mercenary did not die (b), and `kills.sh a` started in the Act IV
-town (a); no pair beyond d² 6400 in the same level was logged.
+(player/0002 § 12). Part 2 (2026-11-16): (a) met, 54 kills, n = 1 in 31, 1 bound pair inside and 5 outside, 0 mismatches (player/0002 § 12); (c) has a control (`pk2`), still no player `XK0`, `[I]`; (b) with the dead member partied not reached (the host never died in four sessions; a hostile-joiner dev run gave only the not-partied form). Owner decision pending for (b).
