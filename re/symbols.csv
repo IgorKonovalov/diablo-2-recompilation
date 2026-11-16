@@ -2770,6 +2770,8 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006214A0,func,sub_006214A0_AnimRateIsMove,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x00621580,func,sub_00621580_AnimRateIsAttack,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x00621630,func,sub_00621630_AnimRateIsFixed,,I,anim/timing,docs/findings/anim/0002-rates.md
+0x00621680,func,sub_00621680_AnimModeIsGetHit,,I,anim/timing,docs/findings/anim/0002-rates.md
+0x006216B0,func,sub_006216B0_AnimModeIsBlock,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x006216E0,func,sub_006216E0_AnimRateIsCast,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x00621740,func,sub_00621740_AnimRateBonus,,I,anim/timing,docs/findings/anim/0002-rates.md
 0x006217C0,func,UNIT_AnimAtEnd,,I,anim/timing,docs/findings/anim/0001-modes-frames.md

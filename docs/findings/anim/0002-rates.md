@@ -464,7 +464,7 @@ r = (base * X) mod 2^32 / 100;                          // unsigned
   cast or attack branch. (0x00624016, 0x006242FF, fn:UNIT_SeqInit@0x00621260; anim/0001 §§ 7–8)
 
 - *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* the four rate-class predicates and the two mode tests 0x00621680
-  (get-hit) and 0x006216B0 (block) run whole over types 0–5, every mode, both class ranges, the `npc` bit and the
+  (get-hit, fn:sub_00621680_AnimModeIsGetHit@0x00621680) and 0x006216B0 (block, fn:sub_006216B0_AnimModeIsBlock@0x006216B0) run whole over types 0–5, every mode, both class ranges, the `npc` bit and the
   used skill's flags and record bytes ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family
   `pred`); their maps over the image's mode-class tables are `[C]`, and the tables list as § 3 states, with one
   refinement: monster SQ (14) carries the skill-move and skill-attack flags in both monster tables. What the bytes
