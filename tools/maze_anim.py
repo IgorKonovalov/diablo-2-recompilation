@@ -455,9 +455,7 @@ def build(root, level, seed, scale):
                             cv[o:o + ms] = bytes([C["wall"]]) * ms
         for lk in st["links"]:
             line(cv, CW, CH, mcenter(lk[0]), mcenter(lk[1]), C["link"], 2)
-        for qi, m, dest, fx, fy in warps:          # warp marks, once their room's tiles are drawn
-            if qi >= done:
-                continue
+        for qi, m, dest, fx, fy in (warps if done == len(rooms) and lead is None else ()):   # final frame only
             cx, cy = P2(fx, fy)
             dx, dy = tw * 3 // 2, th * 3 // 2
             pts = [(cx, cy - dy), (cx + dx, cy), (cx, cy + dy), (cx - dx, cy)]
@@ -498,7 +496,7 @@ def build(root, level, seed, scale):
             "File choice: %s." % q["how"],
             "The tiles drawn are that DS1's floor and wall cells, looked up in the level type's tile files (DT1)."] + [
             "This preset holds a warp: wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s); "
-            "marked in cyan (drlg/warps.md, warp slot cell)." % (m, m, dest, lv.get(dest, {}).get("name", "?"))
+            "marked in cyan on the final frame (drlg/warps.md, warp slot cell)." % (m, m, dest, lv.get(dest, {}).get("name", "?"))
             for qi, m, dest, _fx, _fy in warps if qi == i]))
     txt = ("Final composite: %d rooms after %d RNG draws. Drawn relative to the layout's corner; the game "
            "then moves the whole level to its place in the act (not drawn, shape unchanged)." % (n, total))
