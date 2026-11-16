@@ -23,7 +23,7 @@ workspace/render/anim/tc-<name>-d<difficulty>-<seed hex>/:
   steps.json     {text, calc} per step
 
 Every caption and calculation line restates a spec section; it claims nothing of its own. Models used, all
-reading of the specs, none re-derived here: tools/tc.py (Tables, nodrop_scaled; the resolver loop is the
+reading of the specs, none re-derived here: tools/tc.py (Tables, nodrop_scaled; names of uniques, sets and affixes through tools/tbl.py, data/strings.md C; the resolver loop is the
 expansion branch of tc.replay_call run on its own seed instead of a log), tools/quality.py (roll, with its
 trace), tools/uniques.py (overrides, unique_cands, set_cands and the draws of check_block), tools/affixes.py
 (Walk with free=True, the builders magic, rare, superior, low, normal; tools/props.py through
@@ -56,6 +56,7 @@ import items_chain  # noqa: E402
 import palette as pal  # noqa: E402
 import png  # noqa: E402
 import props  # noqa: E402
+import tbl  # noqa: E402
 import quality  # noqa: E402
 import rng  # noqa: E402
 import tc  # noqa: E402
@@ -70,6 +71,23 @@ CHAIN6 = ("unique", "set", "rare", "magic", "superior", "normal")     # quality.
 # ---------------------------------------------------------------- the models, wired together
 
 class Models:
+    def add_display_names(self, root):
+        """Give each unique, set, magic and rare-affix record a "disp" text: its name key resolved through the string
+        tables (data/strings.md C: key -> index by the patchstring, expansionstring, string order; index -> text).
+        The key stays in "name"; a key found nowhere keeps the key as its text."""
+        lng = os.path.join(root, "data", "local", "lng", "eng")
+        S = tbl.Strings(lng) if os.path.isdir(lng) else None
+
+        def disp(key):
+            if S is None or not key:
+                return key
+            i = S.index(key)
+            t = None if i == tbl.NOT_FOUND else S.text(i)
+            return t if t else key
+        for lst in (self.AT.uniq, self.AT.setit, self.AT.magic, self.AT.rare):
+            for r in lst:
+                r["disp"] = disp(r["name"])
+
     def __init__(self, root):
         self.root = root
         self.excel = os.path.join(root, "data", "global", "excel")
@@ -78,6 +96,7 @@ class Models:
         affixes.STAFF_MODEL = True
         affixes.PROPS_HOOK = items_chain.make_hook(props.Tables(self.excel))
         self.AT = affixes.Tables(self.excel)
+        self.add_display_names(root)
         # affix colour byte (+0x56) in the order of AT.magic: magicsuffix, magicprefix, automagic (items/0003 [I])
         self.acol = []
         for t in ("magicsuffix", "magicprefix", "automagic"):
@@ -819,17 +838,17 @@ class Anim:
     def describe(self, nm, q, row, it, res):
         AT = self.M.AT
         if q == 7 and row >= 0:
-            return AT.uniq[row]["name"], "unique row %d of %s" % (row, nm)
+            return AT.uniq[row]["disp"], "unique row %d of %s" % (row, nm)
         if q == 5 and row >= 0:
-            return AT.setit[row]["name"], "set row %d of %s" % (row, nm)
+            return AT.setit[row]["disp"], "set row %d of %s" % (row, nm)
         if it is None:
             return nm, QNAME.get(q, str(q))
-        ps = [AT.magic[a - 1]["name"] for a in it.p if a]
-        ss = [AT.magic[a - 1]["name"] for a in it.s if a]
+        ps = [AT.magic[a - 1]["disp"] for a in it.p if a]
+        ss = [AT.magic[a - 1]["disp"] for a in it.s if a]
         if q == 6:
             ri = res["tried"][-1][2]["rare"]
             if ri:
-                n1, n2 = AT.rare[ri["n1"] - 1]["name"], AT.rare[ri["n2"] - 1]["name"]
+                n1, n2 = AT.rare[ri["n1"] - 1]["disp"], AT.rare[ri["n2"] - 1]["disp"]
                 return "%s %s" % (n1, n2), "rare %s: prefixes %s, suffixes %s" % (nm, ps, ss)
         if q == 4:
             return "%s%s%s" % (ps[0] + " " if ps else "", nm, " " + ss[0] if ss else ""), "magic: prefix %s, suffix %s" % (
@@ -856,7 +875,7 @@ class Anim:
                         i["n"], "" if i["n"] == 1 else "s", i["total"])]
             if i["n"]:
                 calc.append("Candidates (row: weight): " + ", ".join(
-                    "%s" % (AT.uniq[c[0]]["name"] if kind == "pick7" else AT.setit[c[0]]["name"])
+                    "%s" % (AT.uniq[c[0]]["disp"] if kind == "pick7" else AT.setit[c[0]]["disp"])
                     for c in i["cands"][:6]) + (" ..." if len(i["cands"]) > 6 else ""))
             if i["forced"] >= 0:
                 calc.append("uniques-sets.md F: the record names row %d (a TC-named row), taken with no draw." % i["forced"])
@@ -864,7 +883,7 @@ class Anim:
                 calc.append("uniques-sets.md %s: one draw %s(item.seed, total %d) = %d; seed after {%s}." % (
                     sec, "lo %% total" if what == "unique" else "RangeB", i["total"], i["r"], fseed(i["seed_out"])))
             if i["ok"]:
-                name = AT.uniq[i["row"]]["name"] if what == "unique" else AT.setit[i["row"]]["name"]
+                name = AT.uniq[i["row"]]["disp"] if what == "unique" else AT.setit[i["row"]]["disp"]
                 calc.append("The %s builder returns row %d '%s'; its properties are applied to the item seed next "
                             "(not shown)." % (what, i["row"], name))
                 itm["build"].append("%s row: %s" % (what, name))
@@ -888,12 +907,13 @@ class Anim:
         if kd == "rare" and res["rare"]:
             ri = res["rare"]
             AT_ = self.M.AT
-            calc.append("affixes.md E: rare names first (prefix side, then suffix side): '%s' and '%s'; count %d "
+            calc.append("affixes.md E: rare names first (prefix side, then suffix side): '%s' and '%s' (the RarePrefix / RareSuffix keys "
+                        "shown as their string-table text, data/strings.md C); count %d "
                         "(table g_RareAffixCountTable[low & 7] after one Step, or 3 + Range(item.seed, 2) for a jewel)." % (
-                            AT_.rare[ri["n1"] - 1]["name"], AT_.rare[ri["n2"] - 1]["name"], ri["count"]))
+                            AT_.rare[ri["n1"] - 1]["disp"], AT_.rare[ri["n2"] - 1]["disp"], ri["count"]))
         shown = []
         for (kind2, pre2, must, rec, aid) in res["picks"]:
-            nm_a = AT.magic[aid - 1]["name"] if aid else "none"
+            nm_a = AT.magic[aid - 1]["disp"] if aid else "none"
             if rec.get("exit") == "no-roll":
                 line = "%s pick (must %d): draw #1 bit 0 = 0, no affix" % ("prefix" if pre2 else "suffix", must)
                 calc.append("affixes.md C: %s." % line)
