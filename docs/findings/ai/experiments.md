@@ -1441,3 +1441,120 @@ launch to keep the numbering, is `workspace/logs/n69d/dev/` (`2026-11-15-ai-tour
      fork-free where the fork was only that word.
   5. Separation lines and decision counts per entry are reported as the checker prints them; a row with 1 outcome is reported as
      confirming it. Sharing: fresh per case, as in Phase 2 (the launch cost is unchanged).
+
+### Results of `run:2026-11-16-ai-tour-2` (plan 0069 Phase 3a, `lane/n69e`)
+
+Kept outputs in `workspace/logs/n69e/` (`manifest.sha256`, 86 lines, `sha256sum -c` passes from that directory; paths are `../ai/…`
+and local names): the 18 launch logs with their per-case logs (`split`), marks, the two pilot files, the status files, the screenshots
+(`wpfail-…` of the first waypoint attempts of `t-a2-oasis` and `t-a3-flayer`, `stall-…` of the Act III batch), the runners' stdout
+(`batch-a2-stdout.txt`, `batch-a3-stdout.txt`) and the checks (`model-check.txt` over the 17 kept logs, `model-check-all29.txt` over
+them and the 12 of Phase 2, `ai-check.txt`, `words.txt`, `flip-rows.txt`, `flip-states.txt`, `regress.txt`, each with its stdout; the log
+lists `logs-tour2.txt` and `logs-all29.txt`). Tools at the commit of this entry: `tools/gdb/ai.py` rev 7, `tools/ai_model_check.py`
+revision 6 (unchanged), `tools/ai.py`, `tools/ai_tour_words.py`, `tools/ai_resume_flip.py`. Slot 2, `--fresh` (one game process per
+case), every launch under `MemoryMax=4G`. Two batches: Act II under run id `2026-11-16-ai-tour-2` (seed 8723), Act III under
+`2026-11-16-ai-tour-2b` (seed 7842), so that the launch numbers (L1 to L9 each) are not reused.
+
+| case | seed | launch (pid) | position (level) | decisions | wall |
+|---|---|---|---|---|---|
+| `t-a2-town` (first try, failed: stage not reached, stayed in level 103) | 8723 | L1 (1038862) | 103 | 115 | - (kept, unchecked) |
+| `t-a2-town` | 8723 | L2 (1040882) | Lut Gholein 40, walk 40 hops | 527 | 113 s |
+| `t-a2-dryhills` | 8723 | L3 (1051143) | 42, sweep | 318 | 230 s |
+| `t-a2-oasis` | 8723 | L4 (1074408) | 43, sweep; warps to 62, 63, 64 not taken (no hop to the warp; no warp 49), hunt 284 timed out | 845 | 522 s |
+| `t-a2-lostcity` | 8723 | L5 (1125227) | 44, sweep, border walk (40 hops) | 344 | 214 s |
+| `t-a2-canyon` | 8723 | L6 (1140642) | 46, sweep, descent 46 to 66 | 601 | 482 s |
+| `t-a2-palace` | 8723 | L7 (1186431) | 52, sweep | 398 | 218 s |
+| `t-a2-arcane` | 8723 | L8 (1196979) | 74, sweep, hunt 250 timed out (class never seen) | 342 | 267 s |
+| `t-a2-halls` | 8723 | L9 (1206762) | 57, sweep, loot walk (60 hops) | 378 | 223 s |
+| `t-a3-town` | 7842 | L1 (1215456) | Kurast Docks 75, the walk ended at hop 1 (no target, level done) | 28 | 27 s |
+| `t-a3-spider` | 7842 | L2 (1216701) | 76, sweep | 330 | 232 s |
+| `t-a3-marsh` | 7842 | L3 (1232445) | 77, sweep | 565 | 240 s |
+| `t-a3-flayer` | 7842 | L4 (1258234) | 78, sweep | 745 | 246 s |
+| `t-a3-lower` | 7842 | L5 (1272609) | 79, sweep, loot walk (60 hops, frontier 10) | 420 | 254 s |
+| `t-a3-bazaar` | 7842 | L6 (1301735) | 80, sweep | 224 | 225 s |
+| `t-a3-upper` | 7842 | L7 (1319724) | 81, sweep | 299 | 233 s |
+| `t-a3-travincal` | 7842 | L8 (1370720) | 83, sweep, hunt 345 timed out (class never seen) | 424 | 267 s |
+| `t-a3-durance` | 7842 | L9 (1396218) | 101, sweep, the warp to 102 not reached, hunt 242 timed out | 352 | 278 s |
+
+Cases kept: 17 of 17 (Act II 8, Act III 9). One rerun: `t-a2-town`'s first launch (L1) failed at the stage gate (the waypoint click left
+the player in level 103, 115 decisions) and the runner relaunched it fresh; L1 is in the manifest, not checked. Decisions in the 17 kept
+logs: 7 143 (`ai.py check`). Wall of the 17 cases: 4 271 s (the marks' walls; the batches' own totals 2 306 s and 2 003 s). Sharing decision: fresh per case, unchanged.
+
+- **Prediction 1 held.** All 17 logs open with `AI logger armed rev 7 bmax 48` (`words.txt`). `ai.py check` over the 17 logs: 7 143
+  decisions, 7 191 `AIN` lines, 0 mismatches (`ai-check.txt`). The `a2-oasis` regression case is Phase 2's (kept, 0 mismatches).
+- **Prediction 2 held.** `ai_model_check.py check --logs` over the 17 logs: 95 entries, **0 mismatches** in every real entry. The control
+  `R78y` (y for x) fails 8 of its 13 decisions, as a control must (R78 itself 13 of 13, fork-free); the control `R23x` (the loop's
+  other reading) fails 1 decision (`t-a2-dryhills` n=3207, `5.loopdist: PathDist edx 12a0/129f`, one off) where R23 matches. The
+  control `R79x` has 0 decisions in these logs (R79 not reached); over the 29 logs (`model-check-all29.txt`) `R79x` fails 2 of 10
+  (required), `R78y` 8 of 27, `R23x` 1, and no real entry mismatches. `regress` over the 38 kept rev 4 and rev 6 logs:
+  byte-identical to S1b's `model-check.txt` (32 entries, 38 logs, 32 SEP lines).
+- **Stops** over the 17 logs: R23 4 (3 `AIL`, 1 `no AIR line`), R41 18 and R32 82 (`a path action is not modelled`), no other entry.
+- **Decisions, fork-free count and separation line per entry** (the checker's `model-check.txt`, over the 17 logs; separation line =
+  distinct outcomes over the fork-free decisions, ADR-0028 item 7; an entry not in the list had 0 decisions):
+
+| entry | decisions | fork-free | forked | mismatch | stop | separation line |
+|---|---:|---:|---:|---:|---:|---|
+| R3 | 46 | 46 | 0 | 0 | 0 | 3 over 46 |
+| R5 | 200 | 200 | 0 | 0 | 0 | 5 over 200 |
+| R7 and the notes row | 91 | 91 | 0 | 0 | 0 | 3 over 91 |
+| R8 | 211 | 211 | 0 | 0 | 0 | 11 over 211 |
+| R11 | 93 | 93 | 0 | 0 | 0 | 2 over 93 |
+| R12 | 104 | 104 | 0 | 0 | 0 | 3 over 104 |
+| R15 | 148 | 148 | 0 | 0 | 0 | 6 over 148 |
+| R17 | 145 | 145 | 0 | 0 | 0 | 8 over 145 |
+| R18 | 47 | 47 | 0 | 0 | 0 | 6 over 47 |
+| R23 | 491 | 367 | 120 | 0 | 4 | 22 over 367 |
+| R24 | 29 | 29 | 0 | 0 | 0 | 3 over 29 |
+| R25 | 30 | 30 | 0 | 0 | 0 | 7 over 30 |
+| R27 | 26 | 26 | 0 | 0 | 0 | 3 over 26 |
+| R32 | 507 | 0 | 425 | 0 | 82 | none (all forked: its home and script words are not logged) |
+| R38 | 41 | 41 | 0 | 0 | 0 | 4 over 41 |
+| R39 | 76 | 76 | 0 | 0 | 0 | 4 over 76 |
+| R40 | 14 | 14 | 0 | 0 | 0 | 2 over 14 |
+| R41 | 200 | 0 | 182 | 0 | 18 | none (all forked, as R32) |
+| R42 | 20 | 20 | 0 | 0 | 0 | 2 over 20 |
+| R48 | 270 | 0 | 270 | 0 | 0 | none (all forked) |
+| R49 | 82 | 82 | 0 | 0 | 0 | 9 over 82 |
+| R52 | 400 | 400 | 0 | 0 | 0 | 4 over 400 |
+| R54 | 140 | 140 | 0 | 0 | 0 | 1 over 140 (confirms it: the path is `4.idle`) |
+| R56 | 76 | 0 | 76 | 0 | 0 | none (its `owner.mode` word is not logged, so its tests fork) |
+| R57 | 52 | 52 | 0 | 0 | 0 | 3 over 52 |
+| R65 | 53 | 53 | 0 | 0 | 0 | 5 over 53 |
+| R78 | 13 | 13 | 0 | 0 | 0 | 2 over 13 |
+| R94 | 21 | 21 | 0 | 0 | 0 | 5 over 21 |
+| R95 | 149 | 149 | 0 | 0 | 0 | 6 over 149 |
+| R96 | 108 | 108 | 0 | 0 | 0 | 7 over 108 |
+
+  Entries aimed at by Phase 3a's cases and not reached (0 decisions in any of the 17 logs): R16, R43 (its `AII`/`AIQ` init pair of
+  0x005F6630 is logged 3 times in `t-a2-oasis`, but no R43 think decision), R45, R50, R53, R66, R77, R80, R85, R92, R93, S5, S6.
+  R79 (not an Act II or III aim) not seen. R60 and R59 are Act I rows (Phase 2) and stay untested.
+- **Prediction 3 (decisions by case, from `words.txt`).**
+  - Held: `t-a2-dryhills` R17 56, R18 47, R23 74; `t-a2-oasis` R15 85, R23 200, the `AII`/`AIQ` lines of 0x005F6630 (3 each),
+    R38 2 and R40 7 (the conditional ones: the Maggot Lair rows were seen; the warps to 63 and 64 were not taken, the larva and egg
+    came from level 43 and the tomb); `t-a2-lostcity` R8 69, R17 42, R95 23; `t-a2-canyon` R7 91, R15 67, R95 110; `t-a2-palace` R8 142,
+    R11 30, R39 39; `t-a2-halls` R95 16; `t-a3-spider` R24 29, R27 6, R11 49; `t-a3-marsh` R25 30, R27 13, R52 200 (with R56 76 and R57 52,
+    R65 4: not predicted, seen); `t-a3-flayer` R52 200, R65 42 (R78 13 also seen); `t-a3-lower` R17 47, R23 130, R48 13 (R11 14 not predicted,
+    seen); `t-a3-upper` R23 87, R48 57; `t-a3-travincal` R49 76; `t-a3-durance` R39 37; `t-a2-town` R32 200, R41 200 (R42 20 seen); `t-a3-town` R32 10.
+  - Not held: `t-a2-oasis` R43 (no think decision); `t-a2-lostcity` R16 (not seen); `t-a3-bazaar` R48 and R49 (not seen; the case's
+    decisions are R27 7 with the mercenary and R32/R54 only, 224 decisions, `t-a3-bazaar` pool entries R48 and R49 not met); `t-a3-upper` R27
+    (not seen; R49 6 seen); `t-a3-town` R41 (not seen; the walk ended at hop 1, "no target (level done)", 28 decisions in 27 s).
+  - Conditional, not reached: R95 in `t-a2-dryhills` (not seen there; seen in 3 other cases), R94 predicted only in the canyon (seen in
+    `t-a2-lostcity`, 21 decisions, 5 outcomes), R45 (not seen), R93 and R53 (the hunt for class 250 timed out: "class never seen"), R77
+    and R92 (the loot walks sprang no trap), R66 (the hunt for class 284 timed out), R85 and R50 (the hunts for classes 345 and 242
+    timed out), R77/R80/R92 in `t-a3-lower` (not seen).
+- **Prediction 4**: R54 140 of 140 fork-free (as predicted), R78 13 of 13; R10, R79 not in these logs; the rev 7 word lines of
+  `words.txt`: `AiNearestPlayer` 13 to 78 lines per log where R32 and R54 are present, `speed` (270 lines) and `MonsterOwnerRef` (192) for row 48's decisions in `t-a3-lower`, `t-a3-upper`, `t-a3-travincal`. R32 stays all-forked (its words are not in rev 7). R48's 270 decisions are all forked although `speed` is logged for all of them
+  and `MonsterOwnerRef` for 192: the model's `3.ownertype=0`, `3.act=2` and `3.quest21` tests read words rev 7 does not log (`m_r48`).
+- **Prediction 5, separations** above; R54's 1 outcome is reported as confirming it. Resume flip (`flip-rows.txt`, rows 3, 4, 5, 15, 23,
+  26, 43, 52, 54, 63, 65, 68, 70, 78, 79, 96, 118, `--key rowthink --cap 1000000`; `flip-states.txt`, thinks 5e8140 and 5e8340, no
+  decision): fork-free decisions 15@5f1800 148, 23@5f3170 367, 3@5efe20 46, 52@5f8260 400, 5@5f00e0 200, 65@5f9a80 53, 78@5fb6c0 5, 96@5e1250 108;
+  every two-way site fails alone (`two_way_sep` = `two_way`) except 23@5f3170's 24th: the site 0x005F356C is two-way with `nosep` (11
+  decisions, flipping it changes nothing the log shows), so R23's two-way count is 23 of 24; Phase 4 reads it. The raise itself is Phase 4's.
+- **Observations, not claims.** (1) `t-a2-town` shows think 0x005E7590 (inventory row 81, no entry or model in this plan, Phase 1a's
+  "not placed" list) with 5 decisions in the Act II town; it is a lead for the out-of-plan batch H1p. (2) R94 (the desert turret) was
+  met in the Lost City, not the canyon the case table lists. (3) The runner's launch to the first waypoint failed once in the
+  Act II batch (`t-a2-town`) and the waypoint click needed 2 tries in `t-a2-oasis` and `t-a3-flayer` (`wpfail-…` shots); no logger
+  line is affected.
+- **Contradictions:** none. 0 mismatches in every real entry; nothing is filed for the spec.
+- **Not covered by this run:** Act IV, Act V and Nightmare (Phase 3b), the entries listed as not reached, R32's home and script
+  words, the Phase 1c words of R56, R71, R85, R128 and `objects.py`'s lines (R56 stays all-forked), R68 (Act IV: the nested-call
+  test covers the logged calls inside `AiVileMotherSpawn`, no Act IV log yet).

@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c done pending merge (`lane/n69c`, 2026-11-15; 31 of 31 entries and the notes row modelled; Tier B check: accept with fixes, 3); Phase 2 done pending review (`lane/n69d`, 2026-11-15; 12 Act I cases kept, 0 mismatches)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c done pending merge (`lane/n69c`, 2026-11-15; 31 of 31 entries and the notes row modelled; Tier B check: accept with fixes, 3); Phase 2 done (`lane/n69d`, 2026-11-15; 12 Act I cases kept, 0 mismatches; Tier B check: accept with fixes, 1; merged); Phase 3a done pending review (`lane/n69e`, 2026-11-16; 17 Act II and III cases kept, 0 mismatches)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -1036,3 +1036,38 @@ Resumed from the checkpoint 1 note at its case boundary; slot 2 only, `--fresh`,
 - **Left for Phase 3:** the Act II to V batches; the R68 model must consume the calls logged inside `AiVileMotherSpawn`
   (checkpoint note). R60 stays untested.
 - **Review request: Tier B** (backlog entry `2026-11-15-reverser-architect-plan-0069-p2-tier-b-review-request`).
+
+### 2026-11-16 — Phase 3a: Acts II and III kept (reverser, `lane/n69e`)
+
+Branched from `main` `34271870`; slot 2 only, `--fresh`, launches under `MemoryMax=4G`, saves restored
+(`saves.py --slot 2 restore n69e`), slot 2 holds no process and no aside. Record: `run:2026-11-16-ai-tour-2` and its Results section in
+[experiments.md](../findings/ai/experiments.md); kept outputs `workspace/logs/n69e/manifest.sha256` (86 lines, passes from that
+directory). Predictions committed at `c29d96cc` before the first kept log.
+
+- **Model prerequisites:** R68 needs no model change: `ai_resume.top_level` already drops the calls logged between a pending
+  boundary's AIB and AIR lines, which includes the calls inside `AiVileMotherSpawn`; the test
+  `Revision6.test_nested_calls_inside_a_pending_boundary_are_not_offered` (99 tests) states it. R77, R80 and R92 have models
+  (`trap_shot`; their rows were not reached). No logger change (rev 7 kept): R56's `owner.mode`, R85's `MissS1` and `Range`, R32's home
+  and script words stay unlogged, so R56 (76 decisions) and R32 and R41 are all-forked.
+- **Done:** 17 cases kept: Act II `t-a2-town`, `t-a2-dryhills`, `t-a2-oasis`, `t-a2-lostcity`, `t-a2-canyon`, `t-a2-palace`,
+  `t-a2-arcane`, `t-a2-halls` (seed 8723, one rerun: the first `t-a2-town` launch left the player in level 103 at the stage gate);
+  Act III `t-a3-town`, `t-a3-spider`, `t-a3-marsh`, `t-a3-flayer`, `t-a3-lower`, `t-a3-bazaar`, `t-a3-upper`, `t-a3-travincal`,
+  `t-a3-durance` (seed 7842). 7 143 decisions. `t-a3-town` is kept short (28 decisions, 27 s: the town walk ended at hop 1, "no target,
+  level done"); its aims R41, S5 and S6 are held by `t-a2-town` (R41 200 decisions) or not reached.
+- **Checks:** `ai_model_check.py check` over the 17 logs: 0 mismatches in every real entry, the controls `R78y` (8 of 13) and `R23x` (1)
+  failing as controls do, R79x not reached (over the 29 logs: 2 of 10, as required); `ai.py check` 7 143 decisions, 0 mismatches;
+  `regress` byte-identical (32 entries, 38 logs); the resume flip (`flip-rows.txt`, `flip-states.txt`: every two-way site fails alone
+  except R23's site 0x005F356C, `nosep` in 11 decisions); `ai_tour_words.py`. Tests: `test_ai_model_check.py` 99, `test_ai.py` 25,
+  `test_ai_sessions.py` 21, `test_ai_tour.py` 9.
+- **Entries reached:** R3, R5, R7 and the notes row, R8, R11, R12, R15, R17, R18, R23, R24, R25, R27, R32, R38, R39, R40, R41, R42, R48, R49,
+  R52, R54, R56, R57, R65, R78, R94, R95, R96. Decisions, fork-free count and separation line per entry are in the Results table.
+  **Not reached** (Phase 3a aims with 0 decisions): R16, R43 (its `AII`/`AIQ` pair was logged 3 times in `t-a2-oasis`), R45, R50, R53,
+  R66, R77, R80, R85, R92, R93, S5, S6. The hunts (Summoner, Mephisto, the council, the maggot queen) timed out with the class never
+  seen; the loot walks sprang no trap. These go to a later rerun or to Phase 4's d-owner list, not to this lane's re-staging.
+- **Predictions:** 1 and 2 held; 3 held except the cases and rows named in the Results (R43, R16, R48 and R49 at `t-a3-bazaar`, R27 at
+  `t-a3-upper`, R41 at `t-a3-town`); 4 and 5 reported as printed. Sharing decision: fresh per case.
+- **Contradictions:** none; nothing filed for the spec. **Observation for the out-of-plan batch H1p:** think 0x005E7590 (row 81)
+  has 5 decisions in `t-a2-town`.
+- **Left for Phase 3b:** Acts IV and V and the Nightmare cases (R68's Act IV logs; R118, R119, R128). The not-reached list above is
+  the owner's call: one more Act II/III batch with a changed route for the timed-out hunts, or d-owner.
+- **Review request: Tier B** (backlog entry `2026-11-16-reverser-architect-plan-0069-p3a-tier-b-review-request`).
