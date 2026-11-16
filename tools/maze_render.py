@@ -81,7 +81,7 @@ class Renderer:
                 for cy in range(d["rows"]):
                     for cx in range(d["cols"]):
                         c = layers[name][cy * d["cols"] + cx]
-                        if not c or c >> 31:
+                        if not c or c >> 31 or (kind == "floor" and ds1.blank_floor(c)):
                             continue
                         o = 0 if kind == "floor" else (orients[cy * d["cols"] + cx] if orients else 0)
                         if o in ds1.SKIP_ORIENT:

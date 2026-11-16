@@ -11,15 +11,17 @@ stay under workspace/ (anything else is refused). Outputs, all regenerable and n
   maze.gif        the frames as an animated GIF (global palette = the level's game palette; the UI
                   colours are the nearest palette entries; frames after the first are cropped to the
                   changed rows)
-  index.html      local step-through page (prev/next/play/pause, slider, arrow keys)
-  steps.json      the captions
+  index.html      local step-through page (prev/next/play/pause, slider, arrow keys) with each step's
+                  calculations (draw values, picked room and side, overlaps, merge rolls, Def from exits)
+  steps.json      the captions and calculations
 
 Steps: the first room; each room placed, in the order the replay model (tools/maze_replay.py, reading of
 docs/findings/drlg/0006-maze.md) creates them, with the door links the model adds; one step per special or
 theme re-assignment of existing rooms; then each room's LvlPrest Def and preset file (forced index, else
 seed lo % file count, as maze_render.py reads it) with its tiles drawn; the final composite. Rooms the
 model creates and frees again while probing (finder, sec. B) are not shown. The model stops before the
-placement shift (sec. G), so the rectangles are the window's, relative to the bounding box. The canvas is
+placement shift (sec. G1, one translation of every room to the level's origin in the act), so the
+rectangles are drawn relative to the bounding box; the shift would not change the picture. The canvas is
 fixed to the final level's bounds. Stdlib only.
 """
 import csv
@@ -212,6 +214,75 @@ def trace(root, level, seed):
         raise SystemExit("level %d is not in the maze set of lvlmaze.txt" % level)
     count = [0]
     orig_step, o_connect, o_special, o_themes = M.Seed.step, M.connect, M.special, M.themes
+    o_growth, o_merge, o_defcalc = M.growth, M.merge, M.defcalc
+    notes = []          # (len(ev) when made, post?, formatter(nm) -> str); see calc_for below
+    DN = ["west", "north", "east", "south"]
+
+    def note(f, post=False):
+        notes.append((len(ev), post, f))
+
+    def growth(L):      # maze_replay.growth (0x00671210) with each draw logged; same calls, same order
+        tgt = M.MAZE[L.id]["rooms"][L.diff]
+        note(lambda nm: "Growth phase starts: grow until the level has %d rooms (LvlMaze Rooms, normal "
+             "difficulty); it has %d." % (tgt, len(L.rooms)))
+        while len(L.rooms) < tgt:
+            n = len(L.rooms)
+            lo = L.seed.step()
+            k = lo & (n - 1) if n & (n - 1) == 0 else lo % n
+            P = L.rooms[k]
+            dlo = P.seed.step()
+            d = dlo & 3
+            how = "lo & %d" % (n - 1) if n & (n - 1) == 0 else "lo %% %d" % n
+            note(lambda nm, lo=lo, k=k, n=n, P=P, how=how: "Pick a parent: level draw lo = %#010x; %s = %d; "
+                 "position %d of the %d-room list (newest first) is %s." % (lo, how, k, k, n, nm(P)))
+            note(lambda nm, dlo=dlo, d=d, P=P: "Pick a side: %s's own seed draw lo = %#010x; lo & 3 = %d = %s." % (
+                nm(P), dlo, d, DN[d]))
+            if P.lock:
+                note(lambda nm, P=P: "%s is locked (a fixed room): no room is made, both draws stay spent; pick "
+                     "again." % nm(P).capitalize())
+                continue
+            before = count[0]
+            R = M.grow(L, P, d)
+            if R is None:
+                note(lambda nm, P=P, d=d, b=count[0] - before: "A new room (level draw for its seed, %d draws) "
+                     "would sit %s of %s but overlaps a room already there: it is dropped, the draws stay "
+                     "spent; pick again." % (b, DN[d], nm(P)))
+
+    def merge(L, R):    # maze_replay.merge with each roll logged
+        if R.lock:
+            return
+        mg = M.MAZE[L.id]["merge"]
+        for P in list(L.rooms):
+            if P is R or P.lock:
+                continue
+            gx, gy = M.gap(R, P)
+            if gx < 1 and gy < 1 and gx != gy:
+                if any(o is P for (o, _) in R.adj):
+                    continue
+                lo = P.seed.step()
+                ok = lo % 1000 < mg
+                note(lambda nm, P=P, lo=lo, ok=ok, mg=mg: "Merge roll with neighbour %s: its seed draw lo %% 1000 "
+                     "= %d, %s Merge %d: %s." % (nm(P), lo % 1000, "<" if ok else ">=", mg,
+                                                  "a door is opened" if ok else "no door"))
+                if ok:
+                    d = M.adjdir(P, R)
+                    if d != -1:
+                        M.connect(P, R, d)
+                        M.defcalc(L, P)
+
+    def defcalc(L, R):
+        before = R.d
+        dirs = [DN[d] for (_, d) in R.adj]
+        mask = 0
+        for (_, d) in R.adj:
+            mask |= {0: 1, 1: 8, 2: 2, 3: 4}.get(d, 0)
+        r_ = o_defcalc(L, R)
+        if R.d != before or mask:
+            base = M.BASE.get(L.lt, 0)
+            note(lambda nm, R=R, dirs=dirs, mask=mask, base=base, v=R.d: "Def of %s from its open sides (%s): "
+                 "base %d + side mask %d (west 1, east 2, south 4, north 8) = Def %d." % (
+                     nm(R), ", ".join(sorted(set(dirs))) or "none", base, mask, v), post=True)
+        return r_
 
     def step(s):
         count[0] += 1
@@ -245,6 +316,7 @@ def trace(root, level, seed):
             return r
         return f
     M.Seed.step, M.connect = step, connect
+    M.growth, M.merge, M.defcalc = growth, merge, defcalc
     M.special, M.themes = diffwrap("special", o_special), diffwrap("themes", o_themes)
     try:
         M.Room.n = 0
@@ -254,25 +326,51 @@ def trace(root, level, seed):
         first = M.Seed(s.step(), 666)
         first.step()
         n0 = count[0]
+        if L.lt == 10 and level == 34:
+            note(lambda nm: "Start shape (spec E): four rooms attached to room 1 on all sides, no pick; room 1 "
+                 "becomes a locked fixed room.")
+        elif L.lt == 10:
+            note(lambda nm: "Start shape (spec E): one level draw, lo & 1, picks the arms: 0 north and south, "
+                 "1 west and east of room 1; room 1 becomes a locked fixed room.")
+        elif L.lt == 13:
+            note(lambda nm: "Start shape (spec E): a ring of rooms is grown first; it closes with a door link.")
         M.run(L, first)
     finally:
         M.Seed.step, M.connect, M.special, M.themes = orig_step, o_connect, o_special, o_themes
+        M.growth, M.merge, M.defcalc = o_growth, o_merge, o_defcalc
     alive = set(L.rooms)
     final = [R for R in inserted if R in alive]
     num = {R: i for i, R in enumerate(final)}
     steps, shown, links = [], [final[0]], []
-    dn = ["west", "north", "east", "south"]
+    dn = DN
 
-    def add(kind, txt, rng, new, link=None):
+    def nm(R):
+        return "room %d" % (num[R] + 1) if R in num else "a dropped trial room"
+    calc_for = [[] for _ in range(len(ev) + 1)]       # notes made before event j belong to it, post notes to j - 1
+    for j, post, f in notes:
+        calc_for[max(j - 1, 0) if post else j].append(f(nm))
+    carry, last_rng = [], [0]
+
+    def add(kind, txt, rng, new, link=None, calc=None):
         if link:
             links.append(link)
-        steps.append(dict(kind=kind, text=txt, rooms=[num[R] for R in shown], new=new, rng=rng, links=list(links)))
+        c = carry + (calc or [])
+        carry.clear()
+        c.insert(0, "RNG draws in this step: %d (level seed and room seeds together); %d so far." % (
+            rng - last_rng[0], rng))
+        last_rng[0] = rng
+        steps.append(dict(kind=kind, text=txt, rooms=[num[R] for R in shown], new=new, rng=rng, links=list(links),
+                          calc=c))
+    carry.append("Setup (illustrative, like the seed): one draw on a helper seed made from the input gives room 1 "
+                 "its seed, which is advanced once. The level seed is the input itself.")
     add("start", "First room, %d by %d tiles (lvlmaze SizeX by SizeY), at the origin. The level seed gives the room its "
         "own seed." % (M.MAZE[level]["sx"], M.MAZE[level]["sy"]), n0, 0)
-    for e in ev:
+    for j, e in enumerate(ev):
+        ec = calc_for[j]
         if e[0] == "place":
             R = e[1]
             if R not in alive or R is final[0]:
+                carry.extend(ec)
                 continue
             shown.append(R)
             pend = [(o, d) for (o, d) in e[3] if o in alive]
@@ -286,20 +384,33 @@ def trace(root, level, seed):
                 t += "."
             if R.lock:
                 t += " Fixed Def and file index (locked)."
-            add("place", t, e[2], num[R], lk)
+            add("place", t, e[2], num[R], lk, ec)
             for (o, d) in pend[1:]:
                 add("link", "Rooms %d and %d joined by a merge link (merge roll lo %% 1000 < Merge)."
-                    % (num[R] + 1, num[o] + 1), e[2], num[R], (num[R], num[o]))
+                    % (num[R] + 1, num[o] + 1), e[2], num[R], (num[R], num[o]), ["Shown separately; the roll is "
+                    "in the previous step."])
         elif e[0] == "link":
             if e[1] in alive and e[2] in alive:
                 add("link", "Rooms %d and %d joined by a door link (the ring closes)." % (num[e[1]] + 1, num[e[2]] + 1),
-                    e[4], None, (num[e[1]], num[e[2]]))
+                    e[4], None, (num[e[1]], num[e[2]]), ec)
+            else:
+                carry.extend(ec)
         else:
+            carry.extend(ec)
+            if e[0] == "themes":
+                carry.append("Themes: one level draw picks a start in a 15-entry list, 15 pairs of level draws "
+                             "shuffle it, then free rooms whose Def matches an entry get the themed Def (+15).")
+            else:
+                carry.append("Special room: the level's special-room table (entry chosen by a rotating index "
+                             "from one level draw) names a Def; the first free room with that Def takes the "
+                             "special Def and file, or a new room is attached for it.")
             for R, _b, a_ in e[1]:
                 if R in alive:
                     what = "special-room table entry" if e[0] == "special" else "theme step"
                     add("assign", "Room %d: %s sets Def %d, forced file index %s." % (
                         num[R] + 1, what, a_[0], a_[2] if a_[2] >= 0 else "none"), e[2], num[R])
+    if carry and steps:
+        steps[-1]["calc"] += carry
     rooms = []
     for R in final:
         name, nf, files = lp[R.d]
@@ -309,7 +420,7 @@ def trace(root, level, seed):
             how = "forced index %d" % R.idx if R.idx >= 0 else "no file"
         else:
             k = R.seed.lo % len(live)
-            how = "seed lo %% %d = %d" % (len(live), k)
+            how = "room seed lo %#010x %% %d files = %d" % (R.seed.lo, len(live), k)
         rooms.append(dict(rect=[R.x, R.y, R.w, R.h], d=R.d, name=name, how=how,
                           file=live[k % len(live)] if live else None))
     return steps, rooms, count[0]
@@ -366,7 +477,7 @@ def build(root, level, seed, scale):
                 for cy in range(d["rows"]):
                     for cx in range(d["cols"]):
                         c = lay[name][cy * d["cols"] + cx]
-                        if not c or c >> 31:
+                        if not c or c >> 31 or (kind == "floor" and ds1.blank_floor(c)):
                             continue
                         o = 0 if kind == "floor" else (ori[cy * d["cols"] + cx] if ori else 0)
                         if o in ds1.SKIP_ORIENT:
@@ -479,16 +590,26 @@ def build(root, level, seed, scale):
     frames, caps = [], []
     for st in steps:
         frames.append(frame(len(frames), st, 0, st["new"], total_steps))
-        caps.append(st["text"])
+        caps.append(dict(text=st["text"], calc=st["calc"]))
     for i, q in enumerate(rooms):
         txt = "Room %d: Def %d (%s), preset file %s (%s)." % (
             i + 1, q["d"], q["name"], (q["file"] or "none").replace("\\", "/").split("/")[-1], q["how"])
         frames.append(frame(len(frames), dict(text=txt, rng=total, rooms=range(n), links=[]), i + 1, i, total_steps))
-        caps.append(txt)
-    txt = ("Final composite: %d rooms after %d RNG draws in the model run. Illustrative seed; "
-           "the placement shift is not modelled." % (n, total))
+        caps.append(dict(text=txt, calc=[
+            "Def %d is the room's LvlPrest row (%s); its File1..6 columns list the preset maps (DS1) it may use."
+            % (q["d"], q["name"]),
+            "File choice: %s." % q["how"],
+            "The tiles drawn are that DS1's floor and wall cells, looked up in the level type's tile files (DT1)."]))
+    txt = ("Final composite: %d rooms after %d RNG draws. Drawn relative to the layout's corner; the game "
+           "then moves the whole level to its place in the act (not drawn, shape unchanged)." % (n, total))
     frames.append(frame(len(frames), dict(text=txt, rng=total, rooms=range(n), links=[]), n, None, total_steps))
-    caps.append(txt)
+    caps.append(dict(text=txt, calc=[
+        "Placement shift (spec drlg/maze.md G1): growth never looks at where the level sits in the act; rooms grow "
+        "freely around the first room, so coordinates can go negative.",
+        "At the end the game takes the bounding box of all rooms (x0, y0) and adds (level.x - x0, level.y - y0) to "
+        "every room, so the box's top-left corner lands on the level's origin in the act map.",
+        "It is one translation for all rooms: shape, doors and Defs do not change. This picture is already drawn "
+        "relative to the box corner, so the shifted level would look the same."]))
     return frames, caps, CW, CH, bytes(pal)
 
 
@@ -496,15 +617,30 @@ def write_html(path, caps, W, H):
     page = """<!doctype html><meta charset="utf-8"><title>maze animation</title>
 <style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
 img{max-width:100%%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
-#cap{max-width:900px;margin:8px auto;min-height:3em}#s{width:60%%}</style>
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
 <img id=f width=%d height=%d alt="frame"><div>
 <button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
 <input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>Rooms are LvlMaze SizeX by SizeY tile blocks. A room is placed flush against a parent room on one of four sides:
+0 west, 1 north, 2 east, 3 south.</li>
+<li>Two random streams are used: the level seed (which room to grow from, each new room's seed) and every room's own
+seed (which side to grow on, merge rolls, and at the end which preset file the room uses).</li>
+<li>A draw advances a seed (lo, hi) as lo*0x6AC690C5 + hi (64-bit) and returns the new lo. "lo %% n" picks one of n.</li>
+<li>Blue outline: placed room; yellow: this step's room; green line: a door between two rooms.</li>
+<li>The seed is an illustrative input, not one the game derives from a game seed. Rooms the model tries and drops
+are listed in the calculations but not drawn.</li></ul></details>
 <script>
 var caps=%s,i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
 s.max=caps.length-1;
 function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.src='frame-'+('000'+i).slice(-3)+'.png';
-s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i];}
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
 function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
 document.getElementById('p').onclick=function(){stop();show(i-1)};
 document.getElementById('n').onclick=function(){stop();show(i+1)};
