@@ -440,3 +440,97 @@ review). A tool fix and its test, then a re-run of the kept emulations it could 
   ```
 - **Results:** [frame/0007 § Plan 0066 batch S7b](0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o).
   `audit: n/a, no check of a new run.` (run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3)
+
+## run:2026-11-16-sweep2-s7e
+
+Plan 0066 Phase 1 batch S7e (`lane/n66u`, reverser-static). **Part 1: route reads and development runs; part 2: the kept runs and
+the remaining route reads (below).** Inventory rows: [sim-frame](../../plans/0066-inventory/sim-frame.md),
+[path-README](../../plans/0066-inventory/path-README.md), and the S7e rows of path-search, drlg-lifecycle and
+quests-travel.
+
+- **Route reads behind the part 1 moves** (objdump, `tools/sweep_s4b.py`'s body walker; r2 `ii` for import slots). Each
+  moved row's claim lies after a pool allocation or free whose block or effect it uses, so ADR-0021's boundary covers
+  nothing of it and R2 forbids a declared return: `EventBlockNew` 0x00540BC5, `ChatRecordNew` 0x00661152 (after its
+  string length, an empty string returning with no record at 0x00661129–0x0066112E, and the clamp of `n ≥ 255` to 254 at
+  0x00661131–0x0066113F), `GameEventCtlCreate` 0x00541496 and `GameEventCtlFree` 0x00541435 / 0x00541452,
+  `ChatRecordFree` 0x006611B6, `RoomUnitOp` 0x0061A292 and `RoomRemovalsFree` 0x0061A313, `QUESTS_TimersRun`'s frees
+  0x00543EA9 / 0x00543EC2, `QUESTS_TimerAdd` 0x00543F65, `InactiveUnitSave` 0x00542EA8 / 0x00542F1A,
+  `RoomInactiveUnitsRestore` 0x00542DC9, `NewRoomsUpdate`'s walk callees 0x0052D1D2 / 0x0052D1DB, `PATH_DynamicCreate`
+  0x00649D1C. `AutosaveTick` reaches `GetTickCount` (slot 0x006CC260, 0x0052D36B) only past its 0x00730FFC test, so
+  `ClientsRoomSync` (frame row 64) is not moved: it stays for part 2.
+- **Tool.** `tools/sweep2_s7e_emu.py` (development revision; families `ffn` for travel 19 and 60 through
+  `COLL_FindFreeNear`'s two wrappers 0x0064E7E0, 0x0064E810 and directly, with item_emu3's declared rooms and pool page
+  and the ADR-0029 (a) lock stand-ins; `qx`, `mevd`, `mevr` over frame_queue_emu's image).
+- **Development runs, not cited** (`workspace/logs/n66u/s7e/dev1`–`dev4`, `manifest-dev.sha256`, 33 lines, passing from
+  `workspace/logs/n66u/s7e/`): `dev1` (40 `ffn` cases) ran out its 1 500 s timeout with no output; `dev3` (12 cases)
+  stopped 3 size-3 cases at the 20 M step limit inside `COLL_RectTest`'s recursion, because the image left `CollMap.h`
+  (+0x0C) at 0; `dev4` (24 cases, the height declared) 0 mismatches, 0 stops, the only unaccounted reads
+  `COLL_PlusTest`'s jump table (0x0064D41C–0x0064D44F, in .text). `dev2` (60 cases each): `qx` 1 mismatch and 6 traced
+  accesses below the control and at address 0 — a negative frame after the counter's wrap indexes outside its list's
+  slot array (`smod64` < 0), to be read in part 2; `mevd` 3 and `mevr` 6 mismatches, a model error (the frozen units'
+  stat lists were written to the image but not to the model's memory, so every control separated 0).
+
+### Part 2 (2026-11-16): kept runs, route reads, row outcomes
+
+Ghidra 12.1.2 (`workspace/ghidra-n66u`, `-Xmx3G`), every launch under `MemoryMax=4G`. Kept outputs, each directory with
+its `manifest.sha256` passing from that directory: `workspace/logs/n66u/s7e/run` (22 lines: `ffn`, `qx`, `mevd`, `mevr`,
+`check-ffn.txt`, `check-fq.txt`), `workspace/logs/n66u/s7e/path` (21 lines: `facing`, `mreset`, `wtick`, `wroll`,
+`check.txt`), `workspace/logs/n66u/s7e/routes` (`routes.txt`). Development outputs `dev5`, `dev6`
+(`workspace/logs/n66u/s7e/manifest-dev2.sha256`, 22 lines, passing from `workspace/logs/n66u/s7e/`), not cited. Tools at
+the cited outputs: `tools/sweep2_s7e_emu.py` sha256 `b89a4fa3…`, `tools/sweep2_s7e_path.py` `b70ebec2…`,
+`tools/sweep2_s7e_routes.py` `f2d7f39d…`. Every case file regenerates byte for byte from its seed (`cases`, checked).
+
+- **`ffn` (quests/travel A5, G2; ADR-0015, ADR-0029 (a) as part 1 states).** 600 cases run, 4 left out of the claim (below), 0 mismatches in the other 596, 0 stops
+  (`check-ffn.txt`): `act` 300 (200 at step 5), `portal` 150 (100 at size 3), `direct` 150. Controls, each separating
+  and passing 0: `step1` 268, `nowalk` 94, `walkmaskA` 37, `sizeone` 326, `fixedbase` 26, `leq` 119. The first check of
+  these outputs had 1 mismatch (case 505) and 345 traced reads at 0x0064CCA0 from addresses 0–0x2B0: `COLL_RectTest`
+  tests the room's map (0x0064CEDE) but not the map's cell pointer, and `COLL_RectTestInMap` (0x0064CC30) then reads
+  from `0 + 2·index`. The image's `nomap = 2` rooms (a map with no cell array) reach it. Under the emulator that is
+  undeclared memory read as 0; in the game it is an access violation. The model now follows the code there and the
+  checker flags those cases (4) and leaves them out of every claim (ADR-0015 (2), (5)); the outputs are unchanged. The model change is in the checker only (`ffn.out` is the image's own output); the architect check re-ran `check` from the cited tool revision (`b89a4fa3…`) over the kept outputs: the manifest passes and the `ffn` lines are byte-identical to `check-ffn.txt`. So
+  drlg/collision E4's "r has no cells: return 0x27" holds for a missing map only, `[I]` for the cell pointer
+  (backlog entry). `[C]` scope: the search through both wrappers at sizes 0–4 and steps 1–5 as the code's map, to the
+  return; not the caller after it (`PortalObjectCreate` 0x0056D218, "the open fails").
+- **`qx`, `mevd`, `mevr` (sim/frame D9, E2a, E3a, E6, F3, I; `tools/frame_queue_emu.py`'s image).** 400 / 500 / 300
+  cases, 0 mismatches (`check-fq.txt`). Controls, each passing 0: `qx` `unsigned` 107, `keepcb` 49, `nonull` 6; `mevd`
+  `nofreeze` 23, `deadignored` 32, `skipnone` 11; `mevr` `nofreeze` 30, `freeall` 13. The model fixes from part 1's
+  development runs: the frozen units' stat lists written to the model's memory as well (`mevd`, `mevr`); and the
+  current frame −2: **the raise gives −1, the every-frame sentinel**, so `EventQueueAt` (0x00541721) takes the null
+  tail (0x0054173D, `ECX` = 0), reads and writes the dword at address 0 (0x00541771, 0x0054177D) and then sets the
+  type's every-frame head if it is empty (0x00541782–0x005417BB). In the game the access at 0 faults: `[I]` (ADR-0015
+  (5)); the map is `[C]` with that dword declared 0 per case and dumped (6 cases). A negative frame of list 0 heads a
+  slot below the control (`ctl + 4 + 4·smod64(F)` with `smod64(F)` < 0): the 0x100 bytes below the control are
+  declared and dumped, and a pre-state record there is written to the image. `dev5` ran with an empty pre-state (a
+  recursion in the case writer's guard), `dev6` without those pre-state words (26 mismatches, all in that region).
+  Outcomes in `check-fq.txt`: `qx` 89 positive frames kept at a negative current frame, 32 allocations from the second
+  block, 64 frame −1 requests through `UnitQueueEventCb` (39 with a callback, dropped), 50 `UnitFreeAllEvents` (30
+  with the walker's saved next among the records), 25 `QUESTS_TimersRun` with `game+0x10F4` = 0 returning with no
+  write; `mevd` 331 at a handler, 169 returned; `mevr` 190 at a handler, 110 walks ended.
+- **`facing`, `mreset` (path/README H3, B4).** 200 / 300 cases, 0 mismatches, 0 traced (`check.txt`). `facing`: 20
+  null paths write nothing, 120 dirs ≥ 64 masked to `& 0x3F`, both bytes `+0x64`, `+0x65` (`mask7f` 71, `oneonly` 179).
+  `mreset` (`PathSetType` 0x00648CF0 observed, site and both arguments asserted): `+0x7C ← +0x80` under `0x8000`;
+  unit type word 0 → `PathSetType(path, 7)` from 0x00648E0F; else under `0x2000` → `PathSetType(path, +0x40)` from
+  0x00648E25; else return, `ret 4` (`nospeedflag` 160, `noplayer` 94, `flagfirst` 41). Domain: a non-null unit (the
+  fatal path 0x00648DCD not run). Not covered: what `PathSetType` does; `g_PathTypeFlags`' rows 8, 9, 11.
+- **`wtick`, `wroll` (drlg/lifecycle I1).** 300 / 300 cases, 0 mismatches, 0 traced. `wtick`: `RoomWandererTick`
+  (ECX game, EDX room) steps the room seed, returns when `low & 0x7FFF` ≠ 0 (136), when `+0x78` ≠ 0, or when the
+  `+0x2E` byte of the record `LEVELS_GetRecord` returns for the level id (`room+0x10 → +0x58 → +0x1D0`) is 0; else
+  `WandererRoll(EAX room; game, level, record)` from 0x0054F0BF (`mask16` 32, `no78` 52, `nownd` 26: the 32 are
+  open gates with bit 15 set). `wroll`: steps the seed, returns when `low mod 100` ≥ 3 (unsigned), then reads
+  `[game + 0xF0 + 4·level]` (`MonRegionGet`) and returns when its `+0x2C4` ≥ 3 **signed** (counts −1, 0–4, 19 other
+  negatives, 5 other positives); else `WandererSpawn(EAX record; region)` from 0x0054F04E (`unsignedcnt` 30, `cnt2` 22,
+  `roll4` 55). Domain: a level id inside `1 .. count − 1` (else the record is 0 and `+0x2E` is read at 0x2E), a
+  non-null region. Not covered: the spawn and its draws; the meaning of `+0x78`.
+- **Route reads (`routes.txt`, objdump body walker to depth 3, cut at the pool entries 0x0040B4B0, 0x0040B430,
+  0x0040B480 and `EventBlockNew`).** Moved to b (H7b) because the claim needs a callee to return whose closure
+  allocates or frees: frame 55, 56 (`UnitFrameReset`: 0x00625960 → 0x0040B480 at 0x00625990; 0x00627260 → 0x00624DD0
+  → 0x0040B4B0 at 0x00624E73), 64 (`ClientsRoomSync`: 0x0053B320 → 0x0053B280 → 0x0040B430 at 0x0053B2DD; 0x0052D350
+  → 0x0052CAF0 → 0x00539DA0 → 0x0040B480 at 0x0053A1ED), 65 (`ClientRoomSync`: 0x0053A770 → 0x0053BDA0 → 0x0053B280;
+  0x00537340 → 0x00537230 → 0x00536580 → 0x0040B480 at 0x005365C3), 75 and lifecycle 28 (`LevelUnloadCheck` 0x00643060
+  → 0x0040B480 at 0x006431B6; `LevelUnload` 0x00642010 → 0x0040B430 at 0x0064203D), lifecycle 47 (`InactiveUnitSave`
+  → 0x0040B430 at 0x00542EA8). The walker found no pool entry under `UnitRoomUnlink`, `PathMoveReset`, `PathPlan`,
+  `PathReplan`, `PathSetFacing`, the path-search planners or `ItemGroundExpiry` (`PathPlan` and `PathReplan` reach
+  the `IsBadCodePtr` slot 0x006CC34C): those rows are emulable but not settled in this batch, each with its reason in
+  its row (27 statements).
+- **Not evidenced here:** the import stand-ins' own effects (ADR-0029 (d), `ffn` as part 1); faults (the null tail,
+  the null cell array); any run-time context (who calls these, when, on which seed).
