@@ -4559,5 +4559,5 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   not transcribed. (3) Machinery 52 raised on 7 player draws, each with the seed compared, the monster and no-state
   paths showing no step.
 - **Review:** Tier B requested
-  ([request](../backlog/2026-11-16-reverser-architect-tier-b-review-plan-0066-s1ne.md)); the first check since the
+  ([request](../backlog/archive/2026-11-16-reverser-architect-tier-b-review-plan-0066-s1ne.md)); the first check since the
   S2be audit restarted the count.
