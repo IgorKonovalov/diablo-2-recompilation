@@ -476,6 +476,12 @@ each cluster's re-tag.
 | anim (`lane/n66v`) | [anim/timing](anim-timing.md) | 134 | 49 | 52 | 2 | 31 | C 65 / I 135 / L 22 | C 168 / I 91 / L 22 |
 | anim (`lane/n66v`) | [anim/movement](anim-movement.md) | 44 | 15 | 18 | 0 | 11 | C 26 / I 46 / L 8 | C 58 / I 32 / L 8 |
 | anim (`lane/n66v`) | [anim/README](anim-README.md) | 13 | 3 | 6 | 0 | 4 | C 14 / I 13 / L 2 | C 23 / I 10 / L 2 |
+| combat (`lane/n66y`) | [combat/README](combat-README.md) | 43 | 16 | 16 | 2 | 9 | C 43 / I 43 / L 5 | C 75 / I 27 / L 5 |
+| combat (`lane/n66y`) | [combat/to-hit](combat-to-hit.md) | 33 | 16 | 8 | 1 | 8 | C 39 / I 33 / L 5 | C 66 / I 16 / L 4 |
+| combat (`lane/n66y`) | [combat/damage](combat-damage.md) | 34 | 25 | 7 | 1 | 1 | C 34 / I 35 / L 5 | C 56 / I 8 / L 4 |
+| combat (`lane/n66y`) | [combat/reductions](combat-reductions.md) | 25 | 18 | 0 | 2 | 5 | C 46 / I 25 / L 5 | C 58 / I 5 / L 4 |
+| combat (`lane/n66y`) | [combat/delivery](combat-delivery.md) | 67 | 23 | 14 | 2 | 28 | C 81 / I 67 / L 4 | C 114 / I 42 / L 4 |
+| combat (`lane/n66y`) | [player/party](player-party.md) (row 12 only) | 26 | 1 | 0 | 0 | 25 | C 46 / I 30 / L 3 | C 47 / I 29 / L 3 |
 
 A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
 `[C]` count rises by more than the `[I]` count falls.

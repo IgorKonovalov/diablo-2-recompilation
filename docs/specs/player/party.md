@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [player/creation, monsters/stats, items/tc, combat/delivery, combat/overview, items/economy, quests/progression, items/quest-drops, hirelings]
 consumed_by: []
-tags: {C: 46, I: 30, L: 3}
-updated: 2026-11-10
+tags: {C: 47, I: 29, L: 3}
+updated: 2026-11-16
 ---
 
 # Party and player count
@@ -186,7 +186,7 @@ flowchart LR
 | a monster's hit points | count at creation, frozen in the value | at creation; never rescaled | `+50 %` per player beyond the first | [C] (data:g_PlayerHpPct@0x006E1590, run:2026-10-15-mon-stats) | [monsters/stats C1, C2](../monsters/stats.md#c-the-player-count-sub_00573930_monplayerbonus) |
 | a monster's experience, stat 13 | count at creation, frozen in the value | at creation; `XP_OnMonsterKill` reads the stat | `+50 %` per player beyond the first | [C] (data:g_PlayerXpPct@0x006E15B4, run:2026-10-15-mon-stats) | [monsters/stats C1, C2](../monsters/stats.md#c-the-player-count-sub_00573930_monplayerbonus) |
 | crushing blow divisor | frozen stat 100 | at the stat event | `k + MulDiv(k, PlayerHpPct(n), 100)` | [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:sub_005738F0_PlayerHpPct@0x005738F0, run:2026-10-16-combat) | [combat/delivery E1](../combat/delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze), [combat § D](../combat/README.md#d-branches) |
-| `MonAttackStats` damage | frozen stat 100 | at each attack | expansion, Nightmare and Hell: `+ value × b ÷ 128`, `b = 8(n − 1)` for `n < 9` | [I] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20) | [monsters/stats H1](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only), [combat § D](../combat/README.md#d-branches) |
+| `MonAttackStats` damage | frozen stat 100 | at each attack | expansion, Nightmare and Hell: `+ value × b ÷ 128`, `b = 8(n − 1)` for `n < 9` | [C] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005A4F20_PlayerDmgBonus@0x005A4F20, data:g_PlayerDmgBonus@0x006E21F4, run:2026-10-16-combat: `b` 16 at `/players 3`, 600 of 600 separating, 56 at `/players 8`, 1 679 of 1 798, 0 in Normal, the table read with r2, [combat/experiments § S5a part 2](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)) | [monsters/stats H1](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only), [combat § D](../combat/README.md#d-branches) |
 | NoDrop | count now, and the party count now | at each resolve | `n = party + (PlayerCount − party) ÷ 2`, scaled through the x87 formula | [C] (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-12-tc-party, run:2026-10-20-two-clients) | [items/tc F](../items/tc.md#f-nodrop-scaling) |
 | NoDrop's cap | frozen stat 100 of a monster source; an object source has none | at each resolve | `n ← min(n, max(1, stat 100))`; it never acted in a logged call | [I] for the cap's effect (0x0055A926); [C] for no cap on an object source (0x0055A926, run:2026-10-20-sweep-items-tc) | [items/tc F2](../items/tc.md#f-nodrop-scaling) |
 | four think functions | no count: `MonPlayerBonus` computes it and they read only the block's difficulty word | at their own run | nothing by the count; a changed `/players` has no effect here (below) | [I] (0x005E8D6B, 0x005E9C8C, 0x005F0B37, 0x005FC54C) | [monsters/stats C3](../monsters/stats.md#c-the-player-count-sub_00573930_monplayerbonus), [ai/0012 § 2.3](../../findings/ai/0012-batch11.md#23-diablos-decision-fnsub_005e8810_aidiablodecide0x005e8810) |
