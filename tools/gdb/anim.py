@@ -69,9 +69,13 @@ import struct
 
 import gdb
 
-REV = 6  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"; rev 3: "ph";
+REV = 7  # rev 1: the development logs (dev-, dev2-, dev3-, dev-r1-); rev 2: FREE lines, PS0 "pts"; rev 3: "ph";
 #          rev 4: DLY lines, GH "st" (95, 102), stat 150 in SR; rev 5: states 139 (wolf), 140 (bear) in "ss";
-#          rev 6: CQ lines (the catalogue's own UnitQueueEvent calls)
+#          rev 6: CQ lines (the catalogue's own UnitQueueEvent calls);
+#          rev 7 (plan 0066 H6d): SR "x" (the exit address), "b" (+0x44, +0x48, +0x4C at the entry), "l", "a44" (+0x48, +0x44 at the
+#          exit); MSW (every MonStats row's +0x36/+0x38 words at the game start); ALF (the fallback record returned by
+#          ANIMDATA_Lookup 0x0066AA02 and by the name look-up 0x0066AA80's absent branch 0x0066AAF6); HAF (HumanAttackFrames
+#          0x0062A710: the absent-record return 0x0062A7C5 and the result at 0x0062A830)
 
 
 def _anim_main():
@@ -79,11 +83,12 @@ def _anim_main():
     DT_PTR = 0x00744304
     CAPS = {"sr": 40000, "sch": 30000, "mds": 60000, "pds": 40000, "mset": 60000, "oa": 3000, "oq": 3000,
             "ps": 60000, "ad": 40000, "dr": 20000, "gr": 6000, "gh": 8000, "pa": 6000, "pl": 6000, "can": 60000,
-            "ct": 60000, "ef": 30000, "oev": 2000, "cq": 20000}
+            "ct": 60000, "ef": 30000, "oev": 2000, "cq": 20000, "alf": 4000, "haf": 20000}
     for k in list(CAPS):
         v = os.environ.get("ANIM_CAP_" + k.upper())
         if v:
             CAPS[k] = int(v)
+    MSW_ROWS = int(os.environ.get("ANIM_MSW_ROWS", "734"))
     WIN_FRAMES = int(os.environ.get("ANIM_WIN_FRAMES", "80"))
     WINS = int(os.environ.get("ANIM_WINS", "400"))
     WIN_GAP = int(os.environ.get("ANIM_WIN_GAP", "50"))
@@ -268,6 +273,11 @@ def _anim_main():
         st["game"] = reg("edi")
         st["isc"] = None
         emit("AGM", {"game": st["game"]})
+        if REV >= 7:
+            ms = u32(0x0096C6A8)
+            n = MSW_ROWS
+            blk = mem(ms, n * 0x1A8)
+            emit("MSW", {"ms": ms, "n": n, "w": [list(struct.unpack_from("<hh", blk, i * 0x1A8 + 0x36)) for i in range(n)]})
 
     # --- rate --------------------------------------------------------------------------------------------------
     def on_sr0():
@@ -275,18 +285,24 @@ def _anim_main():
         u = u32(esp + 4)
         if not server(u) or u32(u) not in (0, 1):
             return
-        st["sr"][esp] = (u, u32(esp))
+        st["sr"][esp] = (u, u32(esp), [s32(u + 0x44), s32(u + 0x48), s16(u + 0x4C), u32(u + 0x50)] if REV >= 7 else None)
 
     def on_sr1():
         esp = reg("esp")
         v = st["sr"].pop(esp, None)
         if not v or not take("sr"):
             return
-        u, ra = v
+        u, ra, b0 = v
         t = u32(u)
         d = {"u": unit(u), "fr": frame(), "ra": ra, "rec": rec(u), "r": s16(u + 0x4C), "sr": s32(u + 0x3C),
              "seq": int(u32(u + 0x30) != 0), "c8": u32(u + 0xC8), "st": stats(u, RST), "ss": states_on(u),
              "sk": used_skill(u), "pv": path_v(u)}
+        if REV >= 7:
+            d["x"] = gdb.selected_frame().pc()
+            d["b"] = b0
+            d["l"] = s32(u + 0x48)
+            d["a44"] = s32(u + 0x44)
+            d["rp"] = u32(u + 0x50)
         if t == 0:
             d["eq"] = equip(u)
             if not st["plr"]:
@@ -625,6 +641,45 @@ def _anim_main():
 
     def on_kbe():
         emit("KBE", {"ecx": reg("ecx"), "edx": reg("edx"), "fr": frame()})
+
+
+    # --- rev 7: the fallback record and HumanAttackFrames ---------------------------------------------------------
+    def on_alf(kind):
+        def f():
+            if not take("alf"):
+                return
+            ebp = reg("ebp")
+            d = {"k": kind, "ra": u32(ebp + 4), "fr": frame(), "ecx": reg("ecx"), "edx": reg("edx")}
+            if kind == "lookup":
+                d["name"] = mem(ebp - 0xC, 8).split(b"\0")[0].decode("latin-1")
+                d["args"] = list(struct.unpack("<3i", mem(ebp + 8, 12)))
+                rr = reg("eax") + 0x404          # 0x0066AA02 is the `add eax, 0x404`, not yet run: eax is the container
+                d["rec"] = [u32(rr + 8), u32(rr + 0x0C)]
+                d["fb0"] = int(any(mem(rr, 8)) or any(mem(rr + 0x10, 0x90)))     # the name and the 144 event bytes
+            else:
+                p = u32(ebp + 8)
+                d["name"] = mem(p, 8).split(b"\0")[0].decode("latin-1") if p else None
+                d["out"] = [u32(u32(ebp + 0x0C)), u32(u32(ebp + 0x10))]
+            emit("ALF", d)
+        return f
+
+    def on_haf(kind):
+        def f():
+            ebp = reg("ebp")
+            u = u32(ebp + 8)
+            if not server(u) or not take("haf"):
+                return
+            d = {"k": kind, "u": unit(u), "fr": frame(), "it": s32(u32(ebp + 0x0C) + 4) if u32(ebp + 0x0C) else None,
+                 "ra": u32(ebp + 4), "res": reg("eax") if kind == "ret" else 45}
+            if kind == "ret":
+                d["spd"], d["frames"] = s32(ebp - 0x10), s32(ebp - 0x14)
+            emit("HAF", d)
+        return f
+
+    Bp(0x0066AA02, on_alf("lookup"))
+    Bp(0x0066AAF6, on_alf("find"))
+    Bp(0x0062A7C5, on_haf("abs"))
+    Bp(0x0062A830, on_haf("ret"))
 
     Bp(0x0052C312, on_game)
     Bp(0x00623F50, on_sr0)

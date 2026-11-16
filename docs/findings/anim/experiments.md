@@ -925,3 +925,22 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
   and `monseq` hold at run time (their loaders), what each observed callee does, `PathStep`'s `+0x24`/`+0x90`,
   `PathStepTargetCheck`, `PathStop` with flag `0x40000` or a marked unit, the schedule with a sequence, and
   `PlrModeStartMove`'s refused path.
+
+## run:2026-11-16-sweep2-H6d
+
+- **Question:** (plan 0066 Phase 2, batch H6d, `lane/n66h6`, slot 1 only) The H6d rows are the rate-call edges and the
+  speed words whose emulation route crosses `COMPOSIT_BuildCofName`'s `wsprintfA` (0x0064F9C2, 0x0064F9E9): does the
+  live game keep what the anim findings state about `UNIT_AnimSetRate`'s exits, the fallback record
+  (`ANIMDATA_Lookup` 0x0066A9B0), `MonStatsSpeeds` (0x00650F00) and `HumanAttackFrames` (0x0062A710)?
+- **Predictions (committed before the first kept log; written after one development session, `dev3-sp-bar-dw`, that
+  showed the logger lines work):**
+  1. MSW: all 734 rows' `+0x36`/`+0x38` words equal `tools/anim.py`'s `Data.speeds(i)` in every session.
+  2. ALF: every fallback return has frames 2048, speed 256, and the name and 144 event bytes zero; its name is absent
+     from `animdata.d2`; the callers are 0x00650F4D and 0x00650FB3 at the load, and the same two or
+     `UNIT_AnimSetRecord`'s 0x00620F40 in play.
+  3. SR: the existing model (`tools/anim.py check`) holds on every line; `+0x48` and `+0x44` are as they were at the
+     call's entry on every line; the record pointer changes mostly at `UNIT_AnimInit`'s calls.
+  4. No stock session reaches the moving floor 25, the attack floor 15, block's floor 1, `q` ≤ 0 or `q` ≥ 0x7FFF
+     (the least moving factor met stays at the stock monster base); no `HumanAttackFrames` absent-record return.
+  5. A moving call with no path keeps `+0x4C` and writes no path speed.
+  Against these, a floor met in a session is a prediction failure to report, not to tune.

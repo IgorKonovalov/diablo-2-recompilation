@@ -38,7 +38,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 PY = [sys.executable, "-I"]
-LOGDIR = os.path.join("workspace", "logs", "anim")
+LOGDIR = os.environ.get("ANIM_LOGDIR") or os.path.join("workspace", "logs", "anim")   # ANIM_LOGDIR: plan 0066 H6d
 EXCEL = os.path.join("workspace", "merged", "data", "global", "excel")
 BASE = os.path.join("workspace", "runtime", "saves-backup", "p0005")
 RDIR = os.path.join(HERE, "d2s_recipes")
