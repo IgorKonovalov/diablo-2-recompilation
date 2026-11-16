@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0035**
+Next free number: **0036**
 
 | # | Title | Status |
 |---|---|---|
@@ -12,7 +12,7 @@ Next free number: **0035**
 | [0006](0006-docs-gate.md) | A mechanical docs gate: strict checks on what can be checked, review for the rest | accepted |
 | [0007](0007-fetched-leads-only.md) | A lead is a document read in-session, never a recollection (amends 0001) | accepted |
 | [0008](0008-two-client-harness.md) | Two clients in one game: a second prefix and display, a local TCP/IP game, gdb on the host only | accepted 2026-10-16 (owner's condition: port 4000 closed to non-loopback before hosting; two non-zero slots) |
-| [0009](0009-public-documentation-site.md) | Public documentation: deferred; a later, heavily redacted export with no tie to the repository | proposed (no site now; what `docs/tables/` holds amended by 0031) |
+| [0009](0009-public-documentation-site.md) | Public documentation: deferred; a later, heavily redacted export with no tie to the repository | proposed (no site now; what `docs/tables/` holds amended by 0031; hosting and the owner-name tie amended by 0035) |
 | [0010](0010-forced-path-runs.md) | Forced-path runs: an edited decision table may drive a rare stock path | superseded by 0013 |
 | [0011](0011-harness-slots.md) | Harness slots: several game copies at once, one per display and prefix | accepted |
 | [0012](0012-human-wiki.md) | A human wiki: explanatory pages over the reviewed specs, no claims of their own, not published | accepted (local builds: amended by 0034) |
@@ -38,3 +38,4 @@ Next free number: **0035**
 | [0032](0032-clean-room-implementation-test.md) | A clean-room implementation test of the specs: a lane outside the four skills implements a slice from the specs alone, its code stays in `workspace/`, its gap ledger enters git | accepted (owner, 2026-11-10) |
 | [0033](0033-scope-player-trade.md) | Scope: the player-to-player trade, row `items/trade` (amends 0025) | accepted (owner, 2026-11-10) |
 | [0034](0034-local-documentation-site.md) | A local-only documentation site, built by the user from their own game files and our scripts, with animated illustrations (amends 0012, 0030) | accepted (owner, 2026-11-16) |
+| [0035](0035-public-export-hosting.md) | The public export's hosting: a separate repository under the owner's GitHub account, a Starlight site on GitHub Pages (amends 0009) | accepted (owner, 2026-11-16, with plan 0070) |
