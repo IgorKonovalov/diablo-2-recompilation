@@ -2,11 +2,11 @@
 based_on:
   - docs/specs/monsters/README.md 2026-11-04
   - docs/specs/monsters/pool.md 2026-11-10
-  - docs/specs/monsters/spawn.md 2026-11-04
+    - docs/specs/monsters/spawn.md 2026-11-16
   - docs/specs/monsters/special.md 2026-11-03
   - docs/specs/monsters/stats.md 2026-11-04
-  - docs/specs/drlg/collision.md 2026-11-04
-  - docs/specs/drlg/lifecycle.md 2026-11-04
+    - docs/specs/drlg/collision.md 2026-11-16
+  - docs/specs/drlg/lifecycle.md 2026-11-16
 ---
 
 # Monsters
@@ -290,10 +290,10 @@ is read from the code.
 room-seed draw per tick, and it goes on doing so after the room is populated: 4 044 logged ticks on
 populated rooms each took exactly one step. Rarely, a wanderer roll follows. It fired once in a run, in the Chaos
 Sanctuary: the roll stepped the room seed once more, missed its 3 in 100, and spawned nothing, so that tick took two
-steps. The spawn itself was never reached and is read from the code only. So is the rest of the gate, which this
-single case cannot separate: by the code it passes 1 in 32 768 ticks, only in a level with `MonWndr` set and only in a
-room no player is near, but the one pass came in a `MonWndr` level and cannot tell how many bits of the draw are
-tested. The wanderer class list holds one class, for Act I
+steps. The spawn itself was never reached and is read from the code only. The rest of the gate, which this single case cannot
+separate, ran under emulation as the code's map: the draw passes only when its low 15 bits are 0, only in a level with `MonWndr`
+set, only in a room no player is near, and the roll spawns only with fewer than 3 wanderers in the level's region, a signed count.
+That this is 1 pass in 32 768 ticks is read from the code. The wanderer class list holds one class, for Act I
 only. `MonWndr` gates only this roll: the code has no other reader of it, and watching it in play found none. It
 does not decide whether monsters roam, which is what a community page says.
 

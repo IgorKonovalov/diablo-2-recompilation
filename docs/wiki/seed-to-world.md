@@ -3,7 +3,7 @@ based_on:
   - docs/specs/chain/README.md 2026-11-04
   - docs/specs/rng/seeds.md 2026-11-10
   - docs/specs/drlg/room-tiles.md 2026-10-27
-  - docs/specs/drlg/lifecycle.md 2026-11-04
+  - docs/specs/drlg/lifecycle.md 2026-11-16
   - docs/specs/monsters/stats.md 2026-11-04
   - docs/specs/objects/README.md 2026-10-27
 ---
@@ -151,14 +151,15 @@ At the start of the next frame ([the server frame](server-frame.md#rooms-in-the-
    - the **presets window**: the room's hand-placed units in order. Hand-placed monsters go through the same
      creation as random ones (step E); superuniques and the special map presets go through their own path
      ([monsters](monsters.md)). 311 hand-placed monsters of the ordinary class kind were predicted in the recordings of the plan's first phase;
-   - the **restore**, which finds nothing to restore on a first visit and draws nothing;
+      - the **restore**, which finds nothing to restore on a first visit and draws nothing (1 459 first activations, both seeds unchanged);
    - the **object population** on the object-region seed: the gate, the eight group slots and each object's creation
      rolls ([objects](objects.md)). The window draws on the room seed, the game seed and the object-region seed;
      in the run it created 13 056 objects (2 888 by the population, 10 168 hand-placed) with every seed predicted;
    - the **monster population pass**, on the room seed and the game seed, each creation through step E
      ([monsters](monsters.md#when-a-room-is-populated-and-how-many-attempts)).
 3. On a **later** activation: the restore of what the room saved when it was released, and nothing else (step F).
-   A room is never populated twice.
+   A room is never populated twice: the run's 408 hand-placed units were all placed in a first population, none in the 286 later
+   restore-only walks of those rooms.
 
 Two details carry seeds across rooms. The object-region seed is **one stream for the whole game**, so the order of
 the rooms' object populations decides each room's object rolls. And a monster that the pass places on a neighbour
@@ -188,8 +189,8 @@ them.
 ### F. Coming back to a room
 
 ([chain § Algorithm](../specs/chain/README.md#algorithm) F, [levels](levels.md#rooms-that-come-and-go-release-and-restore))
-A released room that activates again re-creates its saved monsters, oldest first, then its items, then its other
-units. A re-created monster is a **new unit for the seeds**: a new game-seed step, a new own seed and a full creation,
+A released room that activates again re-creates its saved monsters, then its items, then its other units, each kind in
+the reverse of the order the release saved it: the saved list's order, which the specs call oldest first, and not the units' age. A re-created monster is a **new unit for the seeds**: a new game-seed step, a new own seed and a full creation,
 keeping only its id, class, cell, a few saved stats and, for a special, its mods from the save. Where it lands and
 whether it comes back alive or dead depend on what it did in the meantime, so they are inputs.
 

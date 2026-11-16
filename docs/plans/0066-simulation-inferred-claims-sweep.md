@@ -2864,7 +2864,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   sim/frame n8 alone and monsters/ai/README n1 moves to the Coverage table's *Weaker duplicate* column
   ([entry](../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-monsters-ai-readme-note-1-after.md)). Research-map rows of
   sim/frame, path (both), drlg/lifecycle, drlg/collision, monsters/spawn, player/party and quirks rewritten. Eight wiki pages
-  carry W4; a refresh entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-frame-re-tag.md)).
+  carry W4; a refresh entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-frame-re-tag.md)).
   `tools/backlog.py close` rewrote the closed entries' links in three findings (drlg/0009, frame/0001, path/0001); no other
   findings edit.
 - **Judgment calls for the review:** (1) five rows filed raised are counted split, under the binding overclaim rule: frame 37

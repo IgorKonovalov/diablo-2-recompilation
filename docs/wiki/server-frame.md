@@ -1,12 +1,12 @@
 ---
 based_on:
-  - docs/specs/sim/frame.md 2026-11-10
+  - docs/specs/sim/frame.md 2026-11-16
 ---
 
 # The server frame
 
 The server advances each game by one **frame** every 40 ms (25 per second is the value in the image, and the routine that could
-change it has no reference: read from the code). This page gives the order of everything inside a frame: the tick and its
+change it has no reference: checked by a second reading). This page gives the order of everything inside a frame: the tick and its
 passes, the ten walks over the unit event lists, the queue that fills them, the periodic timers, the order rooms are activated
 and populated in, and where client messages are applied. It answers the question that decides the draws on a
 [shared seed](../glossary.md): **whose draws come first**. It restates the [server frame spec](../specs/sim/frame.md#purpose).
@@ -25,6 +25,7 @@ This page names its ground at each statement, because the kinds differ and they 
 | **Seen in a window** | A [frame window](../glossary.md) is a run of consecutive frames in one small scene of the game, with every event, queue call and seed step logged and each entry seed asserted against the chain, none resynchronised. [§ K1](../specs/sim/frame.md#k1-the-windows-as-they-stand) lists the windows and which count. | It holds for the scenes run. The same seed and script repeating confirms nothing. Much is taken from the log as given, and most events move no seed. |
 | **Seen in the kept logs** | Logs of earlier game sessions, read again against an order model. No game was run for this. | The logs name few kinds of event, so a large total holds few pairs that can fail. |
 | **Emulated** | The game's own code run in an emulator on declared inputs and compared with a model: the code's map. | It shows what that code does with what it is given, up to where a case ends. It is not the order in a game. |
+| **Checked by a second reading** | The instructions read again with a second tool, or a scan of every reference to or store into the thing named. The spec counts it confirmed. | It covers what the code says, not that a game reached it. |
 | **Read from the code** | The instructions were read, and nothing ran. | No run has checked it. |
 | **Counted, not raised** | A count taken from the window logs, with what the spec says it means. The spec keeps these below confirmed. | The count is of the logs. Its reading is not a confirmed statement. |
 | **Unknown** | Listed under [What is not known yet](#what-is-not-known-yet). | |
@@ -33,7 +34,9 @@ This page names its ground at each statement, because the kinds differ and they 
 
 ## The big picture
 
-Read from the code, unless a sentence says otherwise ([§ A](../specs/sim/frame.md#a-the-host-loop-and-the-frame-clock)).
+Seen in a window for game modes 0 and 1, unless a sentence says otherwise ([§ A](../specs/sim/frame.md#a-the-host-loop-and-the-frame-clock)): over 5 500 ticks
+the windows hold 344 drain lines and none inside a tick, and the loop's order was read again with a second tool. The open-server thread of modes 6 and 8 is
+read from the code only: no run used it.
 
 ```mermaid
 flowchart TD
@@ -46,12 +49,19 @@ flowchart TD
 ```
 
 Each pass of the client's main frame in game modes 0 and 1, or of the open-server thread, drains the messages first, then asks whether
-a frame is due, then flushes. In mode 0 the flush follows only a pass that ticked.
+a frame is due, then flushes. In mode 0 the flush follows only a pass that ticked. Each game ticks once per frame: 5 500 frames of the windows, at
+consecutive stamps, one game per process. The open-server thread, after a tick, flushes and sleeps 30 ms, and otherwise sleeps 10 ms.
 
-**The clock owes at most one interval.** Every caller passes the cap, so one call runs at most one frame per game. After a stall of any
-length one call ticks, the next ticks again at once, and the third waits. A slowed game runs every frame in order, only later. Games tick
-in slot order, each under its own lock. A second tick routine exists, but no call, jump or pointer reaches the stub that calls it, so in
-this build this route runs every frame.
+**The clock owes at most one interval.** Every caller passes a cap of 1, three calls in all (checked by a second reading), so one call runs at
+most one frame per game (read from the code). After a stall of any length one call ticks, the next ticks again at once, and the third waits. A
+slowed game runs every frame in order, only later. Games tick in slot order, each under its own lock, over 1 024 slots (the bound checked by a
+second reading). A second tick routine exists, but no call, jump or pointer reaches the stub that calls it, so in this build this route runs every
+frame (checked by a second reading). The lag scale the tick stores is always the same value, and its one reader is a host statistics query, with no
+game effect (the value checked by a second reading, the reader read from the code).
+
+**The packets leave the frame through the flush,** with one exception: on the autosave's route inside the room sync, a one-byte packet goes to each client at once when the
+save's conditions hold and one global is set (checked by a second reading). What sets that global, so whether single player takes the branch, is not read, and that nothing else
+leaves the frame is read from the code: the graph's indirect calls are not followed.
 
 **The flush** comes after the frame. Per live game, it sends every client's queued packets. A game with no clients starts a timer and is
 closed once 300 000 ms have passed, **or while its frame is above 1 500 and below 7 500**. A game with clients clears the timer. Called
@@ -59,8 +69,9 @@ with both arguments 0, the flush returns at once when under 40 ms have passed si
 
 ## The tick and its passes
 
-The order of the passes is read from the code; the seven calls from rank 1 to rank 16 have no branch between them
-([§ B](../specs/sim/frame.md#b-gametick)). A [rank](../glossary.md) is a place in the frame. The frame counter goes up by one **before**
+**Seen in a window: the order of ranks 1, 3, 4, 6 to 9, 14 and 17 to 20,** 0 inversions over 58 678 ranked lines. The places of ranks 2, 5, 10
+to 13, 15 and 16 are read from the code. The seven calls from rank 1 to rank 16 have no branch between them, and no branch elsewhere in the code
+targets that run (checked by a second reading) ([§ B](../specs/sim/frame.md#b-gametick)). A [rank](../glossary.md) is a place in the frame. The frame counter goes up by one **before**
 rank 1, and every period below tests the raised counter.
 
 ```mermaid
@@ -72,8 +83,10 @@ flowchart TD
   R20 --> R21["21 between the ticks: the drain first"]
 ```
 
-The table's last column is each pass's route to a draw, from [§ J](../specs/sim/frame.md#j-draws-per-pass-and-the-shared-seeds), all read
-from the code. **"None" means by direct reach:** the call graphs do not follow indirect calls (54 and 57 of them in ranks 1 and 15, and so on).
+The table's last column is each pass's route to a draw, from [§ J](../specs/sim/frame.md#j-draws-per-pass-and-the-shared-seeds). **"None" means by
+direct reach:** the call graphs do not follow indirect calls (54 and 57 of them in ranks 1 and 15, and so on). Each pass's own code, and its "none" with the
+stops the spec names, is checked by a second reading, a second call-graph walker; what lies past a stop (the refresh's aura route, an item's free,
+the quest callbacks' and the level build's seeds, the per-item counts) is read from the code.
 
 | Rank | Pass | What it does | Route to a draw |
 |---|---|---|---|
@@ -88,12 +101,15 @@ from the code. **"None" means by direct reach:** the call graphs do not follow i
 | 18 | Release, frame % 12 | Room idle counts and releases | The release's save test and room free |
 | 19 | Level unload, frame % 11 | A countdown on idle levels | Building a neighbouring level's record |
 | 20 | Sweep tick | Works only when frame % 1500 = 0 | The free of an expired item |
-| 21 | Between ticks | The message drain, first of all, and the client's own code | 135 random-number functions reached through the handlers; not computed per handler |
+| 21 | Between ticks | The message drain, first of all, and the client's own code | Random-number functions reached through the handlers, 135 by one walker and 142 by the other; not computed per handler. The dispatch draws nothing of its own |
 
-A queue call can draw too, by one route: a monster's AI event queued under state 54 ([below](#the-queue)). A frame in which no act clock changes and
-no listed unit frees an item leaves the seeds of ranks 1, 2, 15 and 16 as they were (read from the code). Rank 21 assumes one thread runs both
-the client frame and the ticks, the single-player loop; the open-server thread of modes 6 and 8 would break it. A debug switch sits at the
-head of the tick, 0 in a normal game; its one identified writer has no reference, so it reads as unreachable in the stock image.
+A queue call can draw too, by one route: a monster's AI event queued under state 54 ([below](#the-queue)); that it is the one route is checked by a
+second reading. A frame in which no act clock changes and no listed unit frees an item leaves the seeds of ranks 1, 2, 15 and 16 as they were (read
+from the code). **Seen in a window:** ranks 1 and 2 drew nothing (no draw before rank 3 in 631 frames with draws, and the game seed at each tick's
+start equal to the next one logged in all 5 500 frames), and ranks 14 to 16 drew nothing in the 589 frames with no activation, release or save; the
+windows do not tell 15 and 16 apart from 14. Rank 21 assumes one thread runs both the client frame and the ticks, the single-player loop; the
+open-server thread of modes 6 and 8 would break it. A debug switch sits at the head of the tick, 0 in a normal game; its one identified writer has no
+reference (checked by a second reading), so it reads as unreachable in the stock image.
 
 **What the kept logs show of this order.** Over the 331 frame-stamped kept logs, 3 713 293 events placed in 383 349 frames fall in rank order in every
 frame, 0 mismatches. **What tests it is far less:** 17 254 consecutive pairs separate the order (16 935 from the animation logger, 319 from the skills
@@ -103,13 +119,15 @@ after items on 8 885, the drain before the tick on 95 ([§ B4](../specs/sim/fram
 
 **Other pieces seen in a game.**
 - The periods of ranks 17, 18 and 19: each call's line appears at every due frame in every window, 12 of 12, 21 of 21 and 23 of 23 in the town's first. The line is at the call site, so it shows
-  the frames, not what the call did ([§ I5](../specs/sim/frame.md#i-the-periodic-calls)).
+  the frames, not what the call did ([§ I5](../specs/sim/frame.md#i-the-periodic-calls)). In the 144 frames that hold two or more of the four periodic calls, all
+  run in the table's order.
 - The sweep's position: in one town window, frame 1500's sweep line comes after that frame's quest and release lines and before the frame's end. That window logs no
   seed steps, so it shows position only. The 1 500 period and the sweep's first steps are emulated; that the sweep unlinks, sends and frees in a game is read from the code.
 - The save's position: at frame 8192 in two Den of Evil windows, one save pair each, after the frame's unit events and before its end, inside the
   room sync. Its seeds are taken as given. Those windows are nearly empty and test the position and little else
   ([§ H3](../specs/sim/frame.md#h-rooms-list-order-the-new-room-walk-the-room-sync-the-activation-record)). The test itself, a signed `frame % 8192`, is seen at
-  that frame only. Read from the code: the autosave routine does not save in single player and leaves its flag at 0, which is how the save call comes to run there.
+  that frame only. Seen in a window: the autosave routine does not save in single player and leaves its flag at 0, which is how the save call comes to run there;
+  the windows hold 2 calls of the save, both at frame 8192 from the room sync, and none at another of 5 500 frames.
 
 **Ranks 15 and 16, read from the code** ([§ G](../specs/sim/frame.md#g-the-other-per-frame-passes)). A unit marked updated joins its room's list; the reset visits a
 room's units newest marked first, rooms in list order, and a unit that changed room only in the new one. A removal noted in frame N is sent in frame N's sync and gone before frame N + 1.
@@ -117,22 +135,27 @@ The marking and the list clear ran under emulation. The 78 marking sites are not
 
 ## The message drain
 
-Read from the code, except the one count below ([§ C](../specs/sim/frame.md#c-the-message-drain)).
+From [§ C](../specs/sim/frame.md#c-the-message-drain); each paragraph names its ground.
 
 Three queues are drained in order, each first in, first out: **system** messages (game create, join), **in-game packets** of every client of every game,
-and **host control**. A packet's handler runs at once. A message arriving while its queue drains is drained in the same pass. The packets of all clients and all games
-share one queue, so their order is their arrival order. Which drain a message falls in is arrival: a logged input, not something this page predicts.
+and **host control**. The queues' order is checked by a second reading: the pop takes the head and both appends go to the tail, under one lock. A packet's
+handler runs at once. A message arriving while its queue drains is drained in the same pass. Most packets pass a player-mode test first: all but five types, and a sixth outside one mode;
+91 of the types up to 0x66 have a handler (checked by a second reading). Read from the code: the packets of all clients and all games share one queue, so
+their order is their arrival order, and which queue an append reaches is the network layer's. Which drain a message falls in is arrival: a logged input,
+not something this page predicts.
 
-**Messages are applied between frames, never inside the tick.** The packet dispatch has one call site, on one route from the drain, and the drain's four call sites lie in the
-loops of the big picture and one wait loop that drains with no frame. A loop pass that does not tick still drains, so several drains can fall between two frames.
+**Messages are applied between frames, never inside the tick.** Seen in a window: 0 of 262 handler lines inside a tick. Read from the code: the packet
+dispatch has one call site, on one route from the drain, and the drain's four call sites lie in the loops of the big picture and one wait loop that drains
+with no frame. A loop pass that does not tick still drains, so several drains can fall between two frames.
 
-**The stamp is the frame before.** A packet applied while the counter reads N takes effect in the state frame N + 1's passes start from. The stamp is seen in the kept logs, for the
-skill-request handlers only: 87 skill checks from those handlers are logged after a missile frame of the same stamp, and "the drain reads the frame it acts before" fails all 87. The effect is read from the code.
+**The stamp is the frame before.** A packet applied while the counter reads N takes effect in the state frame N + 1's passes start from. Seen in a window:
+262 of 262 handler lines, of 13 packet types, carry the last tick's stamp N, and the next tick is N + 1. The kept logs agree for the skill-request handlers:
+87 skill checks from those handlers are logged after a missile frame of the same stamp, and "the drain reads the frame it acts before" fails all 87.
 
 ## The ten walks
 
-The order is read from the code ([§ D](../specs/sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners)); how far a game has confirmed it is the
-[next section](#how-far-the-order-of-the-walks-is-confirmed).
+The order is read from the code ([§ D](../specs/sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners)) and seen in a window for ranks 4 and 6 to 9;
+the [next section](#how-far-the-order-of-the-walks-is-confirmed) gives each rank's ground.
 
 Each unit's pending work is a record on one of five lists, one per type: missiles, players, monsters, objects, items. Each list has two parts. Its **every-frame** part
 runs each frame. Its **slot** part is a ring of 64: a timed record sits in slot `frame % 64` of the frame it is due. Ranks 4 to 13 walk them:
@@ -144,25 +167,29 @@ flowchart LR
   O1 --> B0["10 objects every-frame"] --> B1["11 objects slot"] --> I0["12 items every-frame"] --> I1["13 items slot"]
 ```
 
-A walk reads its list's head when it starts, so a record queued during an earlier walk of the frame is found by a later walk of its own list. For a rebuild, a unit's events in one
-frame run by its type's place in the five, then every-frame before timed, then the list's order. Two units of one type interleave by their records' places in the shared list. What
-a unit is or where it stands plays no part (read from the code).
+A walk reads its list's head when it starts, so a record queued during an earlier walk of the frame is found by a later walk of its own list (read from the code; the
+windows hold no such record, and the kept logs' monster starts below are this case). For a rebuild, a unit's events in one frame run by its type's place in the five, then
+every-frame before timed, then the list's order. Seen in a window: the types' places among ranks 4 and 6 to 9, and every-frame before timed, with 0 inversions; in the
+windows' passes 8 818 slot records ran at their frame and 48 159 every-frame records ran. Read from the code: ranks 5 and 10 to 13, and that two units of one type
+interleave by their records' places in the shared list, while what a unit is or where it stands plays no part.
 
 **Emulated, the code's map:** the runners, the five of them in both modes, 300 cases, and the whole pass, 100 cases, with the game's own every-frame queue call as the re-entrant
 callback. A walk saves the next record before it runs one, and passes over a slot record due a later multiple of 64 frames on. "Players before missiles" fails the 33 cases it separates, and "next read after the run" the
 96. This covers no dispatch or event function, and no callback that frees another record.
 
-The counter holds for 2 147 483 647 frames, 994.2 days at 25 per second. The next increment wraps negative; no case emulates that.
+The counter holds for 2 147 483 647 frames, 994.2 days at 25 per second, and the next increment wraps negative (read from the code). **Emulated, the code's map,
+at a negative current frame:** a queue request's raise compares a positive frame against the negative current one and keeps it, and at current frame −2 a frame
+at or below it is raised to −1, the every-frame marker; the queue then follows a null pointer, which in the game is an access violation (read from the code).
 
 ## How far the order of the walks is confirmed
 
-**Confirmed only among what the windows separate: ranks 4, 7, 8 and 9.** The other six ranks hold no event in any counted window, and their places are the reading above.
+**Confirmed only among what the windows separate: ranks 4 and 6 to 9.** Ranks 5 and 10 to 13 hold no event in any counted window, and their places are the reading above.
 
 | Rank | Walk | Ground for its place |
 |---|---|---|
 | 4 | Missiles, every-frame | Seen in a window |
 | 5 | Missiles, slot | Read from the code |
-| 6 | Players, every-frame | Read from the code |
+| 6 | Players, every-frame | Seen in one window: a town window's 86 players' every-frame events, each before that frame's players' slot walk |
 | 7 | Players, slot | Seen in a window |
 | 8 | Monsters, every-frame | Seen in a window |
 | 9 | Monsters, slot | Seen in a window |
@@ -195,7 +222,9 @@ flowchart TD
 ```
 
 **Emulated, the code's map** ([§ E](../specs/sim/frame.md#e-the-queue)): the timed queue, 400 cases, 0 mismatches ("insert at the head" fails the 241 where the slot already holds records); the every-frame
-queue, 150 cases ("append at the tail" fails the 36 it separates); the free, 300 cases; cancelling a unit's events and freeing all of them, 150 cases, thin but sufficient. The state 54 branch's own work lies past where those cases end.
+queue, 150 cases ("append at the tail" fails the 36 it separates); the free, 300 cases; cancelling a unit's events and freeing all of them, 150 cases, thin but sufficient. Further cases: a frame −1 request with a callback queues on the every-frame list with the
+callback dropped, 39 cases; taking a record passes an empty first block to the second, 32 cases. The state 54 branch's own work lies past where those cases end, and so does linking a new
+block of records.
 
 **The state 54 branch** (read from the code) is the one draw route inside the queue. It ends the state and, under a second state, can kill the unit or apply a hit; for a monster it then frees the pending AI events, and only then is the new record taken, so it replaces them.
 
@@ -206,38 +235,48 @@ queue, 150 cases ("append at the tail" fails the 36 it separates); the free, 300
 - **Every-frame events run newest queued first.** Seen in the counted windows: 29 300 adjacent events over 1 769 frames, 0 inverted; **1 096 run against descending unit id**, the same separation. In the kept logs, 24 652 consecutive
   pairs of windowed missiles run newest first, which a descending id order would also predict.
 
-**Queued during a pass.** A timed record does not run in the frame it is queued, since its frame is at least the current one plus 1 (read from the code). An every-frame record runs in this frame only if its type's list is walked later in
-the frame; queued into the list being walked or one already walked, it first runs next frame (read from the code). That half is seen in the kept logs **for players and monsters**: 658 monster starts queued during the missile or player walks
-ran in that frame, 2 819 monster starts queued in or after the monster walks and all 6 205 player starts ran in the next, 9 682 starts, 0 mismatched. For objects, items and missiles it stays read from the code.
+**Queued during a pass.** An every-frame record queued into the list being walked or one already walked first runs next frame: seen in a window, 3 716 of 3 716
+(missiles 3 396, monsters 308, players 12). One queued into a list walked later in the frame runs in this frame: the windows hold no instance, and the kept logs hold it
+for monsters. The kept logs agree on both halves **for players and monsters**: 658 monster starts queued during the missile or player walks ran in that frame, 2 819
+monster starts queued in or after the monster walks and all 6 205 player starts ran in the next, 9 682 starts, 0 mismatched. For objects and items it stays read from the
+code: no log has a queue line of theirs. A timed record does not run in the frame it is queued, since its frame is at least the current one plus 1 (read from the code; no
+request in the windows asked a frame at or below the current one).
 
-**Freed during a walk** (read from the code). A record freed is not run after it, because the free moves the walker's saved next record on. A unit freed during a pass loses all its records at once. A unit moved between rooms
+**Freed during a walk.** Emulated, the code's map, 50 cases: freeing all of a unit's records frees every one, on one to three lists, and moves the walker's saved
+next record on. Read from the code: so a record freed is not run after it, and a unit freed during a pass loses all its records at once. A unit moved between rooms
 keeps them, since no record holds a room. A unit made inactive by a room's release loses its records with the unit. Its saved record carries an event only for a shrine, queued again at the restore; another object branch queues events and is not read further. Where a restored monster's first events come from is not read
 ([§ L](../specs/sim/frame.md#l-inactive-units-and-the-room-unlink)).
 
 ## What an event runs
 
-Read from the code, except where a sentence says otherwise ([§ F](../specs/sim/frame.md#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11)).
+From [§ F](../specs/sim/frame.md#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11). The dispatches, their bound tests and tables, and the queue sites' constant kinds are
+checked by a second reading; other sentences name their ground.
 
 An event has a **kind** below 15, and each unit type has its own table of what a kind means, so a kind's meaning depends on the type. For players and monsters the kinds are the mode's frame, the mode's end, a monster's AI, regeneration, a state's do function,
 an overhead chat's expiry, the aura ticks and timed-list expiry, among others. Every missile record, of any kind, runs the missile's frame, and every missile is queued to run every frame. A record with a callback runs that instead of the table.
-Some object kinds are not read. Players and monsters skip an empty entry; objects and items have no bound and stop the process on a bad one.
+Some object kinds are not read. Players and monsters skip an empty entry; objects and items have no bound and stop the process on a bad one. Kind 14 has no table entry;
+that it is queued only with a callback is read from the code.
 
-**The freeze drop.** A frozen, living monster's events are dropped at the dispatch, except five kinds. The runner has already set its running flag, so a dropped timed record is freed like a run one, and a dropped every-frame record stays on its list and runs
-again once the freeze ends. A record with a callback is not dropped. Players have no such drop.
+**The freeze drop.** A frozen, living monster's events are dropped at the dispatch, except five kinds. The runner has already set its running flag, so a dropped timed record is freed like a run
+one, and a dropped every-frame record stays on its list. Emulated, the code's map: the monster dispatch, 500 cases, and the monster runner with the drop, 300 cases.
+Read from the code: the kept record runs again once the freeze ends, a record with a callback is not dropped, and players have no such drop.
 
 **Two kinds, and whether they draw:**
 
-- **The player's status report, kind 11,** first runs 250 frames after a player's placement, then every 30 frames (read from the code). Seen in a window: draw-free in the windows' scenes, entry and exit seeds equal on every seed logged and no step on the unit's own seed, in all 119 runs of the seven
-  windows that log seed steps ([§ F4](../specs/sim/frame.md#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11)). The windows hold no dead pet, so the branch that removes one is not run. Read from the code: its call graph reaches no draw, with two stops.
+- **The player's status report, kind 11,** runs every 30 frames: seen in a window, 186 runs, each queueing the next at frame + 30 and drawing nothing. Its first run, 250 frames after a
+  player's placement, and its two sends are read from the code (no placement falls in a window). Seen in a window: draw-free in the windows' scenes, entry and exit seeds equal on every seed logged and no step on the unit's own seed, in all 119 runs of the seven
+  windows that log seed steps ([§ F4](../specs/sim/frame.md#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11)). The windows hold no dead pet, so the branch that removes one is not run. Its call graph reaches no draw, with two stops (checked by a second reading, a second walker).
 - **The overhead chat's expiry, kind 6,** is untested in the game: no window holds one ([§ F5](../specs/sim/frame.md#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11)). Its draw-free reading is by call graph only. Its three branches are emulated, up to the record's free. A chat record lives `8n + 125` frames for `n` characters, read from the code.
 
-**The AI has two entries:** at a mode's end it runs inside that mode-end event, so its draws come at that event's place in the frame and not at the AI record's (read from the code; [monster AI](monster-ai.md#when-a-unit-thinks)).
+**The AI has two entries:** at a mode's end it runs inside that mode-end event, so its draws come at that event's place in the frame and not at the AI record's. Seen in a window:
+447 AI draws in monsters' mode-frame events, where a mode's end is handled, and 992 in their AI events ([monster AI](monster-ai.md#when-a-unit-thinks)).
 
 ## The periodic calls
 
-The four run in the order of the table above, read from the call sites ([§ I](../specs/sim/frame.md#i-the-periodic-calls)). The periods of the first three are seen in a window, as [above](#the-tick-and-its-passes).
+The four run in the order of the table above, read from the call sites and seen in a window: the 144 frames that hold two or more of them hold them in that order
+([§ I](../specs/sim/frame.md#i-the-periodic-calls)). The periods of the first three are seen in a window, as [above](#the-tick-and-its-passes).
 
-**Quest timers, every 20 frames.** Emulated, 300 cases, given that the pointer check returned 0: a tick count goes up, the list is walked from its head with the next timer read before each callback, a timer whose due tick has passed runs, one that returns 1 is unlinked and freed, the rest are due
+**Quest timers, every 20 frames.** A game with no quest control returns at once, writing nothing (emulated, 25 cases). Emulated, 300 cases, given that the pointer check returned 0: a tick count goes up, the list is walked from its head with the next timer read before each callback, a timer whose due tick has passed runs, one that returns 1 is unlinked and freed, the rest are due
 again at the period plus the current tick, and the due ticks are folded when the tick count reaches its last value. Not covered: what any real callback does, the free, and adding a timer. Read from the code: adding pushes on the front, so timers run newest registered first, and adding is fatal while the
 list runs. For a registered period `p`, a timer's first run is `p + 1` boundaries after registration and its period `20 × (p + 1)` frames. The 26 registration sites name 21 callbacks: 13 reach no draw, 2 only through a specified entry, and 6 draw through quest content (the Act V thaw, Izual's ghost, Diablo and the Act III guardians
 spawn monsters, the Tristram portal picks a level point, the Dark Wanderer steps the quest seed once and creates a unit).
@@ -252,27 +291,37 @@ alone, so its frames are where an item can disappear with no event (read from th
 
 ## Rooms in the frame
 
-Read from the code, unless a sentence says otherwise
-([§ H](../specs/sim/frame.md#h-rooms-list-order-the-new-room-walk-the-room-sync-the-activation-record)). The rooms' counts and population bodies are [levels](levels.md#rooms-that-come-and-go-release-and-restore).
+Seen in a window for the list order and the new-room walk, on one act per game, unless a sentence says otherwise
+([§ H](../specs/sim/frame.md#h-rooms-list-order-the-new-room-walk-the-room-sync-the-activation-record)): the act lists modelled by a push at the head and an unlink equal all 23
+later walks. The rooms' counts and population bodies are [levels](levels.md#rooms-that-come-and-go-release-and-restore).
 
 **An act's room list is newest first.** A created room goes at the head and sets the act's new-rooms flag, so every pass over the list goes from the most recently created room to the oldest.
 
 **Rank 3 walks an act whose flag is set**, from the head. Every room gets one wanderer tick on its own seed; a room not yet populated is populated, and one already populated is restored once per activation. The flag is cleared **after** the walk. So in one frame's walk, an act's rooms created since its last walk
-come first, newest first, then its older rooms, and each older room's seed steps once per frame in which any room of the act was created. Emulated, 200 cases: which act is walked first, the head room reached first, the flag cleared on an act with no room. The walk past the first room is past those
-cases. Seen in a game: a client's new rooms are walked at the start of the next frame. Three other callers populate one room at once, outside this order.
+come first, newest first, then its older rooms, and each older room's seed steps once per frame in which any room of the act was created. Seen in a window: a walk falls exactly
+in the 30 frames whose act had a room created since its last walk, 371 older rooms stepped once each, 51 rooms populated and 32 restored. Emulated, 200 cases: which act is walked
+first, the head room reached first, the flag cleared on an act with no room. A client's new rooms are walked at the start of the next frame. Three other callers populate one room
+at once, outside this order (read from the code). Several acts in one game are read from the code: the windows hold one act per game.
 
-**A room created during the walk** is linked before the walk's position, so it is not visited, and the flag's clear leaves it waiting, unpopulated, for the next walk of its act, which needs another room of that act to be created, or for one of those three callers. One created in a later act is walked in the same pass, one in an earlier act in the next frame. No kept log stamps both the
-activation and the population in a case that separates this. The spec also assumes that the act's room-create callback is 0 on the server; its writer is not read.
+**A room created during the walk** is linked before the walk's position, so it is not visited, and the flag's clear leaves it waiting, unpopulated, for the next walk of its act, which
+needs another room of that act to be created. Seen in a window: 4 such rooms, each first walked at its act's next walk, after another room of that act was created, 41, 47 and 72 frames
+later (the fourth has no later walk in its window). Read from the code: a level-point lookup inside the walk can activate one, and the cause of the 4 is not logged; one of the three
+callers could populate it sooner; one created in a later act is walked in the same pass, one in an earlier act in the next frame.
+
+**The act's room-create callback.** A created room calls the act's callback when it is set. Checked by a second reading: the act's creation zeroes the act and sets no callback, and the
+client's two callback pointers are named once each, by the client's own act creation. Read from the code: a later writer is not read, since 106 register stores to that field's offset are not
+resolved, and the spec assumes the callback is 0 on the server.
 
 **Rank 14** walks clients newest first, one in single player. A client whose player's room has changed makes its room change there. Within one change, rooms are created in the near-list order of the new room, restricted to rooms not yet active, with one other route (a room whose files become ready). Across one frame: clients in list order, each client's room change, then the on-demand activations at their own passes.
 
 ## Whose draws come first
 
-Read from the code, except the hand-offs and the re-chained entries, which are seen in the kept logs ([§ J](../specs/sim/frame.md#j-draws-per-pass-and-the-shared-seeds)).
+Read from the code, except where a paragraph says otherwise ([§ J](../specs/sim/frame.md#j-draws-per-pass-and-the-shared-seeds)).
 
 A shared seed is one that two units' or two rooms' draws in one frame can both step, so their order decides the values. Five kinds:
 
-1. **The game seed:** every unit creation, in population and the inactive restore at rank 3, in the unit events, in the quest timers' spawns and in the drain's handlers.
+1. **The game seed:** every unit creation, in population and the inactive restore at rank 3, in the unit events, in the quest timers' spawns and in the drain's handlers, and the
+   population's own loop over a room.
 2. **Each level's seed:** the preset rolls of the rooms its activations load, the level-point lookups inside a population, the Tristram portal timer.
 3. **The object-region seed,** carried across rooms, operates and timer events.
 4. **The quest seed.**
@@ -280,7 +329,11 @@ A shared seed is one that two units' or two rooms' draws in one frame can both s
 
 A room's own seed is stepped by that room's activation, tiles and wanderer tick, and by a neighbour's population. The saves' seed is not read.
 
-**One counter crosses games.** The hit class counter is a byte, 0 at load, with one store, the increment, and no game create or close resets it. So the element of a hit depends on the hits picked before it in the process, other games included, and only for a hit with two or more of cold, fire, lightning and poison
+**Seen in a window, for the game seed:** it is stepped at the unit constructor of every creation (184 inside the rank-3 walk, 3 099 in units' events), at the item constructor (27),
+and by the population's own loop, 6 929 steps inside the walk.
+
+**One counter crosses games.** The hit class counter is a byte, 0 at load, named by two instructions, its read and its one store, the increment, and no game create or close resets it
+(checked by a second reading). So the element of a hit depends on the hits picked before it in the process, other games included, and only for a hit with two or more of cold, fire, lightning and poison
 above 0. Otherwise two games share no seed, in the tick's call graph, whose 145 indirect calls are not followed, but for one salt store. The windows log the counter, which shows it was logged and no more.
 
 **Hand-offs, seen in the kept logs:** 1 065 396 pairs of consecutive observations of one seed by two events of one frame, in logged order: 1 023 086 handed on, 42 310 stepped 1 to 4 096 draws on, **0 reversed**, 0 off the stream. On the game seed, 440 754 pairs, 4 675 of them stepped. A stepped pair says that something unlogged
@@ -324,21 +377,25 @@ The spec's own warning ([§ K](../specs/sim/frame.md#k-what-the-frame-windows-te
 
 ### A zero tests less than it sounds
 
-All of this is counted, not raised ([§ K3](../specs/sim/frame.md#k3-a-large-zero-can-test-little)).
+From [§ K3](../specs/sim/frame.md#k3-a-large-zero-can-test-little). The counts of the first and last bullets were recounted by a second reader and are confirmed as counts; what each
+count means is counted, not raised, like the rest of this section.
 
 - **Most events move no seed.** Of the 37 977 events in the seven windows that log seed steps, 37 489 (98.7%) moved neither the game seed nor their own. 452 moved their own, and **only 53 moved the game seed**: the player's skill do 34, a missile's event 17, a monster's every-frame event 2. 17 did both, so 488 moved either. The chained events mostly say that no seed moved unlogged, and little about any draw's value.
-- **A step on no chained seed is not tested at all.** That is 157 769 of the 174 756 logged steps: 147 314 between the ticks at no listed client location, 9 968 in the tick with no event open, 487 inside an event. The lists of allowed sites bind only a step on a chained seed.
+- **A step on no chained seed is not tested at all.** That is 157 769 of the 174 756 logged steps: 147 314 between the ticks at no listed client location, 9 968 in the tick with no event open, 487 inside an event. The lists of allowed sites bind only a step on a chained seed. Counted by place alone, with no class, the logged steps lie 152 718 between the ticks (the client steps
+included), 9 995 in the tick with no event open and 12 043 inside an event.
 - **Some readings accept any of several values.** While a fresh seed shares its low half with a chained one, the log reader holds every value the seed may have, and a reading passes on any of them: 225 readings held more than one. There a surplus step is not seen, while a lost one still is. Dropping one in-tick step at random is seen 24 of 25 times in the two full maze windows, 4 of 25 in the first pack window, 25 of 25 in the standing window and 14 of 25 in the second Nova window, where most in-tick steps are on no chained seed.
 - **Taken as given, not predicted:** a unit's own draws (AI, skill do, a missile's own), the number of drop draws on a dead monster, the listed pass steps, the client steps, the save, and the equality of kind 11's seeds. Every think in the windows is taken as given. What is predicted is the arithmetic of every logged reading, the missiles' first readings, the class of every step, and the order.
 - **The per-death item rule tests almost nothing.** Over 54 logged deaths, the item constructor's steps and the unit constructor's are 0 and 0 in 37, and 1 and 1 in 17, 0 failures. Read from the code, an item's step cannot come without a unit's, so in a game the rule can fail only on a lost line. The zeros test nothing, and the pairs at 1 and 1 show one path and that no other unit was created in those segments. A sub-missile would add a unit step and pass, and none occurred in a segment. "2 per item" over a kill with several items and "0 on a no-drop" are not tested: no segment holds two items, and neither the item count nor a no-drop is logged. "Two per dropped item" is the [treasure class reading](../specs/items/tc.md#h-item-pick-and-hand-off).
 
 ### Another unit's event drawing on a seed
 
-Counted, not raised, unless a line says otherwise ([§ K4](../specs/sim/frame.md#k4-touches-another-units-event-or-a-rooms-walk-drawing-on-a-seed), which has the sites). A step on a seed inside someone else's event must match a listed trigger:
+From [§ K4](../specs/sim/frame.md#k4-touches-another-units-event-or-a-rooms-walk-drawing-on-a-seed), which has the sites. A step on a seed inside someone else's event must match a listed
+trigger. **Seen in a window: the sites of each trigger.** The steps inside a killer's event holding a death are the kill's sites, 124 of them; the steps with a room walk open are the listed
+functions only, 1 720 of them; the owner and defender steps are at their listed sites. The counts below are those on a chained seed, and they are counted, not raised:
 
 - **kill, 122 steps:** a drop's treasure-class or quality draw, inside a killer's event; the trigger names its unit through the logged death.
 - **room, 847:** a wanderer tick, a monster spawn or an object placement inside a room's walk. It needs only an open room walk, not that the rooms are neighbours.
-- **owner, 3:** a to-hit or critical-double site, with a missile's or the monster's own event open.
+- **owner, 3:** a to-hit or critical-double site, with a missile's or the monster's own event open. 
 - **defender, 8:** the defence, cold, wear, get-hit, hit-class and damage sites of a hit. Only the defence and wear sites were hit.
 - **kill event, 0:** a unique mod's death site, named through its queued event. No window hit it.
 
@@ -350,7 +407,8 @@ Owner and defender match event type and site, **not the target**: the logger doe
 
 ### Shared-seed pairs
 
-Counted, not raised ([§ K5](../specs/sim/frame.md#k5-shared-seed-pairs)). A pair is two top-level events of different units that each moved the game seed in one frame. **There are 2 in the counted windows,** both handed on and in pass order, 0 reversed. Over every log of the window runs, pilots and development logs included, there are 8: missile then player 3, missile then missile 4, player then monster 1. This is a named count reported as measured, and it is not a short against a target.
+From [§ K5](../specs/sim/frame.md#k5-shared-seed-pairs). A pair is two top-level events of different units that each moved the game seed in one frame. **Seen in a window: there are 2 in the
+counted windows,** both handed on and in pass order, 0 reversed, recounted by a second reader. Over every log of the window runs, pilots and development logs included, there are 8: missile then player 3, missile then missile 4, player then monster 1. This is a named count reported as measured, and it is not a short against a target.
 **No confirmed statement rests on a pair.** The rule for whose draw comes first follows from every game-seed step being logged inside an open event and from the events running in the tested order. What is thin is the variety among drawing events: the 53 above.
 
 ### Hooks: where they ran, not where they can
@@ -369,11 +427,20 @@ Counted, not raised ([§ K7](../specs/sim/frame.md#k7-client-steps-are-not-evide
 
 The record **cannot be derived from client messages alone**. The room a player stands in at rank 14 is the end of its movement in the walks, so that input stays logged until a movement model exists. With one, it follows from the player's position each frame, and the on-demand activations still need the warp and waypoint requests and the population's level-point lookups.
 
-**The act clock** ([§ G](../specs/sim/frame.md#g-the-other-per-frame-passes), [open questions](../specs/sim/frame.md#open-questions)). Each act's clock steps every frame, faster under conditions the spec gives, and it reads as the act's day-and-night light (read from the code). The step ran under emulation, 420 cases, 0 mismatches, as the code's map, with the scale kept below 5 000. Its three tables' values are in the [ActClockTables doc](../tables/ActClockTables.md), checked against the image. Read from the code: on the server every act's clock starts at scale 128 with its flag clear, and only Act II's changes, to scale 4 with the flag set, between the eclipse and the viper chest. Run on the image's tables, the step gives how often the pass sends its packet and refreshes every client's player: 26 times a game day, 23 during the eclipse (a day is 35 846 frames in Acts I, II and V, fewer in Act III and far fewer in Act IV), never more than 2 176 frames apart. These frame counts come from the emulated step, not from a log. So a build with no log can predict on which frames rank 1 refreshes the players. What is still not read is whether such a refresh can draw in play: on stock data a clock change makes no item usable or unusable, and the refresh selects an aura only when a player's wanted skill differs from the current one and is usable, a state other events would have to leave behind. A window across a clock packet settles that, and none has run.
+**The act clock** ([§ G](../specs/sim/frame.md#g-the-other-per-frame-passes), [open questions](../specs/sim/frame.md#open-questions)). Each act's clock steps every frame, faster under conditions the spec gives: seen in a window, one step per frame on the one act, 5 500 of 5 500, and each of the 5 changes the
+tick's first ranked line. It reads as the act's day-and-night light (read from the code). Its three tables are only read, never written (checked by a second reading). The step ran under emulation, 420 cases, 0 mismatches, as the code's map, with the scale kept below 5 000. Its three tables' values are in the [ActClockTables doc](../tables/ActClockTables.md), checked against the image. Read from the code: on the server every act's clock starts at scale 128 with its flag clear, and only Act II's changes, to scale 4 with the flag set, between the eclipse and the viper chest. Run on the image's tables, the step gives how often the pass sends its packet and refreshes every client's player: 26 times a game day, 23 during the eclipse (a day is 35 846 frames in Acts I, II and V, fewer in Act III and far fewer in Act IV), never more than 2 176 frames apart. These frame counts come from the emulated step, not from a log. So a build with no log can predict on which frames rank 1 refreshes the players. What is still not read is whether such a refresh can draw in play: on stock data a clock change makes no item usable or unusable, and the refresh selects an aura only when a player's wanted skill differs from the current one and is usable, a state other events would have to leave behind. A window across a clock packet settles that, and none has run.
 
 ## Traps for a rebuild
 
 From the [reimplementation notes](../specs/sim/frame.md#reimplementation-notes).
+
+Seen in a window:
+- **The stamp a packet reads is the frame before the one it acts in.**
+- **The wanderer tick runs on every room of a walked act,** so a frame that creates one room steps every room seed of its act once.
+- **The AI has two entries,** so its draws can come at a mode-end event's place in the frame.
+
+Checked by a second reading:
+- **Do not reset the hit class counter per game.** Its one store is the increment.
 
 Emulated, the code's map:
 - A queue request with frame −1 **drops its callback**, and a frame at or below the current one is raised, not refused.
@@ -381,10 +448,7 @@ Emulated, the code's map:
 - A slot holds records of later multiples of 64: a walk passes over them and keeps them.
 
 Read from the code:
-- **The stamp a packet reads is the frame before the one it acts in.**
 - **The new-rooms flag is cleared after the walk.** A room created during its own act's walk waits; do not re-walk.
-- **The wanderer tick runs on every room of a walked act,** so a frame that creates one room steps every room seed of its act once.
-- **Do not reset the hit class counter per game.**
 - **The act clock pass refreshes every client's player on any act's change,** and only the packet goes to that act's clients.
 
 ## What is not known yet
@@ -392,15 +456,15 @@ Read from the code:
 From the [spec's open questions](../specs/sim/frame.md#open-questions), and the limits above:
 
 - **The act clock:** whether its refresh can draw in play ([above](#what-a-build-with-no-log-still-needs)).
-- **Ranks 5, 6 and 10 to 13 in a game:** no counted window holds an event in them.
+- **Ranks 5 and 10 to 13 in a game:** no counted window holds an event in them.
 - **In no counted window:** Corpsefire, the overhead chat's expiry, a dead pet, and the kill event's row.
 - **The saves' seed.**
 - **The frame reset:** the bits it clears, by name, and which item has the item flag at the reset.
 - **The room sync:** two calls under one unit bit, what one more call does under a game bit, and the 16 game-code indirect calls of its graph.
 - **Events:** the object handlers left unread, and which unit type each of the 269 queue sites is for, on which a kind's meaning depends.
 - **Others not read:** the caller of one Act V quest function, four unreferenced sites of the room unlink, one further room-list call, a dead mercenary's way out of its pet list, the registrars behind 54 functions, and whether a logged event of a universal kind is the server's or the client's. The room unlink's list of callers is a floor: up to 500 functions of its walk have none listed.
-- **Unemulated corners:** a new record block being linked (no case used more than 32 records), the counter's wrap, the act clock's product wrap at a far larger scale.
-- **Leads, nothing more:** the busy client function may be rain particles, with no code read to say so, and no spec depends on it. The act's room-create callback may be 0 on the server because the server's call passes 0. Every window ran without sound; no figure here is known to depend on it, and none was run with it.
+- **Unemulated corners:** a new record block being linked, the act clock's product wrap at a far larger scale.
+- **Leads, nothing more:** the busy client function may be rain particles, with no code read to say so, and no spec depends on it. The act's room-create callback may stay 0 on the server, because the server's call passes 0 and no later writer is read. Every window ran without sound; no figure here is known to depend on it, and none was run with it.
 
 ## Where to read more
 
