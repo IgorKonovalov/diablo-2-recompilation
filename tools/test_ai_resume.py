@@ -361,7 +361,7 @@ class ReviewFixesTest(unittest.TestCase):
 
     def test_logger_rev5_source(self):
         src = open(os.path.join(HERE, "gdb", "ai.py")).read()
-        self.assertIn("REV = 6", src)
+        self.assertRegex(src, r"REV = [678] ")                                  # rev 6 or later keeps the rule
         self.assertIn('emit("AIL"', src)
         # the MonSetMode line itself must still be logged: its AIB breakpoint is created before the MSM0 one at the same address
         self.assertLess(src.index("Bp(a, on_bnd(a), bnd_bps)"), src.index("Bp(0x005A7C20, on_msm0, bnd_bps)"))

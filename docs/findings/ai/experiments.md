@@ -1704,6 +1704,7 @@ Sharing decision: fresh per case, unchanged.
   Other readings the same data allow: the `dist` or `aip(4)` the test at 0x005E1E45 compares differs from the checker's `ctx[5]` and `aip(4)`; or the rev 7 word breakpoint at 0x005E1E34 perturbs the path (the 7 near decisions with no word line behave as the model does). Both exits of the tests at 0x005E1E36 and 0x005E1E48 go to 0x005E1FBE, so no change of the block's structure gives one step.
   Catalogue rows 347 and 348 stay `[I]`; the far case (12 decisions) matches. Filed for the spec and the
   architect: backlog entry `2026-11-16-reverser-spec-writer+architect-plan-0069-p3b-r118-step-1-draw-contradiction`.
+  - **Read again 2026-11-16 (logger rev 8, `lane/n69h`, architect review):** the word above is not the call's result. Rev 7's `w_eax` (`tools/gdb/ai.py`) was `s32(reg("eax"))` and `s32` reads memory, so `R118.flag0x20` held the dword at the address in EAX, and a decision whose `StatListFindFlag` returned 0 raised a `MemoryError` and wrote no line. The 33 lines are decisions with the flag set (the `jne` at 0x005E1E36 taken: one step), the 7 near decisions without a line are flag 0 (two steps, as modelled), and the 12 mismatches are the checker reading a dereferenced word as the flag. `[I]` (the logger source, git history of `tools/gdb/ai.py` at 30c71622 and e6d746ed, 0x005E1E2F, 0x005E1E34); no kept log yet reads EAX itself, so rows 347 and 348 stay `[I]` until a kept rev 8 run. The checker keeps the rev 7 reading of rev 7 logs (so `regress` and this run's `model-check-all84.txt` stay byte-identical): its R118 and R119 results on rev 7 logs that carry the word are not evidence about the block.
 - **Prediction 3 (decisions by case, from `words.txt`).**
   - Held: `t-a4-town` R32 6, R54 2; `t-a4-steppes` R72 35; `t-a4-cotd` R4 100, R68 44, R71 56; `t-a4-river` R39 81, R68 31, R73 62, R33 18
     and R100 12 (the conditional ones, with R98 not seen); `t-a5-town` R32 81; `t-a5-foothills` R116 90 and R126 21 (conditional);
@@ -1726,7 +1727,7 @@ Sharing decision: fresh per case, unchanged.
   activated or skipped"): R119's pool level 128 and the Worldstone 130 cases (R74, R137) need another route; this is a lead for a later rerun.
   (2) `t-a4-chaos` never left the River of Flame (107): the border walk of the case table did not reach Chaos Sanctuary. (3) A `LOGERR ai f
   MemoryError('Cannot access memory at address 0x0')` line (the `f` reader of `w_nearest`, a logged rev 7 word with the pointer 0) sits in
-  the R118 decisions without a word line; the word lines of the others are unaffected. It is a lead for the logger, not a claim.
+  the R118 decisions without a word line; the word lines of the others are unaffected. It is a lead for the logger, not a claim. Read again at the rev 8 review: the `f` in that line is also the name of every rev 7 word reader (`on_word`), and the R118 decisions reach no `AiNearestPlayer` site, so the line is `R118.flag0x20`'s reader dereferencing EAX 0 (above).
 - **Contradictions:** one, R118 above (filed). 0 mismatches in every other real entry.
 - **Not covered by this run:** R119, R128, R55, R74, R98 (Act IV and V, not reached), R32's home and script words, R56 and R85 (rev 7 does
   not log their words), R10, R78, R79 (no decision in these logs).
