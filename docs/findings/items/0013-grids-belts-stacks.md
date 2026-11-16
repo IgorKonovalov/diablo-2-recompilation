@@ -76,10 +76,10 @@ No community source was compared; every claim is from the code. **2026-11-04 (`l
 
 | Packet | Handler | Body | Tag and anchor |
 |---|---|---|---|
-| `0x13`, `0x16` | `0x0054AA90`, `0x0054AAD0` | `UnitInteract(type ≤ 5, guid, action)`; `0x13`'s action is 0 | [I] (fn:sub_00548B00_UnitInteract@0x00548B00) |
-| `0x17` | `0x0054AB40` | a cursor item; `InteractIsPlayer(0)` non-zero returns 3; `CursorDrop` | [I] (fn:sub_00563C00_CursorDrop@0x00563C00) |
-| `0x18` | `0x0054ABB0` | § 5; `ItemSetPage(item, page)`, then `InvPlaceItem(…, x, y, 0, 1, 0)` | [I] (fn:sub_00560200_InvPlaceItem@0x00560200) |
-| `0x19` | `0x0054ACD0` | an owned item, empty cursor, not page 1; trade test `0x00535610`; `InvItemToCursor` | [I] (fn:sub_00560420_InvItemToCursor@0x00560420) |
+| `0x13`, `0x16` | `0x0054AA90`, `0x0054AAD0` | `UnitInteract(type ≤ 5, guid, action)`; `0x13`'s action is 0. *2026-11-16, § 12: `[C]` to the call; a type of 6 up returns 2, and `0x16` with type 0 and the player's own guid returns 3* | [I] (fn:sub_00548B00_UnitInteract@0x00548B00) |
+| `0x17` | `0x0054AB40` | a cursor item; `InteractIsPlayer(0)` non-zero returns 3; `CursorDrop`. *2026-11-16, § 12: `[C]` to the call; the interaction test runs only when `PlayerIsBusy` is non-zero, and `InteractIsPlayer` does not read its argument* | [I] (fn:sub_00563C00_CursorDrop@0x00563C00) |
+| `0x18` | `0x0054ABB0` | § 5; `ItemSetPage(item, page)`, then `InvPlaceItem(…, x, y, 0, 1, 0)`. *2026-11-16, § 12: `[C]` to the call* | [I] (fn:sub_00560200_InvPlaceItem@0x00560200) |
+| `0x19` | `0x0054ACD0` | an owned item, empty cursor, not page 1; trade test `0x00535610`; `InvItemToCursor`. *2026-11-16, § 12: `[C]` to the call; a full cursor ends at `NoManaMsg`, and a 0 from the trade test returns 0 with nothing moved* | [I] (fn:sub_00560420_InvItemToCursor@0x00560420) |
 | `0x1A`..`0x1E` | | equip and swap with a body location (`0x1B`'s slot 1..10) | [I] (fn:sub_005606B0_ItemEquip@0x005606B0, fn:sub_00563D20_EquipCursorAtSlot@0x00563D20, fn:sub_00560CD0_BodyToCursor@0x00560CD0, fn:sub_00560F00_BodySwapCursor@0x00560F00, fn:sub_00561220_BodySwapCursor2@0x00561220) |
 | `0x1F` | `0x0054B0F0` | the cursor against a page item, not an item on page 1 or 2 | [I] (fn:sub_00561B00_PageSwapCursor@0x00561B00) |
 | `0x21` | `0x0054B300` | two owned items, unequal guids; `StackRequest` | [I] (fn:sub_0055E7C0_StackRequest@0x0055E7C0) |
@@ -151,7 +151,7 @@ score: n = 0
 
 ## 5. The stash and pages: `0x18`, `0x19`
 
-- [I] `0x18` for a player, in order: the cursor test; a page ≥ 5 returns 2 (the `PlayerIsBusy` branch never returns there, § Answer); page 4: a room in town, else 3; page 2: `InteractIsPlayer(1)`, else 3; page 3, 0: nothing further. Then `ItemSetPage(item, page)` **before** the placement, so a refused item keeps the new page byte on the cursor. A non-player user has only the page ≥ 5 test. *Corrected 2026-11-04 (`lane/s60` review): for a player the code passes only pages 0, 2, 3 and 4 and returns 2 for any other, page 1 and negatives included (`0x0054AC3E`, `0x0054AC40`).* (0x0054ABE5..0x0054AC7E, 0x0054AC68)
+- [I] `0x18` for a player, in order: the cursor test; a page ≥ 5 returns 2 (the `PlayerIsBusy` branch never returns there, § Answer); page 4: a room in town, else 3; page 2: `InteractIsPlayer(1)`, else 3; page 3, 0: nothing further. Then `ItemSetPage(item, page)` **before** the placement, so a refused item keeps the new page byte on the cursor. A non-player user has only the page ≥ 5 test. *Corrected 2026-11-04 (`lane/s60` review): for a player the code passes only pages 0, 2, 3 and 4 and returns 2 for any other, page 1 and negatives included (`0x0054AC3E`, `0x0054AC40`).* *2026-11-16 (S4e part 3, § 12): `[C]` (ADR-0021) up to `InvPlaceItem`'s call, the page byte written before it; whether a refused placement keeps it is `InvPlaceItem`'s code, still `[I]`.* (0x0054ABE5..0x0054AC7E, 0x0054AC68)
 - [I] `InvPlaceItem`: page 4 alone skips `0x0055C270` (for a player, `0x0055C110(1)`, a scroll's or tome's skill quantity, no page test; read at items/0014 § 5, fn:sub_0055C110_ItemSkillQtyAdjust@0x0055C110). An active charm then attaches. A failed put returns 0, the handler 3. (0x00560327, 0x0056032F, fn:ITEMS_IsActiveCharm@0x0062FF70, fn:sub_00560200_InvPlaceItem@0x00560200)
 - [I] `0x19` → `InvItemToCursor(…, 1, 0, 0, 0)`: the cursor empty; a player not busy (no interaction, empty cursor, PlayerData `+0x4C` 0) refuses any page but 0; the item in mode 0; then remove, page byte saved, page `0xFF`, cursor word, mode 4, event flag 4. (fn:sub_00560420_InvItemToCursor@0x00560420, 0x005604D2, 0x005604DC)
 - [I] Page bytes in the code: 0 inventory, 1 and 2 trade, 3 cube, 4 stash; `0xFF` while on the cursor or the belt. (0x00628280, 0x0054AC7E, fn:sub_00621050_InvRowForUnit@0x00621050)
@@ -176,7 +176,7 @@ score: n = 0
 
 ## 8. Pickup
 
-- [I] `UnitInteract`'s item case: the unit's mode 3; distance (`0x00641530`) above 50 does nothing; below 5 and `0x00622B50(…, 0x804)` 0 picks up: action 0 to the inventory, else to the cursor; else it walks there. (0x00548C60..0x00548CC5, fn:sub_00548B00_UnitInteract@0x00548B00)
+- [I] `UnitInteract`'s item case: the unit's mode 3; distance (`0x00641530`) above 50 does nothing; below 5 and `0x00622B50(…, 0x804)` 0 picks up: action 0 to the inventory, else to the cursor; else it walks there. *2026-11-16 (S4e part 3, § 12): `[C]` (ADR-0021) up to the pickups, `InteractWalkTo` (0x00548A50, not `PLAYER_ModeCmdUnit` directly) and the line test; a missing item, a mode other than 3 and `d > 50` return 1.* (0x00548C60..0x00548CC5, fn:sub_00548B00_UnitInteract@0x00548B00)
 - [I] **To the inventory** (`0x00563560`), in order: cursor empty and not busy, else return 0; the unit's mode 3, else the refuse flag; `ItemQuestGate`, a refusal calls `0x0055C9A0(0x13)`; `UnitSetEvent`; gold → `GoldPickup`; `PickupAutoStack`; `ItemAutoEquipSlot` with `0x0063DE60 == 1` → the body; beltable and `BeltPlace`; `InvAutoPlace` on page 0; else `0x0055C9A0(0x17)`, nothing moved. *Corrected 2026-11-04 (`lane/s60` review): a named location with `0x0063DE60 != 1` does not go on to the belt: it sets the refuse flag and returns 0 (`0x005636AE`, `0x00563607`). `InvClearUseMarks` runs before the gate (`0x00563627`), and first in `CursorDrop` (`0x00563C47`).* (fn:sub_00563560_PickupToInv@0x00563560, fn:sub_0055CC90_ItemQuestGate@0x0055CC90, fn:sub_0055C850_GoldPickup@0x0055C850)
 - [I] `PickupAutoStack`: type 22 → the first tome of its kind with room (`0x0063C3B0`: type 18, the same `ITEMS_GetSuffix`, quantity below the maximum); type 18 → the same finder and a merge; a stackable row whose item type's byte `+0x13` is set → `PickupStackMerge`, repeating on each stack with room, a quiver type looking at the body first. Otherwise 0, and the order goes on. A remainder stays the same item, reduced, and goes on down the order (items/0014 § 5). (fn:sub_00560020_PickupAutoStack@0x00560020, fn:sub_0055FFA0_PickupScrollToTome@0x0055FFA0, fn:sub_0055D370_PickupTomeMerge@0x0055D370, fn:sub_0055D0D0_PickupStackMerge@0x0055D0D0)
 - [I] `ItemAutoEquipSlot` needs `ItemReqCheck`, flag `0x10`, not disabled, not type 38; the rest of its body names the location (items/0014 § 5). (fn:sub_0055D710_ItemAutoEquipSlot@0x0055D710)
@@ -235,6 +235,87 @@ without a potion until the first hit killed it): `b8room` with page 0 empty, `b8
   with no room, to the ground (12 of 12). The statement `BeltOverflow` empties the upper rows into the inventory or
   onto the ground (`src:maxroll-death`, D2R) is held for 1.14d on this path. (fn:sub_005608C0_BeltOverflow@0x005608C0,
   fn:PLAYER_CorpseCreate@0x0057F700, run:2026-11-15-sweep8-single)
+
+## 12. Plan 0066 batch S4e part 3: the request handlers and the pickup under emulation (run:2026-11-16-sweep2-s4e-emu)
+
+Five families, 12 700 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 16 controls, each separating,
+`passed` 0 (`tools/items_s4e3_emu.py`, `workspace/logs/n66z/s4e/run3/check.txt`; record in
+[experiments](experiments.md#part-3-the-item-request-handlers-and-unitinteracts-item-case-2026-11-16)). Every case runs
+the handler from its entry over a declared world (the game's unit hash heads, the player, its data, path and
+inventory, items, interaction partners, a room chain) to its return or to a declared callee's entry (ADR-0021: the
+callee and everything after it are not covered, nor the meaning of each offset; `lane/n66z`). Each confirmed claim below holds for the
+code as that map; the callees named as run are run, not observed. No import, no allocator is reached.
+
+- [C] (ADR-0015) **`PktPosFar` (0x00548EF0)**, family `pos` (1 500, all unit types 0..7): the unit's position is the
+  static path's dwords `+0x0C`, `+0x10` for types 2, 4, 5, else `PathGetX`/`PathGetY`'s `u16` at `+2`, `+6` of the
+  dynamic path, 0 with no path (70); per axis `d = pos − u16(packet value)` as `i32`, negated when negative (32-bit
+  `neg`, so −2³¹ stays −2³¹ and passes: 12 cases), `d > bound` signed (EBX) returns 1; both within, 0 (322 / 1 178).
+  Controls `pos_unsigned` 148, `pos_ge` 145, `pos_full` (the packet dword unmasked) 72. (0x00548F4D–0x00548F6B,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **The use requests to their use functions**, family `use` (3 000). `0x20` (0x0054B1E0): length 13,
+  else 3 (94); `PktInvItemBad` (the guid found among type-4 units, mode 0, its ItemData `+0x5C` the player's
+  inventory, else 1); `PktPosFar` with EBX 50 (`lea ebx, [eax + 0x32]`, `eax` 0) on the packet's `+5`, `+9`, else 1
+  (refused 556); then `PlayerUseInvItem(guid, x, y, &flag)` (ECX game, EDX player; 354, site 0x0054B24C). `0x26`
+  (0x0054B560): length 13 (87); `PktBeltItemBad` (found, mode 2, owned, else 1); `PktPosFar(50)` on the unit's own
+  position read by the same rule, so it passes for every dynamic-path unit (the player): `u16(pos) = pos`; for a
+  static-path unit with a coordinate above `0xFFFF` it can return 1 (control `spec_anypos`, "holds with any input",
+  separates 127, none with a player); then `PlayerUseBeltItem(guid, x, y, &flag, +5)` (493, site 0x0054B62F). `0x27`
+  (0x0054B280): length 9 (105); `PktOwnedItemBad` on `+1`, then on `+5` (EDI the player): not found 1; owned 0;
+  else 1 unless it is the player's cursor item (control `owned_only` 26); then `PlayerUseItemOnItem(+1, +5, &flag)`
+  (577, site 0x0054B2D4). Control `inv_nomode` (no mode test) 64. (fn:sub_0054B1E0_Pkt20UseInvItem@0x0054B1E0,
+  fn:sub_0054B560_Pkt26UseBeltItem@0x0054B560, fn:sub_0054B280_Pkt27ItemOnItem@0x0054B280, 0x0054B222, 0x0054B602,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] After each use function: a return of 0 with the flag set returns 3 (0x0054B250, 0x0054B633, 0x0054B2D8). Not
+  covered: the use functions' closures reach `ItemUse` and the use entries (H4c).
+- [C] (ADR-0021) **`0x13` and `0x16` to `UnitInteract`**, family `act` (1 200). `0x13` (0x0054AA90): length 9, else 3;
+  type `+1` as `u32` below 6, else 2; `UnitInteract(guid +5, 0, game)` with ECX the player, EDX the type (400, site
+  0x0054AAC9). `0x16` (0x0054AAD0): length 13; type below 6, else 2; **type 0 with the player's own guid returns 3**
+  (`noself` 48); else `UnitInteract(guid +5, action +9, game)` (340, site 0x0054AB2C); a null player compares as −1.
+  Control `type_le6` 113. (0x0054AAAC, 0x0054AB10, 0x0054AB15, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **`UnitInteract`'s item case** (EDX 4), family `pick` (2 500): the guid not found among type-4 units,
+  or a mode other than 3, returns 1; `d = UnitInteractDistance(player, item)` (run, items/inventory § I2) above 50
+  returns 1 (1 217 returns of 1 in all); `d` from 5 to 50 ends at `InteractWalkTo` (0x00548A50) with ECX the game,
+  EDI 4 and the pushed word −2 for a non-zero action, −1 for action 0 (490, site 0x00548CDD); `d ≤ 4` enters
+  `UnitsLineBlocked(player, item, 0x804)`, where the player's path mask `+0x4C` overlapping `0x804` ends at
+  `UNIT_CollUnmark` (294) and a non-touching pair at `COLL_LineTest` with mask `0x804` and the shortened ends (294); a
+  touching pair returns 0 and the case ends at `PickupToCursor(guid, &flag)` for a non-zero action (135, site
+  0x00548CA2) or `PickupToInv` for action 0 (70, site 0x00548CB1). Controls `reach50` (`d ≥ 50` refused) 43, `reach6`
+  (`d ≤ 5` to the line) 53, `mask801` 196, `actswap` 205. (0x00548C60, 0x00548C70, 0x00548C79, 0x00548C7E, 0x00548C8E,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] After `COLL_LineTest`: a blocked line walks (0x00548C8C → 0x00548CC5); after each pickup, the flag → 3. H4c.
+- [C] (ADR-0021) **`0x17` to `CursorDrop`**, family `mv` (4 500 over three handlers; 0x17 911): length 5, else 3;
+  `PktIsCursorItem` (found, mode 4, the player's cursor item, else 1; 317 returns of 1); then, **only when
+  `PlayerIsBusy` is non-zero**, `InteractIsPlayer` non-zero returns 3 (121 returns of 3, the length refusals among
+  them); then `CursorDrop(guid)` (473, site 0x0054AB9C). `PlayerIsBusy` is 1 for a player whenever the cursor test
+  passed (it has a cursor item) and 0 for any other unit type, so a non-player's drop skips the interaction test
+  (control `iip_always` 12). `InteractIsPlayer` (0x005678A0) does not read its stack argument (`static.txt`: no
+  `[ebp+0x8]` in its body), so the `0` and `1` the handlers push select nothing. (0x0054AB7D, 0x0054AC4A,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **`0x18` to `InvPlaceItem`** (1 776 cases): length 17, else 3; the cursor test, else 1; for a
+  player, `PlayerIsBusy` is 1 in every case that passed the cursor test, so "not busy and page ≠ 0" never refuses;
+  page 4 needs a room (path `+0x1C`) whose level (`+0x10` → `+0x58` → `+0x1D0`) `LevelIsTown` accepts (levels 1, 40,
+  75, 103, 109 in the image's table, `static.txt`), else 3; page 2 needs `InteractIsPlayer`, else 3; pages 0 and 3
+  nothing; every other page (1 and 5 up) returns 2. A non-player has only `page ≥ 5` unsigned → 2, so page 1 passes
+  (16). Then the low byte of the page dword is written to ItemData `+0x45` (`ItemSetPage`) **before** the call, and the
+  case ends at `InvPlaceItem(game, player, guid, x, y, 0, 1, 0)` with ECX 0x006E1050 and EDX 0xBF6 (410: pages 0 136,
+  2 44, 3 118, 4 96; refused 3 on page 2 81 and on page 4 108). Controls `page_after` 331, `page1_ok` 126.
+  (0x0054AC0D–0x0054AC68, 0x0054AC7E, 0x0054ACA1, run:2026-11-16-sweep2-s4e-emu)
+- [I] After `InvPlaceItem`: whether a refused placement keeps that byte is its own code (part 4, `place`).
+  (fn:sub_00560200_InvPlaceItem@0x00560200)
+- [C] (ADR-0021) **`0x19` to `InvItemToCursor`** (1 813 cases): length 5, else 3; `PktInvItemBad`, else 1; **a
+  non-empty cursor ends at `NoManaMsg` (0x00549A60)** with ECX the player (405), the return of 2 after it not covered;
+  an item whose page byte is 1 returns 3; then `InvMoveInteractTest` (0x00535610), run: with the interaction flag
+  (`+0x6C`) set, the partner (type `+0x68`, id `+0x64`) not found ends at `PlayerClearInteract` (139), an NPC (type 1)
+  at 0x00573140 (19), a player at `TradeItemTest`, which returns 0 when the partner's PlayerData `+0x5C` is 0 and else
+  ends at 0x005B5810 (18), and any other type passes; with no interaction, PlayerData `+0x4C` non-zero returns 0, else
+  `TradeItemTest` passes when PlayerData `+0x50 ≤ 4` (signed). **A 0 from the test returns 0 with nothing moved** (181
+  returns of 0); else `InvItemToCursor(guid, &flag, 1, 0, 0, 0)` (219, site 0x0054AD6C). Control `trade_ignored` 357.
+  (0x0054AD3A, 0x0054AD4D, 0x0053568D, 0x00567834, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) `GameFindUnit` (run in every family): types 0..4 walk the chain `+0xE4` from the head at game +
+  `0x006E10E0[type]` + 4 × (guid & 0x7F); **type 5 walks one list from game + `0x1B20`**, with no bucket.
+  (fn:sub_00552F60_GameFindUnit@0x00552F60)
+- Not covered here (S4e part 4 and on): the handlers `0x1A`..`0x1E`, `0x1F`, `0x21`, `0x23`..`0x25`, `0x63`;
+  `InvItemToCursor`'s body (rows 42, 46); the use rows 21, 22, 34, 38, 52, 54.
 
 ## Data touched
 

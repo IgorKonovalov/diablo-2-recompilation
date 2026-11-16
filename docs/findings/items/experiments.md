@@ -4081,3 +4081,39 @@ request handlers, inventory families) will add their own sections under this hea
   after each observed boundary (the stat writes, `ItemBreak`, the timer's queue, the packets, `HandsRefresh`, the
   error routine's exit); `ReplenishStep` after its write (the floor of 125, the broken repair); `DropGoldAmount`
   (its loop crosses 0x0064E810 and the item creation 0x00559CE0, to the harness).
+
+### Part 3: the item request handlers and UnitInteract's item case (2026-11-16)
+
+- **Question:** do the use requests `0x20`, `0x26`, `0x27`, the interaction requests `0x13`, `0x16`, `UnitInteract`'s
+  item case and the moves `0x17`, `0x18`, `0x19` map their inputs as [items/use](../../specs/items/use.md) § B and
+  [items/inventory](../../specs/items/inventory.md) §§ D, E, I state, up to the callee each ends at? Claims in
+  [items/0013 § 12](0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 5, 8 and items/0012 § 1.
+- **Setup:** as part 2 (Ghidra 12.1.2, `workspace/ghidra-n66z`, heap 3 GB, a 4 GB scope, `EmuBoundary.java` unchanged),
+  one kept launch per family, after one development pass (`dev3/`, 60 then 300 cases per family with earlier tool
+  revisions, `manifest-dev.sha256`, not cited). New tool `tools/items_s4e3_emu.py` (draws from
+  `random.Random("n66z-s4e3-<family>")`). Declared image: `bytes` directives zero-fill, before every case, the game's
+  unit hash heads (game + 0x1120..0x1D20), the player (unit, PlayerData, path, inventory), four items (unit, ItemData,
+  static path), four interaction partners, a room chain and the packet; the cases' `w` lines write the non-zero fields
+  (unit `+0x00` type, `+0x0C` guid, `+0x10` mode, `+0x14` data, `+0x2C` path, `+0x60` inventory, `+0x64`/`+0x68`/`+0x6C`
+  the interaction, `+0xE4` the hash chain; ItemData `+0x45` page, `+0x5C` owner; inventory magic and `+0x20` cursor;
+  PlayerData `+0x4C`, `+0x50`, `+0x5C`; path `+2`/`+6`, `+0x0C`/`+0x10`, `+0x1C` room, `+0x4C` mask; room `+0x10` →
+  `+0x58` → `+0x1D0` the level id). Guards: 0x00408090, 0x00408A60, 0x00681E09 and the pool allocator's entries
+  (none reached). Observed boundaries, call site asserted by the return address: `use` 0x0055E170, 0x00562390,
+  0x00561ED0; `act` 0x00548B00; `pick` 0x00548A50, 0x0055CF50, 0x00563560, 0x0064E260, 0x00649560; `mv` 0x00563C00,
+  0x00560200, 0x00560420, 0x00549A60, 0x00554190, 0x00573140, 0x005B5810. No import is reached.
+- **Families:** `pos` 1 500, `use` 3 000, `act` 1 200, `pick` 2 500, `mv` 4 500.
+- **Result:** `workspace/logs/n66z/s4e/run3/check.txt` (`1bc77600…`, 61 lines), `static.txt` (`8de890ed…`, 41 lines,
+  32 pins, 6 read-only tables, `InteractIsPlayer`'s argument reads 0), `manifest.sha256` (`741310ae…`, 27 lines, passes
+  from that directory); `cases` regenerates every `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces
+  `check.txt` from the committed revision. 12 700 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write;
+  outcomes per family and boundary in `check.txt` (each count in items/0013 § 12 is copied from it). **16 controls,
+  each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2), enumerated by the tracer): `GameFindUnit`'s head offsets 0x006E10E0 and
+  `UnitInteractDistance`'s table 0x006EB180 (.rdata), `UnitInteract`'s switch table 0x00548E8C, `LevelIsTown`'s tables
+  0x006426C0/0x006426C8 and `UNIT_GetSizeX`'s switch table 0x00620570 (.text), none writable (`static.txt`). Every
+  other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; the callers; everything after each boundary
+  (the use functions, `UnitInteract`'s callee on the other unit types, the walk, the pickups, the line test and the
+  unmark, `CursorDrop`, `InvPlaceItem`, `InvItemToCursor`, `NoManaMsg`, the interaction and trade callees), so the
+  handlers' returns after those calls stay `[I]` (0x0054B250, 0x0054AD70, run:2026-11-16-sweep2-s4e-emu).

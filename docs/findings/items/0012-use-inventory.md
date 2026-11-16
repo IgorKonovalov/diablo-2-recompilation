@@ -126,6 +126,11 @@ No community source was compared; every claim is from the code. The doubling dra
   player's own, so the distance test holds with any input. `sub_005492F0_PktBeltItemBad` wants mode 2. (0x0054B560)
 - [I] **`0x27`.** Length 9. `+1` is the target and `+5` the used item; both must pass `sub_00549220_PktOwnedItemBad`.
   (0x0054B280, 0x00561ED0)
+- *2026-11-16 (plan 0066 S4e part 3, [items/0013 § 12](0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu)):*
+  the three bullets above are `[C]` (ADR-0021) up to the use function's call (run:2026-11-16-sweep2-s4e-emu), with two
+  refinements: `PktOwnedItemBad` passes an owned item or else the player's cursor item, and `0x26`'s distance test
+  passes for any dynamic-path unit (the player) but can fail for a static-path unit with a coordinate above `0xFFFF`.
+  The return of 3 on a flagged refusal comes after the call and stays `[I]`.
 - [I] **`0x61`.** Length 3; expansion games only (`game+0x70`), else 3. With a cursor item that is not a quest item the
   mercenary path runs; the player must have no used skill and be alive, and the pet of type 7 alive. (0x0054D430)
 - [I] A refusal flagged by the use function returns 3 from the handler; what the drain does with 3 is P1.3's. (0x0054B1E0)

@@ -2921,3 +2921,52 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Gate:** fast green (80 warnings after the merge, none new from the fixes; W4 on wiki/quests, which the lane's refresh
   entry answers); `--full` green (39 surveys).
 - **Verdict: accept with fixes (4)**: overclaim 3, stale cross-reference 1. The review request stays open for the merge.
+
+### 2026-11-16 — Phase 1, batch S4e part 3 (reverser-static, `lane/n66z`): the request handlers and the pickup, 17 rows settled; resume note
+
+- **Done.** Merged `main` `0df309d6` first (`5b3eb0f1`; plan-log conflict kept both; README § 1 recomputed from the 29
+  files' *Totals by class*, unchanged). New tool `tools/items_s4e3_emu.py` (parts 1–2's tools, `run/` and `run2/`
+  untouched), five families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 32 s for
+  the five) after one development pass (`dev3/`, `manifest-dev.sha256`, not cited): `pos` (`PktPosFar` whole), `use`
+  (the `0x20`, `0x26`, `0x27` handlers to their use function), `act` (`0x13`, `0x16` to `UnitInteract`), `pick`
+  (`UnitInteract`'s item case to the walk, the pickups, the line test or the unmark), `mv` (`0x17`, `0x18`, `0x19` to
+  `CursorDrop`, `InvPlaceItem`, `InvItemToCursor` and the interaction callees). 12 700 cases, 0 mismatches, 0 stops,
+  0 undeclared reads, no traced write; 16 controls, each separating, `passed` 0. No import, no allocator on any
+  covered route. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 3](../findings/items/experiments.md#part-3-the-item-request-handlers-and-unitinteracts-item-case-2026-11-16),
+  `workspace/logs/n66z/s4e/run3/` (`check.txt` `1bc77600…`, `static.txt` `8de890ed…`, `manifest.sha256` `741310ae…`,
+  27 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
+  committed revision). Claims in
+  [items/0013 § 12](../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 5, 8 and items/0012 § 1.
+- **Rows settled (17).** items/use: 6 raised; 18, 19, 20 raised in part (the flagged-refusal 3 after the use function
+  → b H4c, its closure reaching the use entries' `STATLIST_Alloc`). items/inventory: 1, 9, 10, 28, 30, 41, 43 raised;
+  29 and 31 remainders raised (with refinements); 40 raised in part (lengths of `0x17`–`0x19` and `0x18`'s fields; the
+  other handlers stay S4e part 4); 45, 99 raised in part (the page write before `InvPlaceItem`; its refusal → part 4,
+  `place`); 64 raised in part (the walk after a blocked line → b H4c). No class move. Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part3-refinements.md): `PktPosFar`'s position
+  rule and −2³¹; `0x26`'s test for a static-path unit; `PktOwnedItemBad`'s cursor alternative; `0x16`'s self refusal;
+  `0x17`'s busy gate and `InteractIsPlayer`'s unread argument; `0x19`'s `NoManaMsg` and silent trade refusal and the
+  trade test's map; `InvPlaceItem`'s ECX/EDX; I1's returns of 1 and `InteractWalkTo`; `GameFindUnit`'s type 5.
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' *Totals by class*; `main` `0df309d6`): a-logs 623, a-run 334, b 509,
+  c 390, c-emu 442, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 455, Phase 2 843. README §§ 3, 4
+  (S4e and H4c rows) updated.
+- **Judgment calls:** (1) part 3 stops at the first callee of each handler; the six use rows that need a use entry
+  to return (21, 22, 34, 38, 52, 54) and the other handlers (`0x1A`–`0x1F`, `0x21`–`0x25`, `0x63`) and
+  `InvItemToCursor` (42, 46) were not reached and move to part 4 with the inventory families; (2) rows 29 and 31's
+  remainders raised with the refinements (the busy gate; the full-cursor message and the silent trade refusal) rather
+  than "contradicted in part", since the spec's tests hold and only their conditions are wider; (3) row 64's
+  `PLAYER_ModeCmdUnit` read as reached through `InteractWalkTo` (items/0014 § 4 anchors both), so a refinement;
+  (4) `GameFindUnit`'s type-5 list was found by a model mismatch (16 `mv` cases with a type-5 partner) in a first
+  full-size pass written to `run3/`, which the kept run then overwrote (the model fixed, the code unchanged); that
+  pass is not kept, against review-fixes 6, and `dev3/` holds only the 300-case pass (the 60-case one overwritten too).
+- **Resume (parts 4 and 5, a fresh lane on `lane/n66z`):** part 4: the use rows 21 (`0x61`, `Pkt61MercItem` to
+  `MercGiveCursorItem`), 22 (C2: `ItemUse` past a kind-1 test with `ItemSpellIcon` < 0 and a kind-3 use returning 0, to
+  `SendUnitPacket6` 0x0053B3D0; the test-0 half has no image test returning 0), 34 (the "else 0" half is
+  run:2026-11-03-use-emu's `stat3` returns, recount them; the 1 half is after a boundary → b), 38 (the doubling's share
+  over the `(r1, r2)` grid, seeds inverted per pair), 52 (`GolemHeal`), 54 (`PlayerUseInvItem` and `PlayerUseBeltItem`
+  to `ItemUse`, `InvClearUseMarks` run with no flagged item, observe 0x0053D220); the handlers `0x1A`–`0x1F`, `0x21`,
+  `0x23`–`0x25`, `0x63` (rows 32–34, 36–39, 40's rest) and `InvItemToCursor` (42, 46), extending
+  `tools/items_s4e3_emu.py`'s world (or a new tool) into `run4/`; then the inventory families. Part 5 as in part 1's
+  note. Tier B review once S4e is whole.
