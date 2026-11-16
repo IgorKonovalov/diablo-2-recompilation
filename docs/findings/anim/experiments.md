@@ -944,3 +944,37 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
      (the least moving factor met stays at the stock monster base); no `HumanAttackFrames` absent-record return.
   5. A moving call with no path keeps `+0x4C` and writes no path speed.
   Against these, a floor met in a session is a prediction failure to report, not to tune.
+- **Setup:** logger `tools/gdb/anim.py` rev 7 (`40367f4a…`; rev 6 plus SR `x`, `b`, `l`, `a44`, `rp`; MSW at the game
+  start; ALF at 0x0066AA02 and 0x0066AAF6; HAF at 0x0062A7C5 and 0x0062A830), the existing runner
+  `tools/anim_sessions.py` (`ANIM_LOGDIR` added; session tables unchanged), slot 1 only, one game at a time, saves of
+  the plan 0050 runs rebuilt as they were (`saves-2026-10-27-anim`, `-p2`). 11 sessions, each a fresh process:
+  `sp-bar-dw`, `sp-dru-form`, `sp-dru-form2`, `sp-ass-bos`, `sp-pal-chg`, `mon-1`, `mon-5`, `p8-dru-1h`, `p8-dru-2h`
+  (Act I–V Normal, clvl 25 recipes) and `sp-pal-slow`, `th-dru` (Nightmare). The first launch of `sp-bar-dw` ran after
+  the checker had been run on it, so it is `dev3-sp-bar-dw` (development) and the kept one is its rerun. 48 118 SR lines.
+  New checker `tools/anim_h6d.py` (`9abf9588…`), the existing `tools/anim.py check` as the control.
+- **Result:** `workspace/logs/n66h6/run/` (`check-h6d.txt` `22d6dbdf…`, `check-anim.txt` `8eeade97…`,
+  `manifest.sha256` `2fe0f52c…`, 37 lines, passes from there): `H6D total checks=189882 bad=0`; `tools/anim.py check`
+  `name`, `rate`, `record` 48 118/0, `pathspeed` 19 228/0, `sched` 4 412/0, rc 0. MSW: 11 loads × 734 rows equal
+  `Data.speeds` (109 rows per load with no walk record, 62 of them their own class: word 256 in 62 of 62); ALF: 4 834
+  fallback returns (all 2 048/256, name and event bytes zero, names absent from `animdata.d2`; callers 0x00650F4D
+  1 199, 0x00650FB3 3 003, 0x00620F40 632: FS 522, BN 104, MO 6, mode 14); floors: 105 monster moving calls below 25
+  (least X −15) and 111 monster attack calls below 15 (least 10), all equal, every control (floors 24/26/none, 14/16/none,
+  the path speed without the floor) differing in all of them; the attack's 175: 37 player calls, controls differ in 37;
+  the default branch below 15: 139 monster and 14 player calls equal. Not reached: a player moving X below 25 (least 150)
+  or attack X below 15 (least 80), block q ≤ 0 (least block rate 100), q at or above 0x7FFF, a moving call with no
+  path, a Velocity-0 class below 410 in S1–S4, an absent-record `HumanAttackFrames` (233 returns), the name look-up's
+  absent branch, a row with a later `BaseId` (0 of 734). `+0x48` and `+0x44` are as at the call's entry in 48 118 of
+  48 118 calls (23 561 changed the record pointer, 23 489 of them at starts; 72 mid-mode, players). 833 shapeshift calls
+  equal. 3 074 init attack calls: the rate equals the model fed the live entry `+0x48` in 3 074; that entry equals the
+  previous record's length in 3 040 and differs in 34. Dual wield: 186 attack calls equal (152 with differing hands,
+  control without the term differing in 141); the linked hand is inferred from stat 68 (left 32, right 96, undecided 24).
+- **Predictions against the result:** 1, 2, 3, 5 held (5 untested: no no-path call); **4 failed**: `sp-pal-slow` reaches
+  the moving floor 25 and the attack floor 15 on monsters (a Holy Freeze slow); the player floors, block's floor, the cap
+  and the absent-record return stay unreached. 2: the FS, BN and MO lookups at 0x00620F40 were not predicted by class.
+- **Dev runs:** `workspace/logs/n66h6/dev/` (`dev-r7-`, `dev2-r7-`: the first two revisions, `eip` read and the
+  fallback pointer before the `add`; `dev3-sp-bar-dw`), not cited for a raise. The logger's OA ret hook raised "Cannot
+  convert value to long" 3 times in 2 sessions (not a H6d line; no SR, MSW or ALF line is affected).
+- **Covers:** the rate branches' floors and clamps on the stock sessions' stat values, the speed words, the fallback
+  record and the unchanged `+0x44`/`+0x48`. Not covered: negative FBR, a stock source for the unreached floors (no
+  stock-data scan was made, ruling (b)), classic games, `PlrModeStartMove`'s refused path, `PathStep`'s `+0x24`/`+0x90`,
+  `PathStepTargetCheck`.
