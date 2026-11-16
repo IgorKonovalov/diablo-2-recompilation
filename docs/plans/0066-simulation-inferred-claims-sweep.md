@@ -2730,6 +2730,13 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   contradiction; (6) the 196 and 420 remainders, routed to S1f from S1e, are counted as S1f rows here.
 - **Next:** Tier B review of S1f and S1o whole: the part 1 request, extended
   ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md)).
+- **Tier B check (architect, S1f and S1o whole):** accept with fixes. Rulings: 171 "raised in part with a correction"
+  stands (the no-store-of-1 claim holds, the count is the correction); machinery 54 "contradicted in part" stands (the
+  `SpawnPosPick` call holds, the empty *Draws* cell does not; both draws are gated); **machinery 19 narrowed to raised in
+  part** (the 215 register-id calls of the spec are 205 in the scan, unreconciled, and "no code in the image" is tested for
+  the ten getters' calls only; S1o: raised 3, raised in part 8); README 38's Bone Prison stays `[I]`. Fixes: ai/0001's note
+  on `UModTeleportTry` said "twice" for two gated draws; stale cross-references added (drlg/0009's town-refusal bullet,
+  ai/0002's no-writer sentence, ai/0012's "only `diabloclone` and `uberdiablo`"); backlog item 6 (215 against 205).
 
 ### 2026-11-16 — Phase 3, the quests cluster re-tagged (spec-writer, `lane/n66qr`)
 

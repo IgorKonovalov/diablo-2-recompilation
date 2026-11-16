@@ -478,7 +478,7 @@ MonAiDelayEarlier(12);
   its `+0x18` was found: of `AiCtlParamGet`'s 15 calls only 0x005F175F passes 14, and the 20 direct calls of
   `AiParamsFind` outside it pass `EDX` 10, 4, 5, 7, 3 or a `[reg+0xa]` (five, the register unresolved)
   (`b1-paramget-pushes.txt`, `b1-paramfind-edx.txt`); direct `+0x18` stores into a record were not scanned. So the
-  skill branch of the alt has no writer found here. (fn:sub_005F1750_AiSandMaggotAlt@0x005F1750,
+  skill branch of the alt has no writer found here. *2026-11-16 (`lane/n66x`, plan 0066 S1f part 1, checked by the architect):* a writer of a kind-14 record with a unit exists: row 65's think builds one and passes it to `MonHelpBlock` (0x005F9C17–0x005F9C33; ai/0005 § 2.18), as ai/0003's note says; whether that block reaches this alt's record is not followed. (run:2026-11-16-sweep2-s1f) (fn:sub_005F1750_AiSandMaggotAlt@0x005F1750,
   fn:sub_0058EFA0_AiCtlParamGet@0x0058EFA0, fn:sub_005B0E00_MonAiInit@0x005B0E00, fn:UNIT_GetTargetUnit@0x00553540)
 
 #### 2.14 Row 16 `ClawViper` (0x005F1B60)

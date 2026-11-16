@@ -1897,7 +1897,7 @@ minutes under a 4 GB scope; no game, no Ghidra.
   - *The unit search* (M15). `g_AiSearchKinds`: 13 pairs, walkers 0,0,1,0,0,2,0,0,0,3,3,2,0; the dispatch 0x005DD0B7–
     0x005DD127; 29 calls, kind 1 ×19, 6 ×2, 2, 3, 5, 7, 8, 9, 11, 12 ×1 (three kind-1 pushes stand well before the call:
     0x005EE8F8, 0x005FA8C0, 0x005FAF20).
-  - *Stat 89* (M19). The ten getters' 1 418 calls: 1 213 with an immediate id by the objdump walker, 161 ids, none 89, and
+  - *Stat 89* (M19). The ten getters' 1 418 calls (the spec's "215 register-id calls" is 205 here, unreconciled): 1 213 with an immediate id by the objdump walker, 161 ids, none 89, and
     no 89 by r2's walker at the 11 calls where the two walkers differ; 7 `push 0x59` and 2 `mov r32,0x59`, none within ten
     instructions before a getter call; the five search functions call no getter.
   - *Others.* M20 13 calls in 10 AI functions, the mask byte 1 against Skills `+0x08`. M40 `MonAiPathOverride` 103 calls,
@@ -1907,7 +1907,7 @@ minutes under a 4 GB scope; no game, no Ghidra.
     `MonGroupForEach` (then `+0x34`). M88 row 37's think and callees to depth 2 (19 functions, 1 447 instructions): no
     displacement 0x170–0x19F. R21 `UnitQueueEvent` 265 calls, kind 2 ×30; `UNIT_CancelEvents` 141, kind 2 ×66. R38
     Hireling's four classes all row 61; the 32 Skills `summon` classes' rows.
-  - *A finding against the specs.* M54: `UModTeleportTry` draws `Range(100)` twice on the acting unit's seed (0x005B12DB
+  - *A finding against the specs.* M54: `UModTeleportTry` draws `Range(100)` up to twice on the acting unit's seed (0x005B12DB
     `< 15`; 0x005B1355 `< 25` with life below 30) besides `SpawnPosPick` (0x005B1318); machinery § F gives none
     (backlog item 5).
 - **Not settled** (reasons in the inventory rows): machinery 42 (`PathPlan`'s `0x40000` exit to `PathPlanStraight`

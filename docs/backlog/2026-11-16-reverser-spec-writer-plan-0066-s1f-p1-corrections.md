@@ -30,7 +30,15 @@ not blocking.
    times (0x005FA74B … 0x005FA9AA, objdump and r2 alike), none writing 1; the rest of the bullet stands. Write
    "its eleven stores". The source is ai/0005 § 2.8 (dated note added). Inventory catalogue row 171.
 5. **machinery line 400 (§ F table, `UModTeleportTry`) and README F4's `; drlg/lifecycle`.** The row gives the seed as
-   `SpawnPosPick`'s and no draws, but the function draws twice on the acting unit's seed (`ecx = unit+0x20`):
+   `SpawnPosPick`'s and no draws, but the function draws up to twice on the acting unit's seed (`ecx = unit+0x20`):
    `Range(100) < 15` at 0x005B12DB, then, with the life percentage below 30, `Range(100) < 25` at 0x005B1355; its
-   `SpawnPosPick` call is 0x005B1318. Add the two draws to the *Draws* cell (acting unit, before and after the pick).
+   `SpawnPosPick` call is 0x005B1318. Add the two draws to the *Draws* cell (acting unit, before and after the pick), each gated: the first after the life-and-word gate 0x005B12B6–0x005B12CD, the second only with the life percentage below 30 (0x005B1349). drlg/0009's town-refusal bullet gets a dated note.
    The source is ai/0001 § 9's table (dated note added). Inventory machinery row 54.
+
+*2026-11-16, Tier B check (architect):* one more.
+
+6. **machinery A9 (line 178) and ai/0001 § 6 (lines 75 and 437), "the 215 getter calls with a register id".** The S1o part 2
+   scan over `light_radius_scan.py`'s ten getters finds 1 418 calls, 1 213 with an immediate id and **205** without. The
+   spec's 215 is not reproduced; reconcile it (getter list or walker), or write the scan's count with its scope. The sentence
+   "no code in the image reads stat 89 by an immediate id" is tested for calls of those ten getters only. Inventory
+   machinery row 19 (ruled raised in part at the check).
