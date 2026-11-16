@@ -2352,3 +2352,56 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   moved a-run → b (new batch H1r, deferred); line 243 (row 27) raised in part on "at full life the parameter is 0" only; line 3268
   (row 345) without "whatever the distance"; line 328 (row 39) in Normal only. The ready list above stands otherwise.
 
+
+### 2026-11-16 — Phase 1, batch S5fe (reverser-static, `lane/n66w`): done, 26 of 26 statements settled (1 named not settled)
+
+- **Done.** Merged `main` `b5a32324` first (a fast-forward from the lane's base `2ffce327`; S5e's tools came with it).
+  New tool `tools/combat_s5fe_emu.py` (`b3e76431…`; imports `tools/combat_s5e_emu.py`, `tools/combat_s5e3_emu.py` and
+  `tools/anim_s6f_emu.py` unchanged, and S5e part 3's declared tables), one kept `tools/ghidra.sh emuboundary` launch
+  on `workspace/ghidra-n66w` (`-Xmx3G`, `MemoryMax=4G`; `import-symbols` first), after two development launches
+  (`workspace/logs/n66w/s5fe/dev1/`, `dev2/`, `manifest-dev.sha256`, not cited). Two families, `crit`
+  (`MissileCritRoll` whole, with `SKILLS_GetMasteryBonus`, 3 000) and `fin` (`PrgFinisher`'s entry tests, 600): 3 600
+  cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes (traced reads all in `g_BitMask32`); 17 controls, 16
+  separating with `passed` 0, `best_lt~` inherent; spec-reading controls `spec_unsigned` 1 142, `spec_141_gt0` 565.
+  The `static` section lists the objdump reads the record cites (call sites, the peek, the allocator calls). Record:
+  [run:2026-11-16-sweep2-s5fe](../findings/combat/experiments.md#run2026-11-16-sweep2-s5fe);
+  `workspace/logs/n66w/s5fe/run/` (`check.txt` `f040b213…`, `static.txt` `43dcac84…`, `manifest.sha256` `bb29e9cf…`,
+  14 lines, passes from there; `cases` regenerates the case file byte for byte). Claims:
+  [combat/0001 § 22](../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe).
+- **Route check first (R2, ADR-0029).** Most of the batch's routes run code after a callee that allocates or walks
+  rooms: `MissileCreate` → `sub_00555230_SUnitCreate` (0x0059FC75), `sub_00571AA0_UnitMsgA3` (0x0040B430 at
+  0x00571AC1, the finisher's tail on every charged state), `COMBAT_QueueHit` (0x0040B430 at 0x0057CABE, reached from
+  `COMBAT_ResolveAndQueue` in `DragonTalonHit` and `DragonClawHit`), `QueuedHitRemove` (0x0040B480 at 0x0057CA5B, every
+  delivery of a found hit), `SKILLS_ForUnitsInRange` and `AreaHitAt` (rooms), `COLL_PatternTest` (0x005FD974, rooms),
+  `UnitQueueEvent` → `EventRecordAlloc` (`STATE_ApplyTimed`'s queue path). Those rows go to b (H5b), each naming its call.
+- **Statements (26).** Raised 6: README 22, 23 (emulated), 25 (call site by two tools plus the chain's map); delivery 7
+  (emulated entry tests plus do 52's untested pass by two tools), 14 (with a correction: `RNG_Step` runs on the seed
+  itself, the saved copy restores it), 60 (static, two tools). Raised in part 3: README 9 and 41 (the peek; the
+  entries' and entry 38's draws → b), delivery 9 (the entry tests and the peek; the rest of the finisher → b).
+  Contradicted in part 1: README 42 (a negative stat 141 steps the seed; 565 separating cases). Moved c-emu → b (H5b)
+  15: README 16, 28, 29; delivery 8, 10, 11, 12, 13, 15, 17, 19, 52, 55, 61, 62. Not settled 1: delivery 53 (the
+  handler-20-to-helper-2 join needs the two cat-emu-item images merged; no allocator known before helper 2's first
+  `COLL_PatternTest`; stays S5fe, c-emu).
+- **Remainders (7).** Raised: README 18, 21, 34 (the second and third crit steps; rows now whole); in part: README 32
+  (its H5b half stays). Moved to b (H5b, not added to its rows): delivery 21 (the entries' draws past their first
+  boundary), 50 (handlers 19, 27 through `UnitQueueEvent`). Not settled: README 14 (`MissileDamageBlock`'s weapon
+  branch and `MISS_GetDamMin`/`Max` with `SKILLS_LevelBands`, declarable, not built in budget).
+- **Corrections (Phase 3's):** backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections.md)
+  (README 501's "above 0", delivery 237's "on the copy", README 377's `UnitMsgA3` writes).
+- **Symbols:** none raised (an emulation over a declared image and static reads, review-fixes 14).
+- **Totals** after merging `main` `b5a32324`, recomputed from the 29 files' rows: a-logs 623, a-run 334, b 489, c 390,
+  c-emu 462, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 475, Phase 2 823. Inventory README § 1,
+  § 3, § 4 (S5fe done, H5b 25 → 40) and the two files' *Totals by class* updated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** combat/README 316, 327, 335 whole; 268,
+  300, 417 now whole; 501 with correction 1 (mastery half); 187 and 496 the peek half. combat/delivery 142, 728 whole;
+  237 with correction 2; 155 the entry tests and the peek.
+- **Review:** Tier B, [request](../backlog/2026-11-16-reverser-architect-review-plan-0066-s5fe.md). Judgment calls:
+  (1) the peek and do 52's pass raised by two static tools on the same bytes (S5b's judgment call (1)), not emulated:
+  reaching the peek from the finisher's entry needs `GameFindUnit`'s image and `InMeleeRange`'s closure, not built;
+  (2) delivery 8, 11, 15 and 61 moved whole although a declarable draw precedes the allocator or room walk (do 42's
+  last-kick `RNG_Range`, entry 38's `RangeB`s): the rows' claims include the later parts, and one Dragon Talon or Fists
+  of Fire session logs both; a reviewer may split them back; (3) README 25 raised on the call site plus the chain's
+  map, the third argument's meaning (the source missile) left as the caller's tag; (4) README 42 contradicted in part,
+  not raised with a correction: the note gives a different seed state for every negative stat 141; (5) the mastery
+  claims are scoped to a unit with no used skill (0x00645720's throwable path not reached).
