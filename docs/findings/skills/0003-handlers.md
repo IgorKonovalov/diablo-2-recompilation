@@ -343,6 +343,8 @@ flagged for removal (`+0x02` bit 1) or with no list (`+0x04` = 0) is unlinked an
 | 30 | `0x005C0670` | stats 197, 199 | `killed`, `levelup` | skill on death/level-up: skill `= layer >> shift`, level `= layer & mask`; one inline step, `low % 100 < stat` → cast, effect 0 | 1 inline |
 | 31 | `0x005C09E0` | stat 155 | `kill` | reanimate (items/0002) | 1 |
 
+*2026-11-16 (plan 0066 batch S2ae part 6, `lane/n66sa`):* handlers 7 (whole), 8, 9, 10, 18 and 31 were emulated to their first call that reaches the pool; the maps are [C] in [skills/0002 § 22](0002-missiles.md#22-plan-0066-batch-s2ae-part-6-six-stat-event-handlers-and-kicks-start-emulated-the-open-routes-read-2026-11-16-lanen66sa). Two cells above say less than the code: row 10 also needs the other unit's `+0xC4` bit 2 (0x005BF739), and row 18 returns unless the unit's life is below its maximum and floors the sum at 0 before the cap (0x005C02B2, 0x005C02C4–0x005C02CE). (run:2026-11-16-sweep2-s2ae6)
+
 - [I] Handler names (`re/symbols.csv`): 1 `sub_005CAB40_StatEv01MissileAtSource`, 2 `sub_005CAC50_StatEv02CalcHitAttacker`,
   3 `sub_005CAD40_StatEv03ElemHitAttacker`, 4 `sub_005C5F50_StatEv04ReturnDamage`, 5 `sub_005C61E0_StatEv05LifeTap`,
   6 `sub_005BF670_StatEv06ThornsPhys`, 7 `sub_005BF960_StatEv07Knockback`, 8 `sub_005BFA10_StatEv08Howl`,

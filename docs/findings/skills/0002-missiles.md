@@ -1297,6 +1297,115 @@ separating control counts (`sep`, each with `passed` 0).
   declared zero). `rfa`, `rro`: a null path and the strictness of the byte cap at 77 (`b_lt_4d~`, as § 20).
   (run:2026-11-16-sweep2-s2ae5)
 
+### 22. Plan 0066 batch S2ae part 6: six stat-event handlers and Kick's start emulated, the open routes read (2026-11-16, `lane/n66sa`)
+
+Part 6 of the batch. The emulated claims are maps of the named functions on declared inputs (ADR-0015), compared with
+`tools/skills_s2ae6_emu.py`'s model over the kept run
+([run:2026-11-16-sweep2-s2ae6](experiments.md#run2026-11-16-sweep2-s2ae6), `check.txt`, 18 500 cases, 0 mismatches,
+0 stops, 0 unaccounted reads or writes). Brackets give separating control counts (`sep`, each with `passed` 0). The
+handlers take `ECX` the game, `EDX` the event id and five stack words (the handler's unit, the other unit, the packet,
+the event word `stat << 16 | layer`, one unused here; `ret 0x14`); the handler's stat is
+`sub_00625500_UnitGetStat(unit, word >> 16, word & 0xFFFF)`, which does not test the unit. Each observed call ends its
+case (ADR-0021): what the callee does is past the claim.
+
+- [C] *Handler 7 (knockback), whole.* A null unit, other unit or packet returns 0 [`u_nz` 799, `o_nz` 741, `pkt_nz`
+  744], as does a stat ≤ 0 (signed) [`v_gt0` 1 767, `v_gt0~` 734]. The cap `c` is 64; for a type-1 other unit whose
+  `sub_00451FE0_MonStats2Rec` (MonStats `+0x18`, signed, below the MonStats2 count) exists, its byte `+5` bit 3 gives 32
+  and else bit 2 gives 128 [`o_mon` 103, `ms2_rec` 252, `b5_8` 108, `b5_4` 55]. One inline step of the unit's seed;
+  `low & 0x7F < c` (signed compare) sets the packet's `+0x04` word bit 3 and returns 1, else 0 [`roll_lt_cap` 714,
+  `roll_lt_cap~` 8; a `0xFF` mask, `spec_mask_ff`, 164]. 355 returns of 1, 1 645 of 0 (`reach.txt`).
+  (fn:sub_005BF960_StatEv07Knockback@0x005BF960, 0x005BF960–0x005BFA03, run:2026-11-16-sweep2-s2ae6)
+- [C] *Handler 8 (howl), to `sub_005DDD00_MonFleeFrom`.* Returns 0 for a null unit or other unit, an other unit not of
+  type 1 [`u_nz` 515, `o_nz` 563, `o_mon` 777], one whose MonsterData `+0x16` word has a bit of `0x0C`
+  (`sub_005A0180_MonTypeFlag`) [`mt_c` 813; the mask 4 alone, `spec_mask_4`, 132], or a stat ≤ 0 [`v_gt0` 1 192,
+  `v_gt0~` 514]. Then `RNG_RangePow2(unit seed, 128)` (one step, `low & 0x7F`); below the stat (signed) it calls
+  `MonFleeFrom` with `ECX` the game, `EDX` the handler's unit and stack (other unit, 0x82, 0x14, 0x14) from
+  0x005BFA88 (296 calls), else returns 0 [`roll_lt_v` 472, `roll_lt_v~` 2]. (fn:sub_005BFA10_StatEv08Howl@0x005BFA10,
+  0x005BFA10–0x005BFA98, run:2026-11-16-sweep2-s2ae6)
+- [C] *Handler 9 (stupidity), to `0x005C39C0`.* Returns 0 for a null unit or other unit or an other unit not of type 1
+  [`u_nz` 1 104, `o_nz` 1 180, `o_mon` 1 405], or a stat of 0 (a negative stat goes on) [`v_nz` 1 930]. The chance is
+  `c = 5·(L_unit + 4·v − L_other + 6)` in 32-bit arithmetic, `L` each unit's stat 12 by `STATS_GetUnitStat`; for event id
+  6 a positive `c` is divided by 3 (truncated) [`ev6` 81, `ch_gt0` 56, `spec_no_third` 56]; then `c ≤ 1` gives 1 and
+  `c ≥ 99` gives 99 [`ch_gt1` 571, `ch_lt99` 633]. `r = RNG_Range(unit seed, 100)`; `r ≥ c` returns 0 [`roll_lt_ch`
+  1 104, `roll_lt_ch~` 11]; else `n = (c − r) / 5 + 1` clamped to 1..20 [`n_gt1` 534, `n_lt20` 511] and
+  `0x005C39C0` is called with `ECX` the game, `EDX` the unit and stack (other unit, `n`) from 0x005BFB88 (571 calls).
+  (fn:sub_005BFAA0_StatEv09Stupidity@0x005BFAA0, 0x005BFAA0–0x005BFBA1, run:2026-11-16-sweep2-s2ae6)
+- [C] *Handler 10 (lightning thorns), to `COMBAT_ApplyDamage`.* Returns 0 for a null unit or other unit, an other unit
+  whose `+0xC4` bit 2 is clear [`u_nz` 523, `o_nz` 513, `o_c4_b2` 543], or a stat ≤ 0 [`v_gt0` 1 232, `v_gt0~`
+  525]. Otherwise a zeroed 0x70-byte packet with `+0x04` word 0x4021, `+0x1C` = `stat << 8` (`spec_no_shift` 474) and
+  `+0x60` = 0x4D, and `COMBAT_ApplyDamage` with `ECX` the game, `EDX` the handler's unit and stack (other unit, 1,
+  packet) from 0x005BF7A2 (474 calls; the packet compared byte for byte). No seed step before that call.
+  (fn:sub_005BF720_StatEv10ThornsLightning@0x005BF720, 0x005BF720–0x005BF7A2, run:2026-11-16-sweep2-s2ae6)
+- [C] *Handler 18 (heal after a demon kill), to `sub_00627260_UnitSetStat`.* Returns 0 for a null unit or other unit
+  or an other unit that `MONSTATS_IsDemon` rejects (type 1, a MonStats row, `+0x0D` & `g_BitMask32[5]`) [`u_nz` 347,
+  `o_nz` 319, `demon` 1 123], and 0 for a stat of 0 [`v_nz` 867] (a negative stat goes on); returns 0 when the
+  unit's life (stat 6) is not below `sub_00625D10_UnitGetMaxHp` (stat 7, layer 0) [`life_lt_max` 623, `life_lt_max~`
+  68]. Else `x = life + (v << 8)` (32-bit), `x ≤ 0` gives 0 [`nl_le0` 262; no floor, `spec_no_floor`, 108], `x ≥ max`
+  gives max [`nl_lt_max` 273], and `UnitSetStat(unit, 6, x, 0)` is called from 0x005C02DC (319 calls: 101 sums, 89 at
+  the maximum, 129 at 0, `reach.txt`). No seed step before that call. (fn:sub_005C0260_StatEv18HealAfterDemonKill@0x005C0260,
+  0x005C0260–0x005C02DC, run:2026-11-16-sweep2-s2ae6)
+- [C] *Handler 31 (reanimate), to `UNIT_AddEvent`.* Returns 0 for a null unit or other unit, an other unit not of
+  type 1 or one with MonsterData `+0x16` & 0x0C [`u_nz` 1 139, `o_nz` 1 214, `o_mon` 1 578, `mt_c` 2 047], or a stat
+  ≤ 0 [`v_gt0` 1 619, `v_gt0~` 502]. `r = RNG_RangeB(unit seed, 100)`; `r ≥ v` returns 0 [`roll_lt_v` 472,
+  `roll_lt_v~` 5]. Then the unit's player: the unit itself if of type 0, else `sub_0058F0D0_MonsterOwner` repeated
+  until a type-0 unit, 0 ending the walk with a return of 0 [`is_player` 678, `p_found` 678]. `UNIT_AddEvent` is called
+  with `ECX` the game, `EDX` the **other** unit and stack (0x0D, the event word's low 16 bits, the player's guid,
+  `sub_005C07A0_SkillReviveDo`, 0, the player's guid) from 0x005C0A74 (299 calls). (fn:STATEVENT_Reanimate@0x005C09E0,
+  0x005C09E0–0x005C0A74, run:2026-11-16-sweep2-s2ae6)
+- [C] *d93 (dispatch I4), Kick's start, whole up to its one queue call.* `sub_0056CAF0_SkillSt02Kick` (`ECX` the game,
+  `EDX` the unit, stack skill and level; `ret 8`) returns the target, 0, when `UNIT_GetTargetUnit` gives none
+  [`t_nz` 1 500, with part 5's re-find tests: `gt_stored` 715, `gt_other` 933, `gt_found` 428, `gt_item` 346, `gt_mode1`
+  292, `gt_mode2` 288, `gt_self` 785]. Otherwise a zeroed 0x70-byte packet with `+0x00` = 2, `+0x04` word 9, `+0x08` =
+  `MinDam << (HitShift & 31)` (Skills `+0x1A8` and `+0x1A4`; `shl` takes the count mod 32: `spec_shift_full` 77;
+  `MaxDam` `+0x1AC` in its place, `spec_maxdam`, 648) and `+0x60` = 1, then `COMBAT_ResolveAndQueue` with `ECX` the
+  game, `EDX` the unit and stack (target, packet, 0x80) from 0x0056CB80 (648 calls; the packet compared byte for
+  byte). Its three direct calls are 0x00553540, the memset 0x00681EF0 and 0x0057DBF0, with no indirect call, and its only
+  record reads are `+0x1A4` and `+0x1A8` (`static.txt`, 0x0056CAF0–0x0056CB90): it calls neither `GetPhysMin` nor
+  `GetPhysMax` and does not read `MaxDam`. (fn:sub_0056CAF0_SkillSt02Kick@0x0056CAF0, 0x0056CAFE, 0x0056CB42,
+  0x0056CB54, 0x0056CB5A, 0x0056CB80, run:2026-11-16-sweep2-s2ae6)
+- *After, `[I]` (ADR-0021).* What `MonFleeFrom` does with its arguments (spec K: "the monster flees"), what
+  `0x005C39C0` does with `n`, the damage `ApplyDamage` and `0x0057CEE0` deal from handler 10's packet, the write
+  `UnitSetStat` makes and handler 18's overlay call (stat 0x97, 0x005C02E9), and what the `SkillReviveDo` event does
+  later are all past their calls. Every one of those callees reaches the pool on its route (`run5/sites.txt`:
+  `MonFleeFrom` the free 0x0040B480 at 0x0058EE65 via 0x0058EDE0 ← 0x005B0E00; `0x005C39C0` the free at 0x005C0BC4 via
+  0x005C0B50 ← 0x005C35C0; `ApplyDamage` the free at 0x005C0CDD via `UNIT_DispatchEvent`; `UNIT_AddEvent` the
+  allocation at 0x005C0AF2; `UnitSetStat` 0x0040B4B0 at 0x00624E73 when the list grows), so the remainders that lie
+  there go to b (ruling R2), except handler 18's write, which a declared stat 6 keeps off the allocator (c-emu).
+- [C] *The open routes read (part 6 triage).* Each of the following was read in `static.txt` (objdump, the run's
+  revision) against `run5/sites.txt`; the class follows ruling R2 (ADR-0029) on the actual route (run:2026-11-16-sweep2-s2ae6):
+  - do 146 (d182, d184, spec P2): the re-seed `RNG_SeedInit` at 0x005C8688 and the `RNG_Range(1 000 000)` at 0x005C8694
+    come after the unconditional call 0x005C8654 → `0x005417D0`, which reaches `EventBlockNew` 0x00540BB0 (at 0x00540C56
+    via 0x00540C30 ← 0x00540DF0 ← 0x005416B0): both rows go to b (H2a). (0x005C8642–0x005C869B,
+    fn:sub_005C8520_SkillDo146Armageddon@0x005C8520)
+  - handlers 2 and 3 (d111, d112): the packet is built before `COMBAT_ApplyDamage` (0x005CACFD, 0x005CADE9), but from
+    `SKILLS_EvalCalc` (0x005CACE6) and `SKILLS_RollElemDamage` (0x005CADCA), which need the calc pool run whole (part
+    2's open d69 piece); their "draws none / 1 (2)" cells reach past `ApplyDamage` and `0x0057CEE0`. They stay c-emu
+    for the packet; the draws past the call go to b.
+  - handler 1 (d110): its target tests and parameter block precede `MissileCreate` at 0x005CAC1E (no other reaching
+    call): c-emu to that boundary.
+  - Firestorm (d172's remainder): bit 6 (`+0xC4` |= 0x40 at 0x005C71C8) and the `calc1 ≤ 0` return (0x005C71E5) both
+    precede the first `SkillMissileCreate` (0x005C7201): c-emu with a constant calc pool.
+  - missile do 3 and do 5 (m71, m72): the `0x40` mark (0x0064CB90, 0x0064EA00; no pool, no import) and do 5's frame
+    loop precede the tail into do 1 (`MissileMoveCollide`, which reaches the pool free through 0x005ADF10): c-emu with
+    a declared room.
+  - `SkillWeaponWear` (d156, d181): its one step and the chance compare precede the reaching calls (`PLAYER_UseAmmo`
+    0x005DAAA8, `UnitSetStat` 0x005DAB05, 0x0053D130 at 0x005DAB26): c-emu to those boundaries.
+  - `ITEMSKILL_Cast` (d79's remainder): the `ItemTarget` helpers and `ItemCheckStart` precede `SKILLS_SrvStart`
+    (0x005FDC15); the restore of the target (0x005FDC44) follows `SKILLS_SrvDo` (0x005FDC2F), which reaches
+    `MissileCreate`'s allocation: the restore half goes to b, the rest stays c-emu.
+  - `SummonInitStats` (d144): the passive stats reach the first setter (0x005C4536); `sumskill` (0x0056E740 →
+    `UNIT_AddEvent`, allocating), the aura list (0x006251F0, allocating at 0x0062520B), the equipment init (0x005701B0,
+    an import) and `sumumod` (0x005D6B60) lie past allocating calls. The row stays c-emu for the passive stats; the rest
+    is b's.
+  - start 6 (d89), `MonOwnerSkillDamage` (d153, d154), `AreaHitUnit`'s defence roll (m74): pool only through
+    `InvPageGet` (a declared page, as S5e part 3); `AreaHitUnit`'s damage (0x0056BA5F onward) is b's.
+  (run:2026-11-16-sweep2-s2ae6, static.txt; run:2026-11-16-sweep2-s2ae5, sites.txt)
+- [I] *Not covered.* Handler 31's owner chains longer than two links; handler 9's `L` terms beyond `[−5, 99]` and
+  random 32-bit words; `UnitGetStat`'s ItemStatCost cap (records declared zero); Kick with a skill id outside the table
+  (the code reads a null record's `+0x1A4`); the strictness of the clamps at their bounds (`ch_gt1~`, `ch_lt99~`,
+  `n_gt1~`, `n_lt20~`, `ch_gt0~`, `nl_lt_max~`: a value at the bound gives the bound either way).
+  (run:2026-11-16-sweep2-s2ae6)
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,
