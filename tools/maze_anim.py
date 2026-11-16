@@ -22,7 +22,9 @@ seed lo % file count, as maze_render.py reads it) with its tiles drawn; the fina
 model creates and frees again while probing (finder, sec. B) are not shown. The model stops before the
 placement shift (sec. G1, one translation of every room to the level's origin in the act), so the
 rectangles are drawn relative to the bounding box; the shift would not change the picture. The canvas is
-fixed to the final level's bounds. Stdlib only.
+fixed to the final level's bounds. Drawn like the game builds a room's tiles (drlg/0001): blank floors
+(0, 30, 0/1) hidden, an orientation-3 wall paired with its orientation-4 tile; no shadows, lighting or rarity
+variants. Stdlib only.
 """
 import csv
 import json
@@ -485,6 +487,8 @@ def build(root, level, seed, scale):
                         gx, gy = q["rect"][0] - x0 + cx, q["rect"][1] - y0 + cy
                         if gx < gw and gy < gh:
                             cells.append((gx, gy, kind, (o, (c >> 20) & 63, (c >> 8) & 63), own))
+                            if o == 3:                   # second pick for orientation 4 (drlg/0001, 0x0066E9B0)
+                                cells.append((gx, gy, kind, (4, (c >> 20) & 63, (c >> 8) & 63), own))
         per_room.append(cells)
     pal = bytearray(palette.load(root, pal_name))
     IW = (gw + gh) * tw // 2 + tw
