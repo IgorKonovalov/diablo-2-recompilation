@@ -2,12 +2,12 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../findings/anim/0001-modes-frames.md
-  - ../findings/anim/0003-movement-gates.md
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/anim/0001-modes-frames.md
+  - ../../findings/anim/0003-movement-gates.md
+resolution: "Done in plan 0066 Phase 3 (lane/n66v): anim/timing B1 (the primary hand, the unwritten index [I]), G1 (the MonStats read with no null test and the uninitialised local, [I]), G2 (three lookups, 9 of 223 on another record); anim/movement B4 (flag 0x8 at every counted end) and B5 (PathStop's step pair 0x006EB7D4)."
 ---
 
 Plan 0066 S6f (`lane/n66s`, run:2026-11-16-sweep2-s6f) found refinements to the anim specs (no contradiction). For

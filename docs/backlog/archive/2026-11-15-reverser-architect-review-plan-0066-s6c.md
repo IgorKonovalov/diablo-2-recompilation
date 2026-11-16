@@ -21,7 +21,7 @@ run:2026-11-16-sweep2-s6e (`tools/anim_s6e_emu.py`; `workspace/logs/n66l/s6e/run
 `manifest.sha256` `0539fe07…`; 11 624 cases, 0 mismatches, 59 of 65 controls separating). The plan log entry of
 2026-11-16 (S6e part 1) lists its judgment calls and the resume note for S6e part 2 (25 rows and 22 remainders,
 not started). Corrections routed to the spec-writer in
-[2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections](../2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+[2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections](2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
 
 *2026-11-16, extended again (`lane/n66l`, S6e part 2):* 18 more rows settled by run:2026-11-16-sweep2-s6e-2
 (`tools/anim_s6e2_emu.py`; `workspace/logs/n66l/s6e/run2/check.txt` `d37ef05c…`, `manifest.sha256` `d5d968e6…`;
