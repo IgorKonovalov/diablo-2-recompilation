@@ -3,6 +3,12 @@
 - **Spec:** [combat/to-hit](../../specs/combat/to-hit.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 33; the *Count* column sums to 33.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66y`, 2026-11-16): re-tagged.** The spec's front matter is now C 66 / I 16 / L 4 (it was C 39 / I
+  33 / L 5 at `main` `858b7eea`). Statement `[C]` whole: rows 1, 2, 4, 6, 9, 10, 12, 19, 20, 22, 24, 25, 27, 31–33
+  (16). Split, the `[C]` half and the remainder `[I]` as the *Route* cell names: 11, 13, 15–17, 21, 29, 30 (8).
+  Corrected to the finding: row 14 (B1's `d ≤ 0` branch, S5e correction 11) (1). Kept `[I]` (H5b, d-none): 3, 5, 7, 8,
+  18, 23, 26, 28 (8). Whole includes rows 20 (S5e correction 12 written in) and 25 (refinement 2: every non-player
+  type). Split: row 29 keeps C4's to-hit arguments `[I]` (rows 3, 8); row 17 adds the missile's `0x4000`.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

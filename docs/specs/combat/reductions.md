@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [combat/overview, combat/damage, monsters/stats]
 consumed_by: [combat/delivery]
-tags: {C: 46, I: 25, L: 5}
-updated: 2026-10-21
+tags: {C: 58, I: 5, L: 4}
+updated: 2026-11-16
 ---
 
 # Combat: the defender's reductions
@@ -56,18 +56,20 @@ flowchart LR
 
 Stat ids read: 34, 35 (DR, MDR), 36–46 (resistances and maxima), 110 (poison length reduction), 118 and 153 (half
 freeze, cannot be frozen), 142–149 (absorb percent and flat), 327 (a missile's DR frame rate), 333–336 (pierce).
-[I] (tbl:ItemStatCost.txt:Stat, [combat/0001 § 12b (e)](../../findings/combat/0001-formulas.md#12b-answers-to-the-archivists-phase-0-questions-backlog-2026-10-16-ae))
+[C] The pushed ids of the four functions and the twelve table rows, read with a second tool, give exactly these 29.
+(tbl:ItemStatCost.txt:Stat, data:g_DamageResistTable@0x00732980, run:2026-11-15-sweep2-s5b,
+[combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b))
 
 ### Constants
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | player and hireling resistance cap | `min(75 + max-resist stat, 95)`; physical 50; rows without a max stat 75 | fn:COMBAT_ResistFor@0x0057BE00 | [C] (run:2026-10-16-combat) |
-| resistance floor | −100 (below −99) | fn:COMBAT_ResistFor@0x0057BE00 | [I] |
+| resistance floor | −100 (below −99) | fn:COMBAT_ResistFor@0x0057BE00 | [C] (run:2026-11-16-sweep2-s5e: 1 816 separating cases) |
 | classic penalty | −20 Nightmare, −50 Hell | fn:COMBAT_ResistFor@0x0057BE00 | [C] (run:2026-10-16-combat) |
 | absorb percent cap | 40 | 0x0057BF2A–0x0057BF6F | [C] (run:2026-10-16-combat) |
-| PvP percent; hireling against hireling | 17; 25 | 0x0057C0B6, 0x0057C0D4 | [C] for 17 between two players, physical and lightning (run:2026-10-20-two-clients); [I] for 17 from a hireling or bit-31 attacker, and for 25 |
-| prime evil against a bit-31 unit | 200 (hireling defender) or 400 | 0x0057C129–0x0057C132 | [C] for 200 (run:2026-10-16-combat), [I] for 400 |
+| PvP percent; hireling against hireling | 17; 25 | 0x0057C0B6, 0x0057C0D4 | [C] for 17 between two players, physical and lightning (run:2026-10-20-two-clients); for 17 from a hireling or bit-31 attacker, and for 25 (run:2026-11-16-sweep2-s5e) |
+| prime evil against a bit-31 unit | 200 (hireling defender) or 400 | 0x0057C129–0x0057C132 | [C] for 200 (run:2026-10-16-combat) and 400 (run:2026-11-16-sweep2-s5e: 111 cases) |
 
 ## Algorithm
 
@@ -125,12 +127,12 @@ flowchart TD
 ```
 
 ```
-A2. DamagePercent(ctx) → i32:                                         [I] (fn:COMBAT_DamagePercent@0x0057C060, all of A2)
+A2. DamagePercent(ctx) → i32:                                         [C] (fn:COMBAT_DamagePercent@0x0057C060, run:2026-11-16-sweep2-s5e, all of A2)
       if att = def or either is missing: return 100
       if def is a player:
         return (att is a player or a hireling or (att.flagsC4 & 0x80000000)) ? 17 : 100
       if att and def are both hirelings: return 25
-      if att is a hireling and def is a boss: return ctx.diff.HireableBossDamagePercent
+      if att is a hireling and def is a boss: return ctx.diff ? ctx.diff.HireableBossDamagePercent : 100   ; a null record: 100 (0x0057C0FA–0x0057C0FC)
       if att is a prime evil and (def.flagsC4 & 0x80000000): return def is a hireling ? 200 : 400
       return 100
 ```
@@ -142,7 +144,9 @@ A2. DamagePercent(ctx) → i32:                                         [I] (fn:
   (0x0057C0FE, run:2026-10-16-combat)
 - A2. The prime-evil 200 (Andariel against the mercenary) reproduced with 0 mismatches in 154 events. [C]
   (0x0057C129–0x0057C132, run:2026-10-16-combat) The 400 against a non-hireling and the 25 % of hireling against
-  hireling were not reached. [I] (0x0057C129–0x0057C132, 0x0057C0D4, run:2026-10-16-combat) `Unit+0xC4` bit 31's
+  hireling were not reached in the run; `COMBAT_DamagePercent` emulated over 2 500 cases returns A2's values, 400 in
+  111 and 25 in 40, every branch separated. [C] (0x0057C129–0x0057C132, 0x0057C0D4, run:2026-11-16-sweep2-s5e,
+  [combat/0001 § 19](../../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e)) `Unit+0xC4` bit 31's
   meaning is not named by the finding. [I] (0x0057C0B6)
 - A2. **P = 17 for a player hitting a player.** Plan 0044's two-client run logged 230 attack events between two
   hostile players, 70 melee hits with the left-button Attack and 160 Nova missiles, and every logged reduction percent
@@ -150,12 +154,15 @@ A2. DamagePercent(ctx) → i32:                                         [I] (fn:
   cold, magic and poison fields, a hireling or bit-31 attacker against a player, and a defender standing in town were
   not reached. [C] (fn:COMBAT_DamagePercent@0x0057C060, 0x0057C0B6, run:2026-10-20-two-clients,
   [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
-- A2. "Boss" is MonStats `boss` (`+0x0C` bit 6), not a unique or superunique. [I] (fn:MONSTATS_IsBoss@0x0063E9F0)
+- A2. "Boss" is MonStats `boss` (`+0x0C` bit 6), not a unique or superunique: 191 mercenary hits on champions,
+  uniques and superuniques that are not MonStats `boss` took P 100, 79 on Andariel P 35 or 25. [C]
+  (fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat,
+  [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
 
 **A3. Length immunities (`COMBAT_LengthImmunities`).**
 
 ```
-A3. LengthImmunities(ctx):                                            [I] (fn:COMBAT_LengthImmunities@0x0057C140, all of A3)
+A3. LengthImmunities(ctx):                                            [C] (fn:COMBAT_LengthImmunities@0x0057C140, run:2026-11-16-sweep2-s5e, all of A3)
       if pkt.coldLen > 0 or pkt.freezeLen > 0:
         if stat(def, 153) ≠ 0: pkt.coldLen ← 0; pkt.freezeLen ← 0        ; cannot be frozen
         else if stat(def, 118) ≠ 0: pkt.coldLen ← pkt.coldLen ÷ 2; pkt.freezeLen ← pkt.freezeLen ÷ 2   ; half freeze duration
@@ -165,7 +172,9 @@ A3. LengthImmunities(ctx):                                            [I] (fn:CO
 
 - A3. Stat 153 zeroing the cold length reproduced (the `CombatSolo` characters carry it). [C]
   (fn:COMBAT_LengthImmunities@0x0057C140, run:2026-10-16-combat) The stat-118 halving and states 131 and 133 were not
-  met. [I] (fn:COMBAT_LengthImmunities@0x0057C140)
+  met in the run; emulated, each test is on a field above 0 and the halving a signed `÷ 2` truncating toward zero
+  (600 to 1 070 separating cases per test). [C] (fn:COMBAT_LengthImmunities@0x0057C140, run:2026-11-16-sweep2-s5e,
+  [combat/0001 § 19](../../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e))
 
 ### B. The rows (`g_DamageResistTable`)
 
@@ -216,9 +225,9 @@ B1. ReduceRow(ctx, row, bypass: bool):                                [C] (fn:CO
 **B2. The effective resistance (`COMBAT_ResistFor`).**
 
 ```
-B2. ResistFor(ctx, row) → i32:                                        [C] (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat, all of B2)
+B2. ResistFor(ctx, row) → i32:                                        [C] (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat, run:2026-11-16-sweep2-s5e, all of B2)
       r: i32 ← row.resStat ≥ 0 ? stat(def, row.resStat) : 0
-      if row.pierceStat ≥ 0 and (r < 100 or not ctx.defIsMon):       ; [I] for pierce (fn:COMBAT_ResistFor@0x0057BE00)
+      if row.pierceStat ≥ 0 and (r < 100 or not ctx.defIsMon):       ; pierce: emulated (run:2026-11-16-sweep2-s5e)
         r ← r − stat(att, row.pierceStat)
       if not ctx.defIsMon and row.resStat ∉ {36, 37}:                 ; players and hirelings; not physical, not magic
         if game is classic:
@@ -226,11 +235,12 @@ B2. ResistFor(ctx, row) → i32:                                        [C] (fn:
           if difficulty = Hell:      r ← r − 50
         else:
           r ← r + ctx.diff.ResistPenalty                              ; 0, −40, −100
-      if r < −99: r ← −100                                            ; [I] (fn:COMBAT_ResistFor@0x0057BE00: none logged below −100, 214 at exactly −100)
-      if r ≥ 1 and not ctx.defIsMon:
+      if r < 1:                                                       ; the floor: emulated (run:2026-11-16-sweep2-s5e)
+        return (r < −99) ? −100 : r
+      if not ctx.defIsMon:
         cap: i32 ← row.maxStat ≥ 0 ? min(75 + stat(def, row.maxStat), 95) : (row is 0 ? 50 : 75)
         r ← min(r, cap)
-      if row is 0 and HasState(att, 47) and def is undead: r ← 0      ; sanctuary, [I] (fn:COMBAT_ResistFor@0x0057BE00)
+      if row is 0 and HasState(att, 47) and def is undead: r ← 0      ; sanctuary, only for r ≥ 1 (0x0057BEDE–0x0057BF02)
       return r
 ```
 
@@ -250,7 +260,11 @@ B2. ResistFor(ctx, row) → i32:                                        [C] (fn:
   stays far below 75. The cap is the same code path as the other rows, read from the code. [I]
   (fn:COMBAT_ResistFor@0x0057BE00, tbl:ItemStatCost.txt:Stat, [plan 0047 Phase 1 review, ruling 2](../../plans/done/0047-simulation-shortfalls.md#implementation-log))
 - B2. Pierce (stats 333–336) applies unless the defender is a monster at 100 or more; no logged attacker had pierce.
-  Sanctuary (state 47) zeroes physical resistance against undead; not met. [I] (fn:COMBAT_ResistFor@0x0057BE00)
+  Sanctuary (state 47) zeroes a **positive** physical resistance against undead: the test sits after the cap, inside
+  the `r ≥ 1` branch, so a resistance of 0 or below is returned unchanged. Neither was met in a run; both are
+  emulated (pierce 141 to 1 040 separating cases per test; sanctuary 41 and 34, and 11 cases that separate the
+  test's place). [C] (fn:COMBAT_ResistFor@0x0057BE00, 0x0057BEDE–0x0057BF02, run:2026-11-16-sweep2-s5e,
+  [combat/0001 § 19](../../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e))
 
 **B3. Absorb (`COMBAT_Absorb`).**
 
@@ -261,22 +275,26 @@ B3. Absorb(ctx, row, d: i32) → i32:                                   [C] (fn:
       if p > 0:
         a: i32 ← MulDiv(d, p, 100);  pkt.absorbHeal += a;  d ← d − a
       f: i32 ← stat(def, row.absorbFlatStat) << 8
-      if f > 0:                                                        ; [C] for fire (run:2026-10-20-shortfalls) and lightning (run:2026-10-21-shortfalls2), [I] for cold
+      if f > 0:                                                        ; fire (run:2026-10-20-shortfalls), lightning (run:2026-10-21-shortfalls2); every row by the emulated map (run:2026-11-16-sweep2-s5e)
         a ← min(f, d);  pkt.absorbHeal += a;  d ← d − a
       return d
 ```
 
 - B3. **Both the percent and the flat absorbed amounts are healed** to the defender at delivery (`absorbHeal`,
   packet `+0x48`). 32 percent-absorb heals of the player reproduced; this contradicts src:purediablo-absorb, which
-  heals from flat absorb only. [C] (0x0057BF2A–0x0057BF6F, run:2026-10-16-combat) That the flat amount is healed
-  too is read from the code: the flat-absorb hits below assert the field, not the heal. [I] (fn:COMBAT_Absorb@0x0057BF10)
+  heals from flat absorb only. [C] (0x0057BF2A–0x0057BF6F, run:2026-10-16-combat) The flat amount is healed too: in
+  the kept logs 794 absorb heals on the player match packet `+0x48` at delivery (flat fire 372, lightning 51, cold 1;
+  percent 371). [C] (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat, run:2026-10-21-shortfalls2,
+  [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
 - B3. **Flat absorb** (fire and lightning): 113 fire hits on `CombatAbs` (*Hellmouth*, fire absorb 15) with the
   amount subtracted and the field asserted. [C] (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-20-shortfalls) 51 lightning
   hits on `CombatAbs` (*Blackhorn's Face* and *Thundergod's Vigor*, 20 + 20), the same: 13 in the Nightmare Black
   Marsh, 25 in Travincal, 13 in the City of the Damned. [C] (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-21-shortfalls2)
   Cold flat absorb was hit once (*Spirit Ward* 11, Travincal: Travincal's cold rows that roll their element gave 13
-  melee attacks, all misses), so its row rests on the code's one path, final for plan 0047. [I]
-  (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-21-shortfalls2)
+  melee attacks, all misses). `COMBAT_Absorb` emulated is one map for every row, its stat ids taken from the row, so
+  the cold row runs the same code: B3 as written (1 163 cases with a flat amount, 524 absorbing all of `d`). [C]
+  (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-21-shortfalls2, run:2026-11-16-sweep2-s5e,
+  [combat/0001 § 19](../../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e))
 - B3. **Absorb runs on whatever `d` is, also a negative one**: the percent of a negative `d` is a negative absorbed
   amount, which delivery does not heal. 186 events where MDR left the field at or below 0 and percent absorb
   (`CombatDR`: *Dwarf Star* fire 15 %, *Raven Frost* cold 20 %) then found it negative and healed nothing. [C]
@@ -322,20 +340,31 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
 - **DR and MDR come before the resistance**, and a field they push negative skips the resistance and stays negative.
   [C] (0x0057BFB4–0x0057C04D, run:2026-10-16-combat)
 - **Penalty, then floor, then cap**: a player's 115 % fire resist in Hell is 15 %, not `min(115, 85) − 100` = −15 %.
-  [C] for the penalty before the cap (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat); [I] for the floor,
-  which changed no logged value (fn:COMBAT_ResistFor@0x0057BE00)
+  [C] for the penalty before the cap (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat) and for the floor, which
+  changed no logged value and is emulated (run:2026-11-16-sweep2-s5e). A resistance of 0 or below takes the floor
+  only, never the cap or sanctuary (B2). [C] (run:2026-11-16-sweep2-s5e)
 - **Classic uses constants, not `ResistPenalty`.** Classic Nightmare −20 and Hell −50 differ from the expansion's −40
   and −100 in `DifficultyLevels`. [C] (fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat)
 - **Monsters are never capped**: a monster resistance above 100 is immunity, and pierce does not lower it. [C] for
-  the immunity (run:2026-10-16-combat); [I] for pierce (fn:COMBAT_ResistFor@0x0057BE00)
+  the immunity (run:2026-10-16-combat) and for pierce (fn:COMBAT_ResistFor@0x0057BE00, run:2026-11-16-sweep2-s5e)
 - **Cold and freeze lengths use cold resistance**; the poison length uses stat 110. [C]
   (data:g_DamageResistTable@0x00732980, run:2026-10-16-combat)
 - **The player-row loop stops at the first monster-only row**: for a player or hireling attacker rows 9–11 are never
-  reached, so the steal percents are not scaled by P. [I] (fn:COMBAT_ApplyReductions@0x0057C1E0)
-- **No minimum damage.** Nothing in this path keeps a hit above 0. [I] (fn:COMBAT_ApplyReductions@0x0057C1E0)
+  reached, so the steal percents are not scaled by P: 79 mercenary hits on Andariel at P 35 and 25 kept their steal
+  fields unscaled. [C] (fn:COMBAT_ApplyReductions@0x0057C1E0, run:2026-10-16-combat)
+- **No minimum damage.** Nothing in this path keeps a hit above 0: 635 negative and 864 zero totals left life
+  unchanged at delivery. [C] (fn:COMBAT_ApplyReductions@0x0057C1E0, run:2026-10-16-combat,
+  [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
 
 ## Evidence
 
+- Plan 0066 Phase 1, the raises this spec carries since its Phase 3 re-tag:
+  [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)
+  and [part 2](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)
+  (new checks over the kept combat and skills logs), [combat/0001 §§ 18–22](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)
+  (second-tool reads, run:2026-11-15-sweep2-s5b; emulations, run:2026-11-16-sweep2-s5e, run:2026-11-16-sweep2-s5e2,
+  run:2026-11-16-sweep2-s5e3, run:2026-11-16-sweep2-s5fe), with the per-statement routes in
+  [plan 0066's inventory](../../plans/0066-inventory/README.md).
 - [combat/0001](../../findings/combat/0001-formulas.md) § 7 (the reductions, the table, P, the length immunities),
   § 13 (*Leads used*: the absorb heal contradicted, the reduction order held with refinement), § 15 (the confirmed
   raises and the below-the-floor bullet).
@@ -363,13 +392,13 @@ poison 153 pass unreduced. No penalty and no cap apply to the monster. [C] (run:
   amount 186 (B3), lightning at the cap 42, cold 31 over the two runs (B2).
 - ~~Cold and lightning flat absorb (B3): 0 hits in run:2026-10-20-shortfalls.~~ Lightning reproduced by
   run:2026-10-21-shortfalls2 (51, B3).
-- [L] Cold flat absorb (B3): 1 hit over the runs; final for plan 0047 under its own condition (the Nightmare Black
-  Marsh session run), not a stock-data limit: the Nightmare and Hell cold rows were not tried. It stays a code reading.
+- ~~Cold flat absorb (B3): 1 hit over the runs; final for plan 0047 under its own condition.~~ Emulated by plan 0066
+  S5e: `COMBAT_Absorb` is one map for every row (B3).
 - [L] The magic resistance cap (B2): not stageable on stock data (plan 0047 Phase 1 review, ruling 2); final, it stays
   a code reading.
-- [L] Not reached: pierce, the stat-118 halving, states 131 and 133, sanctuary, the hireling-against-hireling 25 %,
-  and the PvP 17 % on the fire, cold, magic and poison fields and from a hireling attacker (physical and lightning
-  are A2's, run:2026-10-20-two-clients).
+- [L] Not reached in a run: the PvP 17 % on the fire, cold, magic and poison fields (physical and lightning are A2's,
+  run:2026-10-20-two-clients). Pierce, the stat-118 halving, states 131 and 133, sanctuary, the 25 % of hireling
+  against hireling and the 17 % from a hireling or bit-31 attacker are emulated by plan 0066 S5e (A2, A3, B2).
 - [L] The handlers of event 11 (`absorbdamage`): energy shield and the bone and cyclone armours by the community's
   account; their code is skills, phase (3).
 - [L] The meaning of `Unit+0xC4` bit 31, which P tests for the PvP and prime-evil cases.
