@@ -4295,3 +4295,40 @@ request handlers, inventory families) will add their own sections under this hea
   are code readings by objdump and the raw bytes, a second tool beside the findings' Ghidra readings, not runs.
 - **Routed, not run** (`sites.txt`): items/inventory 61's remainder (the cursor clear after `GroundDropCell` and
   `ItemPlaceOnGround`) to H4d; reasons in items/0013 § 17's last bullet.
+
+### Part 5e: ItemAutoEquipSlot through ItemReqCheck, the stat event list and the elemental appliers (2026-11-16)
+
+- **Question:** does `ItemAutoEquipSlot` with `skipReq` 0 follow `ItemReqCheck`'s return as
+  [items/inventory](../../specs/items/inventory.md) I6 states; what do the stat event list's find (0x005C0BE0) and
+  remove (0x005C0B50) do, and how does `AddStatEvent` reach its node (stats/aggregate 23's remainder); do the burn,
+  cold and freeze appliers make poison's list (stats/states 14)? Claims in
+  [items/0013 § 18](0013-grids-belts-stacks.md#18-plan-0066-batch-s4e-part-5e-itemautoequipslot-through-itemreqcheck-run2026-11-16-sweep2-s4e-emu),
+  [stats/0001 § 13](../stats/0001-aggregate.md#13-plan-0066-batch-s4e-part-5e-the-stat-event-list-under-emulation-run2026-11-16-sweep2-s4e-emu)
+  and [stats/0002 § 12](../stats/0002-states.md#12-plan-0066-batch-s4e-part-5e-the-elemental-appliers-lists-run2026-11-16-sweep2-s4e-emu-static).
+- **Setup:** `main` `31a4949c` (unchanged since part 5d; nothing to merge). One kept launch per family on
+  `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`; `req` about 33 s), after five development passes, each
+  with its `check-dev.txt` and `manifest-dev.sha256` passing from its directory, not cited: `dev9a/` (400 `req`; five
+  controls did not separate), `dev9b/` (1 500 `req`, reweighted: 34 returns of 1), `dev9c/` (1 500 `req`, drawn by
+  rejection: 124 returns of 1), `dev9d/` (600 `evt`; control `nostat` passed 10, its marks on words already marked
+  being no change), `dev9e/` (600 `evt`, the marks counted only where they change the word; `req` not run there).
+  New tool `tools/items_s4e9_emu.py` (draws from `random.Random("n66z-s4e9-<family>")`); its `req` world is part 5d's
+  `gen_auto` called unchanged (its `AW` class wrapped to keep the world for the model), with this part's fields
+  written after it. Parts 1–5d's tools and `run/` to `run8/` untouched (run8's `check` reproduces its `check.txt`).
+  The `evt` family's labels were added after a first kept `evt` pass, so `evt` was rerun under the final revision;
+  `req`'s `.cases`, `.json` and `.mem` were regenerated and checked identical before that rerun. Guards: 0x00408A60,
+  0x00681E09 and the allocator entries (`req` all three; `evt` 0x0040B4B0, with 0x0040B430 and 0x0040B480 observed);
+  none is hit. Observed: the error routine 0x00408090.
+- **Families:** `req` 6 000, `evt` 3 000.
+- **Result:** `workspace/logs/n66z/s4e/run9/check.txt`, `static.txt` (49 family pins and the 35 pins of states 14),
+  `xref.txt` (the references to `g_StatEventFuncs`, the callers of the event functions, the four appliers' call
+  scans), `manifest.sha256` (13 lines, passes from that directory); `cases` regenerates every input byte for byte and
+  `check` reproduces `check.txt` from the committed revision. 9 000 cases, 0 mismatches, 0 stops, 0 undeclared reads,
+  no traced write; outcomes and branch counts per family in `check.txt`. **15 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): the declared scratch world (part 5d's plus the Items requirement fields, the item's and
+  the user's stat lists, the ItemTypes class bytes, 360 zeroed ItemStatCost rows, the MonStats count; a game, a unit
+  and its event nodes); the image reads are the bit masks (0x006CE200..0x006CE300), the body page's 13 × 1 row
+  (0x0074479C) and `g_StatEventFuncs` (0x007325B0, 50 dwords: its one reference in the code is the load at
+  0x0056E74B, `xref.txt`).
+- **Not covered** (ADR-0015 (3), ADR-0021): the level requirement's quality arms 4..8, its socket and skill-stat
+  loops; the allocation and free and what follows them; the 23 other callers of the event functions. The states 14
+  pins are an objdump reading beside the specs' Ghidra reading, not a run.

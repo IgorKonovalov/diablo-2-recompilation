@@ -494,6 +494,24 @@ The record: [experiments § The stats sessions of run:2026-10-21-shortfalls2](ex
   The defender held no shield (28 `DRB` lines with `sh` 0), so the shield-held branch of block chance is not run.
   (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-11-15-sweep8-two-clients)
 
+### 12. Plan 0066 batch S4e part 5e: the elemental appliers' lists (run:2026-11-16-sweep2-s4e-emu, static)
+
+Objdump, 35 pins (`workspace/logs/n66z/s4e/run9/static.txt`) and a call scan of each body (`xref.txt`): each of the
+four appliers makes exactly one `STATLIST_Alloc`, one `StatListSetState`, one `STATLIST_SetRemoveCallback` and one
+link call 0x00626E10. A second tool beside [combat/delivery](../../specs/combat/delivery.md) D2–D4's Ghidra reading. Row: stats/states 14.
+
+- [C] (static) **The same list shape in all four**: `STATLIST_Alloc(game pool, 2, len-derived third argument, the
+  attacker's type, the attacker's guid)`, or 6 and −1 without an attacker (0x0057ACD2..0x0057ACDF, and the `mov
+  eax, 6` of each), then the state, the remove callback and `link(defender, list, 1)`. States: poison 2, burn 115
+  (`0x73`), cold 11 (`0xB`), freeze 1. Alloc sites 0x0057ACEA, 0x0057AE6A, 0x0057B06C, 0x0057B360.
+  (fn:COMBAT_ApplyPoison@0x0057AC50, fn:COMBAT_ApplyBurn@0x0057ADD0, fn:COMBAT_ApplyCold@0x0057AF80,
+  fn:COMBAT_ApplyFreeze@0x0057B230, fn:STATLIST_Alloc@0x006251F0, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static) **Refinement: the remove callbacks differ.** Poison and burn set 0x0056E900; cold sets 0x0057AD80;
+  freeze sets 0x0057B170 (0x0057AD1C, 0x0057AE9C, 0x0057B08C, 0x0057B36F). What the two others do at expiry was not
+  read. (run:2026-11-16-sweep2-s4e-emu)
+- [I] Only the list's make-up is pinned; the timer calls (0x005417D0) and cold's stats 67..69 follow the link and
+  were not compared.
+
 ## Data touched
 
 tbl:States.txt:curse, tbl:States.txt:group, tbl:States.txt:plrstaydeath, tbl:States.txt:monstaydeath,

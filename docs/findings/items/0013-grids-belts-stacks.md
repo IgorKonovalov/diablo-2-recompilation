@@ -631,11 +631,43 @@ worn items. Every callee runs emulated; `ItemReqCheck` 0x0062EAF0 is observed (A
   that `EquipPairCompatible` never reads (objdump 0x0055D670..0x0055D701). (fn:sub_0055D560_EquipPairFlags@0x0055D560)
 - [I] **Not covered:** `ItemReqCheck` and what follows its return with `skipReq` 0 (the same four tests in another
   order, 0x0055D7A1..0x0055D7D8). Its closure reaches no allocator or import (`sites.txt`), so it stays for
-  emulation (S4e part 5e). (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0)
+  emulation (S4e part 5e). *2026-11-16, § 18: `[C]` (ADR-0015), family `req`.* (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0)
 - [C] (static, `sites.txt`) **`CursorDrop`'s cursor clear** is `InvSetCursor(inventory, 0)` 0x0063C180 at 0x00563CB8,
   after `GroundDropCell` (0x00563C96, whose search reaches 0x0040B430) and `ItemPlaceOnGround` (0x00563CAD, which
   reaches 0x0040B480); ruling R2 sends items/inventory 61's remainder to the harness (H4d). (fn:sub_00563C00_CursorDrop@0x00563C00,
   fn:sub_0063C180_InvSetCursor@0x0063C180, run:2026-11-16-sweep2-s4e-emu)
+
+## 18. Plan 0066 batch S4e part 5e: `ItemAutoEquipSlot` through `ItemReqCheck` (run:2026-11-16-sweep2-s4e-emu)
+
+Family `req`, 6 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 10 controls, each separating,
+`passed` 0 (`tools/items_s4e9_emu.py`, `workspace/logs/n66z/s4e/run9/check.txt`; record in
+[experiments](experiments.md#part-5e-itemautoequipslot-through-itemreqcheck-the-stat-event-list-and-the-elemental-appliers-2026-11-16)). The
+world is § 17's, drawn by `items_s4e8_emu.gen_auto` unchanged, with `skipReq` 0 and, added: the Items row's
+strength, dexterity and level requirements (`+0x10A`, `+0x10C`, `+0x13F`), the item's quality (0..3, 9 or larger: the
+level requirement's default path), the ethereal flag, an optional item stat list (stats 91, 92, 70 and decoys), the
+user's stat list (stats 0, 2, 12 and decoys), the ItemTypes class byte (`+0x21`), 360 zeroed ItemStatCost rows (no
+floor) and the MonStats count (DataTables `+0xA80`). `ItemReqCheck` 0x0062EAF0 and every callee run emulated (ADR-0015;
+`lane/n66z`). Row: items/inventory 67.
+
+- [C] (ADR-0015) **`ItemAutoEquipSlot(user, item, &loc, 0)`**: `ItemReqCheck(item, user, 0, 0, 0, 0)` returning 0
+  gives 0 with `&loc` untouched (control `noreq`, the check skipped, 807); returning 1, the same four tests as with
+  `skipReq` non-zero follow (flag `0x10`, not disabled, not type 38, the body byte; 0x0055D7A5..0x0055D7D8) and then
+  § 17's location code. Outcomes: 0 5 514, 1 486 (locations 0..13 and 15, each count in `check.txt`).
+  (fn:sub_0055D710_ItemAutoEquipSlot@0x0055D710, 0x0055D79C, 0x0055D7A3, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) **`ItemReqCheck` on this path** (a third argument of 0, so `0x00625820` and `0x0062B450` are not
+  called): strength needs `reqstr + MulDiv(reqstr, stat 91, 100)`, dexterity the same with `reqdex`, each minus 10
+  when the item data's `0x400000` is set, and each stat must also be above 0 (`nopct` 55, `noeth` 42, `strpos` 99,
+  `strdex`, the two percent terms swapped, 122); the level requirement on the quality-default path is
+  `max(0, Items +0x13F + the item's stat 92)` (`nobonus` 36, `nolevel` 63); a type-18 base needs item stat
+  70 above 0 (`no18` 35); ItemTypes class 7 (or a class byte of 7 or more) passes any user (`anyclass` 68), a player
+  passes its own class, a monster (type 1) passes a class-4 item only when `MonClassCheck` gives 560 or 561 (`nomerc`
+  10). Stat 91 is read at param 0 only (a param-1 decoy is ignored). (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0,
+  fn:sub_00483360_MulDiv@0x00483360, fn:sub_0062C0B0_ItemTypeClass@0x0062C0B0,
+  fn:sub_00463900_MonClassCheck@0x00463900, 0x0062EBB4, 0x0062EBD5, 0x0062BA24, 0x0062ED19, run:2026-11-16-sweep2-s4e-emu)
+- [I] **Not covered:** the level requirement's quality arms 4..8 (affixes, set, unique, crafted), its socket loop
+  (an item with an inventory) and its stat 97/107 skill loops (no such entry declared); `ItemReqCheck`'s identified
+  test is not separated through this caller, since `ItemAutoEquipSlot` tests flag `0x10` again after it.
+  (0x0062B5B0, 0x0062B8B7)
 
 ## Data touched
 

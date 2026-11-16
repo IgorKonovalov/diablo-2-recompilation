@@ -3343,3 +3343,54 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   readers for 127–129), 41 (`EquipReqRefresh` → `PlayerSkillReselect`); states 14 (burn, cold, freeze list shape),
   46 (a stock expiry releasing a pet). New tool and `run9/`; do not overwrite `run8/`. Tier B review once S4e is
   whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 5e (reverser-static, `lane/n66z`): `ItemAutoEquipSlot` through `ItemReqCheck`, the stat event list, the elemental appliers; 3 rows settled; resume note
+
+- **Done.** `main` `31a4949c` already merged (nothing new). Spot-check of the two inventory files part 5d restored
+  (items-inventory, stats-aggregate): against part 5c's commit `2296165b` they differ only in the Route column of
+  part 5d's eight rows (inventory 61, 67; aggregate 10, 11, 13, 17, 23, 37), each a pure append of part 5d text (no
+  part 5c text repeated, Class, Batch and Count unchanged); every other line equal. Scratch scripts this part are
+  `p5e_*.py` in `workspace/logs/n66z/s4e/scratch-p5e/`; the three inventory files edited were diffed against `HEAD`
+  after the scripted edit (only the Route column of the three rows below changed, each an append). New tool
+  `tools/items_s4e9_emu.py` (parts 1–5d's tools and `run/` to `run8/` untouched; run8's `check` reproduces), two
+  families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`) after five development passes (`dev9a/` to `dev9e/`,
+  each with `check-dev.txt` and `manifest-dev.sha256`, not cited): `req` (`ItemAutoEquipSlot` with `skipReq` 0
+  through `ItemReqCheck` and every callee, on part 5d's world drawn by its `gen_auto` unchanged) and `evt` (the
+  event list's find 0x005C0BE0, remove 0x005C0B50 to the free, `AddStatEvent` to the allocator); `static` (49 family
+  pins, 35 for states 14) and `xref` (the `g_StatEventFuncs` references, the event functions' callers, the four
+  appliers' call scans). 9 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 15 controls, each
+  separating, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5e](../findings/items/experiments.md#part-5e-itemautoequipslot-through-itemreqcheck-the-stat-event-list-and-the-elemental-appliers-2026-11-16),
+  `workspace/logs/n66z/s4e/run9/` (`manifest.sha256`, 13 lines, passes from there). Claims in items/0013 § 18,
+  stats/0001 § 13, stats/0002 § 12.
+- **Rows settled.** items/inventory 67's remainder raised (all of I6 now `[C]`); stats/aggregate 23's remainder
+  raised (refinement `[I]`: a found node blocks both events, a 0 frees every kind-2 node of the stat not in use);
+  stats/states 14's remainder raised with refinement (the four remove callbacks: poison and burn 0x0056E900, cold
+  0x0057AD80, freeze 0x0057B170). **Class moves:** none. Refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5e-refinements.md), including the H3 evidence
+  that sits beside aggregate 27 (H4e, a-run; not moved).
+- **Symbols:** none raised (an emulation over a declared image and objdump readings, review-fixes 14).
+- **Totals** (the 29 files' *Totals by class* summed after this part, `main` `31a4949c`): a-logs 623, a-run 334, b 513,
+  c 390, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 451, Phase 2 847, unchanged. README
+  § 3 (part 5e line) and § 4 (S4e row) updated.
+- **Judgment calls:** (1) `req` drives only the level requirement's quality-default path (qualities 0..3, 9 and
+  larger) and declares no stat 97/107 entry, so the affix, set, unique and crafted arms and the skill loops stay
+  unrun; that suffices for row 67, whose claim is `ItemAutoEquipSlot`'s, and is stated under *Not covered*; (2) the
+  `req` cases are drawn by rejection (at most 60 draws per case) so that returns of 1 are not swamped by part 5d's
+  world, which gives 0 in most draws; (3) states 14 is a static (c) row: raised by objdump pins and a call scan of
+  each applier's body beside the specs' Ghidra reading (the S4c/S4d practice); what cold's and freeze's own remove
+  callbacks do is not read; (4) the `evt` add is observed at the allocator (ADR-0021); the node fill after it is one
+  objdump reading, kept `[I]`, and only the callback's call sites of the event functions were read (23 others not).
+- **Resume (part 5f, a fresh lane on `lane/n66z`):** 11 rows left. items/inventory 17: the 39 `InvRowForUnit`
+  callers (list in `scratch-p5e/rowfor-callers.txt`); note 0x00555BAD lies in the unnamed 0x00555AE0 (not
+  `RoomPresetUnits`, the nearest named symbol below it), whose three callers are `PlayerUnitAlloc` 0x00534A01,
+  `ItemInitStats` 0x00557EF4 and `MonInitMode` 0x005736E8 (a player, an item, a monster). A cheaper route may be the
+  creator side: `SUnitCreate` has 53 rel32 callers (`scratch-p5e/sunit-regs.txt`), the type-2 ones with literal
+  classes never 0x152/0x153; the non-literal ones (preset dispatch from DS1, `OBJ_PlaceRandom*`, `OBJPOP_*`, the
+  portal pair, the shrine/chest/quest presets) need their class source, and a DS1 survey for object rows 338/339
+  (`tools/ds1.py units` gives ranges only). 18 (the 13 server calls' record field reads); 87 (quality writers);
+  aggregate 2 (`StatListLinkOwner` and `KeyConsume` callers), 10 (`+0x38`'s reader and other writers, the extended
+  fields), 29 (the 136-frame cadence's writer), 31 (ethereal), 36 (`add func` 0 at creation), 40 (the 9 aura-bit
+  readers for 127–129), 41 (`EquipReqRefresh` → `PlayerSkillReselect`: whether a refresh takes it; consider a
+  `sites` route to b under R2 if the path allocates); states 46 (a stock expiry releasing a pet, `PetLimitRefresh`
+  0x00575900). New tool and `run10/`; do not overwrite `run9/`. Tier B review once S4e is whole.

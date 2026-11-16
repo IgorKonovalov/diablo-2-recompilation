@@ -689,7 +689,7 @@ Rows: stats/aggregate 10, 11, 13, 17, 23, 37.
 - [I] **Refinements** (one tool's reading): for 107 the case first requires a player (type 0) whose class equals the
   skill row's `+0xC` byte (`SKILLS_GetRecord`, 0x0055BADC..0x0055BAF3), else it returns; the registration tests the
   callback's fourth argument, non-zero or 0, and a lookup, not a crossing of 0. What 0x005C0BE0 and 0x005C0B50 do
-  was not read. (0x0055BADC, 0x005C0BE0, 0x005C0B50)
+  was not read. *2026-11-16, § 13: `[C]` (ADR-0015, ADR-0021), family `evt`.* (0x0055BADC, 0x005C0BE0, 0x005C0B50)
 - [C] (static, 10 pins) **The set lookup reads each set list's own stat 71** (J3): for each of the six entries of
   `g_SetBonusStates` (0x006EE424, loop bound 6 at 0x00663C35) `UNIT_FindStatListByState` 0x006256B0 gives the list,
   and `sub_00625D00_StatListGetBaseStatJ(list, 71, 0)` jumps to `StatListGetBaseStat` 0x00625350, which reads through
@@ -705,6 +705,40 @@ Rows: stats/aggregate 10, 11, 13, 17, 23, 37.
   fn:sub_00626D40_UnitStatListCreate@0x00626D40, run:2026-11-16-sweep2-s4e-emu)
 - [I] **Not covered:** the reader that calls `+0x38`, the two child chains, the changed keys and the stat callback
   field of an extended list; the 70 other `STATLIST_Alloc` callers' fifth argument. (fn:STATLIST_Alloc@0x006251F0)
+
+### 13. Plan 0066 batch S4e part 5e: the stat event list under emulation (run:2026-11-16-sweep2-s4e-emu)
+
+Family `evt`, 3 000 cases (find 1 182, remove 1 218, add 600), 0 mismatches, 0 stops, 0 undeclared reads, no traced
+write; 5 controls, each separating, `passed` 0 (`tools/items_s4e9_emu.py`, `workspace/logs/n66z/s4e/run9/check.txt`;
+record in [items/experiments](../items/experiments.md#part-5e-itemautoequipslot-through-itemreqcheck-the-stat-event-list-and-the-elemental-appliers-2026-11-16)). The
+world is declared from scratch: a game (`+0x1C`, the pool), a unit and up to 8 event nodes on its list at `+0x90`
+(next `+0x1C`, previous `+0x18`). Observed: the allocator 0x0040B430 and the free 0x0040B480 (ADR-0021). Row:
+stats/aggregate 23.
+
+- [C] (ADR-0015) **0x005C0BE0, the find** `(ECX game, EDX unit; kind, stat, c)`: 0 for a null unit; else the first
+  node in list order with `+0x04` = kind, `+0x08` = stat and `+0x0C` = c, or 0 (206 found, 923 not, 53 null units;
+  control `noc`, `+0x0C` ignored, 212; `last`, the last match, 45). (0x005C0C02, 0x005C0C0F, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015, ADR-0021) **0x005C0B50, the remove** `(ECX game, EDX unit; kind, stat)`: walks the unit's list; a
+  node with `+0x04` = kind and `+0x08` = stat whose word `+0x02` has bit 0 set gets bit 1 set and stays (106 cases
+  marked; `nomark` 195); the first such node with bit 0 clear is unlinked (the previous node's `+0x1C`, or the unit's
+  `+0x90` for the head, takes its next; the next node's `+0x18` its previous) and handed to the free 0x0040B480 with
+  ECX the game's `+0x1C`, EDX the node and `(0x006E2FFC, 0x95, 0)` (380; `nostat`, the stat ignored, 465). The walk
+  after the free is past the boundary. (0x005C0B86, 0x005C0B8A, 0x005C0BA2, 0x005C0BC4, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015, ADR-0021) **`AddStatEvent` 0x0056E740** `(ECX game, EDX unit; event, stat, 0, func, kind, stat)`:
+  a `func` above 0x31 (112) or whose `g_StatEventFuncs` (0x007325B0) entry is 0 (262) returns 0; a null unit returns 0
+  (51); else 0x005C0AD0 calls the allocator for 0x20 bytes from the game's pool with `(0x006E2FFC, 0x57, 0)` (175;
+  control `nobound`, no bound on `func`, 112). The table has 31 non-zero entries (1..31) of the 50 read; its one
+  reference is the load at 0x0056E74B (`xref.txt`). (fn:sub_0056E740_AddStatEvent@0x0056E740,
+  data:g_StatEventFuncs@0x007325B0, 0x0056E746, 0x005C0AF2, run:2026-11-16-sweep2-s4e-emu)
+- [I] **After the allocation** (objdump, one reading): 0x005C0AD0 zeroes the node, stores the event as a byte at
+  `+0x00`, its second argument at `+0x0C`, the third at `+0x10`, the handler at `+0x14`, the kind at `+0x04`, the
+  stat at `+0x08`, and pushes it at the head of the unit's `+0x90` list. So `MonStatCallback`'s registration
+  (§ 12: `AddStatEvent(itemevent1, stat, 0, itemeventfunc1, 2, stat)`, then `itemevent2` the same) makes kind-2
+  nodes keyed by the stat in both `+0x08` and `+0x0C`, which is what its find (kind 2, the stat twice) looks for;
+  with a node found, neither event is added; at a fourth argument of 0 its remove (kind 2, the stat) frees every such
+  node not in use. (0x005C0B0D..0x005C0B40, 0x0055B872..0x0055B8C2)
+- [I] Callers (`xref.txt`): the find has 3 rel32 callers, the remove 10, `AddStatEvent` 11, 0x005C0AD0 2; only the
+  callback's (0x0055B87A, 0x0055B897, 0x0055B8B9, 0x0055B8C2) were read.
 
 ## Data touched
 
