@@ -60,3 +60,19 @@ run:2026-11-16-sweep2-s5e2). Phase 3's to apply:
     the walking exception reads `+0x10`.
 13. **Delivery B1 (line 297).** A defender with no room (`UnitGetRoom` 0) also clears `0x3` and returns, as the
     not-hostile case does.
+
+**2026-11-16, architect (Tier B lane check of `lane/n66t`), additions for Phase 3.**
+
+14. **Tags on the lines these corrections touch.** Three corrections reach lines the combat specs tag `[C]`; Phase 3
+    re-tags each against § 20/§ 21, not against the old run. (a) delivery E3's tag on line 492 and its E3 bullet (line
+    536: "each with its chance, draw and length as E3 gives them"): the old check
+    (`workspace/logs/n66j/check-combat.txt`, `CASE freeze handler roll (melee): 81`, `freeze handler: freeze delivered
+    (len 26..249): 81`) counted rolls and the length range only and did not compare the chance, so "as E3 gives
+    them" is not what that run showed; the formula line stands `[C]` as § 20's `x·4` (run:2026-11-16-sweep2-s5e2),
+    and the bullet's wording drops the chance. (b) damage A step 6 (line 113, `[C]` on run:2026-10-16-combat): the
+    run's poison hits had a zero poison field at entry, where "add" and "replace" agree, so the `[C]` stands for that
+    observed path only; the replace form is § 20's (correction 8). (c) to-hit B1: the `[C]` bullet at line 200 (the
+    base term reproduced on logged, positive defences) stands; the `d ≤ 0` term (correction 11) goes in the `[I]`
+    pseudocode line's replacement, tagged from § 21.
+15. **Delivery row 46 is contradicted in part, not raised with a correction** (lane-check ruling): E1's
+    "at 100 or more it cancels the blow … `cb` = 0 there" (line 519) is false above `cb` = 0x100000 (correction 9).

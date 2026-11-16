@@ -2131,9 +2131,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   there; `cases` regenerates the case file byte for byte). Claims:
   [combat/0001 § 20](../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2).
 - **Statements settled (24 of 29).** Raised 19: delivery 39, 40, 41, 42, 43, 47, 48; damage 3, 4, 5, 8, 10, 11,
-  18, 22, 23, 24, 25, 26. Raised with a correction 2: delivery 44 (E3's `(x − 1)·4` is `x·4`), 46 (the stat-36 cap
-  cancels a blow only up to `cb` = 0x100000; above it `cb mod 100` stays). Raised in part 2: damage 12's two
-  statements (the no-weapon composition; the blunt `+ 50` stays `[I]`). Contradicted in part 1: damage 7 (step 1's
+  18, 22, 23, 24, 25, 26. Raised with a correction 1: delivery 44 (E3's `(x − 1)·4` is `x·4`). Contradicted in part 2 (delivery 46 by the architect's lane-check ruling, first filed raised with a correction: the stat-36 cap
+  cancels a blow only up to `cb` = 0x100000, above it `cb mod 100` stays, and the row's "`cb` = 0 there" is that statement; damage 7 below). Raised in part 2: damage 12's two
+  statements (the no-weapon composition; the blunt `+ 50` stays `[I]`). Contradicted in part (counted above): damage 7 (step 1's
   condition is a type-0 attacker or `UnitAlignGet` = 2, stat 120 is added; the blunt half stays `[I]`).
 - **Remainders (7 of 10).** Raised: damage 9 (the stat-66 term at `stunLen` = 0), 15 and 34 (flag `0x1` skips
   steps 2–3), README 12 (the divisor 10 against a hireling; row 12 now whole). Raised in part: damage 6 (steps 7 and
@@ -2159,9 +2159,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   205 now whole.
 - **Review:** Tier B; the part 1 [request](../backlog/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md)
   is extended to S5e whole. Judgment calls: (1) damage 7 filed contradicted in part, not raised with a correction:
-  the condition and stat 120's sign give other outputs (596 and 474 separating cases); (2) delivery 44 and 46 raised
-  with a correction: each row's own claim (the missile terms; the cap's lack of a kind branch) holds, the slip is in
-  a neighbouring term of the same line; (3) delivery 48 raised for the floor, the bullet's run sentences being log
+  the condition and stat 120's sign give other outputs (596 and 474 separating cases); (2) delivery 44 raised
+  with a correction: the row's own claim (the missile terms) holds, the slip is in a neighbouring term of the same line
+  (delivery 46 was filed the same way and moved to contradicted in part at the lane check: its row states "`cb` = 0 there", which fails above 0x100000); (3) delivery 48 raised for the floor, the bullet's run sentences being log
   reports, not code claims; (4) the `bd` family runs the whole builder with an unarmed attacker rather than bounded
   pieces, so every step-row is scoped to the no-weapon path, and the weapon halves stay `[I]`; (5) the 53
   unseparated strictness controls taken as inherent (equal output at the boundary, or a value a multiple of 256
@@ -2201,9 +2201,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Totals** after merging `main` `2ffce327`, from inventory README § 1, unchanged (no row moved class): a-logs 623,
   a-run 334, b 474, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808.
   README § 4's S5e row records the part. **S5e over parts 1–3** (52 statements, 12 remainders), counted from the
-  three log entries: statements raised 43 (19 + 21 + 3; five of them with a correction or refinement: to-hit 25,
-  delivery 44, 46, to-hit 20, delivery 22), raised in part 5 (to-hit 11, 24; damage 12's two; to-hit 15),
-  contradicted in part 4 (reductions 16, 18; damage 7; to-hit 14); remainders raised 8 (to-hit 10; README 12's two
+  three log entries: statements raised 42 (19 + 20 + 3; four of them with a correction or refinement: to-hit 25,
+  delivery 44, to-hit 20, delivery 22), raised in part 5 (to-hit 11, 24; damage 12's two; to-hit 15),
+  contradicted in part 5 (reductions 16, 18; damage 7; delivery 46; to-hit 14; the lane filed delivery 46 raised with a correction and the lane check moved it); remainders raised 8 (to-hit 10; README 12's two
   halves; damage 9, 15, 34; to-hit 24, 31), in part 3 (damage 6, 13, 14), not settled 1 (README 35).
 - **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** To-hit 257 (with correction 12), 283, 304
   (now whole), 354 (now whole); 192 and 202 with correction 11 (the calc value `[I]`); delivery 297 with correction 13.

@@ -377,7 +377,7 @@ Called as `(game ECX, attacker EDX; defender, packet, critFlag, srcdam)`; `srcda
    attacker against a monster: stat 120 lowers the monster's stat 31 (not below 0) permanently; stat 121 adds to
    `edPct` against a demon; `sub_0057B660_UndeadDmgBonus` adds 50 for a blunt weapon (item type 57) plus stat 122
    against undead; `sub_0057B6A0_DmgVsMonType` adds stat 180 entries whose MonType bit matches. (0x0057B82A–0x0057B87D)
-   *Corrected by [§ 20](#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2) (S5e part 2): the condition is a type-0 attacker or `UnitAlignGet` = 2, stat 120 is added
+   *Corrected 2026-11-16 by [§ 20](#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2) (S5e part 2): the condition is a type-0 attacker or `UnitAlignGet` = 2, stat 120 is added
    to stat 31, and stats 121/122 count only when positive.*
 2. [I] **Physical** unless `flags & 1`: `phys = COMBAT_RollPhysical(att, useStats = 1, weapon 0, …, edPct, phys,
    srcdam)` (0x0057B88B–0x0057B8AD):
@@ -402,11 +402,11 @@ Called as `(game ECX, attacker EDX; defender, packet, critFlag, srcdam)`; `srcda
 5. [I] **Steal fields**: a monster attacker that is not a hireling rolls life (60/61), mana (62/63) and stamina
    (64/65) drain unless `flags & 4/8/0x10`, each `field += roll·srcdam/128`. Every other attacker adds stat 60 and
    stat 62 (percents) as they are, and sets `flags` 0x100/0x200/0x400 from stats 103/104/106. (0x0057BA55–0x0057BB5A)
-   *Refined by [§ 20](#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2): only a player or hireling takes the second branch, its adds skipped under `flags & 4/8`.*
+   *Refined 2026-11-16 by [§ 20](#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2): only a player or hireling takes the second branch, its adds skipped under `flags & 4/8`.*
 6. [I] **Poison**: stats 57/58 (no shift) with mastery 332 when stat 58 > 0, `COMBAT_RollRange`, then `·srcdam/128`;
    if non-zero, length `+= stat 101` when > 0, else `+= stat 59` and `/= stat 326` when > 1. **Cold length** `+=
    stat 56·srcdam/128` when cold > 0. **Stun** `+= stat 66·srcdam/128` when 0. (0x0057BB60–0x0057BC2C)
-   *Corrected by [§ 20](#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2): the roll runs on every build with the poison field as its base and replaces it.*
+   *Corrected 2026-11-16 by [§ 20](#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2): the roll runs on every build with the poison field as its base and replaces it.*
 7. [I] **Burning**: `burn += max(0, burn·srcdam + 316 + RangeB(att seed, 1)) / 128`, **unconditionally**; the
    `RangeB(…, 1)` steps the attacker's seed once and returns 0 on every build. Then `burnLen += stat 315·srcdam/128`
    when `burnLen ≠ 0`. So a plain attack ends with `burn = 2`, `burnLen = 0` (no burn applied, § 9). The constant 316
@@ -482,7 +482,9 @@ pkt.total = phys + fire + light + magic + cold + poison + (ctx.attIsMon ? lifeSt
   `+ DifficultyLevels.ResistPenalty`. Then `r < −99` → −100; `r ≥ 1` and defender not a monster → `min(r, cap)`
   with `cap = 75 + def.stat(max)` capped at 95, or 50 for row 0 (no max stat), 75 for the other rows without one; and
   `r = 0` for row 0 when the attacker has state 47 (sanctuary) and the defender is undead. Monster resistances are not
-  capped. (fn:COMBAT_ResistFor@0x0057BE00, struct:ReduceCtx+0x04, tbl:DifficultyLevels.txt:ResistPenalty)
+  capped. *Corrected 2026-11-16 by [§ 19](#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e):
+  the sanctuary test sits inside the `r ≥ 1` branch, so a resistance of 0 or below is returned unchanged.*
+  (fn:COMBAT_ResistFor@0x0057BE00, struct:ReduceCtx+0x04, tbl:DifficultyLevels.txt:ResistPenalty)
 - [I] **`COMBAT_Absorb`**: `p = min(def.stat(absorbPct), 40)`; if `p > 0`, `a = MulDiv(d, p, 100)`, `absorbHeal += a`,
   `d −= a`; then `f = def.stat(absorbFlat) << 8`, if `f > 0`, `a = min(f, d)`, `absorbHeal += a`, `d −= a`.
   (fn:COMBAT_Absorb@0x0057BF10, 0x0057BF2A–0x0057BF6F)
@@ -580,7 +582,7 @@ fn:sub_0056E740_AddStatEvent@0x0056E740, tbl:ItemStatCost.txt:itemeventfunc1)
 - [I] **Freeze** (`STATEVENT_Freeze`, stat 134): `c = ((x − 1)·4 − dlvl + 10 + alvl [−6 missile])·5 [/3 missile]`,
   `x = max(x − 1, 0)` first; clamped 0..100; one inlined draw on the attacker's seed; on success `len = (c − r)·2 + 25`
   clamped 25..250 into a fresh packet's freeze length and `COMBAT_ApplyDamage(defender, reductions = 1)`.
-  (fn:STATEVENT_Freeze@0x005BFC60) *Corrected by [§ 20](#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2): the product is `x·4` with `x = max(stat 134 − 1, 0)`.*
+  (fn:STATEVENT_Freeze@0x005BFC60) *Corrected 2026-11-16 by [§ 20](#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2): the product is `x·4` with `x = max(stat 134 − 1, 0)`.*
 
 ### 11. Draws per event kind, and chaining
 
@@ -666,7 +668,7 @@ fn:sub_0056E740_AddStatEvent@0x0056E740, tbl:ItemStatCost.txt:itemeventfunc1)
   315; **12 `frze` falls to the default and sets nothing**. The builder's conversion switch (`convType`, § 5 step 9)
   takes 1–5, 10, 11 and 12 (12 = cold plus freeze length ≥ 50). On-hit States rows: 1 freeze, 2 poison, 11 cold, 21
   stunned, 62 open wounds, 107 shatter, 115 burning; 54 uninterruptable blocks get-hit and freeze; 47 sanctuary zeroes
-  physical resist against undead; 92 death delay blocks the absorb heal; 101 holy shield adds defence; 131 and 133
+  physical resist against undead (a positive one only, § 19, 2026-11-16); 92 death delay blocks the absorb heal; 101 holy shield adds defence; 131 and 133
   zero the burn and poison lengths. (0x005A5300–0x005A53D0, fn:COMBAT_BuildDamage@0x0057B7D0, tbl:States.txt:state)
 - [I] **(e) ItemStatCost stats the formulas read** (by id; the reader in brackets): 0, 2, 12 (to-hit, build, open
   wounds); 16, 31, 171, 182 (defence); 17, 18, 21–25, 111 (physical roll); 19, 115, 116, 119, 123, 124, 179, 325 (to-hit);
@@ -843,7 +845,7 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   every melee event on a mode-3 player that reached a defence line had no `THR`, and none had one). These two were
   under the floor at the Phase 3 review (26, ruling (2)) and reached it in the resume sessions. Not met: a walking
   player (mode 2) under attack, so the mode-2 exception of the `/3` stays `[I]`, and `mv` was set in no other mode, so
-  which modes `0x00621190` counts as moving stays a value oracle. (fn:STATEVENT_CrushingBlow@0x005BFFC0,
+  which modes `0x00621190` counts as moving stays a value oracle *(raised 2026-11-16: the mode-2 exception and the set 2, 3, 6 are § 21's, run:2026-11-16-sweep2-s5e3)*. (fn:STATEVENT_CrushingBlow@0x005BFFC0,
   fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_MeleeHitTest@0x0057EC10, run:2026-10-16-combat)
 - [C] **Open-wounds halving and the resistance floor, counted at the 2026-10-17 review** (the checker re-run over
   `c37r-run2.lst` with a scratch counter around `openwounds` and `resist_for`; no new run; answers the 2026-10-16
@@ -912,6 +914,10 @@ any delivery on a later frame than the hit test (entry seeds asserted, exits tak
   cold named again there, final). **Freeze**: 81 `STATEVENT_Freeze` rolls up
   to the nested delivery (length 26–249 frames), from *Frostwind*. (fn:COMBAT_Absorb@0x0057BF10,
   fn:STATEVENT_Freeze@0x005BFC60, run:2026-10-20-shortfalls)
+  *Scoped 2026-11-16 (S5e part 2):* the check counted the handler's rolls and the delivered length range (`CASE freeze
+  handler roll (melee): 81`, `freeze handler: freeze delivered (len 26..249): 81`); it did not compare the chance, so
+  it does not say the formula's `(x − 1)·4` term holds. The chance is § 20's emulated `x·4`, `x = max(stat 134 − 1, 0)`
+  (0x005BFCB5–0x005BFD4E, run:2026-11-16-sweep2-s5e2).
 - [C] **Prevent-heal takes no draw**: 271 state-52 `STA` lines of the attacker between the to-hit and the defence rolls
   (81 in `abs-n-plains`, *Blackhorn's Face* `noheal`), each with both seeds asserted after it and no step between;
   with the static reading of `sub_0057D810_PreventHealHook` (no RNG call) the Open questions bullet is raised.
@@ -1202,7 +1208,7 @@ is named first.
 - [C] *To-hit 24, in part.* `0x00621190` (one stack argument, `ret 4`) returns 0 for no unit, the unit's `+0x40`
   for a type 0 or 1 unit whose `+0x30` is not 0, and `+0x10` otherwise. [`mode`; `f30` 158, `t0` 247, `t1` 250]
   [I] which of these values `sub_00622D00_UnitIsMoving` counts as moving (2, 3, 6): S5e part 2's `DefenceRoll`
-  family. (fn:sub_00622D00_UnitIsMoving@0x00622D00, run:2026-11-16-sweep2-s5e)
+  family (*raised 2026-11-16 in § 21*). (fn:sub_00622D00_UnitIsMoving@0x00622D00, run:2026-11-16-sweep2-s5e)
 - [C] *To-hit 25, 27, with a refinement.* `COMBAT_AvoidRoll` (ESI defender, EDI attacker, `isMissile`, `ret 4`): a
   type-0 defender in mode 2 or 3, and a defender of **any other type** (not only a monster) in mode 2 or 15, takes the
   evade path only (stat 340, an inlined draw on `def+0x20`, 8 when `r < e`, else 0); otherwise
