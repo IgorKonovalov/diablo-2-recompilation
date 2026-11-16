@@ -27,3 +27,22 @@ For Phase 3 (re-tag); not blocking.
    value only; a defender of type 2 to 5 is neither zeroed (stat 115) nor halved.
 5. **To-hit A6 (line 161).** The state record `PreventHealHook` passes holds nine words: attacker, defender, 0, 1,
    120 000, 31, 0, 52, 0 (0x0057D869–0x0057D891); the 52 is the state id.
+
+**2026-11-16, reverser (`lane/n66t`), S5e part 2 corrections** (evidence:
+[combat/0001 § 20](../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2),
+run:2026-11-16-sweep2-s5e2). Phase 3's to apply:
+
+6. **Damage A step 1 (lines 89–94).** The condition is "att is type 0, or `UnitAlignGet(att)` = 2" (every unit of
+   type 2 or more; a type-1 unit through the stat 172 of its state-105 list), and def type 1, not "a player or a
+   hireling". Stat 120 is **added**: `def's stat 31 ← max(0, stat 31 + stat(att, 120))`. Stats 121 and 122 are added
+   only when positive (the undead sum `blunt + stat 122` likewise).
+7. **Damage A step 5 (lines 106–112).** A player's or hireling's `lifeSteal` / `manaSteal` adds are skipped under the
+   packet flags `0x04` / `0x08`, as the monster's drains are; units of type 2 or more take neither branch.
+8. **Damage A step 6 (lines 113–118).** `COMBAT_RollRange` runs on every build with the poison field as its base and
+   the result scaled **replaces** the field: `pkt.poison ← RollRange(57, 58, pct = stat 332 if stat 58 > 0 else 0,
+   base pkt.poison) × srcdam ÷ 128`; at stat 58 ≤ 0 that is `max(pkt.poison, 0) × srcdam ÷ 128`.
+9. **Delivery E1 (line 474 and the bullet at line 519).** At stat 36 ≥ 100 the blow is cancelled only while `cb` ≤
+   0x100000; above it `MulDiv` divides first and the defender loses `cb mod 100`. A defender of type 2 or more gets
+   `k` = 4 with no player-count term.
+10. **Delivery E3 (lines 492–496).** `c ← (x·4 − dlvl + 10 + alvl [− 6])·5 [÷ 3]` with `x = max(stat 134 − 1, 0)`: the
+    text's `(x − 1)·4` subtracts one twice. The draw is taken whenever stat 134 > 0, also at `c` = 0.

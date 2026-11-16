@@ -2111,3 +2111,58 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   at an observed boundary), the `COMBAT_ApplyDamage` prologue 0x0057C6C0–0x0057C78E, and `COMBAT_BuildDamage`'s
   steps 1, 5, 7 and 9 (`UndeadDmgBonus` needs `UnitGetWeapon`; run the builder whole only if its prg hooks and
   callees hold no allocator, else stop at boundaries and scope each step to what it reaches).
+
+### 2026-11-16 — Phase 1, batch S5e part 2 (reverser-static, `lane/n66t`): 24 of the 29 settled, 7 of 10 remainders; 8 named not settled
+
+- **Done.** Merged `main` `21905e83` first (merge commit `2fd25e2d`, no conflict). New tool
+  `tools/combat_s5e2_emu.py` (`156dae37…`; imports part 1's builders, `tools/combat_s5e_emu.py` and its kept run
+  unchanged), one kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66t` (`-Xmx3G`, `MemoryMax=4G`),
+  after one development launch (`--limit 60`, `workspace/logs/n66t/s5e/dev2/`, `manifest-dev.sha256`, not cited).
+  Five families (`cb`, `ow`, `frz`, `regen`, `bd`), 11 200 cases, 0 mismatches, 0 stops, 0 unaccounted reads or
+  writes (the traced reads all in `g_BitMask32`, the PlayerHpPct table 0x006E1590 and the conversion switch table
+  0x0057BD94); 227 controls, 174 separating with `passed` 0, the 53 others strictness switches at an equal or
+  unreachable boundary, named in the record; nine spec-reading controls. Route check first (R2/ADR-0029): no
+  allocator and no import on any path the cases take (the tick's `STATLIST_FreeIfPlain` lies after the unlink
+  boundary; `COMBAT_BuildDamage` runs with no inventory, so the weapon relinks find no item); observed boundaries
+  `UnitSetStat`, `STATE_ApplyTimed`, `COMBAT_ApplyDamage`, `UNIT_UnlinkStatList`, `UNIT_DispatchEvent`,
+  `UnitSetOverlayStat`, each with its return address checked. Record:
+  [run:2026-11-16-sweep2-s5e2](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e2);
+  `workspace/logs/n66t/s5e/run2/` (`check.txt` `03b6603a…`, `manifest.sha256` `a5a0335d…`, 9 lines, passes from
+  there; `cases` regenerates the case file byte for byte). Claims:
+  [combat/0001 § 20](../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2).
+- **Statements settled (24 of 29).** Raised 19: delivery 39, 40, 41, 42, 43, 47, 48; damage 3, 4, 5, 8, 10, 11,
+  18, 22, 23, 24, 25, 26. Raised with a correction 2: delivery 44 (E3's `(x − 1)·4` is `x·4`), 46 (the stat-36 cap
+  cancels a blow only up to `cb` = 0x100000; above it `cb mod 100` stays). Raised in part 2: damage 12's two
+  statements (the no-weapon composition; the blunt `+ 50` stays `[I]`). Contradicted in part 1: damage 7 (step 1's
+  condition is a type-0 attacker or `UnitAlignGet` = 2, stat 120 is added; the blunt half stays `[I]`).
+- **Remainders (7 of 10).** Raised: damage 9 (the stat-66 term at `stunLen` = 0), 15 and 34 (flag `0x1` skips
+  steps 2–3), README 12 (the divisor 10 against a hireling; row 12 now whole). Raised in part: damage 6 (steps 7 and
+  9 whole, step 1's no-weapon half), 13 and 14 (stat 337 before 141; the mastery crit's place needs a weapon).
+- **Not settled in budget (stay S5e, c-emu):** to-hit 14, 15 (`UNIT_GetDefense`: state 101's branch reaches
+  `SKILLS_EvalCalc` on a calc pool), to-hit 20, 22 and the remainders 24 (`UnitIsMoving`'s set) and 31 (three
+  defence draws) (`COMBAT_DefenceRoll`: a player's block chance needs a shield through `InvItemQuery`, S6f's `wc`
+  inventory image), delivery 22 (`COMBAT_ApplyDamage`'s prologue reads the defender's room and its town test,
+  0x00620BB0 / 0x0061AB00, undeclared), README 35 (`sub_005A4F50_MonAttackStats`'s `Align` = 1, not in the rows).
+  None crosses an allocator or an import as far as read; each is a family to build, not a b row.
+- **Corrections (Phase 3's):** damage A step 1 (condition, stat 120's sign, positive-only 121/122), step 5 (the
+  player's flag tests), step 6 (the poison roll always runs and replaces the field), delivery E1 (the cap's
+  remainder above 0x100000; type 2+ defenders `k` = 4), E3 (`x·4`). Appended to the
+  [corrections entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md) as items 6–10; the
+  finding's own older bullets (combat/0001 § A steps 1, 5, 6 and the Freeze bullet) carry a pointer to § 20.
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* after merging `main` `21905e83`, unchanged (no row moved class):
+  a-logs 623, a-run 341, b 467, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1
+  1 490, Phase 2 808. README § 4's S5e row records the part.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Delivery 467, 472, 474 (with correction
+  9), 485, 486, 492 (with correction 10), 519 (correction 9), 533, 562; damage 78, 79, 80, 107, 124, 126, 168, 186,
+  226, 234, 238, 243 whole; 89 (correction 6) and 136 in part; the remainders of 87, 120, 145, 146, 147, 334; README
+  205 now whole.
+- **Review:** Tier B; the part 1 [request](../backlog/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md)
+  is extended to S5e whole. Judgment calls: (1) damage 7 filed contradicted in part, not raised with a correction:
+  the condition and stat 120's sign give other outputs (596 and 474 separating cases); (2) delivery 44 and 46 raised
+  with a correction: each row's own claim (the missile terms; the cap's lack of a kind branch) holds, the slip is in
+  a neighbouring term of the same line; (3) delivery 48 raised for the floor, the bullet's run sentences being log
+  reports, not code claims; (4) the `bd` family runs the whole builder with an unarmed attacker rather than bounded
+  pieces, so every step-row is scoped to the no-weapon path, and the weapon halves stay `[I]`; (5) the 53
+  unseparated strictness controls taken as inherent (equal output at the boundary, or a value a multiple of 256
+  cannot take).
