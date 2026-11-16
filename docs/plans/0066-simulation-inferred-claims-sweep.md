@@ -2521,7 +2521,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `--families`, the `mevd`/`mevr` model fix, the null-tail and below-control handling in `qx`, the null cell array in
   `ffn`), new `tools/sweep2_s7e_path.py` (`b70ebec2…`: `facing`, `mreset`, `wtick`, `wroll`) and
   `tools/sweep2_s7e_routes.py` (`f2d7f39d…`). Record: [run:2026-11-16-sweep2-s7e](../findings/frame/experiments.md#run2026-11-16-sweep2-s7e), part 2.
-  Families: `ffn` 600, `qx` 400, `mevd` 500, `mevr` 300, `facing` 200, `mreset` 300, `wtick` 300, `wroll` 300; 0
+  Families: `ffn` 600 (4 left out of the claim), `qx` 400, `mevd` 500, `mevr` 300, `facing` 200, `mreset` 300, `wtick` 300, `wroll` 300; 0
   mismatches; every control separates and passes 0.
 - **Rows (52):** raised 11 (travel 19; frame 37, 46, 70; path-README 4, 71; lifecycle 3, 72–75); raised in part 7
   (travel 60; frame 35, 39, 43, 47; path-README 19; lifecycle 76); moved c-emu → b (H7b) 7 (frame 55, 56, 64, 65, 75;

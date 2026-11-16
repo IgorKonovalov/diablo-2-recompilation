@@ -480,14 +480,14 @@ its `manifest.sha256` passing from that directory: `workspace/logs/n66u/s7e/run`
 the cited outputs: `tools/sweep2_s7e_emu.py` sha256 `b89a4fa3…`, `tools/sweep2_s7e_path.py` `b70ebec2…`,
 `tools/sweep2_s7e_routes.py` `f2d7f39d…`. Every case file regenerates byte for byte from its seed (`cases`, checked).
 
-- **`ffn` (quests/travel A5, G2; ADR-0015, ADR-0029 (a) as part 1 states).** 600 cases, 0 mismatches, 0 stops
+- **`ffn` (quests/travel A5, G2; ADR-0015, ADR-0029 (a) as part 1 states).** 600 cases run, 4 left out of the claim (below), 0 mismatches in the other 596, 0 stops
   (`check-ffn.txt`): `act` 300 (200 at step 5), `portal` 150 (100 at size 3), `direct` 150. Controls, each separating
   and passing 0: `step1` 268, `nowalk` 94, `walkmaskA` 37, `sizeone` 326, `fixedbase` 26, `leq` 119. The first check of
   these outputs had 1 mismatch (case 505) and 345 traced reads at 0x0064CCA0 from addresses 0–0x2B0: `COLL_RectTest`
   tests the room's map (0x0064CEDE) but not the map's cell pointer, and `COLL_RectTestInMap` (0x0064CC30) then reads
   from `0 + 2·index`. The image's `nomap = 2` rooms (a map with no cell array) reach it. Under the emulator that is
   undeclared memory read as 0; in the game it is an access violation. The model now follows the code there and the
-  checker flags those cases (4) and leaves them out of every claim (ADR-0015 (2), (5)); the outputs are unchanged. So
+  checker flags those cases (4) and leaves them out of every claim (ADR-0015 (2), (5)); the outputs are unchanged. The model change is in the checker only (`ffn.out` is the image's own output); the architect check re-ran `check` from the cited tool revision (`b89a4fa3…`) over the kept outputs: the manifest passes and the `ffn` lines are byte-identical to `check-ffn.txt`. So
   drlg/collision E4's "r has no cells: return 0x27" holds for a missing map only, `[I]` for the cell pointer
   (backlog entry). `[C]` scope: the search through both wrappers at sizes 0–4 and steps 1–5 as the code's map, to the
   return; not the caller after it (`PortalObjectCreate` 0x0056D218, "the open fails").
