@@ -2989,3 +2989,56 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Gate:** fast green (93 warnings after the merge, none from the fixes; the W4s the refresh entry answers);
   `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
 - **Verdict: accept with fixes (4)**: overclaim 2, misread 1, omission 1. The review request stays open for the merge.
+
+### 2026-11-16 — Phase 1, batch S2ae part 2 (reverser-static, `lane/n66sa`): 9 more settled (31 of 89); resume note for part 3
+
+- **Done.** Merged `main` twice (`0df309d6` at `8e58556a`, clean; `ae68c24d` at `aeecec21`, the plan log kept both
+  sides); totals from the 29 files' *Totals by class* (`tools/quests_s3c.py totals`) are unchanged after each: a-logs
+  623, a-run 334, b 508, c 390, c-emu 443, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, as README § 1 already
+  gives. New tool `tools/skills_s2ae2_emu.py` (`ac1bae1a…`; reuses part 1's check machinery in module state only;
+  part 1's tool and `run/` unchanged, its `check` still reproduces `run/check.txt`). One kept `tools/ghidra.sh
+  emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after three development launches (`dev3/`
+  to `dev5/`; `workspace/logs/n66sa/s2ae/manifest-dev-p2.sha256`, not cited). Seven families (`mana`, `srvm`, `filt`,
+  `cpa`, `cmon`, `cun`, `cmis`), 11 000 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes, no observed
+  boundary, no import; 131 controls, 121 separating with `passed` 0, the 10 others named (9 inherent equalities, one
+  spec control separated by two sibling families). Record:
+  [run:2026-11-16-sweep2-s2ae2](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae2);
+  `workspace/logs/n66sa/s2ae/run2/` (`check.txt` `4aa76a41…`, `reach.txt` `0001c1a2…`, `static.txt` `42c76d27…`,
+  `manifest.sha256` `1edb5bbd…`, 12 lines, passes from there). Claims:
+  [skills/0002 § 18](../findings/skills/0002-missiles.md#18-plan-0066-batch-s2ae-part-2-the-mana-checks-and-the-collide-filters-emulated-2026-11-16-lanen66sa).
+- **Rows (9).** Raised 4: dispatch 36, 37 (`SKILLS_ManaOk` with `SkillLevelBonus` and `ExpMaxLevel` whole; the `− 1`
+  separated, `spec_no_minus1` 428), 49 (`SKILLS_SrvManaCheck`; no state-114 branch, `spec_st114` 56); missiles 47
+  (`CollideUnitFilter` with `UnitsHostile`, `PlayerPairFlags`, `AlignSame02`, `UnitAlignGet` whole). Raised in part
+  5: missiles 40, 41, 42, 45, 46 (the filter cells); the mask cells stay c-emu (part 3): the image bytes match the spec
+  (`static.txt` `GCT`), but two of the four `.text` operands inside `g_MissileCollideTypes` are `lea`s (0x005AE30B,
+  0x005AE355) whose uses were not followed for a store.
+- **Refinements** (Phase 3's): the level bonus's terms; the last-hit test needs Missiles `+4` bit 0; the friend test is
+  skipped with no owner, an owner that is the candidate is not hostile, two players use the relation node's bit 3.
+  Routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-2-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-2-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Judgment calls for the review:** (1) the mana families set stats 6 and 8 at the model's own cost (or one off) in
+  about two cases of three, so the returned bit separates the level term; the cost is the model's, the emulator's
+  answer is compared; (2) `UnitsHostile` is run whole only on owners whose `MonsterOwner` chain ends in 0 and with no
+  type-3 owner carrying `+0xC8` bit 10 (0x00552F60 a guard); m47 is raised on that input space and the two excluded
+  routes are named as not covered; (3) the mask cells split off rather than read the two `lea` uses in part 2's budget.
+- **Resume note for part 3 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays, symbols imported).** Left:
+  58 rows, the 5 S2a remainders (dispatch 31, 63, 79, 164, 172), part 1's 4 remainders (dispatch 39, 69, missiles 29,
+  81) and part 2's 5 mask cells (missiles 40–42, 45, 46: follow 0x005AE30B and 0x005AE355 in `0x005AE2xx` (the do-function
+  calling the collide filters through the table) for a store, then raise from `static.txt` `GCT`). Start a new tool
+  or section and a `run3/`; `tools/skills_s2ae2_emu.py`'s helpers (`relist` for layered stats, `chains` for state stat
+  lists, the declared `ExpMaxLevel` pointer, the Skills/SkillDesc/Missiles tables) cover most of what the remaining
+  leaf functions read. Groups, cheapest first:
+  - **No pool and no import** (part 1's list less what part 2 settled): `SKILLS_TargetCheck` (d47),
+    `ItemTargetRandomPoint`/`StoredUnit` (d83, d84 half), `MissileOwnerUModEvent` (m21, to its first creation),
+    `MISSILE_BuildDamage` (m63, stat-180 entries), `CallDoFunc` (m69), hit 27 `0x005ABA00` (m73),
+    `MissCbReseedZigzag` (m76), `SorSkillStaticMin` (d164's remainder).
+  - **Pool only through `InvPageGet` (0x0063ADD0):** d3, 30–35, 63's and 31's remainders, 92, 96; m26, 29: declare the
+    page at the descriptor's size as S5e part 3 did.
+  - **Pool through the stat setters:** d124, 127–131, 142, 143, 152; m27, 95 (an observed boundary at the first setter,
+    or the stat present so the list does not grow).
+  - **Allocator or import on the route, read the branch first (likely b):** m14, 16–19 (`MissileCreate`; read
+    skills/0002 § 14 for m18 first), d110–112, 119, 144, 89, 93, 156, 181, 182, 184, m71, 72, 74, 75, 77, 82, 85,
+    d79's remainder, d84, d172's remainder, d133, d117, 135, 178; d153, 154 (`MonOwnerSkillDamage`), m80's siblings
+    as part 1 listed.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.

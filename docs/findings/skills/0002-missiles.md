@@ -997,6 +997,79 @@ inventory, "m" rows skills/missiles'.
   return reaches it. The other S2ae rows are left for part 2 (the plan's resume note).
   (fn:sub_005AE400_MissDo02SubMissile@0x005AE400, fn:sub_0059FA30_MissileCreate@0x0059FA30)
 
+### 18. Plan 0066 batch S2ae part 2: the mana checks and the collide filters emulated (2026-11-16, `lane/n66sa`)
+
+Part 2 of the batch. The claims are maps of the named functions on declared inputs (ADR-0015), compared with
+`tools/skills_s2ae2_emu.py`'s model over the kept run
+([run:2026-11-16-sweep2-s2ae2](experiments.md#run2026-11-16-sweep2-s2ae2), `check.txt`, 11 000 cases, 0 mismatches,
+0 stops, 0 unaccounted reads or writes; no observed boundary, no import). Brackets give separating control counts
+(`sep`, each with `passed` 0). What each offset means (lvlmana, CollideFriend, the alignment stat) keeps its own tag
+(ADR-0015 (3)); every callee named runs whole.
+
+- [C] *d36, d37 (C4).* `SKILLS_ManaOk` (EAX entry, ECX unit; `ret`): an entry whose `+0x34` is not −1 returns
+  `+0x38 > 0` (signed) [`item` 1 250, `chg_gt0` 656, `chg_gt0~` 119]. Else, with a unit, `lvl = +0x28 +
+  SkillLevelBonus(unit, entry)`, set to 0 when `≤ 0` and to `ExpMaxLevel(0)` when not below it (declared maxima 0, 1,
+  20, 50, 99) [`lvl_le0` 222, `lvl_lt_max` 371, `unit` 232]; with no unit `lvl = 0`; then `lvl − 1`, floored at 0
+  [`lvl_lt0` 354], and `cost = (s16 +0x18C · lvl + s16 +0x18A) << (+0x188 & 31)` (32-bit), F1's `max(lvl − 1, 0)`
+  [`spec_no_minus1`, the level without the `− 1`, fails 428]. Under state 114 the answer is `stat 6 ≥ cost` (signed)
+  [`st114` 630, `life_ge` 452]; else a record whose word `+0x2E` is 0x74 (116) passes when `Unit+0xC8` bit 3 is set
+  (`0x0063A400`) [`sdf116` 248, `c8b3` 165]; else `stat 8 ≥ cost` (signed) [`mana_ge` 1 181, `mana_ge~` 309]: a cost
+  equal to the mana passes. The record bytes are seeded random and the model has no `minmana` floor.
+  (fn:SKILLS_ManaOk@0x00647540, 0x00647540–0x00647633, run:2026-11-16-sweep2-s2ae2)
+- [C] *The level bonus both checks use.* `sub_00644180_SkillLevelBonus(entry)` (ESI unit): 0 for a null entry or
+  record, or a record whose s16 `+0x00` lies outside the Skills count [`b_sid_ok` 328]; else the entry's `+0x2C`, + 2
+  under state 134 (`ShrineSkillBonus`) [`b_shrine` 63], + stat 127; for a player whose class equals the record's signed
+  byte `+0x0C` [`b_player` 33, `b_ownclass` 21]: + stat 83 at layer class, + stat 188 at layer `t + class · 8 − 1` when
+  the signed byte `t` at `+2` of `SkillDescRec(id)` is non-zero [`b_tab` 3], + stat 97 at layer id capped at 3
+  [`b_cap3` 15]; a player of another class adds stat 97 uncapped; a non-player adds stat 97 capped at 3 only when the
+  entry's `+0x28` is above 0 (signed) [`b_cap3n` 25, `b_base_gt0` 11]; then + stat 126 at layer byte `+0x1DC` when it
+  is non-zero [`b_elem` 17], and + stat 107 at layer id. Each is `STATS_GetUnitStat` (the layer's low 16 bits).
+  (fn:sub_00644180_SkillLevelBonus@0x00644180, fn:sub_00644150_ShrineSkillBonus@0x00644150, run:2026-11-16-sweep2-s2ae2)
+- [C] *d49 (D3).* `SKILLS_SrvManaCheck` (ECX unit; `ret`): a null unit or a non-player returns 1 [`unit` 442,
+  `player` 624]; the entry is the skill list's `+0x10` (`UNIT_GetUsedSkill`), and none returns 0 [`used` 564]; an item
+  entry returns `+0x38 > 0` [`item` 388]; a null record returns 0 [`rec` 421]; else
+  `lvl = max(SKILLS_GetSkillLevel(unit, entry, 1) − 1, 0)` (the same bonus and clamp, run whole), the same cost, the
+  `srvdofunc` 116 and bit-3 pass [`sdf116` 86, `c8b3` 67], and `stat 8 ≥ cost` [`mana_ge` 446]; **no** state-114
+  branch [`spec_st114`, C4's branch put in, fails 56]. (fn:SKILLS_SrvManaCheck@0x0056C160, 0x0056C160–0x0056C206,
+  fn:SKILLS_GetSkillLevel@0x006442A0, run:2026-11-16-sweep2-s2ae2)
+- [C] *m47 (D6).* `sub_005A8730_CollideUnitFilter` (ESI candidate, EDI owner, EBX the Missiles record; game, missile;
+  `ret 8`) returns 0 for a null candidate, or one whose `+0xC4` lacks bit 3 or bit 2 [`f_bit3` 1 555, `f_bit2` 1 568];
+  for a record with byte `+0x188` non-zero, a candidate in state 86 [`f_nexthit` 300, `f_st86` 744]; a candidate
+  `MISSDATA_IsLastHit` names [`f_lasthit` 1 431, `lh_match` 151]; and, **when the owner is not null** [`f_owner` 365],
+  a candidate that `sub_00554200_UnitsHostile(owner, candidate)` calls not hostile while byte `+0x187` is 0
+  [`f_hostile` 688, `f_friend` 650]; else 1. **Refinements:** with no owner the friend test is skipped; an owner that is
+  the candidate counts as not hostile [`h_same` 383]. `MISSDATA_IsLastHit(missile, candidate)` needs a type-3 missile
+  whose Missiles row has bit 0 of `+4`, missile data at `+0x14`, and data `+0x18`/`+0x1C` equal to the candidate's
+  type and `+0x0C`. `UnitsHostile` (on these inputs: monster owners whose `MonsterOwner` chain ends in 0, no type-3
+  owner with `+0xC8` bit 10) gives, for two players, `PlayerPairFlags(owner, candidate, 8)`: the `+4` word of the first
+  node of the owner's player-data `+0x38` list (next at `+0x10`) whose `+0` is the candidate's `+0x0C`, masked with 8,
+  or 0 [`p_id` 16, `spec_any_flag` (any non-zero word) 5]; otherwise hostile unless `AlignSame02(owner, candidate)`
+  [`h_align` 608], which is 1 when both `UnitAlignGet` values are 0 or both 2. `UnitAlignGet` is 0 with no stat list,
+  2 for a type above 1 (unsigned), else stat 172 of the first list in the `+0x3C`, then `+0x40` chain (next at `+0x2C`)
+  whose `+0x14` is 0x69, and 0 when there is none or the list's flag bit 31 is clear.
+  (fn:sub_005A8730_CollideUnitFilter@0x005A8730, fn:MISSDATA_IsLastHit@0x0064A470,
+  fn:sub_00554200_UnitsHostile@0x00554200, fn:sub_0055B300_PlayerPairFlags@0x0055B300,
+  fn:sub_00650D70_AlignSame02@0x00650D70, fn:sub_006259B0_UnitAlignGet@0x006259B0, run:2026-11-16-sweep2-s2ae2)
+- [C] *m40, m41, m42, m46, m45 (the collide-type filters).* With ECX the candidate and EDX a context of four words
+  (game, missile, owner, record), each returns 0 for a null context or record [`w_ctx` 134, 88, 219] or a null
+  candidate, then: `sub_005A87F0_CollidePlayerOrAlly` passes a type-0 candidate, and a type-1 candidate whose
+  `UnitAlignGet` is 2, to the filter, any other 0 [`w_player` 431, `w_mon` 191, `w_align2` 147];
+  `sub_005A87B0_CollideMonster` a type-1 candidate only [`w_mon` 337]; `sub_005A8850_CollideUnit` a signed type 0 or 1
+  [`w_ge0` 271, `w_ge0~` 105, `w_le1` 415, `w_le1~` 96]; each returns the filter's answer as 0 or 1.
+  `sub_005A8890_CollideMissile` (ECX only) returns 1 for a type-3 unit whose signed class lies in the Missiles count
+  and whose row has bit 4 of `+4` [`m_type3` 246, `m_ge0` 149, `m_lt_n` 179, `m_candestroy` 195]. The type table's
+  filters and masks (`0x0084`, `0x0104`, `0x0184`, `0x0185`, `0x0040`, `0x0004`) read from the image as the spec gives
+  them (`static.txt` `GCT`, `.data`), but of the four `.text` operands inside the table two are `lea`s (0x005AE30B,
+  0x005AE355) whose uses were not followed for a store, so the mask cells keep their tags. (fn:sub_005A87F0_CollidePlayerOrAlly@0x005A87F0,
+  fn:sub_005A87B0_CollideMonster@0x005A87B0, fn:sub_005A8850_CollideUnit@0x005A8850,
+  fn:sub_005A8890_CollideMissile@0x005A8890, run:2026-11-16-sweep2-s2ae2)
+- [I] *Not covered.* `MonsterOwner`'s game lookup (`0x00552F60`, a guard, never reached) and a type-3 owner with
+  `+0xC8` bit 10: what `UnitsHostile` does for an owned monster or a missile's owner past these is a reading.
+  Unseparated controls (10): nine strictness switches at an equality that gives the same value both ways (`lvl_le0~`,
+  `lvl_lt0~`, `lvl_lt_max~` and `b_cap3~` in both families, `b_cap3n~`), and `spec_any_flag` in `cun` (none of its
+  matched pair nodes had a word without bit 3; `filt` and `cpa` separate it on the same code).
+  (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-11-16-sweep2-s2ae2)
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,
