@@ -32,7 +32,7 @@ Worth checking:
    a "client act" read as an act no `NewRoomsUpdate` walk visits; (h) row 60 raised with one act in every window, the act
    order being H2's emulation; (i) row 120's "seen by tick N + 1" raised on the placement alone.
 4. Spec corrections and the D6 contradiction in
-   [`2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections`](../2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections.md).
+   [`2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections`](2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections.md).
 
 **2026-11-16, extended to S7f (`lane/n66o`).** Please review batch **S7f** with S7b (sim/frame 8, path 11, path-search 5,
 drlg/lifecycle 16 rows). Static only: no game, no Ghidra; constants, tables and writer/reader pairs read with objdump and r2.
@@ -52,4 +52,4 @@ drlg/lifecycle 16 rows). Static only: no game, no Ghidra; constants, tables and 
    "not interchangeable" scoped to the `PATH_` functions (0x00648000–0x0064A000), the room rectangle sharing the offsets
    elsewhere; (f) lifecycle 61 raised on the same static read as 63, the run's stat-12 neutrality unchanged.
 4. Refinements for the spec-writer in
-   [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+   [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
