@@ -228,15 +228,16 @@ args: 36 0xc0ffee
 seed: illustrative
 illustrates: ../specs/drlg/maze.md#e-start-shapes ../specs/drlg/maze.md#c-random-growth
   ../specs/drlg/maze.md#b-primitives ../specs/drlg/maze.md#d-special-rooms ../specs/drlg/maze.md#h-themes
+  ../specs/drlg/README.md#algorithm
 caption: Catacombs Level 3 (level 36) built room by room. A level draw picks the start shape's two arms on the
   locked first room (maze § E3); growth then picks a parent room with a level draw and a side with a draw on that
   parent's own seed, and each new room may link to the rooms it shares an edge with by a Merge roll on their seeds
   (§ C, § B); each room's Def is the level type's base plus its exit bits (§ B); each special takes a dead end
   facing the right way or attaches a new room, then the theme pass locks up to max(2, rooms ÷ 5 + 1) rooms as their Theme records (§ D, § H). Every value shown is
   computed by our replay model (tools/maze_replay.py), not observed in the game, and the seed is an illustrative
-  input, not a level seed a game produces. For a room with no forced file index, the preset file named in its last
-  step is the tool's own pick (room seed lo mod the number of named files), not the level-seed draw and file rotation
-  of the overview's step 9: a known tool bug, filed to the archivist.
+  input, not a level seed a game produces. The last steps convert the rooms newest first and name each room's preset
+  file as the overview's step 9 picks it: a forced index if the room has one, else the level type's per-build file
+  rotation for the base Defs, else a level-seed draw over `Files` (drlg overview, steps 9a and 9b).
 ```
 
 ## Outdoor levels
