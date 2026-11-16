@@ -4592,7 +4592,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   machinery, no row moved. (7) Row 20 Scarab added to README H1's table on S1m's census (205 decisions, 346 calls past the
   first, 9 of 10 two-way sites failing alone, the tenth told apart by the next `AID` word).
 - **Review:** requested, Tier B on Sonnet only, by the owner's budget decision
-  ([entry](../backlog/2026-11-16-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-cluster.md)).
+  ([entry](../backlog/archive/2026-11-16-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-cluster.md)).
 - **Resume note (part 2, a fresh spec-writer on `lane/n66ai` or a new lane after this merges).** Left: **monsters/ai/catalogue**,
   inventory `monsters-ai-catalogue.md` (520 rows; front matter C 344 / I 520 / L 18, unchanged since `b5999f5e`). Its settled
   rows come from S1a, S1b, S1c, S1d, S1e, S1f (each row's Route cell) and plan 0069 Phase 4 (H1a–H1d, H1g, H1h: 22 raised,
