@@ -1555,3 +1555,11 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Review:** Tier B, S7b and S7f together, by the extended request
   [`2026-11-16-reverser-architect-review-plan-0066-s7b`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s7b.md).
 - **Next:** S7 is done on this lane (S7b, S7f); Phase 1's remaining batches as README § 4 lists them.
+
+### 2026-11-16 - Tier B check of S7b and S7f (architect, `lane/n66o`): accept with fixes (1)
+
+- **Ruling on S7b rows 25 and 67** (the review request's question). Row 25 (queue-order drain, queue 2 unlogged) moves
+  a-logs -> b: it needs a new logger line at each pop, the class (b) rule. Row 67 stays a-logs: the frame logs hold no near
+  list, but the kept rooms.gdb logs (run:2026-10-17-lifecycle) do, so a check over them is a-logs; it is retargeted there, to
+  a later Phase 1 batch, not a session. Totals after the one move: a-logs 627, a-run 340, b 447, c 390, c-emu 494, d-2c 59,
+  d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 511, Phase 2 787 (sim-frame.md and README tables updated).

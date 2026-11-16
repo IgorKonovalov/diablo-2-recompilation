@@ -94,7 +94,7 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [quests/README](quests-README.md) | qu | 6 | 2 | 1 | · | 1 | · | 1 | · | · | · | 1 |
 | [quests/progression](quests-progression.md) | qu | 322 | 71 | 40 | 118 | 41 | · | 35 | 5 | · | 6 | 6 |
 | [quests/travel](quests-travel.md) | qu | 86 | 27 | 18 | 15 | 9 | 2 | 5 | · | · | · | 10 |
-| [sim/frame](sim-frame.md) | fp | 127 | 41 | 4 | 12 | 34 | 24 | 1 | · | · | · | 11 |
+| [sim/frame](sim-frame.md) | fp | 127 | 40 | 4 | 13 | 34 | 24 | 1 | · | · | · | 11 |
 | [skills/README](skills-README.md) | sk | 25 | 7 | 2 | 4 | 2 | 3 | 1 | · | · | · | 6 |
 | [skills/catalogue](skills-catalogue.md) | sk | 109 | 8 | 4 | 2 | 19 | 71 | · | · | · | · | 5 |
 | [skills/dispatch](skills-dispatch.md) | sk | 195 | 73 | 7 | 25 | 28 | 48 | · | · | · | 3 | 11 |
@@ -102,14 +102,14 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [stats/README](stats-README.md) | is | 3 | 1 | 1 | 1 | · | · | · | · | · | · | · |
 | [stats/aggregate](stats-aggregate.md) | is | 42 | 25 | 6 | 1 | 4 | 6 | · | · | · | · | · |
 | [stats/states](stats-states.md) | is | 54 | 6 | 17 | 12 | 8 | · | 2 | 1 | · | 2 | 6 |
-| **All** | | **2626** | **628** | **340** | **446** | **390** | **494** | **59** | **68** | **0** | **23** | **178** |
+| **All** | | **2626** | **627** | **340** | **447** | **390** | **494** | **59** | **68** | **0** | **23** | **178** |
 
 By phase:
 
 | Route | Classes | Statements | Batches |
 |---|---|---|---|
-| Phase 1, static | a-logs 628, c 390, c-emu 494 | 1512 | 36 |
-| Phase 2, harness | a-run 340, b 446 | 786 | 32 (about 256 sessions estimated; H1p none yet) |
+| Phase 1, static | a-logs 627, c 390, c-emu 494 | 1511 | 36 |
+| Phase 2, harness | a-run 340, b 447 | 787 | 32 (about 256 sessions estimated; H1p none yet) |
 | Blocked | d-2c 59, d-owner 68, d-edit 23, d-none 178 | 328 | – |
 | **Total** | | **2626** | |
 
