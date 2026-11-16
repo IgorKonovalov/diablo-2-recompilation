@@ -768,6 +768,59 @@ What it adds to §§ 4 and 5:
   product and the division, so the run fixes the value of the term, not how it grows with `lvl` or how it rounds. This turns § 12's `VelLev` remainder from [I] to [C] for level 1; levels
   above 1 of `spike1` stay unobserved. (fn:sub_0059FA30_MissileCreate@0x0059FA30, tbl:Missiles.txt:VelLev, run:2026-11-15-sweep8-single)
 
+### 15. Plan 0066 batch S2c part 1: second-tool table, call and data scans (2026-11-16, `lane/n66q`)
+
+No session, no Ghidra. `tools/skills_s2c.py` (sections `tables s16 entries data consts calls`) reads every claimed
+instruction with objdump and with r2, counts references three ways (raw rel32/abs32 bytes, objdump, r2), walks call
+arguments twice, and reads each table cell from the `.txt` and from the `.bin` (through `tools/excel_bin.py`). Kept
+output: `workspace/logs/n66q/s2c/check-s2c-p1.txt` (`S2c total bad=0`), under `manifest-s2c-p1.sha256` in that
+directory. The rows, and what each raise covers, are in the plan 0066 inventory files `skills-*.md` (Route cells
+"S2c 2026-11-16 (part 1)"). The statements below are the ones that rest on this run.
+
+- [C] **Function tables.** The start table is bounded by `cmp ax, 0x5B` (0x0056F75D), and the do table by
+  `cmp ax, 0xBF` (0x0056F911, 0x0056D7E8) and by `[0x006E1274]` = 0xBF (0x005D542C). The stat-event table is bounded
+  by `cmp eax, 0x31; ja` (0x0056E746), and its non-null slots are exactly ids 1..31. The missile do, hit and damage
+  counts are 53, 71 and 31 (0x0073C71C, 0x0073C83C, 0x0073C95C), each compared at its readers (0x005ADBFE; 0x005ADA19,
+  0x005AE0A7, 0x005AE112, 0x005B02DB; 0x005AE164).
+- [C] **The signed test.** Each hit, damage and do dispatch loads its record word (`+0xE`, `+0x10`, `+0xC`), then runs
+  `test ax, ax; jle`, `movsx` and the count compare (0x005ADA0D, 0x005AE09B, 0x005AE106, 0x005B02CF, 0x005AE158,
+  0x005ADBEE). Row 568 is the only Missiles row with a word above 0x7FFF in the three columns, so its hit function
+  (64 948) never runs.
+- [C] **Entries.** The 53 distinct hit entries all return with `ret 4`, and the 14 damage entries with `ret 8`.
+  Do-table entry 1 is `jmp 0x005AE1F0` (0x005B0BC0). The 9a entries end in mdo 1 and return its result (mdo 18 does
+  so after the stack-cookie check, 0x005AF521). mdo 20 and mdo 30 return 1 after mdo 1, mdo 32 ends in mdo 7
+  (0x005B047F), and mdo 34 ends in mdo 3. Entries 23 and 24 are both 0x005AF790. Entry 37 (0x005B0AA0) is non-null,
+  and no row names it.
+- [C] **Collide types and directions.** `g_MissileCollideTypes` holds 9 × {filter, mask} from 0x0073C720 up to the do
+  table. Types 0 and 4 are {0, 0}, and type 6 is {0, 0x0004}. Missiles.txt has 301, 0 and 24 rows of these three types.
+  `PathDirection` indexes `g_PathDirTable` at (minor·0x7F)/major with a 12-byte stride (0x0064FCD3–0x0064FCE7), which
+  gives 128 entries. Every point of `g_Circle64X/Y` equals trunc(30·cos, 30·sin) of i/64 turns, and the points are read
+  at `i mod 64` (0x005AF106).
+- [C] **Constants.** The delay state 121 is written by `SKILLS_SetDelayState` (three state calls) and read by
+  `SKILLS_DelayOk` (0x00647908). The unit event is `UnitQueueEvent(12, …)` (0x0056F010). State 114 is used by PayCost,
+  ManaOk, BloodManaPay and `sub_005D2B20_StateDo147Attached`. Both periodic sites clamp the calc to at least 5
+  (0x0056CDFE, 0x0056CECE). The progressive charge is `min(old + 1, 3)` (0x005D3414–0x005D341C).
+- [C] **Callers.** `SKILLS_SrvDo` has 8 callers. 7 pass effect 0, and `ITEMSKILL_Cast` passes its own `[ebp+0x2c]`
+  (0x005FDC1E). Of the 10 item-cast calls below it, only handler 20's path with ItemTgtDo clear passes 1 (0x005C054E,
+  after the test at 0x005C0524). `MonAttackStats` has 6 callers, `SkillWeaponWear` 1 (0x005DAC99),
+  `SKILLS_GetMasteryBonus` 13, `MissileCreateAt` 17, `0x005C2FF0` 2 (do 31 and do 58), and `MissileEndHit` none, not
+  even as abs32 data. `SKILLS_CanUse` has 16 callers, none of them in the monster mode path's functions. The four
+  start refusals call `PlayerModeCmd(0, 5, 0, 0, 1)`, and only behind a type-0 test. `StartUsedSkill` calls
+  `SkillAllyTest` only when TargetAlly is clear. It passes the same skill, and the test returns 0 when that bit is
+  clear (0x0056FBB2–0x0056FBC4, 0x00554D62–0x00554DD0). `SkillMissileCreate` sets flag `0x1000` and `+0x48` only behind
+  `cmp [owner], 1` (0x0056ED84–0x0056ED9E).
+- [C] **Data.** Skills: 48 rows have a srvmissile and no srvdofunc, and 307 and 325 name only srvmissilea..c. The
+  periodic rows are 57 and 277. The startmana rows are 41, 230 and 266, which are also the only repeat rows.
+  ItemStatCost registers handlers 6–10, 13–21 and 28–31, Skills registers 1–5 and 22–27, and no row registers 11 or 12.
+  `STATES_Load`'s list at g_DataTables+0x17C is built with bit 16 (0x00618C58), and the States rows with `disguise` are
+  63, 93, 119, 139, 140, 176 and 177. The O8, P4 and Q6 joins of skills/catalogue hold.
+- **Not raised here** (the remainders are in the rows): the entries' write sets; the conditions that return 2; any class
+  test in the paladin batch; the defender's path to `SKILLS_CanUse` through the durability loss, where the scan cannot
+  tell which unit the path runs for; the synergy calcs; the handler's unit for a draw.
+- **Contradicted in part (missiles row 2):** no shrine function calls `MissileCreateAt`, and the row's list leaves out
+  the two monster-AI callers. The refinements are in backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,

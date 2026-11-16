@@ -1765,3 +1765,61 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (special 43, 0038). No reject-grade miss.
 - **Ledger cell:** audit of lane/n66p: overclaim 2; no reject-grade miss (5th Tier B after the n66m audit; count
   restarts).
+
+### 2026-11-16 — Phase 1, batch S2c part 1 (reverser-static, `lane/n66q`): 47 of 69 settled; resume note for part 2
+
+- **Done.** No game, no Ghidra. `main` is `1f507662`, the lane's base (nothing to merge). New tool `tools/skills_s2c.py`
+  (`13cda266…`; stdlib, objdump and r2, with `tools/quests_s3c.py`'s three-way reference scan and argument walkers and
+  `tools/sweep2_s7a.py`'s call-graph walker). Every claimed instruction is decoded by objdump and by r2, and the two
+  must agree. Every table cell is read from the `.txt` and from the `.bin`. The kept run was made once with this
+  revision, under a 4 GB scope: `workspace/logs/n66q/s2c/check-s2c-p1.txt` (`d24926c2…`, 367 lines,
+  `S2c total bad=0`), under `manifest-s2c-p1.sha256` (`fd3c4b47…`), which passes from that directory. The development
+  outputs are in `workspace/logs/n66q/dev/` with `manifest-dev.sha256`. They include the first full run with revision
+  `00cd05f2…`, before the D48 same-skill sites were added; it differs from the kept run only by those lines. Record:
+  [skills/0002 § 15](../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q).
+  Every settled row's *Route* cell carries its dated "S2c 2026-11-16 (part 1)" note. README § 4's S2c row is updated.
+- **Raised 34:** README 17; catalogue 3, 12, 25, 36, 67, 98, 99; dispatch 18–24, 46, 48, 58, 60, 81, 194, 195;
+  missiles 9–13, 39, 43, 44, 51, 58, 68, 93.
+- **Raised in part 13**, with the remainders in the Route cells. All stay `[I]` out of this plan unless a row says
+  otherwise. Catalogue 4 (the entries' write sets), 10 (the return-2 conditions), 53 (a class test), 80 (the do
+  replacement, which is dispatch E4's), 87 (the code's class source), 90 (the code's curse choice). Dispatch 42 (the
+  defender's durability path reaches `SKILLS_CanUse`; the scan cannot tell which unit it runs for), 74 (the grid, D3),
+  98 (the synergies), 108 (the handler's unit), 151 (mode 4, the leap), 157 (Impale's sequence). Missiles 2.
+- **Remainders routed here by S2a:** dispatch 68 (state 121, unit event 12) and 82 (the item-cast callers) are raised,
+  so both rows are now raised whole. Dispatch 187's state-id half is raised; its H2b half stays.
+- **Contradicted in part: missiles row 2.** No shrine function calls `MissileCreateAt`, and its two monster-AI callers
+  are missing from the row's list. This rewording and the refinements (mdo entry 37 and the 9b tails, the circle's
+  truncation, sandmaggot6/7, state 114 in `StateDo147Attached`, the mastery bonus's other callers, D42's scope) are in
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
+- **Symbols:** none raised. The run is static, and rule 14 covers logged returns.
+- **Totals** at `1f507662` (`quests_s3c.py totals` over the 29 files): a-logs 625, a-run 341, b 448, c 390, c-emu 494,
+  d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No class moved, so Phase 1 is 1 509, Phase 2 789 and blocked 328.
+- **Ready for Phase 3 (spec-writer).** Lines are at `b5999f5e`; match by text.
+  - Whole: README 142; catalogue 80, 228, 320, 487, 865, 1312, 1318; dispatch 105–111, 355, 361, 435, 441, 562, 1126,
+    1127; missiles 93–97, 390, 394, 395, 449, 483, 531, 667.
+  - Split: catalogue 100, 215, 672, 1061, 1144, 1207; dispatch 292, 529, 697, 765, 929, 993; missiles 44.
+  - Dispatch 492 (row 68) and 565 (row 82) move to whole.
+- **Judgment calls for the review:**
+  1. The constants and bounds (dispatch 18–24, missiles 9–13) are raised on the instruction read twice plus the
+     table's extent or its paired reader, as at S3c part 1's registry rows.
+  2. Catalogue 36 and missiles 51/93: "the tested word is the row's `pSrvHitFunc`" rests on the record offset `+0xE`
+     in `tools/excel_layouts.py`, on the `.bin`'s 64 948 for row 568, and on the `.txt`'s `*12`.
+  3. Dispatch 48 and 195 ("dead") are raised whole on the gate, the same skill (`edi = row(ebx)`, with no `ebx` write
+     before the push) and the callee's test of the same mask.
+  4. Dispatch 42 is raised in part, not whole, because of the durability path.
+  5. Dispatch 81's five shared pushes are placed by hand: the push sits before a branch, and the linear walkers stop at
+     the other path's `ret`. The output decodes each push twice.
+- **Review:** Tier B, requested by [`2026-11-16-reverser-architect-review-plan-0066-s2c`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s2c.md) (to be extended to part 2).
+- **Resume note (S2c part 2, 22 rows):** README 24; catalogue 14, 57, 58, 74, 75, 108; dispatch 41, 56, 57, 76 (the
+  reader half; its data half is in `check-s2c-p1.txt` D74/D76), 88, 95, 185, 193; missiles 5, 15, 23, 25, 48, 70, 94.
+  Also the S2a/S2b remainders routed to S2c: dispatch 1, 2, 25 (the packet ids in `g_SrvPacketTable`), 50 (the source
+  of noCost 1), 137 (K3's tests), README 22 and missiles 48 (the `0x40` marks). Add `bits` and `more` sections to
+  `tools/skills_s2c.py` as a new revision, and keep the output as `check-s2c-p2.txt`. Groundwork from part 1:
+  - the 124 `or [r+0xC4], 0x40` and 17 `and …, 0xFFFFFFBF` sites match the spec's counts. 44 of the sets and 7 of the
+    clears are in client-range functions (below 0x00540000), and `MonModeStartKnockback` (0x005A7884) clears the bit.
+    Scope rows 56, 57, 185 and 193 with this, and with S2a's mode-14 contradiction (backlog
+    `2026-11-10-reverser-reverser-skills-mode-14-start-bit-6`);
+  - Smite (catalogue 58): check whether the do-150 closure reaches any of the 124 set sites;
+  - the Skills flag bits are read as `test byte [row+off], [0x006CE268 + 4·bit]` (`repeat` is `+0x05` bit 3, mask
+    0x006CE274).
+  A fresh lane on `lane/n66q`.
