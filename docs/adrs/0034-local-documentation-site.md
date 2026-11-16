@@ -157,3 +157,7 @@ Follow-up work, filed as backlog entries (ADR-0018). This ADR builds nothing.
 - spec-writer: an *Illustrations* section in the pseudocode conventions restating the rules above, then the first
   `illustration` blocks: the maze in the levels wiki page, the treasure-class drop in the items wiki page once its
   pilot merges. ([entry](../backlog/2026-11-16-architect-spec-writer-adr-0034-illustration-blocks.md))
+
+Implementation note (`lane/site1` review, 2026-11-16): `tools/site_build.py` and `tools/site_mermaid.mjs` landed, and
+the block check is registered as gate rule **E19** (`python3 -I tools/site_build.py check`, run by `tools/gate.py`;
+the rule is written in `.claude/skills/architect/references/evidence-rules.md` § Mechanical checks).
