@@ -14,8 +14,8 @@
 - **32 cases: 29 stageable, 3 not.** The not stageable ones need more than two players in one party (MP02, MP03) or a
   player with no room, which no input holds open (MP05). Of the 29, three have no prediction yet: their code is not
   read (MP25 auras, MP31–MP32 trade and gold, plan 0043). *2026-10-27:* MP31 and MP32 have theirs now, from
-  [multiplayer/0002](0002-trade-and-party-gold.md) § 3 (plan 0051 Phase 1b, static reading, inferred). One depends on whether the stock client sends the packet
-  at all (MP18). Two may need owner play: MP17 (the Ancients) and MP14 (a joiner death in Andariel's level).
+  [multiplayer/0002](0002-trade-and-party-gold.md) § 3 (plan 0051 Phase 1b, static reading, inferred). One depended on whether the stock client sends the packet
+  at all (MP18: it does not while a trade is open, § 7). Two may need owner play: MP17 (the Ancients) and MP14 (a joiner death in Andariel's level).
   § 2 maps every source row to its cases.
 - **Coverage.** All 14 d-2c rows of plan 0038's inventory have a case, and so do the four partial halves (tc 27,
   sockets 22, quest-drops 25, player/creation 33). The other sources covered: the eight multiplayer open questions
@@ -427,6 +427,31 @@ readings each case reproduced:
 - [I] **A dead player** is in mode 17 with Unit `+0xC6` bit 0 clear, so PLRS's `dead` field stays 0 and the checkers
   read death from the mode, as `tools/tc.py` does. (run:2026-10-20-two-clients)
 
+### 7. Phase 2 of plan 0065 (run:2026-11-15-sweep8-two-clients, `lane/n65i`)
+
+- [C] **MP25, an offensive aura on a player** (Conviction, filter `0xA583`, bit `0x8000`, no `0x10000`): of 44 `AF` lines,
+  the 15 with the pair hostile passed, the 16 neither partied nor hostile and the 13 partied were refused (the declaration
+  also leaves the party, § 4), 0 mismatches against the § 4 prediction. Scope: Conviction only; Holy Fire, Holy Shock and
+  Holy Freeze were not cast, so their extra `+0xC4` tests (bits 2 and 3) are not exercised beyond "Conviction's, which pass in
+  the hostile case". The helping auras (`0x10000`) are run:2026-10-20-two-clients'. (fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0,
+  run:2026-11-15-sweep8-two-clients)
+- [C] **MP21, the room client count** (`+0x78`): at every `CE`, `CL` and `RP` row it equals the number of clients holding the
+  room (5 996 `RP` rows, 0 mismatches); 6 separating cases (a room two clients held, freed after both left), 12 shared rooms kept
+  while one client stayed. MP20: each activation attributed to the client of the latest `CRC` (6 of 14; 8 with none, counted).
+  (run:2026-11-15-sweep8-two-clients)
+- [C] **MP30, the leave sequence** for a player holding a quest item: `QL0`, `QE9`, `QE10`, `QL1` in order, the leaver's lines only.
+  [I] the e9 callback's count drop: not reached, the callback returned at one of its two early returns (0x00592C87, 0x00592C8D);
+  it stays as § 2 reads it. (fn:sub_00543BD0_QuestsInvItemEvent@0x00543BD0, 0x00592C80, run:2026-11-15-sweep8-two-clients)
+- [C] **MP18, observed: the stock client sent no `0x28` while a trade was open.** J's two clicks (rune, then cap) in an open trade gave `0x19`,
+  `0x1F`, `0x18` and no `0x28`, no `INSX`; the same clicks with no trade gave `0x19` then `0x28` and one insert (1 reproduced,
+  0 failed). One trade session, one pair of clicks, with its control live. [I] The branch at 0x0054B6DB..0x0054B6F4 cannot be reached from a stock client (other client inputs while a trade is open, such as a different click order, were not tried): a shortfall by Phase 1 ruling e.
+  (fn:SOCK_PacketInsert@0x0054B650, run:2026-11-15-sweep8-two-clients)
+- [C] **0058 (a), MP16:** 54 mercenary kills, n = 2 in 23 and n = 1 in 31 (the other member beyond d2 6400 of the monster), 11 pairs
+  the killer's distance and the monster's would decide differently, 1 pair within 800 inside the bound and 5 within 800 outside;
+  0 mismatches. (run:2026-11-15-sweep8-two-clients)
+- [C] **MP31** is met by run:2026-11-10-trade (T1, 0 mismatches). **Unreached:** MP27, MP32, 0058 (b) with the dead member partied,
+  and the player kill's `XK0` (reasons: experiments § run:2026-11-15-sweep8-two-clients); MP28 (b), (c) are postponed by the owner.
+
 ## Data touched
 
 struct:Unit+0x0E4 (the player lists the PLRS line walks). PlayerData `+0x160` and `+0x38` (§ 4) and `PlayerPair`
@@ -445,7 +470,7 @@ are in `re/types/save.h` (`lane/rbs2`). The two-client recipes are the archivist
   logs both directions. Narrowed by run:2026-10-20-two-clients: one withdrawal left `+0x160` unchanged (§ 6); the
   code is still not read.
 - [L] Whether `aurafilter`'s `0x8000` passes a hostile player (MP25 c with an offensive aura): not run (§ 6).
-- [L] Whether the stock client sends the socket insert while a trade is open (MP18).
+- [C] The stock client sent no socket insert while a trade was open, in the one session run; [I] that it never can (§ 7, MP18; fn:SOCK_PacketInsert@0x0054B650, run:2026-11-15-sweep8-two-clients).
 - [L] Whether `slots.py stop` on the joiner (a dropped connection) takes the same server removal path as *Save and
   Exit* (MP07, MP08, MP30): log the removal's caller in both. In run:2026-10-20-two-clients MP07's two leaves went
   through the drop, MP08's and MP30's through *Save and Exit*; both reached the PIEND line (0x00555500).

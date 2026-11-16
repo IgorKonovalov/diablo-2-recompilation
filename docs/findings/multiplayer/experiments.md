@@ -245,3 +245,64 @@ check held, with the commands and their output.
 - **Hygiene.** `slots.py stop 2` then `stop 1` after each session; one `d2run.py` (slot 2, pid 514007) outlived the
   stop of the dev session and was ended by pid after checking its command line (slot 2, mine). No game, gdb or driver
   was left running at the end (`pgrep`).
+
+## run:2026-11-15-sweep8-two-clients
+
+- **Question:** plan 0065 Phase 2. Do the staged two-client cases (plan 0044's list, plan 0058's three) match the Phase 0
+  predictions? Slots 1 (host, gdb) and 2 (joiner), `lane/n65i`, agent-driven, no owner play, Normal, expansion, TCP/IP over
+  127.0.0.1, seed 1, saves from `tools/mp_saves.py build` (37 recipes, 29 pairs).
+- **Precondition (port 4000).** Held as a confirmed existing block: the owner's `sudo ufw status verbose` of 2026-11-10
+  (`workspace/logs/n65i/ufw-owner-2026-11-10.txt`; active, deny incoming, no 4000 rule), with the no-root baseline
+  (`ufw-baseline.sha256`, eight files). `tools/ufwcheck.sh` at the head of every session's driver (`two.sh`): `UFW-OK`
+  before each of the 10 launches (per-session `<session>/ufw.log`) and once before the first launch (`ufw-pre.log`);
+  no rule or hash changed since the owner's listing. No root step was repeated.
+- **Tools.** Drivers `workspace/logs/n65i/drivers/` (`two.sh`, `lib.sh`, `pal.sh`, `mp30.sh`, `wounds.sh`, `pk.sh`,
+  `kills.sh`, `rooms.sh`, `portal.sh`, `mp18.sh`, `ptr.py`, `meet.sh`), adapted from run:2026-10-20-two-clients' drivers;
+  `tools/mp_check.py` with one fix (the `rooms` check skipped a `null` act of an `RP` line, which the logger writes for an act the
+  game has not loaded; it crashed on the first real log). Checks and counts: `workspace/logs/n65i/check-run.txt`; manifest
+  `workspace/logs/n65i/manifest.sha256` (77 lines, base `workspace/logs/`, passes). Dev logs (`dev-` names, outside the
+  manifest): `mp25` (first aura session; the declaration was refused in effect because the host was not yet in town: the
+  driver now checks both level ids before declaring), `kills-a0..a2`, `portal-a0`, `wpscan`.
+
+| Session | Rows | Kept log (`sweep8/2026-11-15-sweep8-two-<s>-host.log`) | Result |
+|---|---|---|---|
+| `mp25` | 12 | MpNovaHost, MpPalConv, `two-combat.gdb` | 44 `AF` lines, Conviction (filter `0xA583`): hostile 15 passed, neither 16 and partied 13 refused; `mp_check.py aura` 0 mismatches; `combat.py check` 8 events, 0 mismatches |
+| `wounds` | 18, 19 | MpPvpHost, MpWoundJoin, `two-wounds.gdb` | the joiner (hostile, Ripsaw) hit the host: 62 attack events, 24 open-wounds applications on a player (3 new state 62, 21 refresh, 200 frames), 1 857 stat-74 ticks checked; `combat.py check` 0, `stats.py check` 0 mismatches; 28 `DRB` lines, all `sh` 0 (no shield held), block chance 0 |
+| `mp30` | 15 | MpNovaHost, MpScrollJoin, `two-quests.gdb` | one leave: `QL0`, `QE9` (quest object 4, callback 0x00592C80, the joiner's item), `QE10`, `QL1` in order, only the leaver's lines; `mp_check.py leave` 0 mismatches. `Q4B`/`Q4C` never fired: the callback returned at one of its two early returns (0x00592C87 `[esi+9] = 0`, 0x00592C8D `[esi+0xC] = 6`), so the count drop is not observed |
+| `rooms` | 11 | MpNovaHost, MpTankJoin, `two-rooms.gdb` | `mp_check.py rooms`: 5 996 `RP` rows (+0x78 predicted from the `CE`/`CL` sets: 692 at 0, 2 274 at 1, 3 030 at 2 clients), 7 `FREE` (none of a held room), 6 separating (a room two clients held, freed after both left), 12 shared rooms kept while one client stayed; 0 mismatches. MP20: activations after a `CRC` of client 0 3, of client 1 3, of none 8. `monspawn.py check` 1 047 checks, 0 mismatches |
+| `pk` | 9 | MpNovaHost, MpNovaWeak, `two-kills.gdb` | the hostile host's Nova killed the joiner (mode 17, no monster within 30 sub-tiles). **0 `XK0` and 0 `XC0`**; `player.py check` and `xpshare` 0 mismatches over nothing |
+| `kills-b`, `kills-b2` | 8 | MpMercWeak, MpTankJoin | the host (life 40) did not die in either (120 teleport hops, then 47 walking hops): case not reached. As samples: 27 and 21 mercenary kills with the joiner partied, n = 2 in 23 and 17, n = 1 in 4 and 4 (the joiner in another level); `xpshare` and `player.py check` 0 mismatches |
+
+- **Not run, with the reason.** Row 7 (0058a, MP16): `kills.sh a` started MpMercHost in the Act IV town (level 103), not the field
+  (the joiner's `PLRS` was not yet in the log when `meet.sh` ran), three dev launches, no kept log; so the far credited
+  player and the 6400 bound are not exercised. Row 10 (MP18): `mp18.sh` written, not run. Row 13 (MP27 a, b): Kurast Docks'
+  town waypoint was not found by the pilot (no waypoint class in the `OBJS` lines within a 12 sub-tile ring of the
+  start; `wp --wp-find` refuses), so the level-101 portal was never opened (`dev/portal-a0`, `dev/wpscan`). Row 17 (MP32, MP32
+  full): not run; the pilot has no ground-pile pickup, which the case needs. Row 16 (MP31): met by run:2026-11-10-trade.
+  Row 14 (MP28 b, c): postponed by the owner.
+- **Part 2 (same run, `lane/n65i`, 2026-11-16).** Same precondition (`UFW-OK` before each of the 9 further launches,
+  `ufw-post.log` at the end), same drivers plus `kills2.sh`, `kills3.sh`, `mp18c.sh`, `pk2.sh`, `gold.sh`, `pile.py`; `meet.sh` now retries
+  the host's waypoint click until its level id changes (the first kept `kills-a` ran with the host still in the Rogue
+  Encampment and logged 0 kills; it was run again). Manifest now 137 lines. Results:
+
+| Session | Rows | Kept log | Result |
+|---|---|---|---|
+| `kills-a` | 7 | MpMercHost, MpTankJoin, `two-kills.gdb` | host from the Act IV town through the Act I waypoint to Cold Plains (level 3), partied; 54 mercenary kills: n = 2 in 23, n = 1 in 31 (the joiner beyond d2 6400 of the monster, host's Rogue credited, so a far member does not share; 11 pairs where the killer's distance and the monster's would decide differently); pairs within 800 of the bound: 1 inside (d2 <= 6400), 5 just outside; `mp_check.py xpshare` 0 mismatches, `player.py check` 77 `PLAYER_AddExperience` reproduced, 2 level-ups, 0 failed. A dev run (`dev-...-two-ka`) gave 56 kills, the same 0 |
+| `mp18`, `mp18c` | 10 | MpNovaHost, MpSockJoin, `two-sockets.gdb` | with the trade open the stock client's two clicks (rune, then cap) sent `0x19` (pick up), then `0x1F` and `0x18` (swap, put back): **no `0x28`**, no `INSX`, `sockets.py` 0 inserts. Control (`mp18c`, no trade, inventory opened with `i`): `0x19` then `0x28` (cursor item 0x20, target 0x1F), 1 insert reproduced, 0 failed. So the client never sends the insert while a trade is open: the packet branch at 0x0054B6DB..0x0054B6F4 is unreachable from a stock client (Phase 1 ruling e: a shortfall) |
+| `pk2` | 9 | MpNovaHost, MpNovaWeak, `two-kills.gdb` | the 0058c control: the hostile host killed 2 monsters first (`XK0` x 2, `ktype` 0, `XC0` x 2, `player.py check` 2 reproduced, 1 level-up), then Novaed the joiner, who died (mode 17). **Still 0 `XK0` with `mtype` 0**: the logger was live in the session, so the player death does not reach the logged entry 0x0057E990 |
+| `kills-b3` | 8 | MpMercWeak, MpTankJoin | not reached again: the host (life 40) did not die in 160 s of teleport hops (`--hop 30`) with the joiner parked (17 kills by its Rogue, host never hit) |
+| `gold` | 17 | MpNovaHost, MpGoldJoin, `two-gold.gdb` | not reached: `pile.py` clicked 12 dead monsters' cells, 0 `GP0` (no pickup); `two-gold.gdb` has no `KILL` line, so the cells came from `MON` mode 0/12 rows; no gold was seen on screen |
+
+- **0058b by a hostile joiner (dev, outside the kept set; `dev-...-two-kd3`, `kd4`).** The joiner (declared hostile) Novaed the
+  host (life 40) dead; the host's Rogue then killed 3 monsters beside the living joiner (30 sub-tiles from them): `XK0` x 3,
+  `xpshare` n = 1 "not partied" (hostility leaves the party), 0 mismatches. A re-party was tried (the hostile toggle and an
+  invite to the dead host: "no effect"), so the partied dead-killer reading (the dead member is not collected while the living
+  member is) is not reached; only its not-partied form is.
+- **MP27 (a, b), not reached.** Kurast Docks' town waypoint is object class 237 at (5159, 5049) (seed 1: the `docktown3.ds1`
+  waypoint unit (159, 49) plus the level origin (5000, 5000) read from the 48 `RL` rooms of level 75; the `OBJS` lines of a
+  walk that came within 40 sub-tiles listed it at that point). The pilot cannot reach it: from the start (5121, 5162) the path
+  runs over boardwalks; `wp --wp-at` and `follow --at` stall ("no move after 4 clicks"; one session also lost its clicks
+  to an inventory panel the driver left open). `portal.sh` now carries `--wp-at 5159,5049`; it needs a path planner or owner play.
+- **Hygiene.** `slots.py stop 1` and `stop 2` after every session; once a driver was started too soon after a stop and
+  refused (slot 2 busy) before launching anything. Both slots end empty (`saves.py --slot N restore n65i`: 0 files, sha match,
+  aside removed; `status`: harness idle). No game, gdb, driver or wait loop remains.

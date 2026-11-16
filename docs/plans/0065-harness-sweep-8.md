@@ -377,3 +377,110 @@ No game, no Ghidra (the owner's quiet machine); one objdump read of 0x00648EB0 a
 - **Ledger cells:** `architect-review`, Fixes `audit of lane/n65h: overclaim 1, misread 1, omission 3, wrong anchor 2,
   stale cross-reference 5, other 1`; no reject-grade miss. **Promotion:** every fix is an existing rule (reverser 1, 10,
   12, 14, 20), so no rule added.
+
+### 2026-11-15 — Phase 2 start (two-client batch), `lane/n65i` (reverser, slots 1 and 2): predictions and session list, written before any kept log
+
+Branched from `main` `712c49e6`. **Port-4000 precondition re-read first** (multiplayer/0001 § 5): step 1 (confirmed existing
+block) is the owner's `sudo ufw status verbose` of 2026-11-10 (active, deny incoming, no rule for 4000/tcp), kept as
+`workspace/logs/n65i/ufw-owner-2026-11-10.txt` with its no-root baseline (`ufw-baseline.sha256`, the eight files, the same
+hashes as run:2026-10-20-two-clients and run:2026-11-10-trade). Re-read today before any hosting: `tools/ufwcheck.sh`
+`UFW-OK` (ufw active and enabled, `DEFAULT_INPUT_POLICY="DROP"`, `ENABLED=yes`, all eight hashes unchanged), and no listener on
+4000 before the first launch. Nothing changed since the owner's listing, so step 1 still holds and no root step is repeated;
+`ufwcheck.sh` runs at the head of every session's driver (`two.sh`, log `<session>/ufw.log`).
+
+**Predictions: the Phase 0 staging table above (rows 7 to 13, 15, 17 to 19), unchanged, and `tools/sweep8_check.py predict`.**
+No prediction is edited by this entry; a case that does not separate its readings is named as such in the run record.
+
+**Session list** (one fresh pair of processes per session; saves from `tools/mp_saves.py build`, Normal, expansion, TCP/IP over
+127.0.0.1; drivers kept in `workspace/logs/n65i/drivers/`, adapted from run:2026-10-20-two-clients' `workspace/logs/p44h-run/drivers`):
+
+| Session | Rows | Pair | Logger | Checks |
+|---|---|---|---|---|
+| `mp25` | 12 | MpNovaHost, MpPalConv | `two-combat.gdb` | `mp_check.py aura`, `combat.py check` |
+| `wounds` | 18, 19 | MpPvpHost, MpWoundJoin | `two-wounds.gdb` | `combat.py check`, `stats.py check`, `mp_check.py gates` |
+| `mp30` | 15 | MpNovaHost, MpScrollJoin | `two-quests.gdb` | `mp_check.py leave` |
+| `mp18` | 10 | MpNovaHost, MpSockJoin | `two-sockets.gdb` | `sockets.py` |
+| `gold`, `goldfull` | 17 | MpNovaHost, MpGoldJoin / MpGoldFull | `two-gold.gdb` | `mp_check.py gold` |
+| `kills-a` | 7 | MpMercHost, MpTankJoin | `two-kills.gdb` | `mp_check.py xpshare`, `player.py check` |
+| `kills-b` | 8 | MpMercWeak, MpTankJoin | `two-kills.gdb` | same |
+| `pk` | 9 | MpNovaHost, MpNovaWeak | `two-kills.gdb` | `player.py check`, `mp_check.py xpshare` |
+| `rooms` | 11 | MpNovaHost, MpTankJoin | `two-rooms.gdb` | `mp_check.py rooms`, `monspawn.py check` |
+| `portal` | 13 | MpDurHost, MpDurClosed / MpDurOpen | `two-quests.gdb` | `mp_check.py portalquest` |
+
+MP31 (row 16) is met by run:2026-11-10-trade; MP28 (b), (c) are postponed by the owner (Phase 0 review). A session that needs
+a driver fix is first a development session (`dev-` log, outside the manifest); the kept session is run again from a fresh
+install. The first development session, `mp25` on `two-combat.gdb`, showed the three aura cases (hostile passes, partied and
+neither refused, 0 mismatches) and that `party hostile` is refused in effect when the host is not yet in town; the driver
+now checks both levels first.
+
+### 2026-11-16 — Phase 2 (two-client batch), `lane/n65i` (reverser, slots 1 and 2), partial: checkpoint with a resume note
+
+Record [run:2026-11-15-sweep8-two-clients](../findings/multiplayer/experiments.md#run2026-11-15-sweep8-two-clients); checks and manifest
+(77 lines) in `workspace/logs/n65i/`. Port-4000: the owner's 2026-11-10 listing plus the no-root baseline, `UFW-OK` before every launch.
+Both slots clean (saves restored, harness idle).
+
+| Row | Case | Result |
+|---|---|---|
+| 12 | MP25 offensive (Conviction) | 44 `AF`: hostile 15 passed, neither 16 and partied 13 refused; 0 mismatches. Raised in part (Conviction only) |
+| 18, 19 | open wounds on a player; the shield flag | 24 applications on a player, 1 857 ticks, 62 events, 0 mismatches; 28 `DRB` `sh` 0: the shield-held branch is not run. Raised in part |
+| 15 | MP30 | leave order met, 0 mismatches; the e9 count drop not reached (callback returned early) |
+| 11 | MP20, MP21 | 5 996 `RP` rows, 6 separating, 0 mismatches; MP20 attribution 6 of 14 activations |
+| 9 | 0058c a player kills a player | the victim died, 0 `XK0`: prediction not met, `[I]` (no control in the session) |
+| 8 | 0058b a dead killer | not reached (the host did not die, two sessions); 48 merc kills as samples, 0 mismatches |
+| 7 | 0058a, MP16 | not reached (driver started in the Act IV town; three dev launches) |
+| 10 | MP18 | not run (`mp18.sh` written) |
+| 13 | MP27 a, b | not run: the pilot found no Kurast Docks waypoint |
+| 17 | MP32, MP32 full | not run: the pilot has no ground-pile pickup |
+| 16, 14 | MP31, MP28 (b), (c) | met by run:2026-11-10-trade; postponed by the owner |
+
+Mismatches over the run: 0 in every check that had data (`aura`, `combat`, `stats`, `leave`, `rooms`, `monspawn`, `xpshare`, `player`).
+Tool change: `tools/mp_check.py rooms` skips a `null` act of an `RP` line (it crashed on the first real log).
+
+**Resume note** (the lane stopped at its token budget, not at a blocker). Drivers are in `workspace/logs/n65i/drivers/`. Next lane:
+(1) `kills.sh a`: wait until `where` shows both players before `meet.sh`, then the Act I waypoint; the host's explore with the
+joiner parked. For the far case, hop the host more than 80 sub-tiles away while the Rogue fights. (2) `kills.sh b`: the host must
+die, so try `--walk` into a pack at Cold Plains, or leave the Rogue dismissed until the host stands among monsters. (3) `mp18.sh`
+as written (trade, pick the rune up, click the cap). (4) `portal.sh`: needs the Kurast Docks waypoint position (read it from a
+kept Act III log or add it to `--wp-at`). (5) MP32: a pile pickup, for example a click at the `KILL` position of a monster killed
+by the host. The `pk` case wants a control (any monster kill in the same session). The Phase 3 re-tag may take what Phase 2
+raised now (MP25, MP21, open wounds); the owner decides whether the rest runs.
+
+**Review request:** [Tier B](../backlog/archive/2026-11-16-reverser-architect-review-plan-0065-p2-two-clients.md).
+
+### 2026-11-16 — Phase 2 part 2 (`lane/n65i`, slots 1 and 2): driver fixes and the new case's prediction, written before its first kept log
+
+Merged `main` into the branch first (clean). Driver fixes (in `workspace/logs/n65i/drivers/`, not committed): `kills2.sh` takes
+the host from the Act IV start to the Act I waypoint with `meet.sh` (retried until the host's level changes) in place of `out`;
+the 0058b host walks alone while the joiner is parked, the joiner follows only once the host is down; `mp18c.sh` is a control for
+MP18 (the same clicks with no trade open and the inventory opened with `i`); `portal.sh` takes the Kurast Docks waypoint at
+(5159, 5049) (the DS1 waypoint unit 237 at (159, 49) of `docktown3.ds1` plus the level origin (5000, 5000) read from the 48 `RL`
+rooms of Act 3 - Town in the dev log); `pile.py` clicks the `KILL` position of each new kill (the MP32 pickup step).
+
+**New case: the 0058c control** (a monster kill in the same session, before the player kill, `two-kills.gdb`). Prediction:
+the monster kill gives an `XK0` line (so the logger is live in that session) and the player kill still gives none or gives one
+with `mtype` 0. Readings: (i) `XK0` for the monster and none for the player: the player-death path does not reach
+`XpCreditPlayer`'s logged entry 0x0057E990 (player/0002 § 4 *victim-player* is then not run by a hostile player's kill); (ii) `XK0`
+for both: the part-1 absence was the logger not armed. Separating by the line counts; the monster's credit is checked by
+`player.py check` as in every kills session.
+
+### 2026-11-16 — Phase 2 part 2 (`lane/n65i`, slots 1 and 2): results and resume note
+
+Record: [run:2026-11-15-sweep8-two-clients](../findings/multiplayer/experiments.md#run2026-11-15-sweep8-two-clients), *Part 2* block; manifest 137 lines. `UFW-OK`
+before every launch and at the end; both slots idle, saves restored, no game, gdb or wait loop left. Mismatches in every check that had data: 0.
+
+| Row | Case | Result |
+|---|---|---|
+| 7 | 0058a, MP16 | met: 54 kills, n = 2 in 23, n = 1 in 31, 1 pair inside and 5 outside the 6400 bound, 0 mismatches (the near-bound band is thin) |
+| 10 | MP18 | shortfall confirmed: no `0x28` with the trade open (`0x19`, `0x1F`, `0x18` only); control without a trade: `0x28`, 1 insert |
+| 9 | 0058c control | monster kills gave `XK0` x 2, the joiner then died, still no player `XK0`: the logger was live, so the death does not reach 0x0057E990 (`[I]`, the stopping test not traced) |
+| 8 | 0058b | not reached with the partied reading: the host did not die in 4 sessions (teleport, walking, melee, 30-sub-tile hops); a hostile joiner killed it in a dev run and its Rogue then killed 3 monsters beside the living joiner (n = 1 not partied, 0 mismatches) |
+| 13 | MP27 a, b | not reached: Docks waypoint at (5159, 5049) found, the pilot cannot path to it (boardwalks) |
+| 17 | MP32, full | not reached: `pile.py` clicked 12 dead monsters' cells, 0 `GP0`; `two-gold.gdb` has no `KILL` line |
+
+**Resume note.** MP27 needs a path to the waypoint (a planner over the town's collision, or one owner-played walk giving the
+route as a list of clicks) and then `portal.sh` as written. MP32 needs gold drops: a drop of a gold pile logged with its cell (a
+`DROP`/item-position line in `two-gold.gdb`) in place of `pile.py`'s guess, or owner play. 0058b partied needs a death by a
+monster the Rogue cannot reach first (a unique with a ranged attack, for example in the Burial Grounds) or a way back into the party
+after a hostile kill. The Phase 3 re-tag may take MP18, 0058a and the `pk` control now.
+
+**Review request:** the existing [Tier B](../backlog/archive/2026-11-16-reverser-architect-review-plan-0065-p2-two-clients.md), extended to part 2.
