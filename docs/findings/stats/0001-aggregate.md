@@ -22,7 +22,10 @@ finding, write for write; § 9 lists what each claim was checked against and wha
   fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0, run:2026-10-17-stats)
 - [I] Both readers floor the value at `MinAccr << ValShift` when the stat has `fMin` and the unit is a player or a
   monster: no read of the run reached the floor. (fn:sub_00624F60_StatListGetValue@0x00624F60, tbl:ItemStatCost.txt:fMin,
-  tbl:ItemStatCost.txt:MinAccr)
+  tbl:ItemStatCost.txt:MinAccr) **S4e 2026-11-16, contradicted in part:** the test is `v < MinAccr` (unshifted), and
+  only then is `MinAccr << ValShift` returned, so a value between the two is kept; the floor also needs the list's
+  extended bit and a non-NULL record argument, and an absent entry returns 0 unfloored. `[C]` as code, [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu).
+  (0x00624FC5–0x00624FD1, run:2026-11-16-sweep2-s4e-emu)
 - [C] **The cache is kept by propagation.** Every add or set on any list passes the delta up the parent chain
   (`STATLIST_Propagate`): a stat with no `op` link adds the delta to each extended list's cache; a stat that feeds an
   `op` or is an `op` target is re-evaluated (`sub_006266C0_StatRecompute`). The walk stops after a list with flag
@@ -35,7 +38,9 @@ finding, write for write; § 9 lists what each claim was checked against and wha
   `CharStats × (full − own) × 64` for energy and vitality. The arithmetic is § 4. (fn:sub_00626200_StatEvaluate@0x00626200,
   fn:ITEMSTATCOST_Load@0x00637A00, run:2026-10-17-stats)
 - [I] Op 3 (no row), op 6 and 7 (time of day; no spawnable row) and the empty ops 10 and 12 were not reached.
-  (fn:sub_00626200_StatEvaluate@0x00626200, fn:STAT_ByTimeValue@0x0065CA30)
+  (fn:sub_00626200_StatEvaluate@0x00626200, fn:STAT_ByTimeValue@0x0065CA30) **S4e 2026-11-16:** op 3, 10 and 12 as
+  code, and "no row" for op 3, 10 and 12 over the table, `[C]` in [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu); ops 6 and 7 are § 10's. Which affixes carry
+  the 36 op-6/7 rows stays `[I]`. (0x0062632D, run:2026-11-16-sweep2-s4e-emu)
 - [C] **Op 6 and 7 as code** (plan 0051 Phase 1b, § 10): `STAT_ByTimeValue` and `StatEvaluate`'s cases 6 and 7
   (with `ActTimeOfDay`, ops 10, 12 and above 13 between them) were run under emulation on synthetic lists. They
   reproduce § 4's arithmetic bit for bit in 9 000 calls, 0 mismatches. Each case adds a term only when the list's
@@ -250,7 +255,10 @@ while (list) {
   player or monster and a positive cached stat 0, see below), 4/5 (linked unit a player or monster with positive
   stat 0), 6/7 (list of a player or monster) or 13 (list of an item); ops 8, 9, 10, 11 never take. So a source of op
   1, 2–7, 12 or 13 keeps its **old** cache value (0 on first use) while its target is non-zero, and its dependents are
-  not walked. (fn:sub_006266C0_StatRecompute@0x006266C0, 0x006267AD the op class table at 0x0062690C)
+  not walked. (fn:sub_006266C0_StatRecompute@0x006266C0, 0x006267AD the op class table at 0x0062690C) **S4e
+  2026-11-16:** `[C]` as code for every class, both outcomes, with two refinements: ops 2/3 read the value with no floor
+  and ops 4/5 through `STATS_GetUnitStat` with it, and an op byte above 13 takes (unreachable on loaded data), [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu).
+  (0x006267A0, run:2026-11-16-sweep2-s4e-emu)
 - [I] **The write order, by instruction** (plan 0041 P3 review, objdump): `StatEvaluate` at 0x006266D0; no `+0x51`:
   `CacheWrite` at 0x006266EA and return; `v = 0`: `CacheWrite` at 0x00626708; per `+0x58` target (three words at
   most, `0xFFFF` ends): `StatRecompute` of the target at 0x00626775, its `CacheWrite` at 0x00626786, the take test only
@@ -265,7 +273,9 @@ while (list) {
   player the per-level sources are hidden; a monster's strength is usually 0. The loader fills only `+0x5E..+0xDD`
   with `0xFFFF` (`rep stos`, 0x20 dwords), not `+0x0DE`, so the 0 of a non-target row is the record's initial
   content, which no code read here writes; Phase 2 question 3 confirms it. (0x006267C0–0x006267DA,
-  0x006267F7–0x00626811, 0x00638250–0x00638262)
+  0x006267F7–0x00626811, 0x00638250–0x00638262) **S4e 2026-11-16:** the word read is the source row's `+0x0DE + 6k`
+  `[C]` as code (a model reading the target's row fails 80 cases), [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu); what a loaded non-target row holds there
+  stays as stated. (run:2026-11-16-sweep2-s4e-emu)
 - [I] **Level-up.** `level` is the `op base` of the 37 per-level rows, so it has dependents; a change of stat 12
   re-evaluates `level` (no targets, so it is always written) and then every per-level row and their targets.
   (fn:ITEMSTATCOST_Load@0x00637A00, tbl:ItemStatCost.txt:op base)
@@ -335,7 +345,9 @@ return acc;
 - [I] `UnitGetMaxHp`, `UNIT_GetMaxMana` and `UNIT_GetMaxStamina` read the cached full stats 7, 9 and 11 with the
   `fMin` floor (`MinAccr` 1, 0, 0). So `maxhp = base 7 + Σ items/states/sets flat 7 + op 9 + op 11 + op 2 + op 6`,
   each as § 4. (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, fn:UNIT_GetMaxMana@0x00625D60,
-  fn:UNIT_GetMaxStamina@0x00625DB0, tbl:ItemStatCost.txt:MinAccr)
+  fn:UNIT_GetMaxStamina@0x00625DB0, tbl:ItemStatCost.txt:MinAccr) **S4e 2026-11-16:** the getters' bodies `[C]` as
+  code (the cached stat through `StatListGetValue` with the stat's record; 0 for a NULL unit or list, or a count at or
+  below the stat), [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu); the floor is the corrected one of § 1. (run:2026-11-16-sweep2-s4e-emu)
 - [I] **The rescale callback.** On a cache change of stat 7, 9 or 11 with `new ≠ old`, `old > 0` and current
   (6, 8, 10) > 0: `r = ftol((float)(new / max(old, 256) × cur))` (`fild`/`fidiv`/`fimul`, stored to a float32), and
   the current value becomes `r` (at least 1) when `max(r, 1) < new`, else `new`. A monster with a MonStats `+0x1A0`
@@ -566,6 +578,69 @@ pinned image under Ghidra 12.1.2's p-code emulator with `EmuTrace.java` (ADR-001
   `+0x04 → {+0x08, +0x28}`. So the phase `x` as a time of day (90 per quarter, 360 a cycle, from the `q·90` offset
   and the 180/359 folds) is a reading of the code's constants, not a run observation. Neither is who reaches the
   cases in play, given that no stock row is spawnable. (fn:sub_0061C100_ActTimeOfDay@0x0061C100)
+
+### 11. Plan 0066 batch S4e part 1: the stats family under emulation (run:2026-11-16-sweep2-s4e-emu)
+
+Plan 0066 Phase 1, batch S4e (`lane/n66z`, 2026-11-16), part 1. The code run on the pinned image under Ghidra 12.1.2's
+p-code emulator with `EmuBoundary.java` (ADR-0015; no observed boundary, no import), compared with
+`tools/stats_s4e_emu.py`'s models over 11 000 synthetic cases, 0 mismatches, 30 controls each separating with `passed`
+0. Record, counts and read set: [items experiments](../items/experiments.md#run2026-11-16-sweep2-s4e-emu). Each confirmed
+statement below covers the code as a map from its arguments and the declared bytes to its return value and the bytes it writes
+(ADR-0015 (3)); the offsets' meanings keep their own tags.
+
+- [C] **The readers' floor.** `StatListGetValue` (EBX list, EDI key, stack record; `ret 4`) reads the cache `+0x48`
+  when the list's `+0x10` bit 31 is set, else the own array `+0x24`; `StatListGetBaseValue` always reads `+0x24`. Both
+  binary-search the array with a signed key compare and return 0 for an absent key, unfloored. A present value `v` is
+  replaced only when all hold: the record argument is not NULL, its `+0x05` has the bit of the mask 0x006CE270 (`4`),
+  the list's `+0x10` bit 31 is set (for the base reader too), the list's `+0x44` is not NULL, and the dword it points
+  to (the owner's type) is 0 or 1. Then **`v < MinAccr` (signed, `+0x2C` unshifted)** gives
+  `MinAccr << (ValShift & 31)` (`+0x18`), 32-bit. So a value at or above `MinAccr` but below `MinAccr << ValShift` is
+  returned as it is (65 cases). 2 581 present reads, 524 floor tests, 211 floored (25 with `ValShift` ≥ 32), 648
+  absent. Controls: the threshold `MinAccr << ValShift` 79 cases, no extended test 83, no owner-type test 240,
+  unsigned 172, `≤` 10, absent entries floored 87. (fn:sub_00624F60_StatListGetValue@0x00624F60,
+  fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0, 0x00624FC5–0x00624FD1, 0x00624F25–0x00624F31,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] **`STATS_GetUnitStat(unit, stat, param)`** (`ret 0xC`): 0 for a NULL unit, a NULL `unit +0x5C`, a stat below 0
+  or at or past the DataTables count `+0xBD4`; else `StatListGetValue(unit +0x5C, (stat << 16) + param word, the
+  stat's record)`, so with the floor above. 675 stats out of range. (fn:STATS_GetUnitStat@0x00625480,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] **The maxima getters** `UnitGetMaxHp`, `UNIT_GetMaxMana`, `UNIT_GetMaxStamina` (`unit`; `ret 4`): 0 for a NULL
+  unit or a NULL `unit +0x5C`, 0 when the DataTables count is at or below 7, 9 or 11 (signed `jle`) or the record
+  address `+0xBCC + 0x144 × stat` is 0; else `StatListGetValue(unit +0x5C, stat << 16, that record)`. They read no
+  CharStats cell and add nothing: the value is the cached stat with the floor. 1 500 cases (hp 510, mana 539, stamina
+  451), 653 at a count at or below the stat. Controls: stat − 1 562, the own value 408, `≥` on the count 117, no
+  floor 39. (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, fn:UNIT_GetMaxMana@0x00625D60,
+  fn:UNIT_GetMaxStamina@0x00625DB0, run:2026-11-16-sweep2-s4e-emu)
+- [C] **`StatEvaluate`'s op 3** (ECX list, EDX key): per entry `{op base +0xDE, source +0xE0, op +0xE2, param +0xE3}`
+  of the target's table, op 3 has op 2's gates: the list's `+0x08` is 0 or 1; the op base is not `0xFFFF` and below
+  the count; `b = StatListGetValue(list, base << 16, NULL) >> (ValShift(base) & 31)` (arithmetic, no floor: the
+  record argument is NULL) is above 0; `p = Eval(list, source << 16)` is not 0. Then `term = (p × b) >> (param & 31)`
+  (32-bit product, arithmetic shift); op 2 adds `term`, op 3 adds `MulDiv(b0, term, 100)` with `b0` the
+  own-plus-children sum. Ops 10 and 12 go to the next entry (0x00626665), as does any op above 13. 2 500 cases: op 2
+  terms 949, op 3 1 347, op 10 670 and op 12 643 skipped, wrapped products 356 / 551, a param ≥ 32 72 / 132, nested
+  sources 428. Controls: op 3 as op 2 600, op 3 on the running total 310, no list-type test 722, logical shifts 357,
+  op 10 as op 2 111. (fn:sub_00626200_StatEvaluate@0x00626200, 0x0062632D–0x0062639B, 0x00626658,
+  fn:sub_00483360_MulDiv@0x00483360, run:2026-11-16-sweep2-s4e-emu)
+- [C] **No stock row has op 3, 10 or 12**: the 359 rows' `op` cells are blank 275, 1 ×2, 2 ×33, 4 ×2, 5 ×2, 6 ×34,
+  7 ×2, 8, 9, 11 ×2, 13 ×5 (`static.txt`). (tbl:ItemStatCost.txt:op, run:2026-11-16-sweep2-s4e-emu)
+- [C] **The take test** (§ 3) as a map: `StatRecompute(list, key, record, arg)` (`ret 8`) tests a target only when its
+  new value is not 0, by the source row's `+0x54` through the class bytes 0x0062690C: ops 1 and 12 always take; ops 2
+  and 3 take when the list's `+0x08` is 0 or 1 and the word `w` is not `0xFFFF` and `StatListGetValue(list, w << 16,
+  NULL)` is above 0 (no floor); ops 4 and 5 when the list's `+0x04` is not NULL, its first dword is 0 or 1, `w` is not
+  `0xFFFF` and `STATS_GetUnitStat(linked unit, w, 0)` is above 0 (with the floor); ops 6 and 7 when `+0x08` is 0 or 1;
+  op 13 when it is 4; ops 0 and 8–11 never; **an op byte above 13 always takes** (`ja` at 0x006267A0 to 0x00626827).
+  `w` is the word at the **source** row's `+0x0DE + 6k` (the quirk below). A source with no take and `v ≠ 0` is
+  written and its dependents walked. 3 000 cases: taken / not, class 1 63 / 622, class 2 88 / 669, class 3 258 / 238,
+  class 4 55 / 211, class 5 396 / 0, class 0 0 / 630, above 13 121 taken. Controls: `w` from the target's row 80, the
+  test at a target of 0 104, op 6/7 never 119, above 13 not 43, class 0 taken 243, class 5 not 158, op 13 never 24,
+  op 6/7 for any type 93, op 13 by the player/monster test 65, op 2/3 with the floor 6, op 4/5 without 9.
+  (fn:sub_006266C0_StatRecompute@0x006266C0, 0x00626790–0x00626827, 0x006267AD, run:2026-11-16-sweep2-s4e-emu)
+- [I] The op byte above 13 does not reach the take test on loaded data: `ITEMSTATCOST_Load` zeroes an `op` outside
+  1..13 (§ 4, E1). (fn:ITEMSTATCOST_Load@0x00637A00)
+- [I] **Not covered:** ops 1, 4–9, 11 and 13 inside `StatEvaluate` (no case's op table held them; ops 6 and 7 are § 10's),
+  a list with children, the allocator paths of insert and remove, the stat callback, and what the offsets hold in
+  play. The phase of ops 6 and 7 (`owner +0x1C` → `+0x04` → `+0x08`, `+0x28`) as a time of day stays § 10's `[I]`.
+  (fn:sub_00626200_StatEvaluate@0x00626200)
 
 ## Data touched
 

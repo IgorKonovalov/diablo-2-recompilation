@@ -3961,3 +3961,69 @@ grid reading, 0 mismatches; verdict "not separated (no fresh bit-0-only word)", 
 2026-11-15 (option (a)). Kept in `workspace/logs/sweep8/` (`2026-11-15-sweep8-p12-s1-3-p12.log`, `.marks.tsv`) and
 `workspace/logs/n65h/` (`checks/p12.txt`, `p12.out`; `manifest-p12.sha256`, 4 lines, passes from the repository root).
 Backs [path/0007](../path/0007-community-cross-check.md#plan-0065-phase-1-the-p12-session-run2026-11-15-sweep8-p12).
+
+## run:2026-11-16-sweep2-s4e-emu
+
+Plan 0066 Phase 1, batch S4e (`lane/n66z`). The batch splits by family (inventory README § 4: "S4e items and
+stats"); **part 1 is the stats family**, recorded here, its claims in
+[stats/0001 § 11](../stats/0001-aggregate.md#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu)
+(pointer under [stats experiments](../stats/experiments.md#pointer-plan-0066-batch-s4e-part-1-the-stats-family)). The items parts (price core,
+request handlers, inventory families) will add their own sections under this heading.
+
+### Part 1: the stats family (2026-11-16)
+
+- **Question:** do the stat-list readers (`sub_00624F60_StatListGetValue`, `sub_00624ED0_StatListGetBaseValue`,
+  `STATS_GetUnitStat`), the three maxima getters, `StatEvaluate`'s ops 2, 3, 10 and 12, and `StatRecompute`'s take
+  test map their inputs as [stats/aggregate](../../specs/stats/aggregate.md) C5, D1, F2 and G1 state, on a declared
+  stat-list image?
+- **Setup:** Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (`GHIDRA_PROJ_DIR=workspace/ghidra-n66z`, heap
+  3 GB, one instance at a time, a 4 GB scope), `re/ghidra_scripts/EmuBoundary.java` unchanged, one kept launch per
+  family (`run.sh` in the run directory), after one development pass of 60 cases per family (`dev/`,
+  `manifest-dev.sha256`, not cited). New tool `tools/stats_s4e_emu.py` (`02c23870…`; `cases`/`check`/`static`/`manifest`; every
+  draw from `random.Random("n66z-s4e-<family>")`). Declared image, written per case: `g_pDataTables` (0x00744304) to a
+  scratch DataTables (`+0xBCC` the records, `+0xBD4` their count); ItemStatCost records of 0x144 bytes with only the
+  fields the code reads (`+0x04`, `+0x05`, `+0x18`, `+0x2C`, `+0x50..+0x54`, the targets `+0x58`, the dependents
+  `+0x5E`, the op table `+0xDE`); stat lists (`+0x00`, `+0x04`, `+0x08`, `+0x10`, own `+0x24`, `+0x3C` null, `+0x44`,
+  cache `+0x48`, `+0x5C` null), the owner's type dword, a unit's `+0x00` type and `+0x5C` list. Guards on the fatal
+  path and the allocator (0x00408090, 0x00408A60, 0x00681E09, 0x0040B4B0, 0x0040B430, 0x0040B480): none reached; the
+  generator rejects a `take` case whose model would grow the cache (`count ≥ capacity` at 0x00624CA4) or shrink it
+  (`capacity − count > 8` at 0x00624D57). No observed boundary, no import (ADR-0021 and ADR-0029 not used).
+- **Families:** `read` 4 000 (`StatListGetValue`, `StatListGetBaseValue` with EBX list, EDI key; `STATS_GetUnitStat`
+  with stats below 0, at and past the count), `max` 1 500 (the three getters; counts 0, −1, stat − 1, stat, stat + 1,
+  random; a record base that makes the record address 0), `ops` 2 500 (`StatEvaluate` on a target whose op table holds
+  ops 2, 3, 10, 12 and above 13, 1 to 16 entries; sources plain or with their own op 2/3 table; `ValShift` and the op
+  param up to 255), `take` 3 000 (`StatRecompute` of a source with one to three targets and up to three dependents,
+  every op byte 0–13 and above, list owner types 0, 1, 2, 3, 4 and random, a linked unit of each type or none).
+- **Result:** `workspace/logs/n66z/s4e/run/check.txt` (`e138a326…`, 46 lines), `static.txt` (`8149f77b…`, 41 lines),
+  `r2.txt` (`f083ed6b…`, 11 lines), `manifest.sha256` (`c0773683…`, 24 lines, passes from that directory); `cases`
+  regenerates every `.cases` and `.mem` byte for byte. 11 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no
+  traced write. Tallies: `read` present 2 581, absent 648, the floor tested 524, floored 211 (25 with `ValShift` ≥ 32),
+  kept at or above `MinAccr` but below `MinAccr << ValShift` 65, a null record 199, `fMin` off 575, a plain list 544,
+  no owner 143, another owner type 596, a stat out of range 675; `max` 1 500 (hp 510, mana 539, stamina 451), the count
+  at or below the stat 653, a record address 0 29, floored 40; `ops` op 2 terms 949, op 3 terms 1 347, `b ≤ 0` 965 /
+  1 305, the list type outside 0/1 1 988 / 2 924, op base 0xFFFF or past the count 200 / 333, `p = 0` 288 / 392, a
+  param ≥ 32 72 / 132, a wrapped product 356 / 551, op 10 skipped 670, op 12 643, above 13 2 005, nested 428; op 3's
+  `MulDiv` took its 32-bit (488), wrapped (205), `a`-first (190) and `b`-first (464) paths; `take` class 0 (ops 0,
+  8–11) 630 tests not taken, class 1 (ops 2, 3) 63 taken / 622 not, class 2 (ops 4, 5) 88 / 669, class 3 (ops 6, 7)
+  258 / 238, class 4 (op 13) 55 / 211, class 5 (ops 1, 12) 396 taken, an op above 13 121 taken; a target value of 0
+  (no test) 2 277, the source written and its dependents walked 1 186, a source of 0 876, inserts 1 925, removals
+  1 472, flag `0x20000000` set 1 535. **30 controls, each separating, `passed` 0:** `read` 8 (the spec's
+  `MinAccr << ValShift` threshold 79, no extended test 83, no owner-type test 240, unsigned 172, `≤` 10, no shift mask
+  22, absent entries floored 87, own for cache 1 986), `max` 5 (stat − 1 562, the base value 408, `≥` for `>` on the
+  count 117, no floor 39, the spec's threshold 17), `ops` 5 (op 3 as op 2 600, op 3 on the running total 310, no
+  list-type test 722, logical shifts 357, op 10 as op 2 111), `take` 12 (the word from the target's row 80, the test
+  at a target of 0 104, no take 424, op 6/7 never 119, above 13 not taken 43, op 2/3 with the floor 6, op 4/5 without
+  it 9, class 0 taken 243, class 5 not 158, class 4 never 24, op 6/7 for any type 93, op 13 by the player/monster
+  test 65).
+- **Read set** (ADR-0015 (2), enumerated by the tracer): the mask dword 0x006CE270 (`4`, .rdata; byte reads at
+  0x00624EFC, 0x00624F9F, dword at 0x00625019), `StatEvaluate`'s jump table 0x00626688, the take class table
+  0x0062690C and jump table 0x006268F4, and the CRT `memmove` 0x00683840's own jump tables (0x00683950..0x00683B54),
+  all in `.text` or `.rdata`, not writable (`static.txt`). The callback mask 0x006CE274 is never read: every list's
+  `+0x5C` is null, read first.
+- **Tool limits** (ADR-0015 (5)): the shifts by `CL` (`shl edx, cl` at 0x00624F2F and 0x00624FCF; `sar` at
+  0x00626301, 0x00626326, 0x00626372, 0x00626399) are cited from r2 (`r2.txt`); cases with `ValShift` or the param at
+  32 and above match the count masked to 5 bits (the `nomask` control fails 22).
+- **Not covered** (ADR-0015 (3)): what the game holds at the offsets read (the meanings carry their own tags); who
+  calls the code and when; the allocator paths of insert and remove; the stat callback (`+0x5C`); a list with children
+  (`STATLIST_SumOwnAndChildren`'s child walk, [C] by run:2026-10-17-stats); ops 1, 4–9, 11 and 13 inside
+  `StatEvaluate` (none in these cases' op tables; every row here has `+0x52` = 0 except the `ops` targets).
