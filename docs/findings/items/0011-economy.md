@@ -373,6 +373,9 @@ flowchart TD
 - [I] **Other callers.** `D2S_WriteCorpses` sums mode 0 prices with difficulty **3** and class 513 (*Malah*) to pick
   the most valuable corpse (0x005698B4); difficulty 3 indexes past `Level(H)` for a body part and past `max buy (H)`,
   neither of which mode 0 returns.
+  *S4e part 2 (2026-11-16):* `max buy [3]` is read in mode 0 (0x0062FCFA, `rec + 0x4C`), just not used; the
+  `Level` read past `(H)` happens for a body part only. [C] for the price core's map, run:2026-11-16-sweep2-s4e-emu;
+  the caller's arguments stay [I] ([§ S4e part 2](#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu)).
 
 ### 6. Gold: costs, caps, drops, death
 
@@ -383,6 +386,9 @@ flowchart TD
   to the cap first and drop or re-drop the rest. Deposit moves at most `cap − stash`; withdraw needs the room.
   (fn:PLAYER_GoldCap@0x00622E70, fn:PLAYER_StashGoldCap@0x00623460, fn:sub_0053FF00_UnitAddGoldStat@0x0053FF00,
   fn:sub_00564D50_StashGoldMove@0x00564D50)
+  *S4e part 2 (2026-11-16):* the caps and the zero-on-overflow write are [C] to the write (run:2026-11-16-sweep2-s4e-emu);
+  the negative test writes 0 for any unit and stat, the cap tests only for a player (unit type 0)
+  ([§ S4e part 2](#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu)).
 - [I] **Pickup.** `GoldPickup` takes `min(pile, cap − gold)` and drops the remainder (`DropGold`); in a party with
   another member in the level the amount goes through `PartyGoldShare` (a split by `PartyCount`; plan 0044's two-client
   case). (fn:sub_0055C850_GoldPickup@0x0055C850, fn:sub_00540900_PartyGoldShare@0x00540900)
@@ -821,3 +827,119 @@ flag `0x1000000` (0x00579688), `0x0055F590` (0x005796D4) and the store record's 
 Wirt's Leg came back from `ItemCreate` identified (flags `0x00082010`) and was repaired, 61 → 66 of 66. So "never" holds
 only for a new rare that is created unidentified, as this run's `cap` was (`lane/h6e1` review).*
 
+
+## Plan 0066 batch S4e part 2: the price core under emulation (run:2026-11-16-sweep2-s4e-emu)
+
+*2026-11-16, `lane/n66z`.* The price core and the gold, wear and replenish helpers run on the pinned image under
+Ghidra's p-code emulator (ADR-0015, ADR-0021) over a declared scratch world: DataTables (ItemStatCost, Skills,
+ItemTypes with their equivalence bit rows, SetItems, UniqueItems, MonStats), `g_pItems` and the item-code link, the
+affix, Books and Npc tables, a quest record, a player and an item with extended stat lists, an inventory of socketed
+children. Model: `tools/items_s4e_emu.py` (`cdfe09bd…`), which follows `tools/economy.py`'s `Model.price` step for step
+over those tables. 14 300 cases in six families, 0 mismatches, 0 stops, 0 undeclared reads; 40 controls, each
+separating, `passed` 0. Record and counts:
+[items experiments](experiments.md#part-2-the-price-core-and-the-gold-wear-and-replenish-helpers-2026-11-16). Each C tag
+below covers the code as a map from the declared inputs to its return or to the observed boundary named; what the
+game holds at each offset keeps its own tag, and who calls the code with which inputs is not covered (ADR-0015 (3)).
+
+**The price core, `ITEMS_TradePriceCore` (6 000 cases, every callee whole; the only boundary is the error routine
+0x00408090).**
+
+- [C] **B1.** A null player (ECX), a null item (EDX) or a unit whose type dword is not 4 returns 0x7FFFFFFF (171
+  cases; the `b1_any` control fails 58). (0x0062EFBA–0x0062EFD4, run:2026-11-16-sweep2-s4e-emu)
+- [C] **B2, B3.** In mode 3 an item `ItemCanRepair` refuses returns 0 (1 012 cases); then an item with flag `0x20000`
+  returns 1 in every mode, 0 to 3 and others (86, 74, 59, 42, 56). B3 comes after B2, so a starting item that cannot be
+  repaired prices 0 in mode 3, not 1. (0x0062EFE4–0x0062F01F, run:2026-11-16-sweep2-s4e-emu)
+- [C] **B4.** `r` = `min(99, stat 87)` by `cmp esi, 0x63; jl` (signed: a negative stat passes unchanged), 1 048 capped
+  inputs; capping at 100 fails 247. (0x0062F052–0x0062F05F, run:2026-11-16-sweep2-s4e-emu)
+- [C] **B6–B7, the bases.** The ear base `earLevel × cost` (307), the body part `cost + 8 × MonStats[fileIndex] +0xAA + 2d`
+  (517) or `cost` without a record (588), the tome `Books[suffix 0] +0x14 × q + cost` (592) and the quiver base leave `R`
+  at 0; setting `R = P` there fails 17 (ear) and 142 (ear, tome, body). The tome's result does not depend on Books
+  `+0x10` (`BaseCost`): taking it for `cost` fails 163. The armour step overwrites all three on an item that is also a
+  body part, tome or ear (46 over an ear); keeping those bases fails 74. A suffix 0 at or past the Books count reaches
+  the error routine 0x00408090 from 0x0062F28D with 0xBBA (17), and an NPC class with no Npc row with 0xCDC (110),
+  both through the shared tail at 0x0062F288. (0x0062F0BE–0x0062F339, 0x0062FA94–0x0062FAA7, run:2026-11-16-sweep2-s4e-emu)
+- [C] **The large form at the other steps.** `AddTerm`'s test is on `P` for all three sums (1 047 large-form terms;
+  the small form alone fails 156), the staff-mod term divides the multiplier first (231 entries; fails 77), and the recharge
+  cost tests `T = K × 10 000` (133 entries in the price, 73 direct; fails 99 and 60). (0x0062F1AB–0x0062F213,
+  fn:sub_0062EDD0_PriceStaffModTerm@0x0062EDD0, fn:sub_00628D30_RechargeCost@0x00628D30, run:2026-11-16-sweep2-s4e-emu)
+- [C] **C4, quality 7 without a record.** A unique whose file index is negative or at or past the UniqueItems count
+  takes the magic branch (prefix 0, suffix 0, then the stat terms; 287); giving it no terms fails 100.
+  (0x0062F583–0x0062F5A0, run:2026-11-16-sweep2-s4e-emu)
+- [C] **Encode 4 in the stat terms.** For a by-time stat, `x = (lo + hi) ÷ 2` (signed) of the two values
+  `STAT_ByTimeValue(v, 0, 0, …)` writes, `lo = ((v >> 2) & 0x3FF) − 256`, `hi = ((v >> 12) & 0x3FF) − 256`, with ISC
+  `Multiply`, `Add` and the divisor 1024 for all three (2 410 entries; pricing it as Encode 0 fails 197).
+  `STAT_ByTimeValue` runs whole. (jump table 0x006292DC, fn:STAT_ByTimeValue@0x0065CA30, run:2026-11-16-sweep2-s4e-emu)
+- [C] **D1.** A mode-1 ethereal item with durability, `M ≠ 0` and `D < 1` sells for `S = 0` before the NPC step (17;
+  without the step 7 fail). (0x0062F9B6–0x0062FA8E, run:2026-11-16-sweep2-s4e-emu)
+- [C] **D2's other branches.** At full durability (`M = 0` or `D ≥ M`) `R = 0` (173; keeping `R` fails 72); with stat
+  252 `R = ((M − 1) × R) ÷ M` below `M − 1`, else 0 (116; the plain fraction fails 51). (0x0062F9B6–0x0062FA8E,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] **D3.** `S`'s large form tests `sell mult ≠ 0` (`test ecx, ecx` at 0x0062FAF0, ECX the sell multiplier); testing
+  `buy mult` fails 73. (0x0062FAEE–0x0062FAF2, run:2026-11-16-sweep2-s4e-emu)
+- [C] **D5.** Mode 3 adds `RechargeCost(item)` (ECX the item, EDX 10 000) after the NPC, quest and quantity steps, so
+  `rep mult` and the quest groups do not scale it (270 non-zero recharge costs; adding it before the NPC step fails
+  225). (0x0062FCD6–0x0062FCF2, run:2026-11-16-sweep2-s4e-emu)
+- [I] D5's ethereal test never decides: an ethereal item has already returned 0 at B2 in mode 3 (`ItemCanRepair`
+  refuses it), so no case reaches D5 with an ethereal item. (0x0062EFE4, 0x0062FCDD)
+- [C] **D6–D7.** The repair price is lowered by `r` like the buy price (`R − MulDiv(R, r, 100)`, 316; without it 131
+  fail). `max buy [d]` is read at 0x0062FCFA in every mode that reaches the NPC step and used only in mode 1 (bounding
+  `P` by it in mode 0 fails 514). With `d = 3` the read is `rec + 0x4C`, past the record: on the table's last record it
+  is the traced read of the dword past the table (18 reads, one per such case that reached the NPC step). (0x0062FCF4–0x0062FD8B,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] **E1–E2, the gamble path.** A version-0 item (the u16 below 1, `cmp ax, 1; jb`) returns the `gamble cost` of its
+  normcode's row through `EXCEL_FindCode` (305; computing it fails 306). In `GamblePrice` the `+1` follows the shift
+  (`sar ebx, 1; add ebx, 1; jns`; adding 1 before fails 116), the floor at 0 follows the `+1` (159 and 138 floored;
+  without it 225 fail), and `x + e` is not capped: 68 inputs at levels 150 to 2 000 have `10 000 − e − x < 0` (capping
+  the sum at 10 000 fails 68). Rings and amulets (`rin `, `amu `) return the gamble cost (38). (0x0062F062–0x0062F0BB,
+  fn:sub_00629370_GamblePrice@0x00629370, 0x00629450–0x00629455, run:2026-11-16-sweep2-s4e-emu)
+
+**The helpers called directly (`rep`, 2 000 cases).**
+
+- [C] **`ItemCanRepair`** (item; stdcall): false for an unidentified item (204) or an ethereal one (190; allowing it
+  fails 61), true when some charge is missing (193), false when the own type's `Repair` byte is 0 (92), true for a
+  repairable stack (38), else `ItemHasDurability` (239). (fn:sub_0062E660_ItemCanRepair@0x0062E660,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] **`ItemHasDurability`** (item; stdcall; counts are evaluations, direct and inside `ItemCanRepair`): false when `nodurability ≠ 0` or `durability = 0` (424), when
+  `ItemMaxDurability` is 0 (240) or when stat 152 ≥ 1 (44; dropping the stat-152 test fails 44).
+  (fn:sub_00629930_ItemHasDurability@0x00629930, run:2026-11-16-sweep2-s4e-emu)
+- [C] **`RechargeCost`** (ECX item, EDX 10 000): over stat 204's entries with `c < x`, `Σ (x − c) × (t + cost add) ÷ x`,
+  `K = lvl + 2 + (reqlevel ÷ 6) × 2`, `t` by the large form of `T = K × EDX` (154 small, 73 large, 287 entries skipped).
+  (fn:sub_00628D30_RechargeCost@0x00628D30, run:2026-11-16-sweep2-s4e-emu)
+
+**Gold (`gold`, 1 500 cases).**
+
+- [C] `PLAYER_GoldCap(unit)` = `STATS_GetUnitStat(unit, 12, 0) × 10 000` (`imul eax, eax, 0x2710`, 32-bit, 295 cases
+  over levels −99 to 2³² − 1); `PLAYER_StashGoldCap(unit)` = 2 500 000 for every level (`mov eax, 0x2625A0; ret 4`, 309;
+  a level-dependent cap fails 309). (fn:PLAYER_GoldCap@0x00622E70, fn:PLAYER_StashGoldCap@0x00623460,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] **`UnitAddGoldStat(unit, stat, delta)`** to its write (observed boundaries `sub_00627260_UnitSetStat` and
+  0x006272B0): `v = stat + delta` (32-bit); `v < 0` writes 0 for any unit and any stat (387, from 0x0053FF24); a
+  **player** (type 0) writes 0 when stat 14's `v` exceeds `PLAYER_GoldCap` (63, 0x0053FF6F) or stat 15's exceeds
+  2 500 000 (51, 0x0053FF52); otherwise the add 0x006272B0(unit, stat, delta, 0) (395). Writing the cap instead fails
+  101; the caps without the type test fail 68. (fn:sub_0053FF00_UnitAddGoldStat@0x0053FF00, run:2026-11-16-sweep2-s4e-emu)
+
+**Wear and replenish (`wear` 2 500, `timer` 800, `repl` 1 500 cases).**
+
+- [C] **`ITEMS_DurabilityLossRoll`** to its first callee after the roll: a non-armour throwable weapon in a classic
+  game (`game +0x70` = 0) returns before the draw with the owner's seed unchanged (22; drawing fails 15); after a roll
+  below the chance with `D − 1 < 1`, an armour item without flag `0x100` calls `ItemBreak` (86, from 0x00559F3A; breaking
+  any item fails 86), and a weapon or an already broken armour item takes the version branches: version ≥ 1 with
+  `q > 1` writes stat 70 = `q − 1` (31, 0x00559F72), with `q ≤ 1` stat 72 = 0 (36, 0x00559FD3), version 0 stat 72 = 0
+  (15, 0x0055A053; treating every version as 0 fails 67). `D − 1 ≥ 1` calls `ItemReplenishDurTimer` (38, 0x00559EF4).
+  Ethereal items take the same branches. (fn:ITEMS_DurabilityLossRoll@0x00559E30, run:2026-11-16-sweep2-s4e-emu)
+- [C] **`ItemReplenishDurTimer`** (ECX game, EDX item): no queue when stat 252 is 0 (109) or when the item's event list
+  (`+0xDC`) holds a type-3 event with `+4 > 0` (89); otherwise 0x005417D0(3, `2500 ÷ r + 1 + game +0xA8`, 0, 0) with
+  a 32-bit `idiv` (602 cases, `r` from −49 to 5 000; without the `+1` 602 fail, the requeue's floor of 125 applied here
+  fails 359: the timer has no floor). (fn:sub_00558530_ItemReplenishDurTimer@0x00558530, run:2026-11-16-sweep2-s4e-emu)
+- [C] **`ITEMEVENT_Replenish`** (ECX game, EDX item) to the write in `ReplenishStep`: an unbroken item with durability
+  and stat 252 ≠ 0 writes stat 72 = `D + 1` when `D + 1 ≤ M` (90, from 0x00562C77); at `D + 1 > M` the step returns 1
+  and nothing is written, the quantity path included (84; running the quantity path fails 19). Otherwise a stackable
+  base with stat 253 ≠ 0 writes stat 70 = `q + 1` up to `MaxStack` (210; at the maximum 148, nothing). (fn:ITEMEVENT_Replenish@0x00562D30,
+  fn:sub_00562C40_ReplenishStep@0x00562C40, run:2026-11-16-sweep2-s4e-emu)
+
+**Not covered, routed.** After each boundary: `UnitSetStat`'s write and everything after it (the stat-list insert
+reaches the pool allocator 0x0040B4B0), so the wear's `D ← M`, the timer when `MaxStack > 0` and `HandsRefresh`; the
+requeue's floor of 125 in `ReplenishStep` (after its write) and its broken-item repair; what the
+error routine does after 0xBBA and 0xCDC. `DropGoldAmount`'s split and 32-pile count: every pile crosses the free-cell
+search 0x0064E810 and the item creation 0x00559CE0 (a unit allocation) inside the loop, so the rows go to the harness
+(H4b). The callers (`D2S_WriteCorpses` at 0x005698B4, the PvP death write) are not covered.

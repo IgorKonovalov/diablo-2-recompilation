@@ -4027,3 +4027,57 @@ request handlers, inventory families) will add their own sections under this hea
   calls the code and when; the allocator paths of insert and remove; the stat callback (`+0x5C`); a list with children
   (`STATLIST_SumOwnAndChildren`'s child walk, [C] by run:2026-10-17-stats); ops 1, 4–9, 11 and 13 inside
   `StatEvaluate` (none in these cases' op tables; every row here has `+0x52` = 0 except the `ops` targets).
+
+### Part 2: the price core and the gold, wear and replenish helpers (2026-11-16)
+
+- **Question:** do `ITEMS_TradePriceCore`, `ItemCanRepair`, `ItemHasDurability`, `RechargeCost`, the two gold caps,
+  `UnitAddGoldStat`, `ITEMS_DurabilityLossRoll`, `ItemReplenishDurTimer` and `ITEMEVENT_Replenish` map their inputs as
+  [items/economy](../../specs/items/economy.md) §§ B–H state, on a declared world? Claims in
+  [items/0011 § S4e part 2](0011-economy.md#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu).
+- **Setup:** Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (`workspace/ghidra-n66z`, heap 3 GB, one instance,
+  a 4 GB scope), `re/ghidra_scripts/EmuBoundary.java` unchanged, one kept launch per family (`run.sh`), after two
+  development passes (`dev2/` 60 cases per family and `dev2full/` the full size, both with earlier tool revisions, each
+  with `manifest-dev.sha256`, not cited). New tool `tools/items_s4e_emu.py` (`cdfe09bd…`; draws from
+  `random.Random("n66z-s4e2-<family>")`, the tables from `random.Random("n66z-s4e2-image")`). Declared image (`load`
+  and `dword` directives re-applied per case, the cases' `w` lines over them): `g_pDataTables` (0x00744304) → a scratch
+  DataTables (`+0xA78/+0xA80` MonStats, `+0xB98/+0xBA0` Skills, `+0xBCC/+0xBD4` ItemStatCost, `+0xBF8/+0xBFC` ItemTypes,
+  `+0xC00/+0xC04` the equivalence bit rows, `+0xC18/+0xC1C` SetItems, `+0xC24/+0xC28` UniqueItems, `+0xC6C/+0xC70`
+  6 and 0x3F); `g_nItems`/`g_pItems` (0x0096CA58/C), `g_ItemCodeLink` (0x0096BCC4) → a link of 40 sorted code pairs,
+  the affix count and records (0x0096CA7C/80), Books (0x0096CC60/64), Npc (0x0096C5D8/DC; 8 records, class 513 last);
+  random record bytes with the read fields drawn per case. Units: `+0x00` type, `+0x04` class, `+0x14` ItemData
+  (`+0x00` quality, `+0x18` flags, `+0x28` file index, `+0x30` version, `+0x36..+0x43` affixes, `+0x48` ear level,
+  `+0x64` next), `+0x5C` stat list (`+0x10`, own `+0x24`, `+0x44` = 0, cache `+0x48`), `+0x60` inventory (magic,
+  `+0x0C` first), `+0xDC` event list; the game's `+0x70` and `+0xA8`; the owner's seed `+0x20/+0x24`. Guards:
+  0x00408A60, 0x00681E09, 0x0040B4B0, 0x0040B430, 0x0040B480 (none reached; 0x00408090 a guard where not observed).
+  Observed boundaries (ADR-0021, call site asserted by its return address): `price` the error routine 0x00408090;
+  `gold` 0x00627260, 0x006272B0; `wear` 0x00627260, 0x0055F850, 0x00558530, 0x005531C0; `timer` 0x005417D0; `repl`
+  0x00627260. No import is reached (ADR-0029 not used).
+- **Families:** `price` 6 000 (modes 0–3, 4 and 7; `d` 0–3; quality 0–10; every base kind; NPC rows redrawn per case,
+  `sell mult` 0 with `buy mult` non-zero in about 30 %; quest ids 1–47 against a random 128-byte record), `rep` 2 000,
+  `gold` 1 500, `wear` 2 500, `timer` 800, `repl` 1 500.
+- **Result:** `workspace/logs/n66z/s4e/run2/check.txt` (`09e30b28…`, 74 lines), `static.txt` (`fc40bd45…`, 26 lines,
+  22 pins), `r2.txt` (`970a0a52…`, 90 lines), `manifest.sha256` (`75befcaa…`, 40 lines, passes from that directory);
+  `cases` regenerates every `.cases`, `.mem`, `.json` and table file byte for byte, and `check` reproduces `check.txt`
+  from the committed revision. 14 300 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write. `price`:
+  B1 171, B2 1 012, B3 by mode 86/74/59/42/56, `r` capped 1 048, ear 307, body 517 (no record 588), tome 592, armour
+  step 395 (46 over an ear), large-form `AddTerm` 1 047, staff 231, recharge 133, quality 7 without a record 287 (with
+  one 232), Encode 4 entries 2 410, D1 17, D2 full 173 / stat 252 116 / fraction 180, recharge added 270, `r` on repair
+  316, gamble computed 677 (rings and amulets 38, `x` floored 159, `e` floored 138, negative weight 68) and version 0 305, the
+  error routine 127 (0xBBA 17, 0xCDC 110), `d = 3` on the last Npc record 18 with 18 traced reads at 0x0062FCFA of
+  0x22066260. `rep`: `ItemCanRepair` branches 204/190/193/92/38/239, `ItemHasDurability` 424/240/44/66 (evaluations, direct and inside `ItemCanRepair`), `RechargeCost`
+  154 small, 73 large, 287 skipped. `gold`: cap 295, stash cap 309, add 395, negative 387, carried 63, stash 51. `wear`:
+  no type 645, no durability 1 472, classic 22, miss 155, timer 38, break 86, `q − 1` 31, zero 36, version 0 15.
+  `timer`: queued 602, rate 0 109, already queued 89. `repl`: durability write 90, at maximum 84, quantity write 210, at
+  maximum 148, rate 0 116, none 852. **40 controls, each separating, `passed` 0** (`check.txt` lists each with its
+  `sep`).
+- **Read set** (ADR-0015 (2), enumerated by the tracer): `g_BitMask32` 0x006CE268 (.rdata), the quality jump table
+  0x0062FD9C and `PriceStatTerms`' Encode jump table 0x006292DC (.text), none writable (`static.txt`); and in `price`
+  the dword past the Npc table, read at 0x0062FCFA for `d = 3` on the last record (accounted and counted, used by no
+  mode-0 output). Every other read lies in the declared image.
+- **Tool limits** (ADR-0015 (5)): the wear LCG's `mul`/`adc` (0x00559E9B–0x00559EB5), the timer's `cdq; idiv`
+  (0x00558560), `cmp ax, 1; jb` (0x00559F4E, 0x0062F06E) and the gamble's `sar; add; jns` (0x00629450) are cited from
+  r2 (`r2.txt`).
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets read; the callers and their inputs; everything
+  after each observed boundary (the stat writes, `ItemBreak`, the timer's queue, the packets, `HandsRefresh`, the
+  error routine's exit); `ReplenishStep` after its write (the floor of 125, the broken repair); `DropGoldAmount`
+  (its loop crosses 0x0064E810 and the item creation 0x00559CE0, to the harness).

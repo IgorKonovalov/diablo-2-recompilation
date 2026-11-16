@@ -2588,3 +2588,47 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   a new tool (`tools/items_s4e_emu.py`) and new run directories (`workspace/logs/n66z/s4e/run2/` and on); do not
   overwrite `run/`. The record continues under the same run heading in items/experiments. Tier B review once S4e is
   whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 2 (reverser-static, `lane/n66z`): the price core, 36 of 36 economy rows settled; resume note
+
+- **Done.** On `lane/n66z` from `ae4f5810` (`main` `72f003c8` already merged, unchanged since). New tool
+  `tools/items_s4e_emu.py` (`cdfe09bd…`; part 1's tool and `run/` untouched), six families on
+  `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 75 s for the six) after two
+  development passes (`dev2/`, `dev2full/`, `manifest-dev.sha256`, not cited): `price` (`ITEMS_TradePriceCore` whole
+  over a declared world: DataTables, items and their code link, ItemTypes bits, affixes, uniques, sets, Books, Npc,
+  MonStats, a quest record, a player and an item with stat lists and socketed children), `rep` (`ItemCanRepair`,
+  `ItemHasDurability`, `RechargeCost`), `gold` (the caps; `UnitAddGoldStat` to its write), `wear`
+  (`ITEMS_DurabilityLossRoll` to its first callee after the roll), `timer` (`ItemReplenishDurTimer` to its queue),
+  `repl` (`ITEMEVENT_Replenish` to `ReplenishStep`'s write). 14 300 cases, 0 mismatches, 0 stops, 0 undeclared
+  reads, no traced write; 40 controls, each separating, `passed` 0. No allocator and no import on any covered route
+  (guards never reached); the error routine 0x00408090 is an observed boundary (0xBBA 17, 0xCDC 110). Record:
+  [run:2026-11-16-sweep2-s4e-emu part 2](../findings/items/experiments.md#part-2-the-price-core-and-the-gold-wear-and-replenish-helpers-2026-11-16),
+  `workspace/logs/n66z/s4e/run2/` (`check.txt` `09e30b28…`, `static.txt` `fc40bd45…`, `r2.txt` `970a0a52…`,
+  `manifest.sha256` `75befcaa…`, 40 lines, passes from there; `cases` regenerates every input byte for byte and `check`
+  reproduces `check.txt` from the committed revision). Claims in
+  [items/0011 § S4e part 2](../findings/items/0011-economy.md#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu),
+  dated notes in §§ 5 and 6.
+- **Rows settled (items/economy, 36).** Raised: 4, 5, 7, 12–20, 22, 23, 25–33, 35, 36, 47, 48 (27). Raised in part:
+  11 (the timer's 2 500, no floor; `ReplenishStep`'s floor → b H4b), 34 (the stock-data expectation stays `[I]`), 43
+  (client half → d-none, `out of scope: client presentation`), 69 (after the first write → b H4b), 79 (the floor and
+  the broken repair → b H4b), 85 (the callers → c, part 5). **Contradicted in part: 46** (mode 0 reads `max buy [3]`,
+  unused; the caller half → c, part 5). **Moved c-emu → b (H4b): 8, 56** (`DropGoldAmount`'s loop crosses the
+  free-cell search 0x0064E810 and the item creation 0x00559CE0, a unit allocation, before every next test).
+  Refinements and the correction routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part2-corrections.md) (G3's caps are a player's
+  only; B3 after B2; 0xBBA; D5's ethereal test never decides; Encode 4's `x`; the timer has no floor).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' rows; `main` `72f003c8`): a-logs 623, a-run 334, b 509, c 390, c-emu 442,
+  d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 455, Phase 2 843. README §§ 1, 3, 4 (S4e and H4b rows)
+  updated.
+- **Judgment calls:** (1) the stat lists have owner 0, so the readers' floor (part 1) is never taken in these cases and
+  every stat reads raw; (2) rows 11, 69 and 79 are split at the first `UnitSetStat`, whose closure reaches the pool
+  allocator 0x0040B4B0 (depth 3 of the call graph), rather than running it whole with a guarded entry; (3) row 46 is
+  filed "contradicted in part" because the spec says "reads", while the finding's "returns" holds; (4) row 34's "none is
+  expected on stock data" is left `[I]` as a play expectation, not a code claim; (5) row 17's missing-Books path is
+  raised to the error routine's call (ADR-0021) rather than left d-edit, matching D3's 0xCDC.
+- **Resume (parts 3 to 5, a fresh lane on `lane/n66z`):** part 3, the item request handlers and `UnitInteract` (use 6,
+  18–22, 34, 38, 52, 54; inventory 1, 9, 10, 28–34, 36–43, 45, 46, 64, 99), extending `tools/use_emu.py` /
+  `tools/item_emu2.py` with model `tools/item_inventory.py`, in a new tool and `run3/`; part 4 the inventory families;
+  part 5 the static (c) remainders of S4c/S4d plus economy 46's and 85's caller halves and the c-emu remainders listed
+  in part 1. Tier B review once S4e is whole.
