@@ -348,6 +348,12 @@ def _vendors_main():
         gdb.flush()
 
     Bp(0x0052C312, on_game)
+
+    def on_frame():     # GameTick entry, ECX = game: a logger attached after the game began (d2run --attach-file) never saw 0x0052C312
+        if not st["game"]:
+            st["game"] = reg("ecx")
+
+    Bp(0x0052D870, on_frame)
     Bp(0x005360D2, on_vsc0)
     Bp(0x00536100, on_vsc1)
     Bp(0x00579D60, on_ma)
