@@ -1136,6 +1136,70 @@ Part 3 of the batch. The emulated claims are maps of the named functions on decl
   false 0), unique-mod bytes above 42 (the table rows past them are not read as code pointers here) and owner or
   target types above 5 (`GameFindUnit` reads address 0 for them). (run:2026-11-16-sweep2-s2ae3)
 
+### 20. Plan 0066 batch S2ae part 4: the zig-zag callback and `MissileCreate` to its allocation emulated (2026-11-16, `lane/n66sa`)
+
+Part 4 of the batch. The emulated claims are maps of the named functions on declared inputs (ADR-0015), compared with
+`tools/skills_s2ae4_emu.py`'s model over the kept run
+([run:2026-11-16-sweep2-s2ae4](experiments.md#run2026-11-16-sweep2-s2ae4), `check.txt`, 6 500 cases, 0 mismatches,
+0 unaccounted reads or writes; the 369 stops are `zz` cases the model predicts at the fatal guard). Brackets give
+separating control counts (`sep`, each with `passed` 0).
+
+- [C] *m76 (H, re-seed sites: callback `0x005D4680`), whole.* `sub_005D4680_MissCbReseedZigzag` (`ECX` the new
+  missile, `EDX` the argument; plain `ret`) returns at once for a null unit [`unit_nz` 2 500]. Otherwise: `n` is the
+  missile data's range word (`+0x0E`, signed, through 0x0064A300: 0 unless the unit is type 3 with data) [`type3`
+  1 853, `data_nz` 1 269]; at `n ≥ 78` it is 77 and both data words `+0x0E` and `+0x10` are set to 77 [`n_ge_4e`
+  2 083, `n_ge_4e~` 122]. The seed at unit `+0x20` is `RNG_SeedInit(argument)` (low word = the argument, high word
+  0x29A). The path is set to type 10 (`sub_00648CF0_PathSetType`: `+0x34 = (+0x34 & 0xFFF800FF) | 0x60000`, `+0x3C` =
+  10, `+0x98` = 0; a path whose `+0x40` is 0xB or 8 then takes the fatal path [`f40_b` 2 271, `f40_8` 2 264]), path
+  bytes `+0x90` and `+0x91` get `n`'s low byte, capped at 77 as an **unsigned** byte (a negative `n` gives 77)
+  [`b_lt_4d` 1 563]. The start is the unit's sub-tile position (path dwords `+0x0C`/`+0x10` for types 2, 4, 5, else
+  words `+2`/`+6`) [`static` 952] and the first direction `d` the low byte of `PathDirection` from it to the path's
+  target words `+0x10`/`+0x12` (through `sub_00621DC0_UnitDirToPoint` and 0x0064FDC0; part 1's model). Then **two
+  seed steps before any point**: the first step's low bit sets the sign (`+1` odd, `−1` even) [`odd` 939], the second
+  (stored) gives the step size `lo mod 3 + 2` (the `.data` word 0x00741B10 = 2). For `i` = 0 … `n − 1` [`i_lt_n`
+  2 083, `i_lt_n~` 1 345]: `d += size · sign`; the 8-way direction is the byte at `0x00745600 + (d & 0x3F)` (`.data`,
+  64 bytes, 8 per direction); `x`, `y` advance by that direction's `.rdata` steps (0x006E32AC, 0x006E328C: ±2 or 0)
+  and are stored as two u16 at path `+0x9C + 4i`; when `i mod 15 = 0` (`.data` word 0x00741B0C = 15) the sign flips
+  and one more step gives a new size [`i_mod_per` 949, `spec_no_flip` (no flip) 938]. Last, path `+0x28` = `n`. So the
+  callback steps the missile's seed `2 + ⌈n ÷ 15⌉` times for `n ≥ 1` (points 0, 15, 30, …) and twice for `n ≤ 0`;
+  no other draw. (fn:sub_005D4680_MissCbReseedZigzag@0x005D4680, 0x005D4764–0x005D4854,
+  fn:sub_00648CF0_PathSetType@0x00648CF0, run:2026-11-16-sweep2-s2ae4)
+- [C] *m14, m16, m17, m18, m19 (B1), to the allocation.* `sub_0059FA30_MissileCreate` (`ECX` game, `EDX` the block
+  `p`) returns 0 when `p.owner` (`+4`) is null, the class (`+0x10`) is outside `[0, nMissiles)` as a signed value, or
+  the owner's type is neither 0 nor 1 [`owner_nz` 1 678, `cls_ge0` 1 790, `cls_lt_n` 2 007, `cls_lt_n~` 188, `owner_t0`
+  921, `owner_t1` 1 226]. `(x, y)` is `(p +0x14, p +0x18)` when flag 1 is set, else the source's (`+8`) sub-tile
+  position, 0 for a null source [`f1` 1 919, `src_nz` 1 071]. The room is `sub_00463740_RoomAtSubtile(room of the
+  owner, x, y)`: the owner's room when `x0 ≤ x < x0 + w` and `y0 ≤ y < y0 + h` (signed; room `+0x4C`…`+0x58`), else the
+  first non-null room of its neighbour list (`[room]`, count `room +0x24`) that holds the point, else 0, which refuses
+  [`r_x0` 1 472, `r_y0` 1 470, `nb_nz` 196, `nb_x0` 139, `room_nz` 1 842]. `(tx, ty)` is `(x + p.tx, y + p.ty)` (32-bit
+  adds) with flag 2, `(p.tx, p.ty)` with flag 0x20, else `(x, y)` [`f2` 1 563, `f20` 1 319]. The velocity: with flag 4,
+  `p.vel` (`+0x28`) as is with flag 0x10, else `p.vel << 8` [`f4` 1 511, `f10` 221]; without flag 4,
+  `((VelLev · lvl) ÷ 8 + Vel) << 8` with `VelLev` (`+0x9B`) and `Vel` (`+0x9A`) unsigned bytes, `lvl` the block's
+  dword `+0x30`, the product a 32-bit signed one and the division signed toward zero [`spec_lvl_m1` (`lvl − 1`) 853,
+  `spec_floor8` (rounding down) 112, `spec_udiv8` (unsigned) 112]. With the row's `CanSlow` (`+4` & 8, `g_BitMask32[3]`)
+  and the owner in state 87 with a state list found by `UNIT_FindStatListByState`, `v ← stat161 · v ÷ 100` (the list's
+  base stat 161, layer 0; 32-bit product, signed ÷ toward zero) [`canslow` 373, `st87` 204, `sl_found` 355,
+  `spec_floor100_slow` 25]; then a non-zero `v` becomes `v · 75 ÷ 100`, signed toward zero [`v_nz` 1 128,
+  `spec_floor100_75` 96]. With `v ≠ 0` [`v_nz2` 1 045]: no target and `(tx, ty) = (x, y)` → both `+1` [`t_nz` 1 049,
+  `txy_eq` 415]; a target other than the owner on the owner's sub-tile → the target is dropped and both `+1` [`t_owner`
+  274, `same_x` 204, `same_y` 210]; then the end point is the target's sub-tile position, else `(tx, ty)`, and the call
+  refuses when `|ex − x| ≥ 100` or `|ey − y| ≥ 100` [`dx_ge100` 1 273, `dx_ge100~` 31, `dy_ge100` 1 251, `dy_ge100~`
+  21]. The `|…|` is `neg` of a signed 32-bit difference: a difference of exactly `−2³¹` stays negative and does **not**
+  refuse [`spec_abs` (a true absolute value) 2]. Otherwise the call at 0x0059FC75 is
+  `SUnitCreate(ECX 3, EDX class; x, y, game, room, 1, row byte +0x183, 0)` with the frame's target, `x`, `y`, `v`, `tx`,
+  `ty` and row as the model gives them (1 577 calls). (fn:sub_0059FA30_MissileCreate@0x0059FA30, 0x0059FA30–0x0059FC75,
+  fn:sub_00463740_RoomAtSubtile@0x00463740, run:2026-11-16-sweep2-s2ae4)
+- *After, `[I]` (ADR-0021).* What `SUnitCreate` does (its game-seed step, § C3) and every later line of B1 (the range
+  with `LevRange` and the `SubLoop` loops, the activate mark, the path's target, masks and speed, the lob division,
+  `MaxVel << 8`, the callback, damage, owner and the unique-mod hook) are past the boundary; the route crosses the pool
+  allocation (0x0059FC75 → 0x00555230, `0x0040B430` at 0x005553BE; `sites.txt`), so those halves of m16, m17 (the
+  `SubLoop` half) and m19 (the lob division and `MaxVel`) go to b (ruling R2). Before 0x0059FC75 no direct call reaches
+  the allocator or an import (`sites.txt`, depth 3 below each call; each of them ran whole in `mcr` with no guard).
+- [I] *Not covered.* Room bounds whose `x0 + w` wraps, and a point exactly on a room's right edge (`r_x1~`, `nb_x1~`
+  separate no case: no point was drawn at `x = x0 + w`); `zz` coordinates whose unit-to-target difference exceeds
+  250 sub-tiles (`PathDirection`'s product wraps past 258 and the index leaves `g_PathDirTable`); `ItemStatCost`
+  flags on stat 161 (the records are declared zero). (run:2026-11-16-sweep2-s2ae4)
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,

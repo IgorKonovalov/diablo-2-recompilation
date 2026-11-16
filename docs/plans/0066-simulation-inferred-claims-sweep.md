@@ -3094,3 +3094,60 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     182, 184, m71, 72, 74, 75, 77, 82, 85, d79's remainder, d84, d172's remainder, d133, d117, 135, 178; d153, 154;
     m80's siblings as part 1 listed.
 - **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 4 (reverser-static, `lane/n66sa`): 6 more settled (40 of 89); resume note for part 5
+
+- **Done.** Merged `main` `30e8a46c` (clean, `1056c0fd`); totals from the 29 files' *Totals by class*
+  (`tools/quests_s3c.py totals`, `bad=0`) unchanged: a-logs 623, a-run 334, b 508, c 390, c-emu 443, d-2c 59, d-owner
+  68, d-edit 23, d-none 178 = 2 626, as README § 1 gives; part 4 moves no row's class, so they stand. New tool
+  `tools/skills_s2ae4_emu.py` (`f481fed7…`; reuses part 1's check machinery and `PathDirection` model and part 3's
+  memory view, reference scan and site walk in module state only; parts 1 to 3's tools and runs unchanged, their
+  `check` still reproduce `run/`, `run2/`, `run3/` `check.txt`). One kept `tools/ghidra.sh emuboundary` launch on
+  `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after one development launch (`dev10/`,
+  `workspace/logs/n66sa/s2ae/manifest-dev-p4.sha256`, not cited). Two families (`zz`, `mcr`), 6 500 cases, 0
+  mismatches, 369 predicted fatal-path stops, 0 unaccounted reads or writes, no import; 72 controls, 69 separating (the
+  3 others named in the record), `passed` 0. Route reads: per call site, allocator and import reach of eight roots
+  (`sites.txt`). Record: [run:2026-11-16-sweep2-s2ae4](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae4);
+  `workspace/logs/n66sa/s2ae/run4/` (`check.txt` `5d0dead9…`, `reach.txt` `83bda362…`, `static.txt` `02daa52f…`,
+  `sites.txt` `58ac68de…`, `manifest.sha256` `ce7ed80a…`, 11 lines, passes from there). Claims:
+  [skills/0002 § 20](../findings/skills/0002-missiles.md#20-plan-0066-batch-s2ae-part-4-the-zig-zag-callback-and-missilecreate-to-its-allocation-emulated-2026-11-16-lanen66sa).
+- **Rows (6).** Raised whole: missiles 14 (the refusal), 18 (the `VelLev` term, no `− 1`), 76 (the zig-zag callback:
+  `2 + ⌈n ÷ 15⌉` seed steps). Raised in part, `MissileCreate` up to `SUnitCreate` at 0x0059FC75 (observed boundary):
+  missiles 16 (B1's lines before the call; remainder → b (H2a)), 17 (the slow scaling and the refusal; the `SubLoop`
+  half → b (H2a)), 19 (the `÷ 8` and `÷ 100` semantics; the lob division and `MaxVel` → b (H2a)); each remainder's
+  route crosses `SUnitCreate`'s pool allocation (0x0040B430 at 0x005553BE, `sites.txt`). No class moves.
+- **Refinements** (Phase 3's): the refusal's −2³¹ difference, `RoomAtSubtile`'s neighbour fallback, the guards' signed
+  class and 0/1 owner types, the velocity's byte and dword widths, and the zig-zag's exact draws and points. Routed by
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Judgment calls for the review:** (1) `zz`'s domain is unit-to-target differences of at most 250 sub-tiles: past
+  258, `PathDirection`'s product wraps and the index leaves `g_PathDirTable`, a read the run would not account; the
+  callback's own steps are unaffected by the limit; (2) `mcr` ends at the first allocation, so rows 16, 17 and 19 are
+  split there rather than read further; the frame's locals (target, `x`, `y`, `v`, `tx`, `ty`, row) are taken from a
+  stack dump at the boundary, a read of the emulator's state, not a write; (3) the three spec controls
+  `spec_udiv8` and the two `spec_floor100_*` were added to `check` after the emulation (the cases file is unchanged),
+  and `static`'s reference scan now also splits the `ds:0x…` operand form (part 3's `DOF-REF`/`UMF-REF` counts are the
+  same under it); (4) part 4 took two of the plan's six cheapest groups' roots; `SKILLS_TargetCheck` (d47) was read
+  but not run (below).
+- **Resume note for part 5 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 49 rows (dispatch
+  3, 30, 32–35, 40, 47, 83, 84, 89, 92, 93, 96, 110–112, 117, 119, 124, 127–131, 133, 135, 142–144, 152–154, 156, 178,
+  181, 182, 184; missiles 26, 27, 63, 71, 72, 74, 75, 77, 82, 85, 95), the 5 S2a remainders (dispatch 31, 63, 79, 164,
+  172), part 1's 4 (dispatch 39, 69, missiles 29, 81) and missiles 69's (do 30). Start a new tool and a `run5/`;
+  `tools/skills_s2ae4_emu.py`'s `room_at`, `has_state`, `find_state_list`, `base_stat` (byte-reading models of the
+  state and stat-list helpers) carry over. From `run4/sites.txt`:
+  - **d47 `SKILLS_TargetCheck` (no pool, no import):** read in part 4 (`0x0056CC60`–`0x0056CD43`): no target → 1; an
+    out-of-range skill with a target → 0; `TargetableOnly` (`+6` & 0x10) needs `UnitsHostile`, else
+    `SkillPetTest` (0x005542C0), else `SkillAllyTest`; then a dead target (`+0xC4` bit 1): a type-1 target in mode 12
+    is kept by a `TargetCorpse` skill (`+7` & 1) and cleared otherwise, **but any other dead target is cleared when the
+    skill has `TargetCorpse` and kept when it has not** (0x0056CD27–0x0056CD35): a reading that differs from D2, to be
+    run before it is filed. Models to reuse: `tools/combat_s5e3_emu.py`'s `hostile` and `gen_adp` units
+    (`UnitsHostile`, `MonsterOwner`, `PlayerPairFlags`, `AlignSame02`); still to model: `UNIT_GetTargetUnit` (part 3's
+    `uev` ran it), 0x0058F090 (`SkillPetTest`'s owner lookup), `SkillAllyTest`'s six functions,
+    `UnitSetPathTargetUnit` (0x00620C10, two functions).
+  - **No pool and no import, still open:** d83 (`ItemTargetRandomPoint`'s later tries: the collision test 0x0064D870,
+    11 functions, runs whole), d164's remainder (`SorSkillStaticMin`: end at `ForUnitsInRange` 0x0056B7E0 as an
+    observed boundary; `SKILLS_EvalCalc` brings 5 indirect calls), m63 (`MISSILE_BuildDamage`'s stat-180 term,
+    0x005A8B97 → 0x006261D0), do 30 (m69: 0x0056E780 has 45 functions and 1 indirect call). d84: helper 3's first
+    call that reaches the pool is 0x005FD9DA (0x0056E390), an observed boundary for "no draw before it".
+  - **Then** the `InvPageGet` group, the stat-setter group and the allocator group as part 3's note lists.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
