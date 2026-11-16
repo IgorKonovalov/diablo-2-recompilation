@@ -2169,3 +2169,31 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   5. C108 is raised whole on the zero case the line states. A negative calc is not claimed.
 - **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s2c`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s2c.md),
   now extended to S2c whole.
+
+### 2026-11-16 — Phase 1, batch S7e part 1 (reverser-static, `lane/n66u`): 11 of 63 settled (moved); resume note for part 2
+
+- **Done.** Branch from `main` `4508f8a2`. Stopped at the orchestrator's token budget, before any kept emulation run.
+  New tool `tools/sweep2_s7e_emu.py` (development revision `1d2acce0…`), four development launches on
+  `workspace/ghidra-n66u` (`-Xmx3G`, `MemoryMax=4G`), kept with `workspace/logs/n66u/s7e/manifest-dev.sha256` (33 lines)
+  and not cited. Record: [run:2026-11-16-sweep2-s7e](../findings/frame/experiments.md#run2026-11-16-sweep2-s7e).
+- **Rows settled: 11, all moved c-emu → b** (the route crosses a pool allocation or free whose block or effect the
+  claim uses; ADR-0021 covers nothing after it and R2 forbids a declared return; each call named in its row):
+  frame 12, 15, 30, 49, 58, 72, 74, 114, 122 → H7b; path-README 5, 18 → H7c.
+- **Totals** (taken before merging `main` `2d5dfac5`; recomputed after the merge commit): sim/frame b 22, c-emu 15;
+  path/README b 13, c-emu 14; all b 478, c-emu 466; Phase 1 1 479, Phase 2 819.
+- **Resume note for part 2 (52 rows).**
+  - `ffn` (travel 19, 60) is ready: 24 development cases matched with `CollMap.h` declared. Run the kept 600 cases
+    (`cases --dir workspace/logs/n66u/s7e/run`), check, manifest; then update findings/quests/0002 line 694's
+    "(plan 0066 S3e, proposed)" and quests/travel's B1 scope bullet. Row 60's "the open fails" (the caller after the
+    return, 0x0056D218) is not covered by the search's run.
+  - `mevd`/`mevr` (frame 46, 47): fix the model (write each frozen unit's stat list, flag and bit word into the model's
+    `Mem` as well as the case lines), re-run development cases before the kept run.
+  - `qx` (frame 35, 37, 39 walk half, 43, 70, 121): the one mismatch and the traced writes below the control and at 0
+    show that a negative frame after the counter's wrap indexes outside its list's slot array; read 0x005416B0's index
+    and the model's `slot_head` for that case before the kept run. 39's new-block half and 121's same-frame half need
+    the allocator or a walk-time queue: route them b when settling.
+  - Not attempted (route reads first; each goes to b if its route crosses the pool, as above): frame 55–57
+    (`UnitFrameReset`'s callees, `UnitSetStat`), 64 (`ClientsRoomSync`: `AutosaveTick` returns at 0x00730FFC before the
+    clock), 65, 75 (`ActLevelsUnloadTick`), 115 (`UnitRoomUnlink`); path-README 4, 19, 20, 23, 25, 27–30, 52, 69, 71,
+    74, 75; path-search 1, 6, 8, 13, 16, 22, 23, 25, 32, 33; lifecycle 3, 9, 28, 47, 50, 60, 72–76.
+- **Review:** none yet; the Tier B request comes with part 2.

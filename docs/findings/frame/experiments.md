@@ -440,3 +440,32 @@ review). A tool fix and its test, then a re-run of the kept emulations it could 
   ```
 - **Results:** [frame/0007 § Plan 0066 batch S7b](0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o).
   `audit: n/a, no check of a new run.` (run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3)
+
+## run:2026-11-16-sweep2-s7e
+
+Plan 0066 Phase 1 batch S7e (`lane/n66u`, reverser-static). **Part 1 of 2: route reads and development runs; no row
+raised yet.** Inventory rows: [sim-frame](../../plans/0066-inventory/sim-frame.md),
+[path-README](../../plans/0066-inventory/path-README.md), and the S7e rows of path-search, drlg-lifecycle and
+quests-travel.
+
+- **Route reads behind the part 1 moves** (objdump, `tools/sweep_s4b.py`'s body walker; r2 `ii` for import slots). Each
+  moved row's claim lies after a pool allocation or free whose block or effect it uses, so ADR-0021's boundary covers
+  nothing of it and R2 forbids a declared return: `EventBlockNew` 0x00540BC5, `ChatRecordNew` 0x00661152 (after its
+  string length, an empty string returning with no record at 0x00661129–0x0066112E, and the clamp of `n ≥ 255` to 254 at
+  0x00661131–0x0066113F), `GameEventCtlCreate` 0x00541496 and `GameEventCtlFree` 0x00541435 / 0x00541452,
+  `ChatRecordFree` 0x006611B6, `RoomUnitOp` 0x0061A292 and `RoomRemovalsFree` 0x0061A313, `QUESTS_TimersRun`'s frees
+  0x00543EA9 / 0x00543EC2, `QUESTS_TimerAdd` 0x00543F65, `InactiveUnitSave` 0x00542EA8 / 0x00542F1A,
+  `RoomInactiveUnitsRestore` 0x00542DC9, `NewRoomsUpdate`'s walk callees 0x0052D1D2 / 0x0052D1DB, `PATH_DynamicCreate`
+  0x00649D1C. `AutosaveTick` reaches `GetTickCount` (slot 0x006CC260, 0x0052D36B) only past its 0x00730FFC test, so
+  `ClientsRoomSync` (frame row 64) is not moved: it stays for part 2.
+- **Tool.** `tools/sweep2_s7e_emu.py` (development revision; families `ffn` for travel 19 and 60 through
+  `COLL_FindFreeNear`'s two wrappers 0x0064E7E0, 0x0064E810 and directly, with item_emu3's declared rooms and pool page
+  and the ADR-0029 (a) lock stand-ins; `qx`, `mevd`, `mevr` over frame_queue_emu's image).
+- **Development runs, not cited** (`workspace/logs/n66u/s7e/dev1`–`dev4`, `manifest-dev.sha256`, 33 lines, passing from
+  `workspace/logs/n66u/s7e/`): `dev1` (40 `ffn` cases) ran out its 1 500 s timeout with no output; `dev3` (12 cases)
+  stopped 3 size-3 cases at the 20 M step limit inside `COLL_RectTest`'s recursion, because the image left `CollMap.h`
+  (+0x0C) at 0; `dev4` (24 cases, the height declared) 0 mismatches, 0 stops, the only unaccounted reads
+  `COLL_PlusTest`'s jump table (0x0064D41C–0x0064D44F, in .text). `dev2` (60 cases each): `qx` 1 mismatch and 6 traced
+  accesses below the control and at address 0 — a negative frame after the counter's wrap indexes outside its list's
+  slot array (`smod64` < 0), to be read in part 2; `mevd` 3 and `mevr` 6 mismatches, a model error (the frozen units'
+  stat lists were written to the image but not to the model's memory, so every control separated 0).

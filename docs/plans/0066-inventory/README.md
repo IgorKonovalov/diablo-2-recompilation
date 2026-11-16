@@ -88,13 +88,13 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [monsters/ai/README](monsters-ai-README.md) | ai | 56 | 15 | 2 | 9 | 13 | 13 | · | · | · | · | 4 |
 | [monsters/ai/catalogue](monsters-ai-catalogue.md) | ai | 520 | 73 | 172 | 124 | 25 | 21 | · | 62 | · | · | 43 |
 | [monsters/ai/machinery](monsters-ai-machinery.md) | ai | 114 | 25 | 21 | 20 | 15 | 31 | · | · | · | · | 2 |
-| [path/README](path-README.md) | fp | 80 | 11 | 5 | 11 | 26 | 16 | · | · | · | · | 11 |
+| [path/README](path-README.md) | fp | 80 | 11 | 5 | 13 | 26 | 14 | · | · | · | · | 11 |
 | [path/search](path-search.md) | fp | 36 | 7 | · | 1 | 9 | 10 | · | · | · | · | 9 |
 | [player/party](player-party.md) | fp | 26 | 1 | 2 | 2 | 4 | · | 11 | · | · | · | 6 |
 | [quests/README](quests-README.md) | qu | 6 | 2 | 1 | · | 1 | · | 1 | · | · | · | 1 |
 | [quests/progression](quests-progression.md) | qu | 322 | 69 | 41 | 119 | 41 | · | 35 | 5 | · | 6 | 6 |
 | [quests/travel](quests-travel.md) | qu | 86 | 27 | 18 | 15 | 9 | 2 | 5 | · | · | · | 10 |
-| [sim/frame](sim-frame.md) | fp | 127 | 40 | 4 | 13 | 34 | 24 | 1 | · | · | · | 11 |
+| [sim/frame](sim-frame.md) | fp | 127 | 40 | 4 | 22 | 34 | 15 | 1 | · | · | · | 11 |
 | [skills/README](skills-README.md) | sk | 25 | 7 | 2 | 4 | 2 | 3 | 1 | · | · | · | 6 |
 | [skills/catalogue](skills-catalogue.md) | sk | 109 | 8 | 4 | 2 | 19 | 71 | · | · | · | · | 5 |
 | [skills/dispatch](skills-dispatch.md) | sk | 195 | 73 | 7 | 25 | 28 | 48 | · | · | · | 3 | 11 |
@@ -102,14 +102,14 @@ Every file's *Count* column sums to its spec's front-matter `I` at `b5999f5e` (c
 | [stats/README](stats-README.md) | is | 3 | 1 | 1 | 1 | · | · | · | · | · | · | · |
 | [stats/aggregate](stats-aggregate.md) | is | 42 | 25 | 6 | 1 | 4 | 6 | · | · | · | · | · |
 | [stats/states](stats-states.md) | is | 54 | 6 | 17 | 12 | 8 | · | 2 | 1 | · | 2 | 6 |
-| **All** | | **2626** | **623** | **341** | **467** | **390** | **477** | **59** | **68** | **0** | **23** | **178** |
+| **All** | | **2626** | **623** | **341** | **478** | **390** | **466** | **59** | **68** | **0** | **23** | **178** |
 
 By phase:
 
 | Route | Classes | Statements | Batches |
 |---|---|---|---|
-| Phase 1, static | a-logs 623, c 390, c-emu 477 | 1490 | 37 |
-| Phase 2, harness | a-run 341, b 467 | 808 | 33 (about 256 sessions estimated; H1p and H6d none yet) |
+| Phase 1, static | a-logs 623, c 390, c-emu 466 | 1479 | 37 |
+| Phase 2, harness | a-run 341, b 478 | 819 | 33 (about 256 sessions estimated; H1p and H6d none yet) |
 | Blocked | d-2c 59, d-owner 68, d-edit 23, d-none 178 | 328 | – |
 | **Total** | | **2626** | |
 
