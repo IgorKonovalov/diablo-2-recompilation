@@ -107,6 +107,8 @@ written from the code before they were read. Little exists beyond anecdotes; not
 |---|---|---|---|
 | `0x0052D870` | `sub_0052D870_GameTick` | frame++, new-room updates, unit events, client room sync, every 12 frames `RoomsDeactivate`, every 11 frames the level-unload tick per act | I |
 | `0x0052D440` | `sub_0052D440_ClientsRoomSync` | per client: `ClientRoomSync` | I |
+| `0x0061A140` | `sub_0061A140_ActRoomAtCoordsActivate` | fatal on a null act, then `RoomAtCoordsActivate`; its one direct caller is 0x00553790 in `sub_00553720_PortalPartnerGet` (§ 12) | I |
+| `0x0061B7B0` | `sub_0061B7B0_RoomAtCoordsActivate` | `0x00642C30` (the room at given coordinates) then `RoomActivateB` on it; a fifth caller of `RoomActivateB` (§ 12) | I |
 | `0x005380D0` | `sub_005380D0_ClientRoomSync` | client room ← its player's room; on a change `ClientRoomChange` | I |
 | `0x00537B50` | `sub_00537B50_ClientRoomChange` | DRLG reference move, level reference move, near-set difference → client add/remove per active room | C |
 | `0x0053A8E0` / `0x0053A9B0` | `sub_0053A8E0_RoomClientEnter` / `sub_0053A9B0_RoomClientLeave` | add / remove the client in the room's client list (`+0x48`, `+0x78`) and tell the units | C |
@@ -1099,6 +1101,72 @@ records of h7a-h-barb3), then new observers on the same lines. Kept output `work
   breakpoints' order, not the writes'. (0x005427FB–0x00542916)
 - [C] **`PresetUnitSpawn` only in a populate walk:** 408 of 408 `PSU0` lines fall in the walk block of a room with flags
   bit 0 clear; 286 later restore-only walks of rooms that had one hold none. (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
+### 12. Plan 0066 batch S7a, part 1: caller and pin scans with a second tool (2026-11-16, `lane/n66n`)
+
+Static, no game. `tools/sweep2_s7a.py` (`49f0d2dc…`, section `xrefs2`): the raw-byte call/jump/abs32 scan of
+`tools/xrefscan.py`, each site decoded by r2, the pushed arguments by r2's linear listing from the int3-padded entry.
+Output `workspace/logs/n66n/s7a/check-s7a.txt` (`43476f6e…`, `S7a total bad=0`), `manifest-s7a.sha256` passing from
+`workspace/logs/n66n/s7a`.
+
+- [C] **`RoomUpdateOne` has exactly three direct callers** (lifecycle row 7): 0x0055379D, 0x0056CF7D, 0x0059E018, no jump
+  and no absolute reference; the third tool agrees with the first. (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0)
+- [C] **Every caller of `RoomRestoredSet` passes 1** (lifecycle row 20, the parenthetical): three calls, 0x0052D12C and
+  0x0052D14A push the immediate 1, 0x0052D20C pushes `EBX`, set to 1 at 0x0052D19B and not written again before the call
+  (callee-saved). The setter's `and [eax+0x34], 0xFFFFFFFD` branch (0x0061A547) is therefore not taken by a direct call.
+  [I] stays: that no other code clears bit 1 of room `+0x34`; the one other `and [reg+0x34], mask` without bit 1 is
+  0x00648B54 in `PathSetTargetPoint` (a path record), and stores of a register to `+0x34` of an unresolved base were not
+  traced. (fn:sub_0061A510_RoomRestoredSet@0x0061A510, 0x0052D19B)
+- [C] **The 31 pin sites** (lifecycle row 27): `RoomPinSet` has 31 direct calls in 24 functions (int3-padded entries), no
+  jump, no absolute reference. `DrlgRoomPinFlag` ORs `0x400000` into room `+0x28` for a 0 argument and ANDs it out
+  otherwise (0x0061BAC0–0x0061BAD3), so a 0 push is a set: 18 sites push 0 (the one register push, `EAX` at 0x005EEAC9,
+  follows `test eax, eax; jne`, so it is 0) and 13 push 1, with the owners § 11.4 (c) names. That the quest sites set
+  at an event's start and clear at its end stays a reading of the call order. (fn:sub_0061AED0_RoomPinSet@0x0061AED0,
+  fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0)
+- **Contradicted in part: lifecycle row 2.** `RoomActivateB` has ten direct calls. Nine lie in the families the spec
+  names: `PresetLevelBuild` (0x006681D2), the warp destination (0x0066AB5A, 0x0066AC32), the waypoint room (0x0066ADAC),
+  the warp record (0x0066B16A, 0x0066B171) and the level point (0x0066B313, 0x0066B330, 0x0066B3C0). The tenth,
+  0x0061B7CA, lies in a separate function, 0x0061B7B0 (int3-padded; Ghidra's references attribute it to
+  `RoomActivateB`), which takes the room at given coordinates (`0x00642C30`) and activates it; its one direct caller
+  is 0x0061A140, whose one direct caller is 0x00553790 in `sub_00553720_PortalPartnerGet`, the "unit spawn at coordinates
+  whose room was not active" that also calls `RoomUpdateOne` (0x0055379D). [I] So a unit spawn at coordinates is a fifth
+  on-demand activation, beside warp, waypoint, level point and preset build; what reaches 0x00553720 is not read here.
+  Backlog: [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../../backlog/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
+  (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B7B0_RoomAtCoordsActivate@0x0061B7B0,
+  fn:sub_0061A140_ActRoomAtCoordsActivate@0x0061A140, 0x0061B7CA, 0x0061A173, 0x00553790)
+- Not settled in part 1 (part 2 of the batch): lifecycle rows 11, 12, 29, 36, 48.
+
+### 13. Plan 0066 batch S7a, part 2: bit and caller scans with a second tool (2026-11-16, `lane/n66n`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7a.py` (`246c8301…`, sections `stores` and `p2xrefs`; the method as
+[path/0001 § 16](../path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n)).
+Output `workspace/logs/n66n/s7a-p2/check-s7a-p2.txt` (`95d0ebe5…`, `S7a total bad=0`).
+
+- [C] **`0x200000` at room `+0x28`** (lifecycle row 29): over all of `.text`, one dword access of `+0x28` with
+  `0x200000` or its complement, and no byte access of `+0x2A` with `0x20` or `0xDF`: the write
+  `or dword [esi+0x28], 0x200000` at 0x0066F232. Two register tests of `0x200000` exist (0x0062E57D, 0x0063135C, in
+  `ITEMS_Deserialize` and `ITEMS_SerializeBits`), neither on a value loaded from `+0x28`. (0x0066F232)
+- [C] **Bit `0x2000` into unit `+0xC4`** (lifecycle row 48): six immediate stores at `+0xC4` hold the bit, all quest
+  setups storing a function entry (`0x00592C80`, `0x0059EA20`, `0x005B64A0`, `0x005B7B80`, `0x005BA9A0`: int3-padded
+  starts, quest callbacks, not unit flags); of the 22 register dword stores at `+0xC4`, one follows an `or` with the bit
+  within ten instructions: 0x0064C08B → 0x0064C097, in 0x0064C040. (0x0064C040, 0x0064C097)
+- [C] **The champion bit** (lifecycle row 36, in part): the `or` writes of bit `0x04` at monster data `+0x16` are three,
+  `SpecialModsRoll` 0x005A083E (`or word, 4`), `SpecialMonRestore` 0x005A44A3 (`or word, 4`) and `ChampionMemberMark`
+  0x005A4905 (`or word, 5`, right after its `MonMarkSpecial` call at 0x005A48F4); no `and` or `btr` in `.text` clears bit
+  `0x08` there but one in a CRT stack frame (0x0068DB37). [I] stays: the whole-field writes, 196 `mov`s of an immediate
+  and 877 register writes covering `+0x16`, their bases not traced, with the block copy the claim already names; and the
+  order after `MonMarkSpecial` for the first two writes (the callers' reading).
+  (fn:sub_005A0320_MonMarkSpecial@0x005A0320, 0x005A083E, 0x005A44A3, 0x005A4905)
+- **Not raised: a monster's drop's `+0x24`** (lifecycle row 11). `ItemCreate`'s direct-call graph (1 988 functions, 619
+  indirect sites) reaches all four item `+0x24` writers of items/0014 (`ItemGroundExpiry`, `ItemPlaceOnGround`,
+  `UnitRelocate`, `InactiveItemRestoreOne`), every one through `UnitFree`'s chains, so reach does not separate the
+  readings; a path-sensitive reading would be needed. The claim stays `[I]` as it stands. (fn:sub_00558D90_ItemCreate@0x00558D90)
+- **Contradicted in part: `ItemPlaceOnGround`'s callers** (lifecycle row 12): 12 calls in 11 functions, no jump or
+  pointer. The spec's list (`CursorDrop`; an overflow, `BeltOverflow` and `CorpseOverflowDrop`; `DropGoldAmount`;
+  `NPC_MenuAction` three times; `CubeDropEmptied`) holds for eight, and four callers are missing: `QUESTS_GiveItem`
+  (0x005467B5), `DropEar` (0x0055A286), `PLAYER_CorpseCreate` (0x0057FA7D) and `TargetBeltItemToGround` (0x005A3213).
+  [C] for the list of calls; what each caller drops stays the callers' reading. Backlog
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
+  (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0)
 
 ## Data touched
 

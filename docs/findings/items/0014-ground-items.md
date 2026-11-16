@@ -173,7 +173,7 @@ walk(r, (x, y), origin, B):
 | How it got to the ground | Item data `+0x24` | In a room that stays active |
 |---|---|---|
 | `ItemCreate`: a monster's or chest's drop, `DropGoldPile` | 0 (zeroed, no writer on the path) | never swept |
-| `ItemPlaceOnGround`: a player's drop, an overflow, `DropGoldAmount`, NPC menus, the cube's | `ItemGroundExpiry` | freed at the first multiple of 1 500 at or past it |
+| `ItemPlaceOnGround`: a player's drop, an overflow, `DropGoldAmount`, NPC menus, the cube's; also `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate`, `TargetBeltItemToGround` (0x005467B5, 0x0055A286, 0x0057FA7D, 0x005A3213; plan 0066 S7a, [drlg/0009 § 13](../drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n)) | `ItemGroundExpiry` | freed at the first multiple of 1 500 at or past it |
 | Restored from a record (drlg/lifecycle): `saved` is `ItemGroundExpiry` at the save's frame, not the item's old `+0x24`, for any of the above | `max(saved, frame + 15000)`, 0 stays 0 | as above |
 
 (fn:sub_00558D90_ItemCreate@0x00558D90, fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0, fn:sub_00541990_InactiveItemRestoreOne@0x00541990, fn:sub_00541B10_InactiveItemSave@0x00541B10, 0x00541B6C, fn:sub_00558B90_ActExpiredItemsFree@0x00558B90)
