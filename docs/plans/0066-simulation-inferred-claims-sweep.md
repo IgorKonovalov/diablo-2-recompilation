@@ -1982,3 +1982,29 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   room walks over declared images under ADR-0021 (the architect may prefer a static route); (5) five rows named
   not settled rather than a part 4. The proposed batch H6d and the d-edit question for timing 91 stay the
   architect's (H6d's wording now names the part 3 additions).
+
+### 2026-11-16 - Tier B check of S6c and S6e (architect, `lane/n66l`): accept with fixes (1)
+
+- **Rulings.** (a) **H6d accepted** as a harness batch: its routes cross `COMPOSIT_BuildCofName`'s `wsprintfA`
+  (0x0064F9C2, 0x0064F9E9), whose formatted name a claim uses; ADR-0029 (b) and (e) admit a stand-in only as a declared
+  input for a test that selects a fatal path, and R2 forbids a declared return, so no static route exists without a new
+  ADR. 21 rows counted by the check (timing 9, 11, 44, 80-84, 87, 90, 91, 129; movement 4-6, 8, 13-15, 22, 43).
+  (b) **Not d-edit yet** (timing 91 and the floors 15/25, block 1, the cap): d-edit (ADR-0010) needs "only edited data
+  reaches it", and the lane holds no kept scan for that. anim/0002's text says the floors are "reached by no call" in
+  the logs, a statement about the runs, not about stock sources (slows, negative FRW and FBR sources are not scanned);
+  and no scan shows that every stock class, mode and weapon name has an `ANIMDATA` record (timing 91). They stay in H6d;
+  a later static scan over the stock property blocks, skills and the name builder may move them to d-edit.
+  (c) **Static preferred for movement 22 and 43 and the room-walking remainders** (timing 62, movement 2, 23, 31): R2's
+  "walk rooms" sentence quotes ADR-0021's "kept as the route, not required" for `MissileCreate` and the spawns, which
+  allocate; `tools/path_emu1.py`, `path_emu2.py` and the `GroundDropCell` run (ADR-0029) emulate room reads over declared
+  images. Try that first (the read set of `PathStepCollide` 0x00650150, `sub_00463740_RoomAtSubtile` and
+  `DUNGEON_GetCollMap` is declarable if the room image is); the rows go to the harness only if the attempt shows a
+  callee that allocates or an import. No class change made now; H6d lists them as provisional. (d) **Yes:** a later
+  static batch (S6f) takes the five unsettled rows (timing 18, 45, 49, and the remainders of 46 and 61) as one family
+  set (scratch item image and `monseq` table), with the room-walk attempt of (c). No Tier A ruling or owner decision is
+  needed; widening ADR-0029 to `wsprintfA` would be an ADR and is not proposed.
+- **Fix (1, stale cross-reference/overclaim):** the H6d row said the floors were for the architect to send to d-edit;
+  it now records ruling (b) and (c) and the batch status "accepted".
+- **Checked.** 7 `[C]` lines added in the anim findings, all emulation runs with separating controls named; anchors
+  `COMPOSIT_BuildCofName` 0x0064F5B0, `ANIMDATA_Lookup` 0x0066A9B0, `MonModeNullRecord` 0x005A7B30 resolve to the
+  sentences; the two new symbol rows are `I`, not clashing; the corrections routes are in the diff.
