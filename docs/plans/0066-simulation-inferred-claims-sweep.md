@@ -3151,3 +3151,62 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     call that reaches the pool is 0x005FD9DA (0x0056E390), an observed boundary for "no draw before it".
   - **Then** the `InvPageGet` group, the stat-setter group and the allocator group as part 3's note lists.
 - **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 5 (reverser-static, `lane/n66sa`): 4 more settled (44 of 89), D2 contradicted in part; resume note for part 6
+
+- **Done.** `main` `30e8a46c` was already merged (part 4's `1056c0fd`; `git merge main`: up to date); totals from the
+  29 files' *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) unchanged: a-logs 623, a-run 334, b 508, c 390,
+  c-emu 443, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, as README § 1 gives; part 5 moves no row's class.
+  New tool `tools/skills_s2ae5_emu.py` (`0490ce73…`; reuses parts 1, 3 and 4's machinery in module state only; parts
+  1 to 4's tools and runs unchanged, their `check` still reproduce `run/` to `run4/` `check.txt`). One kept
+  `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after one development
+  launch (`dev11/`, `workspace/logs/n66sa/s2ae/manifest-dev-p5.sha256`, not cited). Three families (`tc`, `rfa`,
+  `rro`), 7 500 cases, 0 mismatches, 655 predicted fatal-path stops, 0 unaccounted reads or writes, no import; 78
+  controls, 74 separating (the 4 others named in the record), `passed` 0. Route reads: per call site, allocator and
+  import reach of 39 roots, every open S2ae row's function (`sites.txt`). Record:
+  [run:2026-11-16-sweep2-s2ae5](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae5);
+  `workspace/logs/n66sa/s2ae/run5/` (`check.txt` `78107755…`, `split.txt` `f2f57100…`, `reach.txt` `cbd40329…`,
+  `static.txt` `05fc2d2e…`, `sites.txt` `9255ebd1…`, `manifest.sha256` `0f6933ff…`, 12 lines, passes from there).
+  Claims: [skills/0002 § 21](../findings/skills/0002-missiles.md#21-plan-0066-batch-s2ae-part-5-skills_targetcheck-and-two-re-seed-callbacks-emulated-2026-11-16-lanen66sa);
+  skills/0001's `TargetCheck` bullet carries a dated correction.
+- **Rows (4).** Raised whole: dispatch 47 (`SKILLS_TargetCheck`, whole, with `UnitsHostile`, `SkillPetTest`,
+  `SkillAllyTest` and the party lookup run whole), **contradicted in part**: spec D2's dead-target rule holds only for a
+  type-1 target in mode 12; a target with `+0xC4` bit 1 clear is cleared, and with the bit set any other target is
+  cleared by a `TargetCorpse` skill and kept otherwise (`split.txt` 1 433 of 1 593; `spec_d2` 1 564, `passed` 0) →
+  Phase 3; missiles 77 (callback `0x005CD110` to `PathPlan`). Raised in part: missiles 75 (callback `0x005D40F0` to
+  `PathPlan`; the remainder, that the argument is do 37's ring word, → b (H2a): the callback runs inside
+  `MissileCreate` after `SUnitCreate`'s pool allocation, 0x0059FC75 → 0x00555230, 0x0040B430 at 0x005553BE) and 82
+  (the two callbacks' `PathPlan` entries; the walk and the do functions stay c-emu). No class moves.
+- **Refinements and the contradiction** (Phase 3's): routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements.md)
+  (D2's clear map, its three `TargetableOnly` tests, the re-found target; the two callbacks' table cells, which leave
+  out `PathPlan`'s walk, and `0x005CD110`'s roll gate).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Judgment calls for the review:** (1) `tc`'s domain keeps every lookup type in 0..5, gives every type-1 unit
+  monster data and an owner record, and has no owner cycle: outside it the code reads address 0 or loops, which the
+  run would not account; (2) `pet_u0` and `pet_t1` cannot separate (the owner test fails any target that is not type 1),
+  so `SkillPetTest`'s first test is filed as having no effect on the result rather than as confirmed; (3) the "Draws
+  after" cells of rows 75 and 77 are filed as refinements, not contradictions: the walk is past the observed boundary
+  and only inferred from H1's identical entry; (4) `split` was added to the tool after the emulation (the cases file
+  is unchanged; `check` reproduces byte for byte); (5) the throughput note's "route to b as soon as `sites` shows the
+  allocator" was applied only where the claim lies past it (m75's caller half); for the stat-setter and `InvPageGet`
+  groups the claims sit at or before the first reaching call, so they stay c-emu (part 3's note).
+- **Resume note for part 6 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 45 rows (dispatch
+  3, 30, 32–35, 40, 83, 84, 89, 92, 93, 96, 110–112, 117, 119, 124, 127–131, 133, 135, 142–144, 152–154, 156, 178,
+  181, 182, 184; missiles 26, 27, 63, 71, 72, 74, 85, 95), the 5 S2a remainders (dispatch 31, 63, 79, 164, 172), part
+  1's 4 (dispatch 39, 69, missiles 29, 81), missiles 69's (do 30) and 82's (the walk, the do functions). Start a new
+  tool and a `run6/`. `run5/sites.txt` lists every open root's call sites with their pool and import reach; from it:
+  - **No pool and no import:** d40 `SKILLS_ItemChargesOk` (5 callees, none reaching), the callbacks' `PathPlan` (m82's
+    remainder: run it whole from the `rfa`/`rro` entries as run:2026-11-03-path-emu-3 did; its one import must be
+    shown off the walk's branch first), d83, d164's remainder, m63, do 30 as part 4's note lists.
+  - **One allocator-reaching call, claim before or at it (observed boundary there):** d110 handler 1 (only
+    `MissileCreate` 0x005CAC1E reaches the pool: end there and compare the block), d30 `GetRangeType` (only
+    0x00645485 → 0x0064F460 through `InvPageGet`; declare the page at the descriptor's size as S5e part 3 did).
+  - **Stat setters** (0x00627260, 0x00627150, 0x006272B0, 0x006270B0 reach 0x0040B4B0 through the list growth):
+    d124, 127–131, 142, 143, 152; m27, 95: declare the stat present so the list does not grow, or end at the first
+    setter.
+  - **Read the branch, likely b:** d111, 112, 119 (`ApplyDamage` 0x0057C6C0 and 0x0057CEE0 frees and allocates),
+    d117, 135, 178 (the flee and stupidity calls), d133 (0x005C0AD0 allocates), d144, d156/181 (four reaching
+    calls), d182/184 (`EventBlockNew`, `SkillMissileCreate`, 0x00571AA0), d89, d93, d153/154, m71, 72, 74, 85, d79's,
+    d84's and d172's remainders.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.

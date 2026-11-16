@@ -356,6 +356,12 @@ return r;
   skill has `TargetCorpse` (`+0x07` bit 0; the monster-in-mode-12 case keeps it only then too), otherwise the target is
   cleared (`0x00620C10(unit, 0)`) and the check passes. (fn:SKILLS_StartUsedSkill@0x0056FAF0,
   fn:SKILLS_TargetCheck@0x0056CC60, fn:SKILLS_GetItemSkillInfo@0x00643B00)
+- [C] **Corrected 2026-11-16 (plan 0066 S2ae part 5, `lane/n66sa`).** The bullet above holds for a type-1 target in
+  mode 12 only. Emulated whole: a target whose `+0xC4` bit 1 is **clear** is cleared; with the bit set, any target that
+  is not a type-1 unit in mode 12 is cleared when the skill has `TargetCorpse` and kept when it has not. The
+  `TargetableOnly` tests are `UnitsHostile`, then `sub_005542C0_SkillPetTest`, then `SkillAllyTest`. Full map and
+  counts in [skills/0002 § 21](0002-missiles.md#21-plan-0066-batch-s2ae-part-5-skills_targetcheck-and-two-re-seed-callbacks-emulated-2026-11-16-lanen66sa).
+  (0x0056CCF0–0x0056CD35, run:2026-11-16-sweep2-s2ae5)
 
 ```c
 // fn:SKILLS_SrvStart@0x0056F640 (id, lvl, noCost; ECX game, EDX unit), trimmed

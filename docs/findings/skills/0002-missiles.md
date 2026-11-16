@@ -1200,6 +1200,103 @@ separating control counts (`sep`, each with `passed` 0).
   250 sub-tiles (`PathDirection`'s product wraps past 258 and the index leaves `g_PathDirTable`); `ItemStatCost`
   flags on stat 161 (the records are declared zero). (run:2026-11-16-sweep2-s2ae4)
 
+### 21. Plan 0066 batch S2ae part 5: `SKILLS_TargetCheck` and two re-seed callbacks emulated (2026-11-16, `lane/n66sa`)
+
+Part 5 of the batch. The emulated claims are maps of the named functions on declared inputs (ADR-0015), compared with
+`tools/skills_s2ae5_emu.py`'s model over the kept run
+([run:2026-11-16-sweep2-s2ae5](experiments.md#run2026-11-16-sweep2-s2ae5), `check.txt`, 7 500 cases, 0 mismatches,
+0 unaccounted reads or writes; the 655 stops are cases the model predicts at the fatal guard). Brackets give
+separating control counts (`sep`, each with `passed` 0).
+
+- [C] *d47 (D2), whole.* `SKILLS_TargetCheck` (`EAX` the skill, stack `game`, `unit`; `ret 8`) first takes the
+  target from `UNIT_GetTargetUnit(game, unit)`: the unit's path (`+0x2C`; null takes the fatal path) holds a target at
+  `+0x58` with its type and guid at `+0x5C`/`+0x60`; when it is set, `GameFindUnit(game, type, guid)` (the type's
+  bucket, `guid & 0x7F`, walked by `+0x0C`, next `+0xE4`; type 5 one list at game `+0x1B20`) is compared with it, and
+  the stored target is cleared (`+0x58` ← 0) when the unit found is another one, or when it is an item (type 4) in
+  mode 1 or 2 [`gt_stored` 631, `gt_other` 2 206, `gt_found` 225, `gt_item` 539, `gt_mode1` 175, `gt_mode2` 170]; a
+  target equal to the unit itself counts as none [`gt_self` 2 554]. No target → **1** [`t_nz` 3 408]. A skill outside
+  `[0, nSkills)` (signed) → **0** [`sk_ge0` 1 889, `sk_ge0~` 32, `sk_lt_n` 2 122, `sk_lt_n~` 154]. With the row's
+  `+6` & 0x10 (`g_BitMask32[4]`) [`tonly` 1 174] the call returns **0** unless one of three tests passes, in this order
+  [`hostile` 700, `pet` 411, `ally` 422] (fn:SKILLS_TargetCheck@0x0056CC60, 0x0056CC60–0x0056CCEA,
+  run:2026-11-16-sweep2-s2ae5):
+  - `sub_00554200_UnitsHostile(game, unit, target)`: a type-1 unit is replaced by its owner (`MonsterOwner`
+    0x0058F0D0: monster data `+0x28` record, `GameFindUnit(record +0x28, type +0x30, guid +0x2C)`), a type-3 unit
+    with `+0xC8` bit 10 by `GameFindUnit(game, +0x94, +0x98)` when found; the target is replaced by its owner while
+    it is a type-1 unit with an owner other than itself [`h_a_mon` 74, `h_a_owner` 83, `h_a_mis` 32, `h_a_c8` 49,
+    `h_a_mis_owner` 44, `h_b_owner` 172]. The same unit → not hostile [`h_same` 302]; two players → the first one's
+    `PlayerPairFlags` node for the second's guid, `flags & 8` [`h_pp` 391, `pp_id` 68]; otherwise hostile unless
+    `AlignSame` (0x00650D70: both alignments 0, or both 2, with `UnitAlignGet` 2 for a type above 1 and else stat 172
+    of the state-105 list, 0 without it) [`as_a0` 226, `as_b0` 82, `as_a2` 97, `as_b2` 159, `al_gt1` 164, `al_list`
+    101].
+  - `sub_005542C0_SkillPetTest(unit, target, skill)`: the row's `+7` & 2 (`g_BitMask32[1]`) and the target's owner
+    record (`sub_0058F090_MonsterOwnerRef`) naming type 0 and the unit's guid [`pet_row2` 67, `pet_type0` 26,
+    `pet_guid` 22]. Its first test (a non-player unit needs a type-1 target, `pet_u0`, `pet_t1`, `sep` 0 each) cannot
+    change the result: a target that is not type 1 fails the owner test anyway.
+  - `sub_00554D20_SkillAllyTest(game, unit, target, skill)`: a player unit, a type-0 or type-1 target, the row's `+7`
+    & 4 (`g_BitMask32[2]`); a type-1 target is replaced by its owner record's (type, guid), which must name type 0
+    [`al_u0` 24, `al_t0` 5, `al_t1` 19, `al_row4` 33, `al_owner` 19, `al_owner0` 19]; then the unit's party id
+    (0x00554630 → 0x00540710: a player's guid, or with a client record at `+0x60` its `+0x24` when the record starts
+    0x01020304 and −1 otherwise, searched in the parties at game `+0x1D2C`; 0xFFFF for none) must not be 0xFFFF, the
+    player `GameFindUnit` finds for that (type, guid) must exist, and the two party ids (u16) must be equal
+    [`al_party` 97, `pa_client` 108, `pa_magic` 2, `pa_list` 31, `pa_member` 50, `al_found` 24, `al_same` 36].
+  
+  Then the target's `+0xC4` bit 1 decides; the call returns **1** on every branch, and "cleared" is
+  `sub_00620C10_UnitSetPathTargetUnit(unit, 0)` (path `+0x58` ← 0; a unit not of type 0, 1 or 3 takes the fatal path)
+  [`dead` 909, `t_mon` 418, `t_mode12` 426, `corpse_a` 171, `corpse_b` 787]:
+
+  | `+0xC4` bit 1 | type-1 target in mode 12 | `TargetCorpse` (`+7` & 1) | target | cases (`split.txt`) |
+  |---|---|---|---|---:|
+  | clear | either | either | cleared | 684 |
+  | set | yes | set | kept | 73 |
+  | set | yes | clear | cleared | 87 |
+  | set | no | set | **cleared** | 329 |
+  | set | no | clear | **kept** | 420 |
+
+  (fn:SKILLS_TargetCheck@0x0056CC60, 0x0056CCF0–0x0056CD43, fn:UNIT_GetTargetUnit@0x00553540, 0x00553490–0x00553533,
+  fn:sub_00554200_UnitsHostile@0x00554200, fn:sub_005542C0_SkillPetTest@0x005542C0,
+  fn:sub_00554D20_SkillAllyTest@0x00554D20, fn:sub_00620C10_UnitSetPathTargetUnit@0x00620C10,
+  run:2026-11-16-sweep2-s2ae5)
+- [C] *d47, the contradiction.* Spec D2 reads `+0xC4` bit 1 as "dead": a dead target kept only by a `TargetCorpse`
+  skill, otherwise cleared, any other target kept. The run gives otherwise in three of the five rows above: a target
+  with the bit clear is always cleared, and a target with the bit set that is not a type-1 unit in mode 12 is cleared
+  by a `TargetCorpse` skill and kept by any other. The spec reading as a control (`spec_d2`) changes 1 564 cases,
+  `passed` 0; over the 1 593 cases that reach the bit test, it predicts the target's state wrongly in 1 433 (`split.txt`,
+  every cell except the two mode-12 ones). Only the mode-12 rows agree with D2. What the bit means is not given by this
+  code (review-fixes 1): the map above is the claim. Routed to the spec-writer (backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements.md)).
+  (0x0056CCF0–0x0056CD35, run:2026-11-16-sweep2-s2ae5)
+- [C] *m75 (H, callback `0x005D40F0`), to `PathPlan`.* `sub_005D40F0_MissCbReseedFromArg` (`ECX` the new missile,
+  `EDX` the argument; plain `ret`) returns at once for a null unit [`unit_nz` 1 500]. Otherwise the range `r` (data
+  `+0x0E` through 0x0064A300, 0 unless type 3 with data) is capped at 77 from 78 on, both data words set [`type3`
+  1 111, `data_nz` 780, `r_ge_4e` 1 284, `r_ge_4e~` 76]; the seed at `+0x20` is `RNG_SeedInit(argument)`, the
+  argument alone (`spec_plus_x`, `Init(path word +0x10 + argument)` as `0x005C9290` does, 1 284); the path is set to
+  type 10 (as § 20; `+0x40` of 0xB or 8 takes the fatal path [`f40_b` 1 389, `f40_8` 1 358]) and its bytes `+0x90`,
+  `+0x91` get `r`'s low byte capped at 77 unsigned [`b_lt_4d` 929]; then `PathPlan(path, missile, 0)` from 0x005D4141
+  (1 284 calls, observed boundary). No seed step before that call. (fn:sub_005D40F0_MissCbReseedFromArg@0x005D40F0,
+  0x005D40F0–0x005D4141, run:2026-11-16-sweep2-s2ae5)
+- [C] *m77 (H, callback `0x005CD110`), to `PathPlan`.* `sub_005CD110_MissCbReseedRoll`: the same null test and range
+  cap [`unit_nz` 2 000, `r_ge_4e` 1 713, `r_ge_4e~` 99]; the seed is `RNG_SeedInit(path word +0x10 + argument)` (the
+  word zero-extended by 0x00648A00, a 32-bit add), then **one** inline step (`lo·0x6AC690C5 + hi`, stored)
+  [`spec_no_step` 1 775]; when the new low dword **unsigned** mod 100 is at least 20 [`roll_ge20` 1 960, `roll_ge20~`
+  22, `spec_smod` (signed) 766] the path is set to type 10, `+0x90`/`+0x91` to the capped range byte, and
+  `PathPlan(path, missile, 0)` is called from 0x005CD1AE (1 332 calls); below 20 the callback returns with no path
+  change (393 cases in `reach.txt`). (fn:sub_005CD110_MissCbReseedRoll@0x005CD110, 0x005CD110–0x005CD1B9,
+  run:2026-11-16-sweep2-s2ae5)
+- *After, `[I]` (ADR-0021).* What `PathPlan` does from these two entries is past the boundary. The entry state is the
+  one in which `0x005C9290`'s `PathPlan` takes its random walk (H1, [C] there: type 10, `+0x91` the capped range), so
+  the walk's steps of the new seed follow here too whenever `+0x91 ≥ 2`; the spec table's "Draws after" cells
+  ("none" for `0x005D40F0`, "1 inline" for `0x005CD110`) leave them out (refinement, same backlog entry). Who passes
+  the argument (do 37's ring word for `0x005D40F0`) is the caller's: the callbacks run inside `MissileCreate` after
+  `SUnitCreate`'s pool allocation (0x0059FC75 → 0x00555230, `0x0040B430` at 0x005553BE; part 4's `sites.txt`), so
+  that half of m75 goes to b (ruling R2). For m82 (H1, "the other re-seed callbacks … reach the same walk when they
+  set type 10") these two entries are the `[C]` half: both callbacks set type 10 and call `PathPlan(path, missile, 0)`
+  with `+0x90`/`+0x91` the capped range; the walk from there (PathPlan run whole, as run:2026-11-03-path-emu-3 ran it
+  for `0x005C9290`) and the do functions (`0x005B0640` calls `PathPlan` at 0x005B0767) stay open.
+- [I] *Not covered.* `tc`: the guard tests the three-way chain makes unreachable (`pet_u0`, `pet_t1`); owner chains
+  longer than three units; party lists with more than two parties; the `ItemStatCost` flags on stat 172 (records
+  declared zero). `rfa`, `rro`: a null path and the strictness of the byte cap at 77 (`b_lt_4d~`, as § 20).
+  (run:2026-11-16-sweep2-s2ae5)
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,
