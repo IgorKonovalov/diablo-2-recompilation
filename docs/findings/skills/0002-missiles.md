@@ -897,6 +897,106 @@ rows are the plan 0066 inventory files' Route cells "S2c 2026-11-16 (part 2)". T
   sites lie in six recursive-descent bodies (0x005A2620, 0x005A2840, 0x005A2C20, 0x005A3F30, 0x005A6D50, 0x005A6FF0).
   The rewordings are in the S2c refinements backlog.
 
+### 17. Plan 0066 batch S2ae part 1: leaf functions emulated, earlier runs re-read, the routes (2026-11-16, `lane/n66sa`)
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (the skills dispatch and missiles
+emulation batch), part 1. The emulated claims are maps of the named function on declared inputs (ADR-0015), compared with
+`tools/skills_s2ae_emu.py`'s model over the kept run ([run:2026-11-16-sweep2-s2ae](experiments.md#run2026-11-16-sweep2-s2ae),
+`check.txt`, 14 100 cases, 0 mismatches); brackets give separating control counts (`sep`, each with `passed` 0) and the
+`ROWS` tallies. What each offset or column means keeps its own tag (ADR-0015 (3)). "d" rows are skills/dispatch's
+inventory, "m" rows skills/missiles'.
+
+- [C] *m35 (D4's clamp at 0).* `sub_006502D0_PathVelocityStep` (EAX path, ECX multiplier; `ret`): when `+0x88` (the
+  acceleration) is non-zero, `+0x8C` is incremented and, when it is then **above 4** (signed), `+0x7C += +0x88`; if the
+  sum is above `+0x84` it takes `+0x84` and `+0x88 ← 0`, **else** if it is below 0 it takes 0; `+0x8C ← 0`. Then
+  `s = (+0x7C · m) >> 6` with `m` the multiplier (`0x400` when `m < 1`), and `+0x72 = (+0x6A · s) >> 12`,
+  `+0x76 = (+0x6E · s) >> 12` (32-bit products, arithmetic shifts) [`v_lt0` 694, 523 cases clamped at 0;
+  `v_gt_max` 880, `v_gt_max~` 119; `count_gt4` 1 201, `count_gt4~` 69, 160 cases entering with a count above 4;
+  `mult_lt1` 536, `mult_lt1~` 124; `accel_nz` 1 500]. **Refinements:** the clamp at 0 is the `else` of the cap, so a
+  sum above a negative maximum keeps that maximum [`spec_two_ifs`, D4's two separate tests, fails 111]; the step is
+  taken at a count above 4, not equal to 5; the function **writes** the step to `+0x72`/`+0x76`, it does not add to the
+  position (the move is its caller's). (fn:sub_006502D0_PathVelocityStep@0x006502D0, 0x006502D0–0x0065034C,
+  run:2026-11-16-sweep2-s2ae)
+- [C] *m38, m98 (D4's direction).* `sub_0064FC60_PathDirection` (ECX vector out, EDX index out; x1, y1, x2, y2;
+  `ret 0x10`): with `dx`, `dy` the unsigned spans (larger minus smaller coordinate), the major axis is y when
+  `dx ≤ dy` (signed), `i = (minor · 0x7F) ÷ major` (signed, truncating; 0 when `major` is 0) indexes the 12-byte rows of
+  `g_PathDirTable` (0x006EB7E0, `.rdata`); the first two words are the vector, swapped when x is the major axis, whose
+  third word `t` becomes `(−t − 1) & 0xF`; `y2 < y1` (unsigned) negates the y component and maps `u → (−u − 1) & 0x1F`;
+  `x2 < x1` negates the x component and gives the index `(u + 8) & 0x3F`, else `((−u − 1) & 0x3F) + 8 & 0x3F`
+  [`x2_lt_x1` 3 000, `y2_ge_y1` 1 967, `y2_lt_y1` 3 000, `dx_le_dy` 3 000, `dx_le_dy~` 1 405, `major0` 2 160; spans up
+  to 2²³]. The step direction is a table lookup on image data, no arithmetic beyond the one division.
+  (fn:sub_0064FC60_PathDirection@0x0064FC60, data:g_PathDirTable@0x006EB7E0, run:2026-11-16-sweep2-s2ae)
+- [C] *m60–62, m65, m66 (F1's pair steps).* `sub_005A8910_MissileElemRoll` (EAX maximum stat; unit, minimum stat,
+  mastery stat; `ret 0xC`): `hi = STATS_GetUnitStat(u, EAX, 0)`, 0 when `hi < 1`; `lo = STATS_GetUnitStat(u, min, 0)`,
+  0 when `lo ≤ 0`; a pair with `lo > hi` is swapped; when the mastery id is not −1 and its stat on the same unit is
+  non-zero, `lo += MulDiv(lo, k, 100)` and `hi += MulDiv(hi, k, 100)` on the swapped bounds; then
+  `RangeB(u.seed, hi − lo) + lo`, no step when `hi − lo < 1` [`inverted` 1 363, 1 174 inverted pairs, 563 of them with
+  a mastery; `spec_no_swap` 1 172; `m_set` 741, `m_nz` 741, 752 cases with a non-zero mastery; `hi_lt1` 1 877,
+  `lo_gt0` 1 893, `lo_gt0~` 254, `n_gt0` 1 542, `n_gt0~` 179]. A mastery stat of 0 adds nothing. That the unit is the
+  missile is the callers' reading (§ 6, `lane/rbd`). (fn:sub_005A8910_MissileElemRoll@0x005A8910,
+  0x005A894B–0x005A8993, run:2026-11-16-sweep2-s2ae)
+- [C] *d38 (C5, `restrict`).* `SKILLS_RestrictOk` (EAX entry, EBX unit): a null unit, entry or record (`entry+0`)
+  refuses; with the record's byte `+0x228` = 0 it passes only when `0x0063A510` finds no restricted state; 1 passes;
+  2 refuses unless a restricted state is set, then passes on the first of the three s16 ids at `+0x22A` the unit has
+  (`UNIT_HasState`), a negative id ending the list; any other value passes [`rv0` 980, `rv1` 633, `rv2` 862,
+  `restricted` 559, `has` 205, `st_neg` 102, `rec_nz` 846]. `0x0063A510` → `0x0063A130`: any common bit between the
+  unit's state bits (only when its list has bit 31 of `+0x10`; no type test) and the mask words at DataTables
+  `+0x110`, over `(states + 31) ÷ 32` words. **Refinement:** a null record refuses (C5's "any other value passes" is
+  for a record). The mask's meaning (the restricted states) is the table's own tag. (fn:SKILLS_RestrictOk@0x00644060,
+  0x0063A510, 0x0063A130, run:2026-11-16-sweep2-s2ae)
+- [C] *d39 (C6, the map).* `SKILLS_StartManaOk` (ESI unit, EDI entry) returns 0 only for a non-null type-0 unit whose
+  record's s16 `+0x184` is above 0, whose stat 8 is below `+0x184 · 256` (**signed** compare), and which lacks state
+  12; else 1 [`m_lt` 203, `m_lt~` 17, `sm_gt0` 219, `st12` 235, `player` 288; `spec_unsigned` fails 12]. Not covered:
+  which stock rows have `startmana` and when the game calls the check (the first frame of a channelled skill).
+  (fn:SKILLS_StartManaOk@0x006440F0, run:2026-11-16-sweep2-s2ae)
+- [C] *d69 (G2, the gate).* `SKILLS_DelayOk` (EDI unit; entry; `ret 4`) returns 1 for a null unit, a type other than
+  0, a unit without state 121, or a null entry or record; otherwise its first call is `SKILLS_GetSkillLevel(unit,
+  entry, 1)` from 0x00647931 (return address 0x00647936 checked) [`st121` 331, `entry` 277, `player` 271, `unit` 234;
+  157 boundary cases]. Not covered (ADR-0021): the `SKILLS_EvalCalc` of the delay calc and its `< 1` test.
+  (fn:SKILLS_DelayOk@0x006478F0, run:2026-11-16-sweep2-s2ae)
+- [C] *d91 (I4, the kick maximum).* `sub_00644C20_SkillKickDamage` (ESI unit; flag; `ret 4`): `x = stat 2 + stat 0 −
+  20` for a type-0 unit, else `3 · stat 12` (a null unit gives 0), floored at 1; flag non-zero → `(x ÷ 4) << 8`, flag 0
+  → `(x ÷ 3) << 8` [`flag` 536, `player` 843, `x_lt1` 833]. `SKILLS_GetPhysMax` with the `Kick` bit loads `ESI` from
+  its first argument, pushes 0 and tail-returns the call's `EAX` (0x00647D3D–0x00647D49; objdump in `static.txt`
+  `physmax-kick`, and the Ghidra decompile of run:2026-10-20-cat-emu-9d), so the kick maximum is `(max(x, 1) ÷ 3) << 8`.
+  (fn:sub_00644C20_SkillKickDamage@0x00644C20, fn:SKILLS_GetPhysMax@0x00647D00, run:2026-11-16-sweep2-s2ae)
+- [C] *d149 (L5, the level gate and the class-364 path).* `sub_005C4430_SummonClassRoll` (ECX caster, EDX summon;
+  id, lvl): a null summon or a class other than 363 and 364 returns with no step. Class 363 →
+  `sub_005C4300_SkeletonParam1Roll`: at `lvl > 2` (signed) one inline step of the caster's seed and
+  `flag = (low mod 100) < Skills[id] +0x148` (signed; 0 for an id out of the table), at `lvl ≤ 2` no step and flag 0;
+  then `sub_005C4180_SummonSetDataBytes(EAX 1; flag, 0)`. Class 364 → `0x005C43D0` → `SummonSetDataBytes(EAX 1; 0, 1)`,
+  which steps the caster's seed once (`EDI`), writes `low & 3` to MonsterData `+0x0F` and `+0x10` and calls
+  `0x005B0D70` with `ECX` = the dword at MonsterData `+0x28`, `EDX` = 1 and the stack arguments 0, −666 (return
+  address 0x005C42CE checked) [`c363` 1 274, `c364` 990, `lvl_gt2` 422, `lvl_gt2~` 44, `roll_lt` 165, `b_nz` 592; ROWS
+  363 at `lvl ≤ 2` 194, above 228, 364 408]. With a type-1 summon and MonsterData, `SummonSetDataBytes` first copies
+  row `EAX` (index clamped at 10) of the 9-byte rows at 0x00741940 to MonsterData `+4`, `+5`, `+0xC`, `+0xD`, `+6`,
+  `+7`, `+8`, `+0x0B` only when its first argument is non-zero, and `+9` when it does not draw. The cases keep the
+  caster's state 97 off (its stat-0x15F index path is not run). (fn:sub_005C4430_SummonClassRoll@0x005C4430,
+  fn:sub_005C4300_SkeletonParam1Roll@0x005C4300, fn:sub_005C4180_SummonSetDataBytes@0x005C4180,
+  run:2026-11-16-sweep2-s2ae)
+- [C] *Earlier kept runs, re-read (no new run).* **m28:** combat/0001 § 22 emulated `MissileCritRoll`'s second and
+  third steps (outcomes by steps 1/2/3: 1 216 / 1 475 / 309; run:2026-11-16-sweep2-s5fe), scoped to a unit with no
+  used skill; the combat cluster's Tier A review takes it as this row's evidence. **m29, the call:** the same § 22's
+  call site 0x0064BD15 (ESI = the block's third argument, weapon 0, only when it is non-null): no mastery step. That
+  the branch is `SrcMissDmg`'s and the argument the source missile stays `[I]` with C1's block (part 2). **d138:**
+  run:2026-11-16-sweep2-s5e's `phh` family ran `sub_0057D810_PreventHealHook` with attackers of types 0, 1, 2 and
+  defender classes 703–710 [`att_player` 255, `cls_lt2c0` 217, `cls_gt2c5` 113]. **d122:**
+  run:2026-11-16-sweep2-s5e2's `frz` family: handler 14 draws one inline step whenever stat 134 is above 0 (and its
+  `ow` and `cb` families handlers 15 and 16; combat/0001 § 20). **m78:** run:2026-10-20-cat-emu-9a `scatter` (do 8,
+  10, 17) and run:2026-10-20-cat-emu-9b `scatter25` (do 25): `0x005A9820` re-seeds the missile to `(SubX + elapsed,
+  666)` and draws two `RangeB` (skills/0004 § 7). **m79, m80:** 9b `reseed9b`: do 28 re-seeds to `(+0x28, 666)`, draws
+  two `Range(2r + 1)` and stores the low word in `+0x28` before its creation; do 34 re-seeds to `(SubX, 666)` and steps
+  once (skills/0005 §§ 7, 8; the table's "path X" is `SubX`). **m81, in part:** do 35 re-seeds to `(+0x28, 666)` and
+  steps once before `PathPlan`; its `+0x28 ← low` comes after that boundary (skills/0005 § 9) and stays `[I]`.
+  (fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:sub_0057D810_PreventHealHook@0x0057D810,
+  fn:STATEVENT_Freeze@0x005BFC60, fn:sub_005A9820_MissSubNearReseed@0x005A9820, run:2026-11-16-sweep2-s5fe,
+  run:2026-11-16-sweep2-s5e, run:2026-11-16-sweep2-s5e2, run:2026-10-20-cat-emu-9a, run:2026-10-20-cat-emu-9b)
+- [I] *Routes (ruling R2, ADR-0021, ADR-0029; `routes.txt`, depth 4).* **m49 → b (H2a):** do 2 reaches its creation
+  through `0x005A9720` (0x005AE469) → `MissileCreate` → `sub_00555230_SUnitCreate` (0x0059FC75), whose pool allocation
+  0x0040B430 sits at 0x005553BE; do 1 follows at 0x005AE475, after the creation, so no emulation without a declared
+  return reaches it. The other S2ae rows are left for part 2 (the plan's resume note).
+  (fn:sub_005AE400_MissDo02SubMissile@0x005AE400, fn:sub_0059FA30_MissileCreate@0x0059FA30)
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,

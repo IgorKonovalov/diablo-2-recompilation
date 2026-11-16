@@ -2737,3 +2737,72 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Gate:** fast green (80 warnings after the merge, none new from the fixes; W4 on wiki/quests, which the lane's refresh
   entry answers); `--full` green (39 surveys).
 - **Verdict: accept with fixes (4)**: overclaim 3, stale cross-reference 1. The review request stays open for the merge.
+
+### 2026-11-16 — Phase 1, batch S2ae part 1 (reverser-static, `lane/n66sa`): 22 of 89 settled; resume note for part 2
+
+- **Done.** Branch from `main` `de39e642` (no newer `main` to merge). New tools `tools/skills_s2ae_emu.py`
+  (`d35f9f74…`; imports `tools/combat_s5e_emu.py` and `tools/sweep_s4b.py` unchanged) and `tools/skills_s2ae_routes.py`
+  (`ee45d8f1…`; the S7e route walker over 80 roots, depth 4). One kept `tools/ghidra.sh emuboundary` launch on
+  `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`; `import-symbols` first), after two development launches
+  (`dev1/`, `dev2/`; `workspace/logs/n66sa/s2ae/manifest-dev.sha256`, not cited). Eight families (`pvs`, `pdir`,
+  `elem`, `smana`, `rst`, `dly`, `kick`, `skel`), 14 100 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes;
+  62 controls, 57 separating with `passed` 0, the 5 others inherent and named; spec-reading controls `spec_two_ifs`
+  111, `spec_no_swap` 1 172, `spec_unsigned` 12. Observed boundaries `SKILLS_GetSkillLevel` and 0x005B0D70, return
+  addresses checked. Record: [run:2026-11-16-sweep2-s2ae](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae);
+  `workspace/logs/n66sa/s2ae/run/` (`check.txt` `1b264a66…`, `static.txt` `2a020d10…`, `routes.txt` `c78b8b93…`,
+  `manifest.sha256` `83a5755f…`, 12 lines, passes from there; `cases` regenerates the case file byte for byte). Claims:
+  [skills/0002 § 17](../findings/skills/0002-missiles.md#17-plan-0066-batch-s2ae-part-1-leaf-functions-emulated-earlier-runs-re-read-the-routes-2026-11-16-lanen66sa).
+- **Rows (22).** Raised 17: dispatch 38 (refinement), 91, 149 (refinement); missiles 35 (refinements), 38, 60, 61,
+  62, 65, 66, 98 (emulated); from earlier kept runs, no new run: dispatch 122 (run:2026-11-16-sweep2-s5e2 `frz`),
+  138 (run:2026-11-16-sweep2-s5e `phh`), missiles 28 (combat/0001 § 22, the combat cluster's Tier A ruling), 78
+  (run:2026-10-20-cat-emu-9a/9b `scatter`, `scatter25`), 79, 80 (9b `reseed9b`). Raised in part 4: dispatch 39 (the map;
+  the stock rows and when the check runs), 69 (the gate up to `GetSkillLevel`; the `EvalCalc` test), missiles 29 (the
+  call at 0x0064BD15 from § 22; the branch and the argument's identity), 81 (the re-seed and step; `+0x28 ← low` after
+  `PathPlan`); the remainders stay S2ae (part 2). Moved c-emu → b (H2a) 1: missiles 49 (do 1 after do 2's creation:
+  `MissileCreate` → `SUnitCreate` 0x0059FC75 → pool 0x0040B430 at 0x005553BE).
+- **Corrections (Phase 3's):** D4's `else`, count and written step; C5's null record and mask; L5's data-byte rows;
+  H's do-34 "path X" = `SubX`; I4's tail call read. Routed by backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image and re-reads of kept runs, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* on `main` `de39e642` (`tools/quests_s3c.py totals`): a-logs 623,
+  a-run 334, b 508, c 390, c-emu 443, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 456, Phase 2 842.
+  Inventory README § 1, § 3, § 4 (S2ae 88 statements, part 1 done; H2a 38) and skills-missiles' *Totals by class*
+  updated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Dispatch 276 (with correction 2), 643
+  (with correction 5), 786, 838, 916 (with correction 3) whole; 279, 496 in part. Missiles 305, 360 (with correction
+  1), 379, 495, 496, 497, 515, 522, 572, 574, 575 (with correction 4), 680 whole; 307, 576 in part.
+- **Judgment calls for the review:** (1) seven rows raised from earlier kept runs with no new emulation, as the combat
+  review ruled for rows 28 and 29: the same function and the same steps, the run's own tallies cited (d122, d138, m78,
+  m79, m80; m29 and m81 in part); (2) d91 raised whole on the function's emulated map plus `GetPhysMax`'s tail call
+  read by objdump and the 9d decompile (two tools on the call site, S5fe's README 25 pattern); (3) d149's draws covered
+  through `SummonClassRoll` with the 0x00741940 rows read from the image (`.data`; the reference scan finds 9 loads and
+  no store); state 97's path not run; (4) m65 raised on the emulated mastery step (752 cases) although its sentence is a
+  log report: the `[I]` is "the mastery step is a code reading"; (5) the 5 unseparated controls taken as inherent.
+- **Resume note for part 2 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays, symbols imported).** Left:
+  67 rows and the 5 S2a remainders (dispatch 31, 63, 79, 164, 172), plus the part-1 remainders of dispatch 39 (stock
+  `startmana` rows: a table read), 69 (`EvalCalc` on a calc pool, as plan 0046's families), missiles 29 (with 26) and 81
+  (`PathPlan` whole through the `IsBadCodePtr` slot, ADR-0029 (b), as run:2026-11-03-path-emu-3). The route listing
+  `workspace/logs/n66sa/s2ae/run/routes.txt` names the first pool path of every root; read each claim's branch before
+  moving a row (review-fixes: name the call on the actual route). Groundwork:
+  - **No pool and no import at depth 4:** `SKILLS_ManaOk` (d36, 37), `SKILLS_TargetCheck` (d47), `SKILLS_SrvManaCheck`
+    (d49), `ItemTargetRandomPoint`/`StoredUnit` (d83, 84 half), `MissileOwnerUModEvent` (m21, to its first creation),
+    the collide filters (m40–42, 45–47; `UnitsHostile`, `MISSDATA_IsLastHit`, `UnitAlignGet`), `MISSILE_BuildDamage`
+    (m63, stat-180 entries), `CallDoFunc` (m69), hit 27 `0x005ABA00` (m73), `MissCbReseedZigzag` (m76),
+    `SorSkillStaticMin` (d164's remainder).
+  - **Pool only through `InvPageGet` (0x0063ADD0):** `SKILLS_CanUse`, `SkillAmmoOk`, `SKILLS_WeaponTypeOk`,
+    `SKILLS_GetRangeType`, `DualAttackAlternate`, `GetPhysMin`/`SkillSrcDamWeapon`, `KickItemDamage`,
+    `MissileDamageBlock` (d3, 30–35, 63's and 31's remainders, 92, 96; m26, 29): declare the page at the descriptor's
+    size as S5e part 3 did, so the allocator is not reached.
+  - **Pool through the stat setters** (`UnitSetStat` 0x00627260 → 0x00624DD0, `UnitSetOverlayStat` 0x00621E40):
+    handlers 18, 23–27 (d124, 127–131), `SummonSetLevel` (d142, 143), `MonAttackStats` (d152), `MissileDamageToStats`
+    (m27, 95): an observed boundary at the first setter, or the stat already present so the list does not grow; a
+    claim about several setter calls in a row needs the latter.
+  - **Allocator or import on the route, read the branch first (likely b):** `MissileCreate` after 0x0059FC75 (m16, 17;
+    m14, 18, 19 lie before it: emulate to the `SUnitCreate` boundary; skills/0002 § 14 already separated `VelLev` at
+    level 8, run:2026-11-15-sweep8-single, so read it for m18 first), handlers 1, 2, 3, 10 (d110–112, 119; imports),
+    `SummonInitStats` (d144), start 6 (d89), start 2 (d93, the stores up to `ResolveAndQueue`), `SkillWeaponWear`
+    (d156, 181; 5 imports), do 146 (d182, 184), do 3 and do 5 (m71, 72), `AreaHitUnit`/hit 14 (m74), the callbacks
+    with `PathPlan` (m75, 77, 82, 85), `ITEMSKILL_Cast` and `ItemTargetCorpse` (d79's remainder, d84), Firestorm
+    (d172's remainder), `STATEVENT_Reanimate` (d133, pool at 0x005C0AF2), handlers 8, 9 and the unfired gates (d117,
+    135, 178).
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
