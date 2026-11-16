@@ -75,3 +75,51 @@ a three-line step or a plain list. Keep each diagram small enough to read withou
   or a backslash: `A["DATA\GLOBAL\EXCEL\x.bin"]`.
 - The docs gate parses every block (rule E9 of `evidence-rules.md`): a block Mermaid can't parse, such as a non-contiguous `packet-beta`, is an error at its `file:line` and denies the commit.
 - The gate also draws every block as GitHub would (rule E17): a block that fails there, or a label that does not reach the drawing, is an error. GitHub decodes HTML entities first, so write `#quot;`, `#lt;` and `#gt;` in labels, never `&quot;`, `&lt;` or `&gt;`. A `<word>` in a label is taken for an HTML tag and dropped. A node id keeps only its last label. A `;` ends a sequence message.
+
+## Illustrations (local site)
+
+[ADR-0034](../../../../docs/adrs/0034-local-documentation-site.md) lets a page name an animated illustration that
+`tools/site_build.py` builds on the reader's own machine from their own game files: a maze growing room by room, a
+drop resolving from its treasure class. The picture is game art and never enters git, so the page names it with a
+fenced block, never with a link or an image.
+
+- **Illustrate only, like a diagram.** An illustration makes no claim of its own and carries no tag. Every caption,
+  "How to read this" line and calculation line restates a tagged statement of a spec or finding, or shows a value the
+  replay model computes for that statement. Where the illustration and the spec disagree, the spec wins and the
+  illustration is a bug: file it to the archivist, who owns the generators.
+- **Model values are labelled.** A number our model computes (`tools/maze_replay.py`, `tools/tc.py`, …) is said to be
+  computed by our model, never presented as observed in the game.
+- **Seeds.** `seed: illustrative` unless a recorded run or finding names the seed; then `seed` cites that record
+  (`run:…` or the finding's section).
+- **The block.** Info string `illustration`, one `key: value` line per key (a value may continue on indented lines),
+  exactly these six keys:
+
+  | Key | Holds |
+  |---|---|
+  | `id` | unique across `docs/`, `[A-Za-z0-9][A-Za-z0-9_-]*`; the build writes `workspace/site/illustrations/<id>/` |
+  | `tool` | a script name in `tools/` (`name.py`) |
+  | `args` | the tool's arguments after the data root, which the builder supplies: a level id, a seed, a row name, flags; never game data. May be empty |
+  | `seed` | `illustrative`, or the record that names it |
+  | `illustrates` | the spec sections it shows, as relative links with `#anchor`s, separated by spaces or commas; a long list continues on indented lines |
+  | `caption` | a short paragraph restating the sections named in `illustrates`, plus the model label and anything the tool leaves out that a reader could take for shown |
+
+  ````markdown
+  ```illustration
+  id: drlg-maze-level36
+  tool: maze_anim.py
+  args: 36 0xc0ffee
+  seed: illustrative
+  illustrates: ../specs/drlg/maze.md#c-random-growth
+  caption: The maze grows one room at a time; …
+  ```
+  ````
+
+- **Where.** On a wiki page, at the end of the section whose prose it illustrates. The prose must explain the step
+  without the picture: a reader on GitHub, or one who has not built the site, sees only the block. A spec may carry a
+  block after the heading it illustrates, as with a diagram, and only after the pseudocode, never in its place; the
+  tool must then follow that section without a known disagreement.
+- **Review.** A lane that places or edits a block, or writes a generator's caption or calculation text, writes
+  explanatory statements over specs and takes Tier A ([ADR-0030](../../../../docs/adrs/0030-verdict-lanes-and-wiki-tier-a.md)).
+- **The gate checks the block** (rule E19 of `evidence-rules.md`, `python3 -I tools/site_build.py check`): the six
+  keys and nothing else, a valid unique `id`, a `tool` that exists, `illustrates` links whose file and `#anchor`
+  resolve. It does not check that the caption restates the section; review does.
