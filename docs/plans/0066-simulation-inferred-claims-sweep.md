@@ -2079,9 +2079,11 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   GetPhysMax test address, the D88 packet-base window, the M70 read filter) and in two added decodes (D76, M23).
   Record: [skills/0002 § 16](../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q).
   Every row's Route cell carries an "S2c 2026-11-16 (part 2)" note, and README § 4's S2c row is updated.
-- **Raised 12:** README 24; catalogue 14, 57, 74, 75, 108; dispatch 56, 76 (its reader half; part 1 held the data half,
-  so the row is now whole), 88, 185; missiles 5, 70.
-- **Raised in part 8**, with the remainders `[I]` and out of this plan:
+- **Raised 10:** README 24; catalogue 14, 57, 74, 75, 108; dispatch 56, 88, 185; missiles 5.
+- **Raised in part 10**, with the remainders `[I]` and out of this plan (dispatch 76 and missiles 70 moved here at the
+  architect check: their absence claims rest on a function-type criterion, judgment calls 1 and 2):
+  - dispatch 76: a Skills row passed in as an argument;
+  - missiles 70: a Missiles row passed in, and the dword reads;
   - catalogue 58: the durability path's unit, and 622 indirect calls;
   - dispatch 95: the skill ids at the four sites Kick's closure reaches;
   - missiles 23: the function count, contradicted below;
@@ -2101,15 +2103,15 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   - dispatch 1, 2 and 25 (the packet table) and 137 (K3's tests) are now whole;
   - dispatch 50's noCost-1 half (only `ITEMSKILL_Cast`) is raised, and Blade Fury stays in H2b;
   - README 22's `0x40` half is raised, and durability stays in H4b.
-- **S2c whole:** 67 of 69 rows settled. 46 raised, 21 raised in part, 4 contradicted in part (missiles 2, dispatch 57,
+- **S2c whole:** 67 of 69 rows settled. 44 raised, 23 raised in part, 4 contradicted in part (missiles 2, dispatch 57,
   193, missiles 23), none moved, 2 not settled.
 - **Symbols:** one new `I` row, `0x005A7870 sub_005A7870_MonModeStartSeq`. None raised: the run is static, and rule 14
   covers logged returns.
 - **Totals** at the merged `0c3cd6c9` (`quests_s3c.py totals`, `totals-s2c-p2.txt`): a-logs 623, a-run 341, b 469, c 390,
   c-emu 475, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No class moved.
 - **Ready for Phase 3 (spec-writer).** Line numbers are at `b5999f5e`; match them by text.
-  - Whole: README 167; catalogue 233, 730, 968, 970, 1413; dispatch 40, 41, 170, 428, 535, 617, 832, 1094; missiles 84, 545.
-  - Split: catalogue 732; dispatch 366, 430, 680, 1124; missiles 237, 248, 405, 669; README 153.
+  - Whole: README 167; catalogue 233, 730, 968, 970, 1413; dispatch 40, 41, 170, 428, 617, 832, 1094; missiles 84.
+  - Split: catalogue 732; dispatch 366, 430, 535, 680, 1124; missiles 237, 248, 405, 545, 669; README 153.
 - **Judgment calls for the review:**
   1. D76 and D95 identify the tested row by the row-making call or stride just before each mask test, plus a
      whole-function criterion: a function with no `SKILLS_GetRecord` call, no 0x23C stride and no `+0xB98` base makes no
