@@ -2689,3 +2689,51 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   the S3a check's dispatch site does not see.
 - **Gate:** fast green (76 warnings, the W4s on wiki/quests the refresh entry answers); `--full` green.
 - **Review:** Tier A, [request](../backlog/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-quests-cluster.md).
+
+### 2026-11-16 — Phase 3 quests cluster review (architect, Tier A, `lane/n66qr`): accept with fixes (4)
+
+- **Checked.** `main` (`3845398b`, the combat cluster) merged first (`57f7711c`; keep-both on inventory README § 6, combat's
+  rows then quests'; this log, the research map and the quirks index merged clean, no markers). The three inventory
+  files' *Phase 3* lines partition their rows exactly (progression 322: 50 / 61 / 1 / 210; travel 86: 14 / 23 / 1 / 48;
+  README 6: 1 / 2 / 0 / 3; a script over the lists, no row twice or missing); § 6's three rows carry the same counts, and
+  "after" equals each front matter (C 231 / I 272 / L 6, C 118 / I 75 / L 5, C 14 / I 5 / L 2). Travel's "before" I 88
+  over 86 rows is explained in its line (C3's "draws nothing" and the draws table's event-1 row, plan 0063's). The two
+  rewrites read against the findings: progression C4 (row 49) says what quests/0001 § 18's contradiction bullet says,
+  the `[C]` on the four joins (quest 13's b3 → `+0x0B` = 5, quest 19's no restore on b4, run:2026-10-18-quests2, where
+  x-talk2/3 ran), the maps as read `[I]`; travel Outputs' event 3 (row 86) restates quests/0002 § 16's 341 / 87 counts
+  and keeps "dispatched", which scopes out the Warriv direct call quests/0001 § 20 found. Also sampled against the Route
+  cells: progression rows 13 (A1's `[C]` note), 43 (B4, row 37's part-2 raise, the 66 `.bin` records of § 21), 56, 64,
+  120, 126, 196, 227 (row 229's correction), 230, 254, 262, 302, 316, 322, word 4's `TownLevelLeave` row; travel rows 3,
+  20, 22, 60 (the S7e record's `ffn` 596 of 600 and its controls), 78, 83; README rows 1–3 and the evidence paragraph.
+  Each new `[C]` carries its run, kept output or two-tool anchor and the finding section; the split remainders keep `[I]`
+  where the Route cells put them. Six `fn:` anchors resolve in `re/symbols.csv`. No `[L]` outside *Open questions*; no
+  Mermaid line changed (one now disagreed with the text, below). The lane's one edit under `docs/findings/` is the link
+  `tools/backlog.py close` rewrote in quests/0001 (the S3c part 2 refinements entry, now under `archive/`), nothing else.
+  The promotion re-check read the S3a raises the cluster imports (quests/0001 § 18, quests/0002 § 16: C4, seeds per
+  dispatch, the `SetState`/`ClearState` pairs, the e3 counts, B1's 1 102 searches) and the S7e `ffn` record; they say
+  what the sentences say, with the scopes below.
+- **Fixes (4).** *Overclaim (3):* travel's reimplementation note "Move first, write second" justified the order with "a
+  reimplementation that writes first … runs quest code against the wrong state", which no finding reads (the one quest
+  call left, NPC 155's direct event-3 call, runs after the write either way), and stated that call without its test;
+  it now states the order (E1), the missing dispatch (Outputs) and the direct call "after the word's write and only
+  when word 6 bits 13 and 0 are set (E3, read from the code)", and what dispatching e3 for an act change would do. The
+  travel Outputs' `[I]` sentence and progression § B's e3 row restated the same direct call unconditionally; both now
+  carry the word-6 test (quests/0002 § 5's `[I]` reading, travel E3), the row marking it read from the code.
+  *Stale cross-reference (1):* quests/README's data-flow diagram drew `placement --> quest event 3` for every click,
+  join and NPC menu included, which the rewritten Outputs contradicts; the edge is now labelled "level change within
+  one act". No tag moved; the front matter and § 6 stand.
+- **Judgment calls.** (1) Travel B1's header (row 20) whole on S3a's 1 102 searches and S7e's sizes 0–4 and steps 1–5:
+  accepted; the header cites both, and the callers' code after the return is named not covered. (2) Pseudocode headers
+  wider than the logs `[I]` with a `[C]` note: accepted (as M1/M4 at the anim review). (3) Travel 78 and progression
+  230, 254, 302 filed whole but split on an untested clause: accepted; the clauses ("no portal is exempt", the spawn
+  point, "No draw", "`+0xA4` stays 0") are readings no kept output tests. (4) Progression 43 and 227 split for another
+  row's raise: accepted (spec-writer review-fixes 8). (5) The computed-class caveat inside the `[C]` sentence as its
+  scope: accepted; the scans cannot test a computed class, and the sentence says so. (6) Travel 22: the S7e scope bullet
+  `[C]`, the callers' survey `[I]`: accepted. (7) "Dispatched" event 3 in the Outputs: accepted; the knock-on rewrites
+  of "Move first, write second" and of word 4's `[C]` row were read too: word 4's row holds (the arrival is an act
+  change, which dispatches no event 3, consistent with the four joins), the note is fixed above.
+- **Not a fix, noted.** README's bit grammar keeps bit 12 ("seen in the log") `[I]` although A5's packet 0x58 setting
+  bit 12 is `[C]`; S3a's raise did not list bit 12 and its meaning is the client's log, so the row stays as routed.
+- **Gate:** fast green (80 warnings after the merge, none new from the fixes; W4 on wiki/quests, which the lane's refresh
+  entry answers); `--full` green (39 surveys).
+- **Verdict: accept with fixes (4)**: overclaim 3, stale cross-reference 1. The review request stays open for the merge.

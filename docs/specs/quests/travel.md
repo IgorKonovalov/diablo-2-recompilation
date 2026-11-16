@@ -842,8 +842,8 @@ I2. PlayerPlaceInAct(player, given = 0):                              [C] (fn:su
   (101 waypoint, 115 warp, 122 portal, 3 resurrection) was followed by one dispatched event 3 (0x00543BB7) naming the
   old and the new level, a portal used in a town raising one more inside the use (G3), and none of the 87 act changes
   (40 by NPC, 47 by waypoint) was (fn:QUESTS_DispatchEvent@0x005438E0, run:2026-10-18-quests2, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)). [I] The guard
-  that skips the act change is not read. Warriv's act change calls quest object 6's event-3 slot directly, not through
-  the dispatch (E3). (fn:sub_005467E0_NpcActTravel@0x005467E0 0x00546A22–0x00546AA3)
+  that skips the act change is not read. NPC 155's act change calls quest object 6's event-3 slot directly, not through
+  the dispatch, when word 6 bits 13 and 0 are set (E3). (fn:sub_005467E0_NpcActTravel@0x005467E0 0x00546A22–0x00546AA3)
 
 ## Worked example
 
@@ -880,10 +880,10 @@ manifest, and checked by `tools/quests.py check` with 0 mismatches.
   seed. A waypoint arrival into a town (type 13) does **not**.
 - **The portal pair draws three times, not five.** The objects are created already in their final mode; calling
   `SetMode` with the same mode must not draw.
-- **Move first, write second.** An NPC act change moves the player before it writes the travel word, and Warriv's branch
-  then calls quest object 6's event-3 slot itself (E3); a reimplementation that writes first, or that dispatches event 3
-  for the act change, runs quest code against the wrong state. A level change within one act dispatches event 3; an act
-  change does not (Outputs).
+- **Move first, write second.** An NPC act change moves the player before it writes the travel word (E1). It dispatches
+  no event 3 (Outputs); a level change within one act does. NPC 155's branch instead calls quest object 6's event-3 slot
+  itself, after the word's write and only when word 6 bits 13 and 0 are set (E3, read from the code). A reimplementation
+  that dispatches event 3 for an act change runs quest handlers the game does not run there.
 - **`+0x4C` blocks operates** until the client sends packet 0x48; it is set only when a travel word was newly written.
 - **Point 0 without a draw.** A type-5 lookup on a town without a group-1 point returns the first point and draws
   nothing; do not draw `Range(0)`.

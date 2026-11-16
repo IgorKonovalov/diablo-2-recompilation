@@ -48,7 +48,7 @@ flowchart TD
   grec --> readers["object inits, spawn gate,<br/>warp gates"]
   click["waypoint, NPC menu, scroll,<br/>warp, resurrect, join"] --> place["placement:<br/>ActLevelSpot"]
   place --> lseed["level seed of Position levels"]
-  place --> e3["quest event 3"]
+  place -->|"level change within one act"| e3["quest event 3"]
   e3 --> qobj
   rec --> out["Save and Exit"]
 ```
