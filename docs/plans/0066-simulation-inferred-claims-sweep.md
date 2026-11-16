@@ -2485,6 +2485,55 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
 - **Verdict: accept with fixes (3)**: overclaim 2, misread 1. The review request stays open for the merge.
 
+### 2026-11-16 — Phase 1, batches S1f and S1o part 1 (reverser-static, `lane/n66x`): S1f 21 of 24 rows and S1o 12 of 28 settled; resume note
+
+- **Done.** No game, no Ghidra. New tool `tools/ai_s1fo.py` (`22acb79b…`; sections `entry`, `tables`, `init`, `more`,
+  `totals`) on the helpers of `quests_s3c.py`, `skills_s2c.py` and `sweep2_s7a.py`: references three ways (raw bytes,
+  objdump, r2), every claimed instruction decoded by objdump and r2, call arguments by two walkers, image words by Python
+  and r2 `pxwj`, table cells by the `.txt` reader and the `.bin`. Record:
+  [run:2026-11-16-sweep2-s1f](../findings/ai/experiments.md#run2026-11-16-sweep2-s1f); kept output
+  `workspace/logs/n66x/s1fo/check-s1fo-p1.txt` (91 check lines, `S1fo total bad=0`) and `manifest-s1fo-p1.sha256`,
+  passing from `workspace/logs/n66x/s1fo`. Every settled row's *Route* cell carries its dated note; README § 4's S1f and
+  S1o rows updated.
+- **S1f (catalogue), 24 rows, 25 statements.** Raised 12: 1, 2, 16, 73, 87, 274, 275, 282, 372, 440, 443, 473. Raised in
+  part 9 (10 statements), the remainder named in each Route cell and kept `[I]`: 52, 89, 155, 236, 244, 245, 247, 313,
+  514 (count 2; "every indirect source is resolved" and other `AiCtl+0x00` writers stay a reading). Not settled 3: 171,
+  422, 431. S1e remainders: 288 and 356 raised, **518 contradicted in part** (`AiLifePct` has a fourth think caller, row
+  122 at 0x005E31BB, which the spec's own R122b names), 196 and 420 not settled.
+- **S1o (machinery and README), 28 rows.** Raised 9: machinery 1, 57; README 1, 2, 3, 4, 26, 34, 55. Raised in part 2:
+  README 16 (the freeze skip and the unread arguments stay readings), 35 (the register sites and `SpawnOwnedMonster`'s
+  block word stay readings). **Contradicted 1: machinery 82** (T30a "no writer of a kind-14 record with a unit": row 65's
+  `MonHelpBlock` block, 0x005F9C17–0x005F9C33, ai/0005 § 2.18). Not settled 16.
+- **Observed for part 2:** MonStats `Skill8` is also set on 709 `uberbaal`, so catalogue R51a's "only on `diabloclone` and
+  `uberdiablo`" holds for Diablo's block's records only (row 422).
+- **Contradictions** go to Phase 3 through
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md);
+  dated notes in ai/0002 (line 379's list) and ai/0003 (line 557's absence), rule 20.
+- **Symbols:** none raised or added. No logged return is compared (review-fixes 14).
+- **Totals** after merging `main` `858b7eea` (the kept check's `totals` line, from the 29 files' *Totals by class*):
+  a-logs 623, a-run 334, b 489, c 390, c-emu 462, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No row moved class.
+- **Judgment calls for the review:** (1) a row whose claim is a table equality plus a meaning read from the code (155,
+  236, 247) is raised in part: the table half and the decoded tests, the meaning's link (the filter word being the
+  difficulty's `aip2`, `+0xDC`'s bit 4) stays `[I]`; (2) machinery 82 filed contradicted though worded "in the batch":
+  read as a reimplementer would, it says no writer exists, and one does; (3) 518's list read as exhaustive ("rows 4, 8
+  and 15"); (4) README 3's "first from `MonsterInit`" raised on the census (MonsterInit's call with 0), "first" taken as
+  "at creation"; (5) R55 and catalogue 282 raised on the full-table values with `D100` taken as `Range(100)` per the
+  catalogue's notation, which S1e raised.
+- **Resume note (part 2, same branch, a fresh lane).** Add sections to `tools/ai_s1fo.py`, rerun `all` into
+  `check-s1fo-p2.txt` (keep part 1's file). Rows: catalogue 171 (row 71's think: its twelve `[ctl+0x14]` stores and the
+  `state − 1`/`state − 2` sites 0x005FA767, 0x005FA803), 422 and 431 (the Diablo and Baal tables' start words against
+  ai/0012 § 2.3/2.8 as frame stores, as C87 does; weights 0, 11, 16 never stored; Skill8 scoped as observed), S1e 196
+  (`RNG_RandLoHi` 0x004BC500's callers and `MonRegionsBuild`'s −1 store) and 420 (Diablo's 0x005E8E2A and Baal's inline
+  copies against 0x005FC130). Machinery 10 (`TargetListAttach`'s 15 calls, `TargetListAdd`'s list 8/9 pushes), 15
+  (`g_AiSearchKinds` 0x006E3300 and `AiUnitSearch`'s kind immediates), 19 (stat 89 immediates), 20 (`MonSkillTargetOk`
+  13 calls, 10 functions), 40 (`MonAiPathOverride` 103 and `AiPathOverrideSet` 9 with their type arguments), 41, 42, 44
+  (`AiCtlFollowSet`'s four callers), 45, 54, 88 (row 37's `+0x170`), 94 (row 61's `+0x14` writers); README 21
+  (`UnitQueueEvent` 0x005417D0 kind-2 pushes, 30, and the 66 cancels), 23, 33, 38 (Hireling, PetType, Skills `summon`
+  classes' `AI`).
+- **Next:** Tier B review of part 1 requested
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md));
+  part 2 by a fresh lane on `lane/n66x`.
+
 ### 2026-11-16 — Phase 3, the combat cluster re-tagged (spec-writer, `lane/n66y`)
 
 - **Done.** Branch from `main` `858b7eea`. No game, no Ghidra, no slot. Sources: the S5a parts 1–2 and S5b
@@ -2645,6 +2694,49 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **For the owner:** none. The 27 not-settled statements could be a later static batch (no pool entry in 23 of them);
   whether that is worth a batch is the architect's call.
 - **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s7e`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7e.md), covering S7e whole.
+
+### 2026-11-16 — Phase 1, batches S1f and S1o part 2 (reverser-static, `lane/n66x`): the 21 remaining rows; S1f and S1o done
+
+- **Done.** Merged `main` `72f003c8` first (plan-log conflict kept both; README § 1 checked against the 29 files' rows,
+  already equal). No game, no Ghidra. `tools/ai_s1fo.py` (`842c1e79…`) gains sections `p2f` and `p2o`; part 1's sections
+  unchanged and their lines reproduce `check-s1fo-p1.txt`. Kept output `workspace/logs/n66x/s1fo/check-s1fo-p2.txt`
+  (178 check lines, 87 of part 2, `S1fo total bad=0`), `manifest-s1fo-p2.sha256` passing from `workspace/logs/n66x/s1fo`;
+  development in `dev2/` (`manifest-dev2.sha256`). Record: [run:2026-11-16-sweep2-s1f](../findings/ai/experiments.md#run2026-11-16-sweep2-s1f), *Part 2*.
+  Every row's *Route* cell carries its dated note; README § 4's S1f and S1o rows updated.
+- **S1f (5).** Raised 1: S1e remainder 420 (the four inline picks have 0x005FC130's shape, n 17/16, fallback 11/1).
+  Raised in part 2: 196 (the caller set and the region word's three writers; "levels 1 and up" stays), 431 (Baal's start
+  words, w0, `P`'s w7, the level compare; the action map, `v18`, `S(t)`, `Skill5` stay). Raised in part with a correction
+  2: **171** (no store writes 1, but the stores are eleven, not twelve), **422** (Diablo's start words, weights 0/11/16
+  never non-zero, the unsigned score test, the difficulty word; `Skill8` also on 709 `uberbaal`, part 1's item 3).
+- **S1o (16).** Raised 4: machinery 10, 19, 20, 44. Raised in part 7: machinery 15, 40, 41, 45, 88; README 21, 38 (the
+  remainder named in each row). **Contradicted in part 1: machinery 54** (`UModTeleportTry`'s two own `Range(100)` draws
+  on the acting unit's seed). Not settled 4, a reason each: machinery 42, 94; README 23, 33.
+- **Batches whole.** S1f: all 24 rows and the five S1e remainders settled (part 1: 12 raised, 9 raised in part, 288
+  and 356 raised, 518 contradicted in part; part 2 above). S1o: 28 rows, 24 settled (13 raised, 9 raised in part, 2
+  contradicted whole or in part), 4 not settled.
+- **Corrections** to Phase 3 through the part 1 entry
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md)
+  (items 4 and 5 added); dated notes in ai/0005 § 2.8 (the store count) and ai/0001 § 9 (the draws), rule 20.
+- **Symbols:** none raised or added (no logged return compared).
+- **Totals** after merging `main` `72f003c8` (the kept check's `totals` line): a-logs 623, a-run 334, b 507, c 390,
+  c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No row moved class.
+- **Judgment calls for the review:** (1) a count off by one inside an otherwise held statement (171's "twelve") is filed
+  "raised in part with a correction", not contradicted; (2) machinery 54 filed contradicted in part: the seed reference
+  holds, the empty *Draws* cell does not; (3) machinery 19 raised whole at the claim's own scope (immediate ids, the ten
+  getters of `light_radius_scan.py`), the 11 calls where the two argument walkers differ checked on both; (4) machinery 88
+  scoped to the think and two levels of callees, `MonSetMode`'s indirect call and deeper levels named as the remainder;
+  (5) README 38's Bone Prison: its Skills `summon` cell names `bonewall` (row 84) while the claim says row 1 and
+  `boneprison1`–`4` are row 1; left `[I]` (the class mapping in `SkillSummonClass` is unread), not filed as a
+  contradiction; (6) the 196 and 420 remainders, routed to S1f from S1e, are counted as S1f rows here.
+- **Next:** Tier B review of S1f and S1o whole: the part 1 request, extended
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md)).
+- **Tier B check (architect, S1f and S1o whole):** accept with fixes. Rulings: 171 "raised in part with a correction"
+  stands (the no-store-of-1 claim holds, the count is the correction); machinery 54 "contradicted in part" stands (the
+  `SpawnPosPick` call holds, the empty *Draws* cell does not; both draws are gated); **machinery 19 narrowed to raised in
+  part** (the 215 register-id calls of the spec are 205 in the scan, unreconciled, and "no code in the image" is tested for
+  the ten getters' calls only; S1o: raised 3, raised in part 8); README 38's Bone Prison stays `[I]`. Fixes: ai/0001's note
+  on `UModTeleportTry` said "twice" for two gated draws; stale cross-references added (drlg/0009's town-refusal bullet,
+  ai/0002's no-writer sentence, ai/0012's "only `diabloclone` and `uberdiablo`"); backlog item 6 (215 against 205).
 
 ### 2026-11-16 — Phase 3, the quests cluster re-tagged (spec-writer, `lane/n66qr`)
 
