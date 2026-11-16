@@ -723,6 +723,9 @@ Read on 2026-10-16 before the Phase 2 logs (objdump of the pinned image, Ghidra 
   it then calls are not read. So "draws at least once more" above does not hold for the finisher's own step. [I]
   (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C, fn:sub_00650E70_Copy64Out@0x00650E70,
   fn:sub_00650E60_Copy64In@0x00650E60)
+  *Update 2026-11-16 (plan 0066 S5fe, [§ 22](#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe)):*
+  the peek itself (the copy, the step on the seed itself, the restore, the value read once) is `[C]` there by two tools;
+  the entries' draws inside the finisher stay `[I]` (routed to H5b).
 - [I] **"State 38" is a state flag.** The test at `0x0056F19A` is `UNIT_HasStateFlag(attacker, 38)` (`0x0063A7B0` →
   `sub_0063A130_UnitHasStateInMask` over the 40 flag bit-sets): flag bit 38 is States `meleeonly`, set on `wolf` (139)
   and `bear` (140), not state row 38 (`thunderstorm`). With it, `sub_0056C2D0_AttackDeliverMeleeOnly` sets attacker
@@ -1417,6 +1420,75 @@ synthetic image (ADR-0015 (4)); what each offset means keeps its own tag.
   do not separate (562 of the 598 others do). The emulated route needs `MonLvlStats` and the MonLvl image, and
   `STATLIST_Clear` / `STATLIST_SetStat`, unread for an allocator; it stays `[I]`. (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
   0x005A5109–0x005A511B)
+
+### 22. Plan 0066 batch S5fe: the missile critical chain emulated, the finisher's entry tests and peek, and the routes that cross an allocator (run:2026-11-16-sweep2-s5fe)
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5fe (`lane/n66w`, 2026-11-16). The
+emulated claims are maps of the named function on declared inputs (ADR-0015), compared with
+`tools/combat_s5fe_emu.py`'s model over the kept run ([run:2026-11-16-sweep2-s5fe](experiments.md#run2026-11-16-sweep2-s5fe),
+`check.txt`, 0 mismatches in 3 600 cases); brackets give separating control counts (`sep`, each with `passed` 0) and
+the `ROWS` tallies. The static claims rest on two tools reading the same bytes (the Ghidra decompile and objdump,
+`static.txt`), as S5b did. What each offset means keeps its own tag.
+
+- [C] *README 22, 23 (`CritChain`).* `sub_0064A850_MissileCritRoll` (ESI unit; one stack argument, the weapon;
+  `ret 4`): one inline step of the unit's seed (`+0x20`), success when the remainder `low mod 100` (0..99), compared
+  **signed**, is below `STATS_GetUnitStat(u, 337)`; else, when `UnitGetStat(u, 141)` is **non-zero**, a second step
+  and the same compare with it; else, when the weapon is non-null and `SKILLS_GetMasteryBonus(u, w, 0, 2)` is non-zero,
+  a third step and the compare with it; the first success returns 1 and stops, else 0 [`lt_337` 3 000, `lt_337~` 218,
+  `nz_141` 2 258, `lt_141` 1 536, `lt_141~` 415, `weapon` 557, `nz_m` 1 337, `lt_m` 557, `lt_m~` 59; outcomes by steps
+  1/2/3: 1 216 / 1 475 / 309; a negative stat 337 in 784 cases, ≥ 100 in 459]. The unsigned reading
+  (`spec_unsigned`) fails 1 142 cases. (fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A85D–0x0064A92D,
+  run:2026-11-16-sweep2-s5fe)
+- [C] *The mastery value in the chain, with no used skill.* With the unit's skill list (`+0xA8`) null,
+  `SKILLS_GetMasteryBonus(u, w, 0, 2)` reaches 0x00645720, which returns 0 with its flag cleared, and then returns the
+  largest value, starting from 0, of the unit's stat-344 (0x158) entries whose layer is an item type the weapon is
+  (`ITEMS_UnitIsType`, a layer ≥ the type count matching nothing); a zero or negative entry never counts, so the third
+  step needs a value above 0 [`best_lt` 670, `is_type` 638, `ly_in` 743; 592 cases with a negative entry, 1 382 with an
+  out-of-range layer]. Not reached: a used skill (0x00645720's throwable path, stats 345–347). (fn:SKILLS_GetMasteryBonus@0x00645830,
+  0x00645720, fn:ITEMS_UnitIsType@0x00629BB0, run:2026-11-16-sweep2-s5fe)
+- [C] *Correction (README 42).* The deadly-strike step needs a **non-zero** stat 141, not one above 0: a negative
+  value steps the seed and cannot succeed [565 cases with a negative 141 and a second step; `spec_141_gt0`, the note's
+  reading, fails all 565]. The mastery half holds (the value is never below 0). (0x0064A8A5–0x0064A8AE,
+  run:2026-11-16-sweep2-s5fe)
+- [C] *README 25 (`SrcMissDmg`).* In `sub_0064B860_MissileDamageBlock`, the call site at 0x0064BD15 (the `SrcMissDmg` branch
+  by the row's reading in skills/0002, which keeps its `[I]`: the `+0x12D`/`+0x12E` tests are not in the site listing)
+  calls the chain with ESI = its third argument (`[ebp+0x10]`) and a pushed weapon of 0 (0x0064BD07–0x0064BD15), only
+  when that argument is non-null (0x0064BD0C); with a null weapon the chain
+  makes one or two steps and no mastery call [`weapon` 557: no third step without one]. Two tools on the call site
+  (`static.txt` `mdb-src-site`), the chain's map from the run. That the third argument is the source missile is the
+  caller's reading and keeps its tag. (fn:sub_0064B860_MissileDamageBlock@0x0064B860, 0x0064BD15,
+  run:2026-11-16-sweep2-s5fe)
+- [C] *Delivery 7.* `COMBAT_PrgFinisher` (ECX game, EDX attacker; the hit; `ret 4`) returns at once, with no write to
+  the attacker's first 0x100 bytes or the hit and no traced write, for a null hit [149 cases] or one whose result word
+  (`+4`) lacks bit `0x1` [298]; with the bit set its first call is `UNIT_GetTargetUnit` from 0x005D5244 [153, return
+  address 0x005D5249 checked; `hit_nz` 153, `res_bit0` 451]. Do 52 passes `QueuedHitFind`'s `EAX` straight to it with
+  no test (0x005D79D5 `call`, 0x005D79DA `push eax`, 0x005D79DF `call`; two tools, `static.txt` `do52-finisher`).
+  (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5229–0x005D523B, run:2026-11-16-sweep2-s5fe)
+- [C] *Delivery 14, 60; README 9 and 41, the peek (static, two tools).* `COMBAT_PrgFinisher` copies the attacker's
+  seed words to two locals (`sub_00650E70_Copy64Out`, 0x005D5374: `[ecx]`, `[ecx+4]` stored through `EDX` and the
+  pushed pointer), calls `RNG_Step` with `ECX` = the attacker's own seed (`ESI` = attacker + 0x20, 0x005D537B), keeps
+  `EAX` in `[ebp-0x24]` (0x005D5383) and writes the two saved words back (`sub_00650E60_Copy64In`, 0x005D538C), so the
+  seed leaves the peek as it entered. `[ebp-0x24]` is read once in the whole function, at 0x005D544E, and pushed as
+  the third argument of `sub_00571AA0_UnitMsgA3` (0x005D5465). **Correction (delivery 14):** the step runs on the
+  seed itself, not on the copy; the copy is the saved value restored after it (same net state). (`static.txt`
+  `fin-peek`, `copy64`, `fin-slot24`, `fin-tail`)
+- [I] *Not run here (routes, ruling R2 and ADR-0029).* Every claim after a `MissileCreate` (entries 37, 39, 41, 143
+  past their first creation; entries 36 and 40; do 151 past `SkillMissileCreate`) crosses `sub_0059FA30_MissileCreate`
+  → `sub_00555230_SUnitCreate` (0x0059FC75), a unit allocation; `sub_00571AA0_UnitMsgA3` allocates its message
+  (0x0040B430 at 0x00571AC1) and links it into the unit (`+0xEC`, `+0xF0`) with `sub_0064C040_UnitMarkUpdated`, so
+  every pass of the finisher's state loop after the first entry, its later states and its free are after an
+  allocator; the finishing moves' later deliveries follow `COMBAT_ResolveAndQueue` → `COMBAT_QueueHit` (0x0040B430 at
+  0x0057CABE) or `COMBAT_DeliverQueued` → `sub_0057C9F0_QueuedHitRemove` (0x0040B480 at 0x0057CA5B); entry 38's area
+  units come through `SKILLS_ForUnitsInRange` (rooms); helper 2's later tries follow `COLL_PatternTest` (0x005FD974,
+  collision rooms); `STATE_ApplyTimed`'s queue path reaches `sub_005417D0_UnitQueueEvent` (0x0056EAC5) →
+  `sub_00540DF0_EventRecordAlloc`. Those rows go to b (H5b). (`static.txt` `raq-queue`, `queuehit-alloc`,
+  `qhremove-free`, `dragontalonhit`, `msgA3-alloc`)
+- [I] *Not settled in budget (declarable, not built).* The finisher past `UNIT_GetTargetUnit` (it reaches
+  `sub_00552F60_GameFindUnit` through `sub_00553490_PathTargetRevalidate` whenever the path holds a target, then
+  `InMeleeRange`'s closure), so the join of the peek and the first entry in one case; `MissileDamageBlock` whole
+  (`MISS_GetDamMin`/`Max` with `SKILLS_LevelBands`, the weapon branch); handler 20 → `ITEMSKILL_Cast` → helper 2 in
+  one case. (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5244, fn:sub_0064B860_MissileDamageBlock@0x0064B860,
+  fn:ITEMSKILL_Cast@0x005FDA80)
 
 ## Boundary recommendation for Phase 2
 
