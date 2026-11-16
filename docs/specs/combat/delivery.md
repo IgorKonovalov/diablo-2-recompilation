@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 114, I: 42, L: 4}
+tags: {C: 115, I: 42, L: 4}
 updated: 2026-11-16
 ---
 
@@ -805,9 +805,11 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   sites and the calls of do 42, 46 (on its bad-id path) and 50 up to them (ADR-0021, run:2026-10-21-cat-emu-ass); [I]
   for do 46's calls on a valid id and the deliveries
   after them (0x005D6386–0x005D6405)
-- **A ring's step count is used untested.** A ring given 0 never ends; a negative count reads below the direction
-  tables until the index wraps (A3). A reimplementation that guards these changes behaviour only for data that makes
-  them happen. [I] (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA)
+- **A ring's step count is used untested.** A ring given 0 never ends: neither ring tests its count, loaded into
+  `edi` and added four times over until the index reaches `0x100`. [C] (static, 0x005D4605–0x005D4675, 0x005D4D25–0x005D4DA2,
+  [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q))
+  A negative count reads below the direction tables until the index wraps (A3). A reimplementation that guards these
+  changes behaviour only for data that makes them happen. [I] (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA)
 - **A handler draws on its own unit's seed**: shiver armour (3) and skill on get-hit (21) on the defender's, skill on
   death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit, and reanimate on the attacker's (E5).
   [C] for 7, 8, 9, 20 and 21 (run:2026-10-25-skills, run:2026-10-27-skills); [I] for 3, 30 and 31, never fired

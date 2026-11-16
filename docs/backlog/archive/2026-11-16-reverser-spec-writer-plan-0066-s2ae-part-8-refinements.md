@@ -2,15 +2,19 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/skills/0002-missiles.md", "../specs/skills/dispatch.md", "../specs/skills/missiles.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+  - ../../specs/skills/dispatch.md
+  - ../../specs/skills/missiles.md
+resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): item 1 as [skills/dispatch](../../specs/skills/dispatch.md) K5 (the stat setter, kept in dispatch beside the handlers that cite it), item 2 in § K's row 26, item 3 in skills/missiles C1 (part 1)."
 ---
 
 Plan 0066 batch S2ae part 8 (`lane/n66sa`, run:2026-11-16-sweep2-s2ae8) ran `sub_00627260_UnitSetStat` whole on a
 declared stat list and settled the setter writes of skills/dispatch rows 124, 130, 156 and skills/missiles rows 27
 and 95 (C1). For Phase 3 to carry when the skills cluster is re-tagged (claims and anchors in
-[skills/0002 § 24](../findings/skills/0002-missiles.md#24-plan-0066-batch-s2ae-part-8-the-stat-setter-run-whole-behind-handlers-18-26-skillweaponwear-and-in-missiledamagetostats-2026-11-16-lanen66sa)),
+[skills/0002 § 24](../../findings/skills/0002-missiles.md#24-plan-0066-batch-s2ae-part-8-the-stat-setter-run-whole-behind-handlers-18-26-skillweaponwear-and-in-missiledamagetostats-2026-11-16-lanen66sa)),
 the spec says less than the code in these places:
 
 1. **The setter** (wherever the specs cite `UnitSetStat`; it may belong to the stats spec): key `(stat << 16) +

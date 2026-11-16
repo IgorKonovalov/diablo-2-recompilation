@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, skills/dispatch, skills/missiles, combat/delivery, stats/states, data/calc, monsters/stats]
 consumed_by: [skills/overview, skills/dispatch, skills/missiles, monsters/ai]
-tags: {C: 257, I: 109, L: 7}
-updated: 2026-11-04
+tags: {C: 290, I: 94, L: 7}
+updated: 2026-11-16
 ---
 
 # The function catalogue: every numbered skill and missile function
@@ -41,9 +41,9 @@ flowchart LR
 |---|---|---|
 | A skill mode starts | `g_SkillStartFuncs[srvstfunc]` from fn:SKILLS_SrvStart@0x0056F640 ([dispatch § D](dispatch.md#d-the-mode-start)) | [C] (data:g_SkillStartFuncs@0x00732140, static scan of every batch) |
 | A skill's action frame | `g_SkillDoFuncs[n]` from fn:SKILLS_SrvDo@0x0056F7F0 ([dispatch § E](dispatch.md#e-the-do-frame-and-skills_srvdo)) | [C] (data:g_SkillDoFuncs@0x007322B0, static scan of every batch) |
-| A missile's frame | `g_MissileSrvDoFuncs[pSrvDoFunc]` ([missiles § D](missiles.md#d-each-frame)) | [I] (data:g_MissileSrvDoFuncs@0x0073C768) |
+| A missile's frame | `g_MissileSrvDoFuncs[pSrvDoFunc]` ([missiles § D](missiles.md#d-each-frame)) | [C] the frame's do entry is the class's `pSrvDoFunc` in all 33 041 windowed frames, do 1, 3, 5 and 23 (run:2026-10-25-skills, [skills/0002 § 13](../../findings/skills/0002-missiles.md#13-plan-0066-batch-s2b-the-missile-lines-re-checked-2026-11-15-lanen66f)); [I] the other do entries, whose rows no windowed missile had (data:g_MissileSrvDoFuncs@0x0073C768) |
 | A missile hits a unit, or ends | `g_MissileSrvHitFuncs[pSrvHitFunc]` ([missiles § E](missiles.md#e-the-hit)) | [C] (data:g_MissileSrvHitFuncs@0x0073C840, the 9d table scan) |
-| A missile's damage packet is built | `g_MissileSrvDmgFuncs[pSrvDmgFunc]` ([missiles § F](missiles.md#f-the-packet-at-the-hit-missile_builddamage)) | [I] (data:g_MissileSrvDmgFuncs@0x0073C960) |
+| A missile's damage packet is built | `g_MissileSrvDmgFuncs[pSrvDmgFunc]` ([missiles § F](missiles.md#f-the-packet-at-the-hit-missile_builddamage)) | [C] damage function 3 runs between the build and `MISSILE_ApplyDamage`, the missile's seed stepping once there in 13 486 of 13 486 hits, and rows without a damage function step none (4 118) ([skills/0002 § 13](../../findings/skills/0002-missiles.md#13-plan-0066-batch-s2b-the-missile-lines-re-checked-2026-11-15-lanen66f)); [I] the other damage functions (data:g_MissileSrvDmgFuncs@0x0073C960) |
 | An item stat, a charge or a shrine casts | the callers of § N | [C] up to their boundaries (run:2026-10-21-cat-emu-item) |
 
 ## Inputs
@@ -77,7 +77,7 @@ flowchart LR
 | start table | `g_SkillStartFuncs`; stock Skills names 64 distinct `srvstfunc` numbers | data:g_SkillStartFuncs@0x00732140, [Skills § Function index](../../tables/Skills.md#function-index-plan-0046-phase-0) | [C] (the batches' slot reads, `static.txt`) |
 | do table | `g_SkillDoFuncs`; 138 distinct `srvdofunc` numbers, plus the progressive, `ItemEffect` and `srvactivefunc` entries | data:g_SkillDoFuncs@0x007322B0, [Skills § Function index](../../tables/Skills.md#function-index-plan-0046-phase-0) | [C] (the batches' slot reads, `static.txt`) |
 | missile hit table | 71 slots; 24 filled in 31–59, 30, 34, 41, 42, 46, 49 and 60–70 null | data:g_MissileSrvHitFuncs@0x0073C840 | [C] (run:2026-10-20-cat-emu-9d) |
-| `g_Circle64X`, `g_Circle64Y` | 64 s32 each: points on a radius-30 circle | 0x006E2B78, 0x006E2A78 | [I] (0x006E2B78) |
+| `g_Circle64X`, `g_Circle64Y` | 64 s32 each: point `i` is `(trunc(30 · cos), trunc(30 · sin))` of `i/64` turns, truncated toward zero, so the radius runs from 28.84 to 30; read once each, at index `i mod 64` | 0x006E2B78, 0x006E2A78 | [C] 64 of 64 points (static, 0x006E2B78, 0x005AF106–0x005AF11D, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q)) |
 
 ## Algorithm
 
@@ -97,7 +97,9 @@ life and mana are in 1/256 points.
   A missile hit entry is `(ECX game, EDX m; unit)` with `ret 4` and returns the result word of
   [missiles § E](missiles.md#e-the-hit) (bit 0 end, bit 1 damage, bit 2 keep and return at once); a damage entry is
   `(ECX game, EDX m; unit, packet)` with `ret 8` and changes only the packet, the missile's seed and (mdmg 8) the
-  unit's overlay. [I] (data:g_MissileSrvHitFuncs@0x0073C840, data:g_MissileSrvDmgFuncs@0x0073C960,
+  unit's overlay. [C] the calling convention: the 53 distinct hit entries all end in `ret 4` and the 14 damage
+  entries in `ret 8` (static, every `ret` by objdump, the first by radare2; [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q)). [I] the write sets ("changes only
+  the packet, …") and the result bits (data:g_MissileSrvHitFuncs@0x0073C840, data:g_MissileSrvDmgFuncs@0x0073C960,
   [skills/0005](../../findings/skills/0005-missile-do-19-36-damage.md#answer-summary),
   [skills/0006](../../findings/skills/0006-missile-hit-1-29.md#answer-summary))
 - A2. **How far a `[C]` reaches.** Each entry was run under the emulator on its own code (ADR-0015) with synthetic and
@@ -181,7 +183,10 @@ flowchart TD
 - B1. **Creation callbacks re-seed the new missile.** The callback in the parameter block's `+0x54` runs inside
   `MissileCreate` ([missiles § H](missiles.md#h-re-seed-sites)): `0x005C9290` (do 17, do 118, do 130) and
   `0x005AC040` (mhit 38; mhit 45 when `sHitPar2 ≠ 0`) are measured there, `[C]`; `0x005CD110` (do 102),
-  `0x005D40F0` (prg 37) and `0x005D4680` (prg 143) are read, `[I]`. [I] (0x005CD110, 0x005D40F0, 0x005D4680)
+  `0x005D40F0` (prg 37) and `0x005D4680` (prg 143) are emulated: each re-seeds the unit in `ECX` at its `+0x20` by
+  `RNG_SeedInit` before any boundary, `0x005D4680` to its return, the other two to `PathPlan`. [C] (0x005CD110,
+  0x005D40F0, 0x005D4680, run:2026-11-16-sweep2-s2ae4, run:2026-11-16-sweep2-s2ae5, [skills/0003 § 18](../../findings/skills/0003-handlers.md#18-plan-0066-batch-s2be-part-1-the-catalogues-after-parts-routed-re-seed-callbacks-from-the-kept-runs-2026-11-16-lanen66sb)) That `MissileCreate`
+  runs them for prg 37, prg 143 and do 102, past `SUnitCreate`'s allocation, is the reading. [I] (0x0059FC75)
 - B2. **Draws after a boundary, from the reading.** These lie past the point the emulator stopped and are the
   reading's order: st 10's elemental `RangeB(caster, max − min)` after its hit test; do 55's and do 58's one
   `RangeB` on **the target's** seed; do 66's one `SKILLS_RollElemDamage` per aura run (the caster's seed); do 81's
@@ -212,8 +217,11 @@ flowchart LR
 - C0. **The shared tail.** Entry 1 of the table is a 5-byte `jmp 0x005AE1F0`, so mdo 1 is
   `sub_005AE1F0_MissileMoveCollide` ([missiles § D](missiles.md#d-each-frame)). Every entry of 9a ends in mdo 1 and
   returns its result (mdo 18 after its cookie check); in 9b, mdo 20 and 30 return 1 after mdo 1, mdo 32 ends in
-  mdo 7 and mdo 34 in mdo 3; a missing record, owner or sub-missile returns 2. [I] (fn:sub_005B0BC0_MissDo01Thunk@0x005B0BC0,
-  data:g_MissileSrvDoFuncs@0x0073C768) mdo 1, 3, 5 and 23 are tier A: [missiles § G](missiles.md#g-the-function-tables). [I] (0x005AE1F0)
+  mdo 7 and mdo 34 in mdo 3; a missing record, owner or sub-missile returns 2. In 9b, entries 19, 21–29, 31, 33, 35
+  and 36 also end in mdo 1; do-table entry 37 (`0x005B0AA0`, inside the Baal effect function's range) is non-null and
+  no Missiles row names it. [C] entry 1 is the 5-byte `jmp 0x005AE1F0` and the tails as stated (static, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q)).
+  [I] Which tests return 2 (fn:sub_005B0BC0_MissDo01Thunk@0x005B0BC0, data:g_MissileSrvDoFuncs@0x0073C768) mdo 1, 3, 5
+  and 23 are tier A: [missiles § G](missiles.md#g-the-function-tables). [I] (0x005AE1F0)
 
 ```
 C1. mdo 2 (0x005AE400, poisonjav):                                     [C] → MissileCreate (run:2026-10-20-cat-emu-9a)
@@ -225,12 +233,12 @@ C2. mdo 6, 9, 12 (0x005AE680, 0x005AE940, 0x005AECA0):                 [C] → M
       on each flag-8 frame: SubMissile1 at the missile's own sub-tile, with its skill and level
       mdo 6, 12: need an owner and SubMissile1 ≥ 0, else return 2 (mdo 6 also with no path; mdo 12 reads a null
         path as flag 0); mdo 9 tests neither
-      after: mdo 1                                                       [I] (0x005AE680)
+      after: mdo 1                                                       [C] mdo 6's call at 0x005AE766, its result returned (static, skills/0002 § 15)
 C3. mdo 7 (0x005AE780, Guided Arrow, Bone Spirit):                     [C] the gates → mdo 1 (run:2026-10-20-cat-emu-9a)
       no record, no owner, an owner UnitIsDead calls dead, or a missile in a town room: return 2
       with MissileData+0x28 bit 0 clear, or a missile target: mdo 1
       with bit 0 set and a live hostile target: re-plan the path to it   [I] (0x005AE780)
-      bit 0 is written by do 10 when cast at a unit                      [I] (fn:sub_005DB6D0_SkillDo10GuidedMissile@0x005DB6D0)
+      bit 0 is written by do 10 (1 at a unit, 2 at none), one of its writers   [C] (fn:sub_005DB6D0_SkillDo10GuidedMissile@0x005DB6D0, 0x005DB71B–0x005DB7FE, static, skills/0002 § 16)
 C4. mdo 8, 10, 17 (scatter around the missile):                        [C] → COLL_CellTestAt (run:2026-10-20-cat-emu-9a)
       mdo 8:  r ← Param1 + max(lvl ÷ P3, 2); period ← max(Param2 − lvl ÷ P3, 3); P3 = max(Param3, 1)
       mdo 10: r ← calc1; period ← calc2 (Blizzard's)
@@ -317,7 +325,9 @@ C25. mdo 36 (0x005B0A40, baalfx control):                              [C] → Q
 - C26. **The sub-missile tests differ.** mdo 21, 22, 23, 25 and 26 test `SubMissile1 ≠ 0`, so a blank (−1) passes;
   the other creating entries test `≥ 0`. [C] (run:2026-10-20-cat-emu-9b)
 - C27. mdo 24 is mdo 23's function (`0x005AF790`) and no stock row names it; the unused numbers of 1–36 are in
-  [Missiles § Function index](../../tables/Missiles.md#function-index-plan-0046-phase-0). [I] (0x005AF790)
+  [Missiles § Function index](../../tables/Missiles.md#function-index-plan-0046-phase-0). [C] entries 23 and 24 are
+  both `0x005AF790`; no row of the `.txt` or the `.bin` names do 24; the unused do numbers are 4, 24 and 37–52 (static,
+  0x005AF790, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q))
 
 ### D. Missile damage entries (mdmg 1–14)
 
@@ -483,8 +493,11 @@ F21. mhit 57 (0x005AD970, baalfx control): once +0x28 ← 1; QUESTS_IsActive(gam
 
 - F22. **Row 568** (`royalstrikechainlightning`, `pSrvHitFunc` 64 948): every read of the hit table (four sites) is
   behind a signed 16-bit `test ax, ax; jle` of the function word. [C] (data:g_MissileSrvHitFuncs@0x0073C840, `static.txt`)
-  That the tested word is this row's `pSrvHitFunc`, so that 64 948 (−588 as an s16) runs no server hit function, is
-  the reading. [I] (data:g_MissileSrvHitFuncs@0x0073C840, [skills/0007 § 10](../../findings/skills/0007-missile-hit-31-59.md#answer-summary))
+  The tested word is this row's `pSrvHitFunc`, so 64 948 (−588 as an s16) runs no server hit function: the five hit
+  and damage tests and the do test are a `movzx` of the record word (`+0xE` hit, `+0x10` damage, `+0xC` do), then
+  `test ax, ax; jle`, `movsx` and a compare with the count, by two decoders, and row 568 is the only row above 0x7FFF
+  in any of the three columns. [C] (static, data:g_MissileSrvHitFuncs@0x0073C840, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q),
+  [skills/0007 § 10](../../findings/skills/0007-missile-hit-31-59.md#answer-summary))
 
 ### G. Sorceress (st 11–14; do 17–29, 144)
 
@@ -576,13 +589,16 @@ H5. do 6 (0x005DB1C0, Inner Sight, Slow Missiles):                     [C] → S
       auratargetstate (s16) in the States count and aurastat1 (s16) in the ItemStatCost count (−1 refused):
         block {id, lvl, auralencalc, auratargetstate, aurastat1, aurastatcalc1};
         ForUnitsInRange(game, caster; 0, 0, aurarangecalc, aurafilter, 0x005DB150, &block, 1, …)
-      after: the callback hands each unit to STATE_ApplyTimed           [I] (0x005DB150)
+      after: the callback 0x005DB150 calls STATE_ApplyTimed (0x005DB1A6, ECX → its frame block) with
+        {game (ctx+4), unit, id, lvl, auralencalc, aurastat1, aurastatcalc1, auratargetstate, 0}: the state
+        word after the stat pair                                         [C] (run:2026-11-16-sweep2-s2be2, 1 500 cases)
+        that ForUnitsInRange hands it each unit, and what STATE_ApplyTimed does   [I] (0x005DB150)
 H6. do 8 (Multiple Shot, Teeth, PrimePoisonball, Shock Wave; tier A): [C] → the first MissileCreate (run:2026-10-20-cat-emu-ama)
       bit 6; needs a target point; n ← calc1; (sx, sy) perpendicular to the caster–point line (short vectors
         scaled up, then halved, truncating, until sx² + sy² ≤ 3); first creation's target point − (s·n) ÷ 2;
         +0x44 ← calc2; groups g1 = (n − c3) ÷ 2 (outer, flags 0x10820), c3 (calc3, or n when 0; centre, 0x820),
         n − g1 − c3 (outer); the first non-empty group's flags
-      after: the other creations, group by group, stepped by (sx, sy)   [I] (0x005DB410)
+      after: the other creations, group by group, stepped by (sx, sy)   [C] at (n, calc3) = (21, 2): 36 of 36 Multiple Shot do events, 21 creations each in groups of 9, 2 and 10, flags 0x10820, 0x820, 0x10820, the targets stepped by one (sx, sy) (0x005DB410, run:2026-10-25-skills)
 H7. do 10 (0x005DB6D0, Guided Arrow, Bone Spirit):                     [C] → MissileCreate (run:2026-10-20-cat-emu-ama)
       bit 6; needs a target point; {flags 0x20 (0x420 without a target unit), +0x0C the target unit, the point,
         +0x54 callback 0x005DB6A0 when calc1 ≠ 0, +0x58 calc1}
@@ -596,8 +612,9 @@ H9. do 12 (Strafe), do 13 (0x005DBC60, Fend, Zeal, Fury):              [C] → U
       the last target: GameFindUnit(+0x1C type, +0x20 guid); found: do 12 UnitSetPathTargetUnit(caster, target),
         do 13 InMeleeRange(caster, target, 0); not found: NearestUnitInRange(game, caster; 0, 0, r, F, guid, 0)
         with do 12's r = aurarangecalc, F = 3; do 13's r = 0x00622870(caster) + 4, F = 0x20003
-      after: one arrow or one hit per call, the count − 1, the next target recorded; do 13 returns 0 on every path
+      after: one arrow or one hit per call, the count − 1, the next target recorded
                                                                          [I] (fn:sub_005DBC60_SkillDo13Fend@0x005DBC60)
+      do 13 returns 0 on every path                                      [C] (fn:sub_005DBC60_SkillDo13Fend@0x005DBC60, two disassemblers, skills/0003 § 19)
 H10. do 15 (Dopplezon), do 16 (0x005DC1E0, Valkyrie, a player caster only):   [C] → SpawnOwnedMonster (run:2026-10-20-cat-emu-ama)
       summon and the mode from SkillSummonClass; bit 6; block {0, caster, summon, 0, mode, 0, 0,
         pettype (0 at or past the PetType count), petmax calc, w}
@@ -636,7 +653,8 @@ I4. do 30 (the eight curses, Defense Curse, Blood Mana), do 61 (0x005C3F20, Conf
       do 30: len ← auralencalc, ÷ the difficulty record's +0x1C (idiv) when auratargetstate is 23 or 56 (f ← 1)
       do 61: len always divided; f ← 0; its stat list starts at aurastat2 (word 0 stays 0); event words 0
       s ← 1 when one listed stat's ItemStatCost byte +5 has bit 1
-      after: the callbacks apply the state per unit                     [I] (0x005C3F20)
+      after: the callbacks apply the state per unit                     [C] Amplify Damage's 61 do events apply state 9 at most once per unit, one length per event, the caster the applier (run:2026-10-25-skills, run:2026-10-27-skills)
+        which units in range the callback passes                         [I] (0x005C3F20)
 I5. do 31 (Raise Skeleton, Raise Skeletal Mage; tier A):               [C] → COMBAT_ApplyDamage or 0x0061A270 (run:2026-10-20-cat-emu-nec)
       0x00645510(target, 0); then 0x005C2FF0: a player caster of class 3 → COMBAT_ApplyDamage(game, caster;
         caster, 0, &packet), {+0x00 0x1000, +0x04 4, +0x08 maxhp ÷ 8, +0x4C the same}
@@ -668,8 +686,10 @@ I9. a class-3 player caster of Raise Skeleton or Revive takes 1/8 of its maximum
 ### J. Paladin (st 29, 31, 35–37; do 64–67, 73, 79–82, 150)
 
 [skills/0011](../../findings/skills/0011-paladin.md#answer-summary), 15 entries, all emulated; no draw before the
-boundaries (4 950 cases). [C] (run:2026-10-20-cat-emu-pal) Nothing in the batch tests the caster's class, and no
-paladin entry calls `0x005C2FF0`. [I] (0x005C2FF0) st 36, do 65 and do 66 are tier A
+boundaries (4 950 cases). [C] (run:2026-10-20-cat-emu-pal) No paladin entry calls `0x005C2FF0`: it has two callers,
+do 31 (Raise Skeleton) and do 58 (Revive), by three tools, and the direct-call closure of the 15 entries (2 136
+functions) does not reach it. [C] (static, 0x005C2FF0, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q)) Nothing in the batch tests the caster's class. [I]
+(run:2026-10-20-cat-emu-pal) st 36, do 65 and do 66 are tier A
 ([dispatch § O](dispatch.md#o-tier-a-the-start-and-do-functions)); the entries kept below add the batch's map.
 
 ```
@@ -684,7 +704,8 @@ J1. the aura entries do 65 (Might; tier A), 66 (Holy Fire; tier A), 81, 82:   [C
         ForUnitsInRange(game, caster; 0, 0, aurarangecalc, aurafilter, 0x005CEDC0, &block, 1, …); neither → 1
       do 66, 81, 82: an aurastate outside [0, States count) → 0; passivestat1..5 with passivecalc1..5
         (all five, no stop; do 82 skips the value of a stat below 0); do 81 puts 0x005D0770 at +0x4C
-      after: the target pass and its per-unit draws (§ B2)              [I] (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005D07C0_HolyFreezeUnitCb@0x005D07C0)
+      after: the target pass and its per-unit draws (§ B2)              [C] Holy Fire's 35 do events: one elemental roll on the caster, its first draw after the do's entry, one fire value across the packets of the 17 events with 2 to 15 units (run:2026-10-25-skills)
+        § B2's other per-unit draws (the defenders' rolls)              [I] (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005D07C0_HolyFreezeUnitCb@0x005D07C0)
 J2. st 29 (0x005CE790, Sacrifice), do 150 (0x005CE9F0, Smite):         [C] → sub_00622C40_InMeleeRange(caster, target, 0) (run:2026-10-20-cat-emu-pal)
 J3. st 35 (0x005CFE10, Vengeance):                                     [C] → COMBAT_MeleeHitTest (run:2026-10-20-cat-emu-pal)
       COMBAT_MeleeHitTest(target, SKILLS_GetToHit(caster, id, lvl), 0) with a zeroed 0x70-byte packet; no range test
@@ -725,11 +746,15 @@ J10. do 73 (0x005D0040, Blessed Hammer), do 80 (0x005D0670, Fist of the Heavens)
   `ResolveAndQueue` treats a word with both is not followed. [I] (fn:sub_005CE9F0_SkillDo150Smite@0x005CE9F0,
   [quirks/0001 § 3](../../findings/quirks/0001-community-bugs.md#3-smite-rows-68))
 - J2. **A monster's Smite uses its `A2` stats whatever mode it used.** The monster branch passes mode 5 to
-  `MonAttackStats` (0x005CEBB6), and mode 5 selects `A2`
-  ([monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)); it keeps the test's
-  result. [I] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005CE9F0_SkillDo150Smite@0x005CE9F0, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 8)
-- J2. **Smite sets no flag `0x40`.** Do 150 itself has no access to `Unit+0xC4`, where do 2 does `or [edi+0xC4], 0x40`; the
-  callees past `COMBAT_ResolveAndQueue` and `COMBAT_DeliverQueued` are unfollowed. [I] (0x005CE9F0–0x005CEC50, 0x0056F42A,
+  `MonAttackStats` (`edx = 5` at 0x005CEBB6), which tests mode 5 first (0x005A5015–0x005A501B, mask `0x10`), and mode
+  5 selects `A2` ([monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only)); it
+  stores the test's word with no `or ax, 1` (0x005CEBE4–0x005CEBEB; the player's `or` at 0x005CEBB0 jumps past it).
+  [C] (static, [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q), fn:sub_005A4F50_MonAttackStats@0x005A4F50, fn:sub_005CE9F0_SkillDo150Smite@0x005CE9F0, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 8)
+- J2. **Smite sets no flag `0x40`.** Do 150 itself has no access to `Unit+0xC4`, where do 2 does `or [edi+0xC4], 0x40`;
+  its direct-call closure (2 085 functions) reaches one of the 124 set sites, `SKILLS_SrvDo`'s at 0x0056F98A, only
+  through `COMBAT_DeliverQueued` → `COMBAT_DurabilityLoss` → … → `AuraSelect`, the durability path. [C] (static,
+  [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q)) Which unit that path sets the bit on, and the 622 indirect calls of the closure, are unfollowed. [I]
+  (0x005CE9F0–0x005CEC50, 0x0056F42A,
   [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 7)
 
 ### K. Barbarian (st 32–34, 38–41; do 2, 9, 68–72, 74–78)
@@ -743,7 +768,8 @@ K1. st 32 (0x005D7EA0): the record, the target, the target's room (town → 0); 
                                                                          [C] → 0x0056E520 (run:2026-10-21-cat-emu-bar)
 K2. st 39 (0x005D97F0): → COMBAT_MeleeHitTest(target, SKILLS_GetToHit(caster, id, lvl), 0), a zeroed 0x70-byte packet
                                                                          [C] → COMBAT_MeleeHitTest (run:2026-10-21-cat-emu-bar)
-      after: st 32's and st 39's elemental SKILLS_RollElemDamage on the caster's seed   [I] (0x005D97F0)
+      after: st 32's and st 39's elemental SKILLS_RollElemDamage on the caster's seed   [C] for st 32: 73 of 86 Bash starts hold one elemental roll on the caster, 13 none (run:2026-10-27-skills)
+        st 39, and what the 13 starts without a roll failed               [I] (0x005D97F0)
 K3. do 2 (0x0056F1F0):                                                 [C] → each call below (run:2026-10-21-cat-emu-bar)
       with 0 < srvoverlay ≤ DataTables+0xBC0: a target (→ 0) and a QueuedHitFind node naming the caster and
         the target (none → 1, no delivery); sub_00621E40_UnitSetOverlayStat(target, srvoverlay, 0) when the
@@ -861,8 +887,8 @@ L8. do 121 (0x005C8AD0):                                               [C] → M
       sum ← the 32-bit total of SKILLS_GetToHit(caster, s, lvl) over the states of the list at DataTables+0x17C
         (count s16 +0x180) that the caster has and whose list's stat 350 names a skill s in range; the last such
         skill's non-zero SrcDam byte (0x80 by default) at ebp−0x8; MeleeHitTest(target, sum, 0)
-      the list is STATES_Load's: the States rows with flag bit 16 (disguise), the wereforms among them
-                                                                         [I] (fn:STATES_Load@0x00618100, fn:sub_00611DC0_StatesListByFlag@0x00611DC0)
+      the list is STATES_Load's: the States rows with flag bit 16 (disguise), 63, 93, 119, 139, 140, 176 and 177,
+        the wereforms among them, at DataTables +0x17C/+0x180     [C] (static, fn:STATES_Load@0x00618100, fn:sub_00611DC0_StatesListByFlag@0x00611DC0, 0x00618C58, tbl:States.txt:disguise)
 L9. do 118 (0x005C72F0); do 117 (Firestorm) is tier A, dispatch § O:  [C] → MissileCreate (run:2026-10-21-cat-emu-dru)
       SrvMissileByCharge's class in [0, Missiles count); bit 6; calc1 > 0 (else 0)
       do 118: 0x005C7040(game, caster; calc1, class, id, lvl, 0): no target point → 1; else MissileCreate
@@ -961,13 +987,19 @@ M4. traps, states, areas:                                              [C] → e
         slot; do 54 in town → 1 without it
       after: the summons' set-up, do 44's teleport of the trap to the caster, the area callbacks   [I] (0x005D5FB7–0x005D6012)
 M5. ItemEffect 36 (rows 44 Frost Nova, 48 Nova): an item cast of those skills runs prg 36, a nova of the row's
-      srvmissilea (119 frostnova, 90 nova) centred on the cast's target unit; nothing without one   [I] (0x005D4DB0)
+      srvmissilea (119 frostnova, 90 nova) centred on the cast's target unit; nothing without one
+        [C] with a kept target and lvl > 0, SkillNovaAtUnit(target, 119 or 90, id, lvl, 24) from 0x005D4E53;
+        no target: 0, no call (run:2026-11-16-sweep2-s2be2, 735 and 688 calls, 587 refusals)
+        that an item cast of these rows runs prg 36                        [I] (0x005D4DB0)
 ```
 
 - M2. **The knockback's level difference is `slvl`.** Dragon Talon's do reads stat 12 of the target (`push edi`) twice,
-  so its chance computes `level(target) + slvl − level(target)`. [I] (0x005D5AEB, 0x005D5AF7,
+  so its chance computes `level(target) + slvl − level(target)`: `edi` is `UNIT_GetTargetUnit`'s result
+  (0x005D5A6F–0x005D5A74), both reads push it with no `edi` write between, and the chance is `s1 + slvl − s2`
+  (0x005D5AFC–0x005D5B01). [C] (static, [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q), 0x005D5AEB, 0x005D5AF7,
   fn:sub_005D5A30_SkillDo42DragonTalon@0x005D5A30, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 1)
-- M2. Psychic Hammer's do has the same form: both reads are `push ebx`, the target. [I] (0x005D31D9, 0x005D31E5,
+- M2. Psychic Hammer's do has the same form: both reads are `push ebx`, the target (`ebx` from `UNIT_GetTargetUnit`,
+  0x005D3196–0x005D31A3; the chance at 0x005D31EA–0x005D31EF). [C] (static, [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q), 0x005D31D9, 0x005D31E5,
   fn:sub_005D3140_SkillDo33PsychicHammer@0x005D3140, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 2)
 
 ### N. Item, charge and shrine callers (st 3, do 4, 113, 151)
@@ -1058,8 +1090,13 @@ N8. the shrine missiles:                                               [C] → e
 
 - N9. **The effect flag.** It is 1 only from handler 20 without `ItemTgtDo`, so `ItemEffect` 36 and 151 (Nova, Frost
   Nova, Chain Lightning) replace the do entry only for the skill-on-attack, -kill and -hit stats, not for on-get-hit,
-  on-death, on-level-up, the item-use entries or charges; no other call of `SKILLS_SrvDo` passes 1. [I]
-  (0x005C0529–0x005C0558, [skills/0015 § 6](../../findings/skills/0015-item.md#answer-summary))
+  on-death, on-level-up, the item-use entries or charges; no other call of `SKILLS_SrvDo` passes 1. [C] the effect
+  argument is 0 at seven of `SKILLS_SrvDo`'s eight callers and `ITEMSKILL_Cast`'s own argument at the eighth; the
+  chains of `ITEMSKILL_Cast`'s ten callers pass 1 only from handler 20 with `ItemTgtDo` clear (0x005C054E), 0 with it
+  set, from handlers 21 and 30 and from the item-use casts; handler 20 is ItemStatCost's `item_skillonattack`, `-kill`
+  and `-hit`, 21 get-hit, 30 death and level-up (static, 0x005C0529–0x005C0558, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q),
+  [skills/0015 § 6](../../findings/skills/0015-item.md#answer-summary)). The do entry's replacement inside
+  `SKILLS_SrvDo` is [dispatch § E](dispatch.md#e-the-do-frame-and-skills_srvdo)'s reading. [I] (fn:SKILLS_SrvDo@0x0056F7F0)
 - N10. **Whose seed helper 2 steps.** The unit the handler made the caster: the other unit for handler 20 with
   `ItemTgtDo` (54 Teleport, the one stock `ItemTarget` 2 row, has it), the stat's owner otherwise; composed from three
   `[C]` links. [I] (0x005FDB96–0x005FDB9F, 0x0056E955–0x0056E960)
@@ -1141,7 +1178,9 @@ O7. missiles and the infernos:                                         [C] → e
 O8. the data joins: Fire Hit has no srvmissilea, so do 83 makes no missile; rows 183 MissileSkill1 and 202
       HireableMissile have none (stats 157/158, or a hireling's weapon class), 336 RogueMissile names rogue1;
       MaggotEgg (159), MagottLay (163) and the nests (167, 320) take their class from the caster's MonStats
-      spawn row (sandmaggot1..5 → maggotegg1..5, spawnmode S1)    [I] (tbl:Skills.txt:srvdofunc, tbl:MonStats.txt:spawn)
+      spawn row (sandmaggot1..5 → maggotegg1..5, sandmaggot6 and 7 → maggotegg6, spawnmode S1)
+        [C] the cells and the joins (tbl:Skills.txt:srvdofunc, tbl:MonStats.txt:spawn, the .txt and .bin agree)
+        that the do functions take the class from the caster's row    [I] (tbl:Skills.txt:srvdofunc)
 ```
 
 ### P. Monster skills, Skills rows 190–289 (st 54, 55, 59, 60, 64; do 99–109, 112, 125–127, 141, 152)
@@ -1204,7 +1243,7 @@ P3. node words, prison, corpses, curse:                                [C] → e
         Step(caster)                                                   ; draw#1, before any test
         k ← caster.low mod 5 picks the curse
         → SkillForUnitsNearTarget(ECX game, EDX 3; caster, radius, 0x005C35C0, &block), the drawn row's curse block
-P4. the data joins:                                                    [I] (tbl:Skills.txt:srvdofunc, tbl:Skills.txt:Param7)
+P4. the data joins:                                                    [C] the cells and rows below (tbl:Skills.txt:srvdofunc, tbl:Skills.txt:Param7); [I] one time in five, the caster's level and row 91's Param7 use, which are code
       DiabLight (193) runs st 53 and do 152, the infernos' cast with diablight
       Baal Corpse Explode (285): Param5 40, Param6 0, a radius of 40 at every level
       MonCurseCast (212) casts Amplify Damage (66), Weaken (72), Life Tap (82), Decrepify (87) or Lower Resist (91),
@@ -1294,6 +1333,11 @@ Q4. hits, curses, states:                                              [C] → e
         not 2 → STATE_ApplyTimed, state 110, length 0, the callback 0x005D21B0
       after: do 128's overlay; do 133's end callback (the painworm spawn from a dead unit); do 134's elemental
         roll and area hit; do 137's 0x0064C040 and 0x00570590           [I] (0x005D21B0–0x005D2249, 0x005D2777–0x005D2793)
+      do 137 after STATE_Set(target, 104, 1), run whole: state bit 104 set (when it was clear, its changed bit at word
+        (states + 31) / 32 + 3, and with States record 104's +0x12 bit 0 the target's +0xC8 |= 8); UnitMarkUpdated
+        links the target to its room's +0x1C list (its own 0x0064C040 call then changes nothing); then 0x00570590
+        from 0x005D2793 with ECX game, EDX caster and (caster, aurastate, id, lvl)
+                                                                         [C] (run:2026-11-16-sweep2-s2be3, 1 500 cases, 221 at the call)
 Q5. moves, spawns, links:                                              [C] → each call below (run:2026-10-21-cat-emu-8c)
       st 61 (0x005D1BF0): a monster caster with a room → UnitSetStat(caster, 6, stat 7, 0) inside 0x005CC960; no
         room → +0xC4 bits 1–3 cleared, PATH_SetMarkMask(path, 0x100)
@@ -1309,13 +1353,14 @@ Q5. moves, spawns, links:                                              [C] → e
 Q6. the data joins: Siege Beast Stomp (301) has srvmissilea −1, so do 134 returns 0 for the stock row before
       its packet; Imp Teleport (330) has aurastate 143 (attached), whose srvactivefunc is 147; Overseer Whip
       (295): auratargetstate 141 (bloodlust), calc1 par1 (65), summon 461 (suicideminion1), summode 8;
-      Impregnate (300) summon 551 (painworm1)                          [I] (tbl:Skills.txt:srvmissilea, tbl:MonStats.txt:BaseId)
+      Impregnate (300) summon 551 (painworm1)                          [C] (tbl:Skills.txt:srvmissilea, tbl:MonStats.txt:BaseId, the .txt and .bin agree)
 ```
 
 - Q7. **Surprises kept as read.** do 148 and 149 differ in one byte; do 132 writes a slot; do 136 tests the point
   before bit 6; three entries have no id test; do 134 returns 0 before its packet for `srvmissilea` −1. They stand
   as code readings inside the map; what the game shows for them is under *Open questions*.
-  [C] (run:2026-10-21-cat-emu-8c) That the stock row 301 takes that exit is Q6's data join. [I] (tbl:Skills.txt:srvmissilea)
+  [C] (run:2026-10-21-cat-emu-8c) That the stock row 301 takes that exit is Q6's data join: its `srvmissilea` is blank
+  in the `.txt` and 0xFFFF in the `.bin`. [C] (tbl:Skills.txt:srvmissilea)
 
 ### R. In the game: the Phase 2 sample
 
@@ -1343,8 +1388,9 @@ Q6. the data joins: Siege Beast Stomp (301) has srvmissilea −1, so do 134 retu
   checker row `MC.cbseed2`). [C] (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, 0x005AC073, run:2026-10-30-skills-catalogue)
   The 10 steps are `PathPlan`'s random walk, and the `Init`'s low word is path word `+0x10`
   ([missiles H4](missiles.md#h-re-seed-sites)). [C] (fn:sub_0067A240_PathPlanRandomWalk@0x0067A240, run:2026-11-03-path-emu-3)
-  Which of the hit
-  entries that pass the callback (mhit 38 `0x005AC14B`, mhit 45 `0x005AC525`) made these creations is not logged. [I]
+  24 of the 36 lie inside an `end` 1 call of a class-407 missile with hit function 38 (mhit 38 `0x005AC14B`). [C]
+  (run:2026-10-30-skills-catalogue, [skills/0002 § 13](../../findings/skills/0002-missiles.md#13-plan-0066-batch-s2b-the-missile-lines-re-checked-2026-11-15-lanen66f)) Which of the hit entries that pass the callback (mhit 38, mhit 45
+  `0x005AC525`) made the other 12, after the log's hit-line cap, is not logged. [I]
   (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, fn:sub_00649970_PathPlan@0x00649970)
 - R3. **`ReturnDamage` (stat-event handler 4, Iron Maiden) when its returned damage kills the cursed unit.** In one
   case the cursed monster's seed stepped once between the handler's entry and its return, its life going from 1 173
@@ -1354,12 +1400,17 @@ Q6. the data joins: Siege Beast Stomp (301) has srvmissilea −1, so do 134 retu
   the checker's handler-seed check (`EVH.seed`)**: the checker reports the steps of a `ReturnDamage` call that kills
   its unit and does not check them, so the no-draw `[C]` for handler 4 does not extend to a kill. [I]
   (fn:sub_005C5F50_StatEv04ReturnDamage@0x005C5F50, [dispatch § K](dispatch.md#k-stat-event-handlers))
-- R4. **Observations, not checks.** do 131 steps the caster once in 61 of 61 do events, those with a monster target,
-  as Q2's one draw for a minion target allows; do 132 once in 198 of 198, the nested creation's critical roll the
-  likely source; do 129 in 62 of 347, inside its `UnitTeleport` boundary; do 109 once in 361 and four times in 634 of
-  995 (the restart and hit that § P's P2 leaves to the reading); the other logged monster rows none. [I]
+- R4. **The monster rows' caster steps per do event**, now a check: do 131 steps the caster once in 61 of 61 do events,
+  those with a monster target, as Q2's one draw for a minion target allows, with no nested logged span; do 132 once in
+  198 of 198, inside its nested creation; do 129 once in 62 of 347, with no logged line holding it (its `UnitTeleport`
+  boundary); do 109 once in 361, inside `COMBAT_MeleeHitTest`, and four times in 634 of 995 (the hit test one, the
+  elemental roll one, two with no logged line); the `srvmissile` rows 339, 340, 342 and 345 (do 0) once in 92 of 92,
+  inside their creation, where § P's chain places the critical roll; row 167 (do 91) nine times in 1 of 11, with no
+  logged line inside; the 14 other logged monster rows none. [C]
   (fn:sub_005D1F70_SkillDo131OverseerWhip@0x005D1F70, fn:sub_005D2090_SkillDo132ImpFireMissile@0x005D2090,
-  fn:sub_005D1AB0_SkillDo129ImpTeleport@0x005D1AB0, fn:sub_005CDF10_SkillDo109Frenzy@0x005CDF10, run:2026-10-30-skills-catalogue)
+  fn:sub_005D1AB0_SkillDo129ImpTeleport@0x005D1AB0, fn:sub_005CDF10_SkillDo109Frenzy@0x005CDF10, run:2026-10-30-skills-catalogue,
+  [skills/0002 § 13](../../findings/skills/0002-missiles.md#13-plan-0066-batch-s2b-the-missile-lines-re-checked-2026-11-15-lanen66f)) The sources of the unlogged steps (do 129's, do 109's two, row 167's nine) are not read. [I]
+  (fn:sub_005D1AB0_SkillDo129ImpTeleport@0x005D1AB0, fn:sub_005CDF10_SkillDo109Frenzy@0x005CDF10)
 
 ## Outputs
 
@@ -1371,8 +1422,11 @@ state, a packet, a delivery). The seeds it steps are § B's. Each boundary's own
 
 do 140 on Hell (difficulty 2) for a caster whose seed is `(low 1, high 666)`, its default arm (no draws; the arm the
 emulated cases reach: stock Baal, the only stock user, takes Baal's arm, two or three more draws, Q1), base point
-`(100, 200)`, computed with [rng](../rng/README.md#algorithm)'s `Step` from Q1's steps. It is arithmetic over the
-spec, not a recorded case. [I] (0x005D2C20)
+`(100, 200)`, computed with [rng](../rng/README.md#algorithm)'s `Step` from Q1's steps. Both branches below are
+recorded cases: do 140 emulated on that seed and arm (MonStats base 0, no target) spawns at `(100, 199)` from 0x005D2E07
+with the seed `(0x280687C4, 0x13ADFE65)` when a room holds try 1's point, and returns 1 with `(0xE778FC3B, 0x49422C1A)`
+when no room holds any of the four. [C] (0x005D2C20, run:2026-11-16-sweep2-s2be3, [skills/0003 § 20](../../findings/skills/0003-handlers.md#20-plan-0066-batch-s2be-part-3-closing-the-worked-example-of-do-140-and-do-137-past-state_set-2026-11-16-lanen66sb): cases W1, W2,
+among 1 200 do 140 cases with 0 mismatches)
 
 | Step | Seed after (low, high) | Value |
 |---|---|---|
@@ -1405,13 +1459,17 @@ through tries 2–4, Q1's `after:`); with no room in all four tries the entry re
   calc2. [C] (run:2026-10-21-cat-emu-8b, run:2026-10-21-cat-emu-8c)
 - **Return values that look wrong.** do 13 returns 0 on every path; mdo 14 with a skill or level ≤ 0 returns 2
   without mdo 1; do 63 returns 1 for a bad missile class. [C] for mdo 14 and do 63 (run:2026-10-20-cat-emu-9a,
-  run:2026-10-20-cat-emu-nec); [I] for do 13 (fn:sub_005DBC60_SkillDo13Fend@0x005DBC60)
+  run:2026-10-20-cat-emu-nec) and for do 13: its one `ret` follows `xor eax, eax` with no `EAX` write between and no
+  branch lands past the `xor` (fn:sub_005DBC60_SkillDo13Fend@0x005DBC60, two disassemblers, run:2026-11-16-sweep2-s2be2, [skills/0003 § 19](../../findings/skills/0003-handlers.md#19-plan-0066-batch-s2be-part-2-do-13s-return-do-6s-per-unit-callback-and-prg-36-on-skills-rows-44-and-48-2026-11-16-lanen66sb))
 - **Signed and unsigned tests.** A blank `SubMissile1` (−1) passes the `≠ 0` test of mdo 21, 22, 23, 25 and 26;
   class 0 passes do 68's test, and do 73 and 80 refuse it; do 31 tests `pettype` signed, do 49 unsigned, do 44 and
   45 turn a bad one into 0. [C] (run:2026-10-20-cat-emu-9b, run:2026-10-21-cat-emu-bar, run:2026-10-20-cat-emu-pal,
   run:2026-10-20-cat-emu-nec, run:2026-10-21-cat-emu-ass)
-- **An endless loop.** The rings of prg 37 and 143 do not test their step count; a count of 0 loops for ever. [I]
-  (0x005D4657–0x005D467D)
+- **An endless loop.** The rings of prg 37 and 143 do not test their step count; a count of 0 loops for ever. [C]
+  both load the prg's calc into `edi` (0x005D43A1, 0x005D4AC1), scale it by 4 and loop `esi += edi` while
+  `esi < 0x100`, and no `edi` operand is a test or compare (static, 0x005D4657–0x005D467D, [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q)). What a negative
+  count does is [combat/delivery](../combat/delivery.md#reimplementation-notes) note 11's reading. [I]
+  (0x005D4D77–0x005D4DAA)
 
 ## Evidence
 
@@ -1446,4 +1504,5 @@ Short floors carried from Phase 2 (each family is reached; these members are not
   per family.
 - [L] What `ReturnDamage`'s kill step is (R3): the death's processing or another callee.
 - [L] Everything after each boundary, listed per entry as `after:`, and what the game shows for Q7's surprises, for
-  the harness or the monster-AI plan; whether Siege Beast Stomp does anything on the server for the stock row.
+  the harness or the monster-AI plan. ~~Whether Siege Beast Stomp does anything on the server for the stock row~~:
+  do 134 returns 0 before its packet for row 301, whose `srvmissilea` is blank (Q6, Q7).

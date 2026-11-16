@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 411, I: 136, L: 3}
+tags: {C: 422, I: 125, L: 3}
 updated: 2026-11-16
 ---
 
@@ -61,16 +61,16 @@ flowchart LR
 
 | Class | Entries | C | I |
 |---|---|---|---|
-| [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 26 | 19 | 7 |
-| [2. Rounding and float](#2-rounding-and-float) | 21 | 16 | 5 |
+| [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 26 | 20 | 6 |
+| [2. Rounding and float](#2-rounding-and-float) | 21 | 17 | 4 |
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 | 7 |
 | [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 61 | 18 |
-| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 123 | 21 |
-| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 114 | 21 |
+| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 124 | 20 |
+| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 115 | 20 |
 | [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 18 | 10 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 23 | 17 | 6 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 35 | 37 |
-| **Total** | 538 | 406 | 132 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 42 | 30 |
+| **Total** | 538 | 417 | 121 |
 
 ### 1. Arithmetic width and sign
 
@@ -96,7 +96,7 @@ flowchart LR
 | Q18 | The `gf` stats writer clamps signed instead: a negative value of an unsigned stat becomes 0. | [I] | 0x0056965B, 0x00569661 | [save/d2s](../save/d2s.md#reimplementation-notes) n8 |
 | Q19 | An item property's param is read unsigned (a 9-bit 270 stays 270). | [C] | fn:ITEMS_ReadProperty@0x0062AC80, run:2026-10-27-sweep-d2s-load | [save/d2s](../save/d2s.md#reimplementation-notes) n13 |
 | Q20 | `CSvParam` is read signed in the `gf` list; no stock row reads one. | [I] | fn:D2S_ReadStatsBits@0x0056A4F0 | [save/d2s](../save/d2s.md#reimplementation-notes) n13 |
-| Q21 | Missile function numbers are tested as s16, `> 0` first, so row 568's hit function does not run. | [I] | 0x005ADA0D, 0x005ADA1F | [skills/missiles](../skills/missiles.md#reimplementation-notes) n1 |
+| Q21 | Missile function numbers are tested as s16, `> 0` first, so row 568's hit function does not run. | [C] | 0x005ADA0D, 0x005ADA1F | [skills/missiles](../skills/missiles.md#reimplementation-notes) n1 |
 | Q22 | The regeneration tick adds stat 74 whatever its sign: positive heals up to the maximum, negative (poison) bleeds the player. | [C] | fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stats | [stats/states § E](../stats/states.md#e-the-regeneration-tick) |
 | Q436 | Signed and unsigned tests: a blank `SubMissile1` (−1) passes the `≠ 0` test of mdo 21, 22, 23, 25 and 26; class 0 passes do 68's test while do 73 and 80 refuse it; do 31 tests `pettype` signed, do 49 unsigned, and do 44 and 45 turn a bad one into 0. | [C] | run:2026-10-20-cat-emu-9b, run:2026-10-21-cat-emu-bar, run:2026-10-20-cat-emu-pal, run:2026-10-20-cat-emu-nec, run:2026-10-21-cat-emu-ass | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n7 |
 | Q475 | Store the Inventory `gridX` and `gridY` as bytes: the Hireling second-set rows hold 255 from blank cells. | [C] | 0x0065C1F0 | [items/inventory](../items/inventory.md#reimplementation-notes) n7 |
@@ -125,7 +125,7 @@ flowchart LR
 | Q38 | Two hpregen formulas: creation `((hp << 8)·r) >> 12`, the stat callback `((new >> 8)·r) >> 4`; they can differ by one, and a group member keeps the callback's value. | [C] | 0x00573FF6, 0x00574058, fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-15-mon-stats | [monsters/stats](../monsters/stats.md#reimplementation-notes) n5 |
 | Q39 | The life rescale truncates a float32, and never takes current life below 1. | [C] | fn:sub_0055B800_MonStatCallback@0x0055B800, run:2026-10-17-stats | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) n5 |
 | Q40 | A path step that would pass its point lands on the subtile centre, so frames per point are a ceiling and the next step starts from the centre. | [C] | fn:sub_00650090_PathStepSnap@0x00650090, run:2026-10-30-anim-p3b | [anim/movement](../anim/movement.md#reimplementation-notes) n3 |
-| Q41 | The missile step direction is a lookup in `g_PathDirTable`, not a trigonometric function. | [I] | data:g_PathDirTable@0x006EB7E0 | [skills/missiles](../skills/missiles.md#reimplementation-notes) n10 |
+| Q41 | The missile step direction is a lookup in `g_PathDirTable`, not a trigonometric function. | [C] | data:g_PathDirTable@0x006EB7E0 | [skills/missiles](../skills/missiles.md#reimplementation-notes) n10 |
 | Q454 | A monster with few hit points has no regeneration: stat 74 is `((hp << 8) × r) >> 12`, so 0 while `hp × r < 16`. | [I] | 0x00573FF6, 0x00574058, tbl:MonStats.txt:DamageRegen | [monsters/stats § B](../monsters/stats.md#b-monstatsinit-in-order) |
 | Q478 | `calc1` of a healing or mana potion is a total, not a per-frame amount: it is scaled, maybe doubled and divided by `len`, and the division truncates, so a potion can deliver less than its total. | [C] | 0x005BE6D4, run:2026-11-03-use-emu | [items/use](../items/use.md#reimplementation-notes) n1 |
 
@@ -254,7 +254,7 @@ flowchart LR
 | Q137 | Entry 38 draws two or three times on the attacker's seed after delivering the queued hit. | [I] | 0x0056E1C4 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n9; [combat/README](../combat/README.md#reimplementation-notes) n4 |
 | Q138 | A weapon-share missile steps its owner's seed at least once for stat 337, whatever its value. | [C] | fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n3; [combat/README](../combat/README.md#reimplementation-notes) n5; [skills/README](../skills/README.md#reimplementation-notes) n2 |
 | Q139 | The missile's deadly-strike step needs a non-zero stat 141, a negative one stepping the seed with no chance of success; its mastery step, with no used skill, needs a value above 0. | [C] | fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A864, 0x0064A890 | [combat/README](../combat/README.md#reimplementation-notes) n5 |
-| Q140 | Do not merge the two critical chains: the missile's (stat 337 first, Q138) is not the melee build's. | [I] | fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:COMBAT_BuildDamage@0x0057B7D0 | [skills/README](../skills/README.md#reimplementation-notes) n2 |
+| Q140 | Do not merge the two critical chains: the missile's (stat 337 first, Q138) is not the melee build's. | [C] | fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:COMBAT_BuildDamage@0x0057B7D0 | [skills/README](../skills/README.md#reimplementation-notes) n2 |
 | Q141 | A stat-event handler draws on its own unit's seed: shiver armour (3) and skill on get-hit (21) on the defender's, skill on death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit and reanimate on the attacker's. | [I] | data:g_StatEventFuncs@0x007325B0, 0x005BF9CF, 0x005C0603 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n12 |
 | Q142 | Defence comes before the block: a miss draws no block; a running defender skips the to-hit draw but still draws the block. | [C] | fn:COMBAT_MeleeHitTest@0x0057EC10 | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n6 |
 | Q143 | Stat 328 (the request counter) rises on every skill request, before the checks, and seeds every pierce count: a refused request still changes later pierce counts. | [I] | 0x00549D50, fn:sub_0059F940_MissilePierceCount@0x0059F940 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n1; [skills/README](../skills/README.md#reimplementation-notes) n3 |
@@ -391,8 +391,8 @@ flowchart LR
 | Q259 | The assassin finishing moves (do 42, 46, 50, 52) call the finisher with their own queued hit and then deliver; the call sites and the calls of do 42, 46 (bad-id path) and 50 are confirmed. | [C] | run:2026-10-21-cat-emu-ass | [combat/delivery](../combat/delivery.md#reimplementation-notes) n10 |
 | Q260 | Do 46 runs the finisher only on a hit but delivers on both paths (its valid-id calls and the deliveries after them). | [I] | 0x005D6386, 0x005D6405 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n10 |
 | Q261 | `SKILLS_PayCost` returns 0 for a row with `mana` and `lvlmana` both 0 (scrolls, books, Unsummon). | [C] | run:2026-10-21-cat-emu-item, fn:SKILLS_PayCost@0x0056BFE0 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n13 |
-| Q262 | None of its three callers tests that return: a failed or zero payment still casts, so a reimplementation that refuses on 0 refuses those skills. | [C] | 0x0056F7AF, 0x0056FA7F, 0x005D6B4D, 0x0056F7AA, 0x0056FA7A | [combat/delivery](../combat/delivery.md#reimplementation-notes) n13 |
-| Q263 | An item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` only from a skill-on-attack, -kill or -hit stat without `ItemTgtDo` (the effect flag only handler 20 sets); from other entries it runs the row's `srvdofunc`. | [C] | 0x005C054E, 0x0056FD29, 0x0056FD34 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n14 |
+| Q262 | None of its three callers tests that return: a failed or zero payment still casts, so a reimplementation that refuses on 0 refuses those skills. | [C] | 0x0056F7AF, 0x0056FA7F, 0x005D6B4D, 0x0056F7AA, 0x0056FA7A | [combat/delivery](../combat/delivery.md#reimplementation-notes) n13 ; [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n2 |
+| Q263 | An item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` only from a skill-on-attack, -kill or -hit stat without `ItemTgtDo` (the effect flag only handler 20 sets); from other entries it runs the row's `srvdofunc`. | [C] | 0x005C054E, 0x0056FD29, 0x0056FD34 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n14 ; [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n7 |
 | Q264 | Classic resistance penalties are the constants −20 (Nightmare) and −50 (Hell), not `DifficultyLevels`' `ResistPenalty`. | [C] | fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat | [combat/reductions](../combat/reductions.md#reimplementation-notes) n3 |
 | Q265 | Cold and freeze lengths use cold resistance; the poison length uses stat 110. | [C] | data:g_DamageResistTable@0x00732980, run:2026-10-16-combat | [combat/reductions](../combat/reductions.md#reimplementation-notes) n5 |
 | Q266 | Neither the chance to hit nor the block chance has a difficulty branch; only the block form differs between classic and expansion. | [C] | fn:COMBAT_ToHitRoll@0x0057D9B0, fn:COMBAT_DefenceRoll@0x0057DFB0 | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n5 |
@@ -489,7 +489,7 @@ flowchart LR
 | Q357 | Fixed item fields apply `Save Add`. | [C] | 0x00630A19, 0x00630CF3, run:2026-10-14-props-forced, run:2026-10-16-player | [save/d2s § I](../save/d2s.md#i-one-item); [save/d2s](../save/d2s.md#reimplementation-notes) n9 |
 | Q358 | Neither fixed fields nor followers apply `ValShift`. | [I] | 0x00630F5B, 0x00630FA3, 0x00630A19, 0x00630CF3 | [save/d2s](../save/d2s.md#reimplementation-notes) n9 |
 | Q359 | One delay state blocks all delayed skills, not only the one cast. | [I] | fn:SKILLS_DelayOk@0x006478F0 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n5 |
-| Q360 | A monster's bit 6 is set by its AI, so its do runs only through the attack-frame handler and the mode-14 `Unit+0x4E = 4` case. | [I] | 0x005DEB08 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n6 |
+| Q360 | A monster's bit 6 is set by its AI; in modes 4, 5, 7, 8, 9 and 16–20 its start leaves it set, so its do runs only through the attack-frame handler, while mode 14's start clears it, so its do runs on a code 1 or 2 like a player's and on the `Unit+0x4E = 4` case. | [C] | 0x005DEB08, 0x005A7884, fn:sub_005A8670_MonSeqFrame@0x005A8670 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n6 |
 | Q361 | A missed piercing missile has spent a pierce. | [C] | run:2026-10-25-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n6 |
 | Q362 | A used pierce keeps the missile: stat 328 falls by 1 and it flies on. | [C] | fn:sub_005ADA80_MissilePierceUse@0x005ADA80, run:2026-10-27-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n7 |
 | Q363 | A freed missile at a bit-0 or bit-2 own cell does not explode. | [I] | fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0 | [skills/missiles](../skills/missiles.md#reimplementation-notes) n9 |
@@ -588,7 +588,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q405 | `ToHitFactor` is a class constant added to the base attack rating before the percent; the chance to hit's level term `2·alvl/(alvl + dlvl)` has no class term (contradicts the community description). `BlockFactor` is added to stat 20 in the block chance. | [C] | fn:sub_00622560_PlayerBaseToHit@0x00622560, struct:CharStatsRec+0x3C, fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat, src:arreat-summit-character-basics | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n1; [player/creation](../player/creation.md#reimplementation-notes) n8; [combat/README](../combat/README.md#reimplementation-notes) n7 |
 | Q406 | Crushing blow is a share of the defender's current life before this hit's damage, 1/4 on uniques and champions, not the community's 1/8 (52 crushing blows on champions took 1/4). | [C] | fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat, run:2026-10-20-shortfalls | [combat/delivery](../combat/delivery.md#reimplementation-notes) n1; [combat/README](../combat/README.md#reimplementation-notes) n7 |
 | Q407 | Burning never applies from a plain attack: the builder leaves `burn = 2` with `burnLen = 0`. | [C] | 0x0057BC2F, 0x0057BC8A | [combat/delivery](../combat/delivery.md#reimplementation-notes) n15 |
-| Q408 | The fire length is overwritten by the burn length in stat 315. | [I] | 0x0064AE2F | [skills/missiles](../skills/missiles.md#reimplementation-notes) n4 |
+| Q408 | The fire length is overwritten by the burn length in stat 315. | [C] | 0x0064AE2F | [skills/missiles](../skills/missiles.md#reimplementation-notes) n4 |
 | Q409 | `dm78` lacks the `lvl < 1` guard of the other `dm` codes: at level 0 it gives `min(Par7, Par8)` rather than 0. | [C] | 0x0064651F, run:2026-10-17-sweep-emu | [data/calc](../data/calc.md#reimplementation-notes) n8 |
 | Q410 | The outdoor road search's step cost is always 2; the 3 for a diagonal step is never taken by its 4-neighbour moves. | [C] | fn:sub_00681630_A1PathSearchStep@0x00681630, run:2026-10-15-drlg-outdoor | [drlg/outdoor](../drlg/outdoor.md#reimplementation-notes) n11 |
 | Q411 | `place_group25` keeps 3/4 and `place_group75` keeps 1/4; do not swap them to match the names. | [C] | 0x00667687, 0x00667794, run:2026-10-15-acts-3-5 | [drlg/preset](../drlg/preset.md#reimplementation-notes) n2 |
@@ -614,22 +614,22 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q431 | Objects use `MonLvl1` in every difficulty, and shrines test `LevelMin` against the level Id; neither is the difficulty's monster level. | [C] | tbl:Levels.txt:MonLvl1, tbl:Shrines.txt:LevelMin, run:2026-10-15-objects | [objects](../objects/README.md#reimplementation-notes) n8 |
 | Q432 | The guide's numbers 1.14d does not follow: urns drop at 21 %, not 20 %; gold piles are 1–9, not 1–10; a sparkle chest uses the act chest TC. | [C] | run:2026-10-15-objects | [objects](../objects/README.md#reimplementation-notes) n16 |
 | Q433 | Quest bit 15 survives: only word 9's first-join check clears it, so a character that saved with a reward pending carries it on. | [I] | 0x00599293 | [quests/progression § A](../quests/progression.md#a-the-quest-record) |
-| Q434 | The ally test of `StartUsedSkill` is dead: do not add a refusal there. | [I] | 0x0056FBB2, 0x0056FBC4 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n8 |
+| Q434 | The ally test of `StartUsedSkill` is dead: do not add a refusal there. | [C] | 0x0056FBB2, 0x0056FBC4 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n8 |
 | Q435 | The stat take test for ops 2–5 reads the source row's `+0x0DE + 6k` word, `strength` (0) on every stock source; do not "fix" it to `op base`. | [C] | 0x006267C0, run:2026-10-17-stats | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) n2 |
 | Q441 | Words read before anything writes them: do 57's block word `+0x24` is the frame slot `ebp−0x10`, do 140's class out word is `EBP − 0x1C`, and mhit 52's class word `+0x10` is never written; keep the stale values, which only a logged case gives. | [C] | run:2026-10-20-cat-emu-nec, run:2026-10-21-cat-emu-8c, run:2026-10-20-cat-emu-9d | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n3 |
 | Q442 | What follows from mhit 52's unwritten class word: its missiles are row 0 by the callee's reading. | [I] | 0x005AC940 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n3 |
 | Q443 | Return values that look wrong: mdo 14 with a skill or level ≤ 0 returns 2 without running mdo 1, and do 63 returns 1 for a bad missile class. | [C] | run:2026-10-20-cat-emu-9a, run:2026-10-20-cat-emu-nec | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
-| Q444 | do 13 returns 0 on every path. | [I] | fn:sub_005DBC60_SkillDo13Fend@0x005DBC60 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
+| Q444 | do 13 returns 0 on every path. | [C] | fn:sub_005DBC60_SkillDo13Fend@0x005DBC60 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n6 |
 | Q445 | No Uber event was found in this image to port: classes 704, 705 and 709 have no creator and no Uber-specific driver found, within the limits the source states; keep their class-gated code. | [I] | fn:sub_005E9DF0_AiUberDiablo@0x005E9DF0, fn:sub_005FD200_AiUberBaal@0x005FD200, fn:sub_005F81C0_AiUberMephisto@0x005F81C0 | [monsters/special](../monsters/special.md#reimplementation-notes) n12 |
-| Q462 | Dragon Talon's knockback chance reads the target's level twice, `level(target) + slvl − level(target)`, so the level difference is `slvl`. | [I] | 0x005D5AEB, 0x005D5AF7, fn:sub_005D5A30_SkillDo42DragonTalon@0x005D5A30 | [skills/catalogue § M](../skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
-| Q463 | Psychic Hammer's knockback chance has the same form: both level reads are the target's. | [I] | 0x005D31D9, 0x005D31E5, fn:sub_005D3140_SkillDo33PsychicHammer@0x005D3140 | [skills/catalogue § M](../skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
+| Q462 | Dragon Talon's knockback chance reads the target's level twice, `level(target) + slvl − level(target)`, so the level difference is `slvl`. | [C] | 0x005D5AEB, 0x005D5AF7, fn:sub_005D5A30_SkillDo42DragonTalon@0x005D5A30 | [skills/catalogue § M](../skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
+| Q463 | Psychic Hammer's knockback chance has the same form: both level reads are the target's. | [C] | 0x005D31D9, 0x005D31E5, fn:sub_005D3140_SkillDo33PsychicHammer@0x005D3140 | [skills/catalogue § M](../skills/catalogue.md#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
 | Q464 | Stat 137 counts twice with boots worn, on the kicks `SkillKickPhysDamage` builds: once alone, once with the boots' values. | [I] | 0x005D560F, fn:sub_00646280_KickItemDamage@0x00646280 | [skills/dispatch § I](../skills/dispatch.md#i-the-skill-packet) |
 | Q465 | The `ToHit` columns of Power Strike, MonPowerStrike and MonIceSpear do not reach st 6's hit test, which passes an attack-rating percent of 0. | [I] | fn:SKILLS_GetToHit@0x006449F0, fn:sub_005DA940_SkillSt06Hit@0x005DA940 | [skills/catalogue § H](../skills/catalogue.md#h-amazon-st-410-do-68-1016) |
 | Q466 | Do 150 (Smite) has no access to `Unit+0xC4`, so it does not set the flag `0x40` do 2 sets there; the callees past `COMBAT_ResolveAndQueue` and `COMBAT_DeliverQueued` are unfollowed. | [I] | 0x005CE9F0, 0x005CEC50, 0x0056F42A | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
-| Q467 | A monster's Smite passes mode 5 to `MonAttackStats` whatever mode it used, so it takes its `A2` stats. | [I] | 0x005CEBB6, fn:sub_005A4F50_MonAttackStats@0x005A4F50 | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150); [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) |
+| Q467 | A monster's Smite passes mode 5 to `MonAttackStats` whatever mode it used, so it takes its `A2` stats. | [C] | 0x005CEBB6, fn:sub_005A4F50_MonAttackStats@0x005A4F50 | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150); [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) |
 | Q468 | `El2` and `El3` take `El1`'s minimum, maximum and length, through `MonLvlStats`' mask `0x40 + e`. | [I] | 0x005A51D7, fn:sub_006538A0_MonLvlStats@0x006538A0 | [monsters/stats § H](../monsters/stats.md#h-to-hit-and-damage-at-attack-time-reference-only) |
 | Q469 | A `manahit` boss takes `256·v` mana where the same value through an `El` column takes `v`, capped by the mana held; `v << 22` wraps i32 at 512. | [I] | fn:sub_005A1F90_UModManaHit@0x005A1F90, fn:COMBAT_RollElemStat@0x0057A8E0, 0x0057C879, 0x0057C889 | [combat/delivery § B](../combat/delivery.md#b-delivery-combat_applydamage); [monsters/stats § G](../monsters/stats.md#g-the-mod-handlers-stat-effects) |
-| Q470 | A summon gets its MonLvl defence and to-hit added whole, with no `noRatio` test. | [I] | fn:sub_005C49E0_SummonSetLevel@0x005C49E0 | [skills/dispatch § L](../skills/dispatch.md#l-summons) |
+| Q470 | A summon gets its MonLvl defence and to-hit added whole, with no `noRatio` test. | [C] | fn:sub_005C49E0_SummonSetLevel@0x005C49E0, run:2026-11-16-sweep2-s2ae9 | [skills/dispatch § L](../skills/dispatch.md#l-summons) |
 | Q471 | A monster's line missile counts stat 19 twice, as the missile's `arPct` from the creation and as the stat at the hit, when the record byte `+0x18B` is set; the dexterity term is not doubled, and the lob form sets no flag. | [I] | fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:MISSILE_HitUnit@0x005ADF10, fn:COMBAT_ToHitRoll@0x0057D9B0 | [combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll); [skills/missiles § E](../skills/missiles.md#e-the-hit) |
 | Q472 | Neither skill creator adds a skill's to-hit bonus to a player's missile; do 74 (Double Throw) is the one exception read, and other creators are unfollowed. | [I] | fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, fn:sub_0056EE90_SkillMissileCreateLob@0x0056EE90, 0x005D8943, 0x005D896E, fn:SKILLS_GetToHit@0x006449F0 | [skills/missiles § B](../skills/missiles.md#b-creation); [skills/catalogue § K](../skills/catalogue.md#k-barbarian-st-3234-3841-do-2-9-6872-7478) |
 | Q473 | Blessed Aim and Penetrate both name `penetrate` in `passivestate`, so a running Blessed Aim removes Penetrate's list from its caster. | [I] | 0x005CEFD5, 0x005CEFFD, fn:AURA_ApplyToTarget@0x005CEDC0, tbl:Skills.txt:passivestate | [skills/catalogue § J](../skills/catalogue.md#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
@@ -725,10 +725,8 @@ One row per spec with a *Reimplementation notes* section: its note count, the no
 and the skipped ones by reason. "Weaker duplicate" is a note that restates, at a weaker tag, a statement another spec
 holds raised; the entry takes the raised statement and the disagreement is routed to the spec-writer's backlog
 ([entry](../../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md); the three overviews it
-named now state the raised clause). Skipped: 35 notes, presentation 5, table rule 12, not a trap 12, wall-clock 3,
-weaker duplicate 3: skills/dispatch n2 and n7, which plan 0066's combat re-tag raised in combat/delivery n13 and n14
-and which wait for the skills cluster's re-tag ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-skills-dispatch-notes-2-and-7.md)),
-and monsters/ai/README n1, which the frame re-tag raised in sim/frame n8 and which waits for the monsters/ai cluster's
+named now state the raised clause). Skipped: 33 notes, presentation 5, table rule 12, not a trap 12, wall-clock 3,
+weaker duplicate 1: monsters/ai/README n1, which the frame re-tag raised in sim/frame n8 and which waits for the monsters/ai cluster's
 re-tag ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-monsters-ai-readme-note-1-after.md)).
 
 | Spec | Notes | Taken | Presentation | Table rule | Not a trap | Wall-clock | Weaker duplicate |
@@ -786,7 +784,7 @@ re-tag ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-monst
 | [save/d2s](../save/d2s.md#reimplementation-notes) | 14 | 14 | — | — | — | — | — |
 | [sim/frame](../sim/frame.md#reimplementation-notes) | 10 | 9 | — | — | n3 | — | — |
 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) | 8 | 7 | — | — | n5 | — | — |
-| [skills/dispatch](../skills/dispatch.md#reimplementation-notes) | 10 | 8 | — | — | — | — | n2, n7 |
+| [skills/dispatch](../skills/dispatch.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [skills/missiles](../skills/missiles.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [skills/README](../skills/README.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |

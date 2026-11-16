@@ -2,18 +2,18 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../findings/skills/0002-missiles.md
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): items 1 and 2 in [skills/dispatch](../../specs/skills/dispatch.md) L2 (pseudocode and both bullets [C]) and item 3 as K4 (Cyclone Armor, [C] to UnitMarkUpdated and STATE_Set, the stat-84 write and off branch [I])."
 ---
 
 Plan 0066 batch S2ae part 9 (`lane/n66sa`, run:2026-11-16-sweep2-s2ae9), the batch's closing part, ran
 `sub_005C49E0_SummonSetLevel` whole and handler 25 to its boundaries, both with the stat setter whole, and settled
 skills/dispatch rows 142, 143 (L2) and 129 (K 25) in part. For Phase 3 to carry when the skills cluster is re-tagged
 (claims and anchors in
-[skills/0002 § 25](../findings/skills/0002-missiles.md#25-plan-0066-batch-s2ae-part-9-summonsetlevel-and-handler-25-emulated-with-the-setter-whole-the-batch-closed-2026-11-16-lanen66sa);
+[skills/0002 § 25](../../findings/skills/0002-missiles.md#25-plan-0066-batch-s2ae-part-9-summonsetlevel-and-handler-25-emulated-with-the-setter-whole-the-batch-closed-2026-11-16-lanen66sa);
 lines of `docs/specs/skills/dispatch.md` at `b5999f5e`, match by text). Not blocking.
 
 1. **L2, the summon level, refinement.** The `L · 3/4` is `trunc(s32(3L) / 4)` (32-bit product,

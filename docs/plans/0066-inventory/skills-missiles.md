@@ -3,6 +3,24 @@
 - **Spec:** [skills/missiles](../../specs/skills/missiles.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 99; the *Count* column sums to 99.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66sk`, 2026-11-16, the skills cluster): re-tagged.** The spec's front matter is now C 125 / I 60 / L 6 (it
+  was C 53 / I 99 / L 8 at `main` `b2fcbc3f`). Statement `[C]` whole: rows 3, 5, 9–14, 18, 27, 28, 30, 35, 38–47, 51, 58,
+  60–62, 65, 66, 68, 73, 76–80, 93, 95, 98 (40). Split, the `[C]` half and the remainder `[I]` as the *Route* cell names:
+  1, 4, 16, 17, 19–22, 24, 25, 29, 31, 33, 34, 48, 50, 52, 53, 57, 59, 64, 69, 70, 75, 81, 82, 84, 86, 88–92, 94, 96
+  (35; rows 29, 69, 81 and 82, raised in part before S2ae's closing note, keep their remainders `[I]` on its routes).
+  Corrected to the finding: 2, 23 (2). Kept `[I]` (H2a, H2b, S2ae not settled, S2c not settled, d-none): 6–8, 15, 26,
+  32, 36, 37, 49, 54–56, 63, 67, 71, 72, 74, 83, 85, 87, 97, 99 (22). Row 2 (the at-a-point entry) is corrected to S2c part 1's
+  17 callers: three quest, seven missile, five skill functions and two monster AIs, no shrine; row 23 (B2's `useAmmo`)
+  to S2c part 2's six monster sites in six function bodies, both `[C]`. The pseudocode headers of B1, B2, D2, D3 and E1
+  (rows 16, 22, 33, 34, 50) keep their `[I]` with a `[C]` bullet stating what the run or emulation holds; the B2 and the
+  D2–D3 bullets each restate their remainder in one new `[I]`, and row 77 (callback `0x005CD110`, whole) adds one for
+  the walk after `PathPlan` (S2ae part 5 refinement 5). The refinements of S2ae parts 1–5 and 8 and of S2c are written
+  in: D4 (the `else` clamp, the count above 4, the `ECX` multiplier, the step written to `+0x72`/`+0x76`), B1 (the
+  guards, the room's neighbour fallback, the velocity's widths, the refusal's `neg`), the unique-mod-29 hook, D6's
+  last-hit and friend tests, the zig-zag and roll callbacks, do 34's `SubX`, `MissileDamageToStats`' flag bits and
+  stat-180 entries, mdo 31's unmark, and the reimplementation note on frozen weapon terms scoped to `MISSILE_BuildDamage`
+  (damage 11 and 13 read the owner, `[I]`). Two open questions are struck (the `VelLev` term, the critical chain's second
+  and third steps).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
