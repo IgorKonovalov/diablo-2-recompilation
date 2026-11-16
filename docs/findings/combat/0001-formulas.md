@@ -723,6 +723,9 @@ Read on 2026-10-16 before the Phase 2 logs (objdump of the pinned image, Ghidra 
   it then calls are not read. So "draws at least once more" above does not hold for the finisher's own step. [I]
   (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368–0x005D538C, fn:sub_00650E70_Copy64Out@0x00650E70,
   fn:sub_00650E60_Copy64In@0x00650E60)
+  *Update 2026-11-16 (plan 0066 S5fe, [§ 22](#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe)):*
+  the peek itself (the copy, the step on the seed itself, the restore, the value read once) is `[C]` there by two tools;
+  the entries' draws inside the finisher stay `[I]` (routed to H5b).
 - [I] **"State 38" is a state flag.** The test at `0x0056F19A` is `UNIT_HasStateFlag(attacker, 38)` (`0x0063A7B0` →
   `sub_0063A130_UnitHasStateInMask` over the 40 flag bit-sets): flag bit 38 is States `meleeonly`, set on `wolf` (139)
   and `bear` (140), not state row 38 (`thunderstorm`). With it, `sub_0056C2D0_AttackDeliverMeleeOnly` sets attacker
@@ -1447,9 +1450,10 @@ the `ROWS` tallies. The static claims rest on two tools reading the same bytes (
   value steps the seed and cannot succeed [565 cases with a negative 141 and a second step; `spec_141_gt0`, the note's
   reading, fails all 565]. The mastery half holds (the value is never below 0). (0x0064A8A5–0x0064A8AE,
   run:2026-11-16-sweep2-s5fe)
-- [C] *README 25 (`SrcMissDmg`).* In `sub_0064B860_MissileDamageBlock`, the branch for a row with `SrcDamage` 0
-  (`+0x12D` = 0) and `SrcMissDmg` (`+0x12E`) non-zero calls the chain with ESI = its third argument (the source unit)
-  and a pushed weapon of 0 (0x0064BD07–0x0064BD15), only when that argument is non-null; with a null weapon the chain
+- [C] *README 25 (`SrcMissDmg`).* In `sub_0064B860_MissileDamageBlock`, the call site at 0x0064BD15 (the `SrcMissDmg` branch
+  by the row's reading in skills/0002, which keeps its `[I]`: the `+0x12D`/`+0x12E` tests are not in the site listing)
+  calls the chain with ESI = its third argument (`[ebp+0x10]`) and a pushed weapon of 0 (0x0064BD07–0x0064BD15), only
+  when that argument is non-null (0x0064BD0C); with a null weapon the chain
   makes one or two steps and no mastery call [`weapon` 557: no third step without one]. Two tools on the call site
   (`static.txt` `mdb-src-site`), the chain's map from the run. That the third argument is the source missile is the
   caller's reading and keeps its tag. (fn:sub_0064B860_MissileDamageBlock@0x0064B860, 0x0064BD15,
