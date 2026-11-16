@@ -519,6 +519,10 @@ and predicts every line from § 1–§ 8 (method and counts in the run record). 
   run:2026-10-17-stats)
   - *Correction 2026-11-15 (plan 0066 S4d part 2):* counted over the kept logs, 136 is the commonest gap in 12 of the
     18 sessions and all 10 of run:2026-10-20-shortfalls; in six it is 1 (bursts after actions). Still `[I]`.
+  - *Update 2026-11-16 (plan 0066 S4e part 5f, § 14):* what queues the idle refresh is read: `ActsClockPass` calls
+    `PlayerEquipRefresh(…, 1)` for each client's player of an act slot whose `ActClockTick` returns non-zero (0x0052D7D2,
+    0x0052D822) `[C]` (static); that the 136 is act index 3's bucket period stays `[I]`.
+    (fn:sub_0052D7B0_ActsClockPass@0x0052D7B0, fn:sub_0055FDE0_PlayerEquipRefresh@0x0055FDE0)
     (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, [stats/experiments § Addendum S4d part 2](experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
   - [C] *Correction 2026-11-15:* the body-to-cursor pickup unlinks the item through `sub_0063AAF0_InvItemRemove` →
     `UNIT_UnlinkItemStatList`, not `ITEMS_DetachFromOwner` (260 unlinks with no detach in the frame); and the
@@ -778,7 +782,8 @@ the Ghidra reading named. Rows: stats/aggregate 2, 10, 29, 31, 36, 40, 41.
 - [C] (static) **Aggregate 31, the ethereal half in part.** `ITEMS_MakeEthereal(item)` sets flag `0x400000` on its
   argument (`ITEMS_SetFlag`, 0x0065E502) and writes the argument's stats through `sub_00627260_UnitSetStat`, each with
   `ESI` (the argument) pushed: 21..24, 159, 160 for a type-45 base, else 31 (0x0065E52F..0x0065E5EA); it has 3 rel32
-  callers (`ItemRollEthereal`, `PROP_Func23_Ethereal`, `CubeModApply`). (fn:ITEMS_MakeEthereal@0x0065E4D0,
+  callers (`ItemRollEthereal`, `PROP_Func23_Ethereal`, `CubeModApply`), beside items/0006's reading of the same stat set
+  (weapon 21..24, 159, 160, else 31). (fn:ITEMS_MakeEthereal@0x0065E4D0,
   run:2026-11-16-sweep2-s4e-emu)
 - [I] "Only" stays `[I]`: the flag's other users (19 `push 0x400000` in 12 functions, `xref.txt`) were not read.
   (fn:ITEMS_MakeEthereal@0x0065E4D0)

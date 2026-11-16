@@ -562,7 +562,8 @@ notes) and items/inventory 25–27.
   0x005BF395; 1 123; `no_clear` 1 123), a use returning 1 makes `ItemUse` return 1 (192; `use_ret0` 192), and the rest
   end at kind 3's callees as in § 15 (431). Flag 4 is set before the use or the test in all 2 095 cases that reach one
   (dumped). **Not met:** a test returning 0 (kind 1's test returns 1 on both its paths, 0x005BE16F, and no other kind has
-  a test) and a use return other than 0 or 1. After `InvClearUseMark`, `[I]`: message `0x7C` goes through
+  a test: `ItemUse`'s entry table at 0x00741790, count 31 at 0x0074178C, has a non-zero test dword in entry 1 only, and
+  `ItemUse` is the table's only referrer; the architect's check read this with objdump, no kept output) and a use return other than 0 or 1. After `InvClearUseMark`, `[I]`: message `0x7C` goes through
   `SendUnitPacket6` (0x005BF345, 0x005BF3B1) → `ClientQueuePacket` (0x0053B3EE), which can allocate (0x0040B430 at
   0x0053B2DD; ruling R2 → H4c). (fn:sub_005BF240_ItemUse@0x005BF240, fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130,
   0x005BF320, 0x005BF38C, 0x005BF3B6, run:2026-11-16-sweep2-s4e-emu)

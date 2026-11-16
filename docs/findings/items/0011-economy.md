@@ -376,6 +376,10 @@ flowchart TD
   *S4e part 2 (2026-11-16):* `max buy [3]` is read in mode 0 (0x0062FCFA, `rec + 0x4C`), just not used; the
   `Level` read past `(H)` happens for a body part only. [C] for the price core's map, run:2026-11-16-sweep2-s4e-emu;
   the caller's arguments stay [I] ([§ S4e part 2](#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu)).
+  *S4e part 5f (2026-11-16):* the caller's arguments are `[C]` (static, objdump pins and the call's pushes beside the
+  call named here): `D2S_WriteCorpses` calls `sub_0062FDC0_ItemTradePrice(player, item, 3, quest word, 0x201, 0)` at
+  0x005698B4 and adds the return to `EBX` (0x005698B9); what the sum chooses stays [I]
+  ([items/0013 § 19](0013-grids-belts-stacks.md#19-plan-0066-batch-s4e-part-5f-the-servers-record-reads-and-the-quality-9-writers-run2026-11-16-sweep2-s4e-emu-static)).
 
 ### 6. Gold: costs, caps, drops, death
 
