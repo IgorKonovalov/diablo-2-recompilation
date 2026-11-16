@@ -4517,3 +4517,47 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   - **`MonAiPreChecks`, `MonSpcWalkCheck`** (README 39, 42) and the **hand maps** (README 43): unchanged from part 1's
     note.
 - **Review:** none yet. The Tier B request comes when S1ne is whole.
+
+### 2026-11-16 — Phase 1, batch S1ne part 3 (reverser-static, `lane/n66ne`): closed; 7 of the 14 rows settled, 7 not settled
+
+- **Done.** `main` `e7e29642` was already in the branch (merged at part 2); nothing to merge. One new tool,
+  `tools/ai_s1ne3_emu.py` (`4ff5089a…`), imports part 1's `tools/ai_s1ne_emu.py` and `tools/ai_s1e_emu.py` unchanged
+  (it adds `UNIT_GetSizeX`'s type-3 case in its own process). One kept EmuBoundary launch on `workspace/ghidra-n66ne`
+  (`-Xmx3G`, `MemoryMax=4G`): `s1ne3`, 4 families (`init`, `prechk`, `forced` 200 cases, `hcand` 400), 1 000 cases,
+  0 mismatches, 0 unaccounted traced accesses, 46 controls, every one separated, `passed` 0. Observed boundaries:
+  `MonAiIdle`, 0x00648EB0, `MonAiStepAway`, `MonAiWanderNearUnit`, `InMeleeRange`, `UnitLineBlocked`, `MonAlignSet`,
+  `AiUnitSearch`, `LogicRegionIdAt`, and under ADR-0029 (c) `MonAiInit`'s call instructions 0x005B0F18 (the row's
+  init) and 0x005B0F30 (KERNEL32 `IsBadCodePtr`, slot 0x006CC34C). The AI class and state rows are image constants,
+  read by the tool from `game.exe`'s `.data`. The record is
+  [run:2026-11-16-sweep2-s1ne-p3](../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p3):
+  `workspace/logs/n66ne/s1ne/run3/` (`manifest.sha256` `68f39ec9…`, 13 lines, passes from there; `check.txt`
+  `8f8b5626…`); the development run is in `dev3/` (own manifest). `run/` and `run2/` are unchanged. The claims are in
+  [ai/0001 § 16](../findings/ai/0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne).
+- **Rows (14).** **Raised 2:** machinery 51 (kind 3's `RangePow2` on the acting unit's seed, 48 cases) and 52 (one
+  `Range 100` step for a state-146 player candidate, 7 cases; control `cand player` 16). **Raised in part 5,** each
+  remainder after an observed boundary → b, named in the Route cell: machinery 13 (`MonAiForcedTarget`), 16
+  (`AiHostileCandidate`), README 29 (`MonAiInit` E1), 31 (the alt bridge; the alt's own second call not run), 39
+  (`MonAiPreChecks`). **Not settled 7, they stay `[I]`** with their routes in the rows: machinery 5, 6, 11, 12
+  (`MonAiFindTarget` A2: an EmuBoundary family with `UnitLineBlocked`, `InMeleeRange` and `MonAiPreferDecoy` as
+  boundaries and the walk run whole on an outdoor room), 14 (`MonAiFindHostile`: the forced map on kind 0, `AiUnitSearch`
+  as a boundary or run on declared rooms), README 42 (`MonSpcWalkCheck`: `UModTeleportTry`, `AiApproachPointTest`,
+  `AiUnitSearch`, `MonAiWanderRing` as boundaries) and 43 (the hand maps of rows 6, 13, 28, 29, 35 as `ai_cat_emu`
+  families). No class moves.
+- **S1ne closed** (parts 1–3): of 44 rows, raised 22, raised in part 15, not settled 7; inventory README's S1ne Status
+  cell updated.
+- **Corrections** go to Phase 3 through the existing entry
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md),
+  as a dated paragraph (items 12–16): E1's state-54 test first, the parameter free on MonsterData's control and the
+  unstated `IsBadCodePtr` check; A3's kind 0 not cleared, a kind past 4 cleared, the flag choosing the line test and
+  the search kind, the out distance sized by the found unit; A6's test order and the room-less candidate; KeepNear's
+  three clears and signed compares; OpenDoor's bit.
+- **Symbols:** none (an emulation over a declared image, review-fixes 14).
+- **Totals** (`tools/quests_s3c.py totals`, `bad=0`, on `main` `e7e29642` merged, unchanged by S1ne): a-logs 622,
+  a-run 334, b 562, c 389, c-emu 390, d-2c 59, d-edit 24, d-none 178, d-owner 68 = 2 626.
+- **Judgment calls.** (1) ADR-0029 (c) applied to an indirect call that is not an import (0x005B0F18, the row's
+  init), as a stop at a call instruction. (2) The class and state rows read from the pinned `game.exe` by the checker,
+  not transcribed. (3) Machinery 52 raised on 7 player draws, each with the seed compared, the monster and no-state
+  paths showing no step.
+- **Review:** Tier B requested
+  ([request](../backlog/2026-11-16-reverser-architect-tier-b-review-plan-0066-s1ne.md)); the first check since the
+  S2be audit restarted the count.

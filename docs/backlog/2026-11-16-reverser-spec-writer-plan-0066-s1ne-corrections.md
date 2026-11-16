@@ -46,3 +46,24 @@ and [run:2026-11-16-sweep2-s1ne-p2](../findings/ai/experiments.md#run2026-11-16-
     that byte is 0; the high bytes pass to `MonAiMove` unchanged.
 11. Machinery reimplementation note on row 125 (L1025): Skill1 is sign-extended (`movsx`, 0x005E378C) into
     `MonAiUseSkill`'s skill argument.
+
+[2026-11-16] reverser (S1ne part 3, `lane/n66ne`, the closing part): five more items for the same Phase 3 pass, on
+[ai/0001 § 16](../findings/ai/0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne)
+and [run:2026-11-16-sweep2-s1ne-p3](../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p3). Seven S1ne rows stay
+`[I]` with their routes in the inventory (machinery 5, 6, 11, 12, 14; README 42, 43): no rewording for them.
+
+12. README E1 (`MonAiInit`): the state-54 test (`UNIT_HasState(U, 54)`, fatal) comes before the null tests; "free the
+    parameter records" acts on MonsterData `+0x28`'s control, not on the `ctl` argument; after the state and think
+    stores the think is passed to KERNEL32 `IsBadCodePtr` and a non-zero return is fatal (0x005B0F30–0x005B0F43, a
+    reading: the import was not run). "Returns without setting anything when a record is missing" holds, with the
+    `+0x14/+0x18/+0x1C` clears and the free already done, as the pseudocode's order says.
+13. Machinery A3 (`MonAiForcedTarget`): kind 0 returns 0 with no clear; a kind past 4 (unsigned) clears. The line test
+    and the kind-6 search are chosen by the function's flag argument (non-zero), the kind-5 search by flag 0, not by
+    the caller's name. The out distance is `AiDistUnits(found, unit)`, sized by the found unit.
+14. Machinery A6 (`AiHostileCandidate`): the candidate's death is tested before the searcher's; a candidate with no
+    room counts as not in town.
+15. README F1 (`MonAiPreChecks`) and machinery § E (`MonAiKeepNear`): `KeepNear` clears `AiCtl+0x0C` to −1 when the
+    class may not take mode 2, when the unit is not found or when it is dead; the distance compares (`> 1`, `> 20`)
+    are signed, and `StepAway(found, 19, 1)` is taken only for a player (type 0), a monster at `d ≤ 1` returning 0.
+16. README F2 (`MonAiOpenDoor`): the opendoors bit is MonStats `+0x0C` bit 3 of the `ctx` record (`ctx+0x1C`), tested
+    before the collision read.

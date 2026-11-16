@@ -2134,3 +2134,58 @@ Plan 0066 Phase 1, batch S1m (`lane/n66m1`, reverser-static). No game, no Ghidra
 - **Not covered:** `MonAiMove` and `MonSetMode` and everything after them; `AiParamsAlloc`/`Push`/`Pop`;
   `AiParamsFind` on a list that is not circular; the target search, `MonAiInit`, `MonAiPreChecks`, `MonSpcWalkCheck`
   and the hand maps (S1ne part 3).
+
+## run:2026-11-16-sweep2-s1ne-p3
+
+- **Question:** (plan 0066 Phase 1, batch S1ne part 3) Do `MonAiInit`, `MonAiPreChecks`, `AiHostileCandidate` and
+  `MonAiForcedTarget` map their declared image to their return, or to the registers and arguments of their observed
+  boundary call, as monsters/ai README E1, E2, F1 and machinery A3, A6 and F state them (at `b5999f5e`)? Ruling R2
+  applies.
+- **Setup:** as [run:2026-11-16-sweep2-s1ne](#run2026-11-16-sweep2-s1ne): EmuBoundary (unchanged), project copy
+  `workspace/ghidra-n66ne`, heap 3 GB, the headless run inside `systemd-run --user --scope -p MemoryMax=4G`. No wine,
+  no slot. New tool `tools/ai_s1ne3_emu.py` (`4ff5089a…`). It imports `tools/ai_s1ne_emu.py` and `tools/ai_s1e_emu.py`
+  unchanged (their image, `W`, `E` and callee models; `UNIT_GetSizeX`'s type-3 case added in its own process) and
+  draws from `random.Random("n66ne3-<family>")`: `init`, `prechk`, `forced` 200 cases each, `hcand` 400, 1 000 in all.
+  Image constants read unwritten and accounted by range: `g_BitMask32`, `g_UnitHashOffsets`, the `UNIT_GetSizeX` jump
+  table, the AI class rows 0x0073CA18 and state rows 0x0073D358 (read by the tool from `game.exe`'s `.data` through the
+  PE section table), `LevelIsTown`'s jump table and index bytes 0x006426C0, and `MonAiForcedTarget`'s kind table
+  0x005DD7D8. Guards as part 1. Observe: 0x005B0F18, 0x005B0F30 (ADR-0029 (c), the call instructions), 0x005DE080,
+  0x00648EB0, 0x005DEFE0, 0x005DF530, 0x00622C40, 0x00622AA0, 0x005543B0, 0x005DD0B0, 0x0061B130. The `init` and
+  `forced` cases dump the 0x200 bytes below the entry `ESP`, from which the checker takes `MonAiInit`'s `blk` and the
+  search block.
+- **Procedure** (from the worktree root; `D=workspace/logs/n66ne/s1ne/run3`):
+  ```
+  python3 -I tools/ai_s1ne3_emu.py cases --dir $D
+  GHIDRA_PROJ_DIR=workspace/ghidra-n66ne GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -q -p MemoryMax=4G \
+    tools/ghidra.sh emuboundary $D/s1ne3.cases $D/s1ne3.mem > $D/s1ne3.out 2> $D/s1ne3.err
+  python3 -I tools/ai_s1ne3_emu.py check --dir $D > $D/check.txt
+  python3 -I tools/ai_s1ne3_emu.py manifest --dir $D --write
+  ```
+- **Outputs:** `$D/manifest.sha256` (`68f39ec9…`, 13 lines: `check.txt` `8f8b5626…`, `s1ne3.out` `f03750ee…`,
+  `s1ne3.cases` `f18c4c83…`, the memory spec, the stderr log, `tool.sha256` and the seven images). `sha256sum -c
+  manifest.sha256` passes from `$D`; `tool.sha256` (the new and the two imported tools, EmuBoundary and `ghidra.sh`)
+  passes from the worktree root. `cases` regenerates its files byte for byte. Development runs:
+  `workspace/logs/n66ne/s1ne/dev3/` (its own `manifest.sha256`, passes from there) holds the last one, with the same
+  tool and the same `check.txt` as the kept run; the first (1 000 matched, 2 unaccounted writes through a stub
+  parameter record, 3 unseparated strictness controls, before the two-record list and the edge cases were added) was
+  overwritten in place and is not cited.
+- **Observed** (`check.txt`):
+  ```
+  S1NE3 init   cases=200 match=200 bad=0 ret=118 stop=8 (3 fatal, 5 pool free) controls=14 separated=14 passed=0
+         OBS 005b0f18:9 005b0f30:65
+  S1NE3 prechk cases=200 match=200 bad=0 ret=124 controls=11 separated=11 passed=0
+         OBS 005de080:31 005defe0:4 005df530:4 00648eb0:37
+  S1NE3 hcand  cases=400 match=400 bad=0 ret=386 controls=10 separated=10 passed=0   OBS 00622c40:14
+  S1NE3 forced cases=200 match=200 bad=0 ret=104 controls=11 separated=11 passed=0
+         OBS 005543b0:26 005dd0b0:14 0061b130:8 00622aa0:48
+  S1NE3 traced unaccounted: 0;  total cases=1000 match=1000 result=ok
+  ```
+- **Conclusion:** [ai/0001 § 16](0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne):
+  - `MonAiInit` holds to its two indirect calls (E1, E2's first call), with the state-54 fatal test first and the
+    parameter free on MonsterData's own control;
+  - `MonAiPreChecks` holds to `MonAiIdle(3)`, `MonAiOpenDoor`'s collision read and `MonAiKeepNear`'s boundaries, its
+    0 returns run whole;
+  - `AiHostileCandidate` holds to `InMeleeRange`, with the player draw on the candidate's seed;
+  - `MonAiForcedTarget` holds to its boundaries, with the confusion draw on the acting unit's seed.
+- **Not covered:** everything after a boundary; `MonAiFindTarget`, `MonAiFindHostile`, `MonSpcWalkCheck` and the hand
+  maps (left `[I]` at S1ne's close).

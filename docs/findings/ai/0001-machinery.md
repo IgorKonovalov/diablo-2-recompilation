@@ -851,6 +851,88 @@ Nothing after either boundary is claimed: what `MonAiMove` does on a refusal (B6
   Skill1 and both chances taken, the call is `MonAiUseSkill(5, Skill1, t, 0, 0)` with Skill1 **sign-extended**
   (`movsx`, 0x005E378C) and no sign test. (fn:sub_005E36F0_AiBloodLord@0x005E36F0, run:2026-11-16-sweep2-s1ne-p2)
 
+### 16. Plan 0066 batch S1ne part 3: `MonAiInit`, `MonAiPreChecks`, `AiHostileCandidate` and `MonAiForcedTarget` (2026-11-16, `lane/n66ne`)
+
+Four functions run under EmuBoundary on § 14's declared image (`tools/ai_s1ne3_emu.py`; record
+run:2026-11-16-sweep2-s1ne-p3, `check.txt`): 200 cases a family (400 for `hcand`), 1 000 in all, 0 mismatches,
+0 unaccounted traced accesses, 46 controls, every one separated, `passed` 0. Image constants read unwritten and
+accounted by range: `g_BitMask32`, the AI class rows 0x0073CA18 (0x94 × 16 bytes) and state rows 0x0073D358 (18 × 16),
+which the tool reads from the pinned `game.exe`'s `.data` through the PE section table, `LevelIsTown`'s jump table and
+index bytes 0x006426C0, the `UNIT_GetSizeX` jump table and `MonAiForcedTarget`'s kind table 0x005DD7D8. Observed
+boundaries (ADR-0021): `MonAiIdle` 0x005DE080, 0x00648EB0 (`MonAiOpenDoor`'s collision read), `MonAiStepAway`
+0x005DEFE0, `MonAiWanderNearUnit` 0x005DF530, `InMeleeRange` 0x00622C40, `UnitLineBlocked` 0x00622AA0, `MonAlignSet`
+0x005543B0, `AiUnitSearch` 0x005DD0B0 and `LogicRegionIdAt` 0x0061B130; and, under ADR-0029 (c), `MonAiInit`'s two
+indirect call instructions, 0x005B0F18 (`call [row+4]`, the row's init) and 0x005B0F30 (`call [0x006CC34C]`, KERNEL32
+`IsBadCodePtr`). At a stop the case compares the call's return address (none at the two call instructions), the
+registers the callee takes, its stack arguments and the words dumped; nothing after a boundary is claimed.
+`UNIT_GetSizeX`'s type-3 case (the missile record 0x0046ACE0) gives 0 on the declared image, where DataTables `+0xB6C`
+is 0; the tool adds that case to part 1's size map in its own process only.
+
+- [C] **`MonAiInit(G, U; ctl, state)`** (README E1). `UNIT_HasState(U, 54)` is tested first and takes the fatal path
+  (3 cases, the `STOP` lines at 0x00408090 in `s1ne3.out`); then a null `G`, `U` or `ctl`, a signed `state ≥ 18` (19) or a non-monster returns with no store. A class
+  at or past the MonStats count (signed) sets the state to 1 (48). With `AiCtl.think ≠ 0`, equal to the think of
+  `MonAiEntryGet(U, AiCtl.state)` (the row of the **current** state), and that row's `alt ≠ 0`, it stores the new state
+  and the alt and returns (23 cases). Otherwise it zeroes `AiCtl+0x14/+0x18/+0x1C` and calls `AiCtlParamsFree(G, U)`;
+  then `r ← MonAiEntryGet(U, state)`. With `r.init ≠ 0` and both the MonStats and MonStats2 records present it reaches
+  `r.init(G, U, &blk)` with `blk = {ctl, 0 × 6, MonStats rec, MonStats2 rec}` (9 cases, the 0x24 bytes compared from the
+  stack dump); with a record missing it returns, the clears made (2). With `r.init = 0` it stores the state and
+  `r.think`, or 0x005B0CD0 when that is 0, and reaches the `IsBadCodePtr(think)` call (65). Controls: 14, among them
+  `state<18~` 3, `class<count~` 1, `think=row think` 42, `alt!=0` 40, `init!=0` 76. A negative state reads the class
+  rows below the state table (`0x0073D358 + 16·state`). **Refinement:** `AiCtlParamsFree` works on MonsterData `+0x28`'s
+  control, not on the `ctl` argument; a parameter record there (`+0x24 ≠ 0`) reaches the pool free 0x0040B480 (5 cases).
+  (fn:sub_005B0E00_MonAiInit@0x005B0E00, 0x005B0E14, 0x005B0E6D, 0x005B0E94, 0x005B0EB5, 0x005B0F18, 0x005B0F30,
+  fn:sub_0058EDE0_AiCtlParamsFree@0x0058EDE0, run:2026-11-16-sweep2-s1ne-p3)
+- [I] **After `MonAiInit`'s two calls**: on the init path the state and think are stored after the init returns
+  (0x005B0F1B–0x005B0F2D, the same stores), and a non-zero `IsBadCodePtr` return takes the fatal path with line 0x1F2
+  (0x005B0F36–0x005B0F43); E1 does not state that check. That the alt then calls `MonAiInit` again with its state
+  (README E2's second call) is `AiHireableAlt`'s (0x005E52AB), not run.
+- [C] **`MonAiPreChecks(G, U; ctx)`** (README F1) to its boundaries. State 21 → `MonAiIdle(G, U; 3)` (31 cases). Else
+  `MonAiOpenDoor`: a MonStats record (`ctx+0x1C`) with `+0x0C` bit 3 reaches the collision read 0x00648EB0 with the
+  unit's path (37); with the bit clear it returns 0 and `MonAiKeepNear(G, U; ctx)` runs whole. `KeepNear` returns 0
+  when `AiCtl+0x0C` is −1 (15); it sets `+0x0C ← −1` and returns 0 when `MonModeAllowed(class, 2)` fails (94), the unit
+  `GameFindUnit(G, AiCtl+0x10, AiCtl+0x0C)` is missing (3) or dead (7). With `d = AiDistUnits(U, found)` (signed): `d ≤ 1`
+  and type 0 → `MonAiStepAway(G, U; found, 19, 1)` (4); `d > 20` → `MonAiPathOverride(U, 7; 0, 40)` then
+  `MonAiWanderNearUnit(G, U; found, 19)` (4); otherwise 0 (5), and `MonAiPreChecks` returns 0. Controls `d>1~` and
+  `d>20~` (edge distances 1 and 20) separate 1 and 2 cases. (fn:sub_005B10E0_MonAiPreChecks@0x005B10E0,
+  fn:sub_005B0F50_MonAiOpenDoor@0x005B0F50, fn:sub_005B0FF0_MonAiKeepNear@0x005B0FF0, 0x005B1080, 0x005B10AC,
+  run:2026-11-16-sweep2-s1ne-p3)
+- [I] **After those boundaries**: the 1 returned after `MonAiIdle`, after a door is operated and after `StepAway` or
+  `WanderNearUnit` (0x005B1101, 0x005B111B, 0x005B10A2, 0x005B10D3), and the door path past 0x00648EB0 (search kind 8,
+  0x00584540, `MonAiIdle(5)`).
+- [C] **`AiHostileCandidate(EDI searcher, ESI cand; G)`** (machinery A6) to `InMeleeRange`. It returns 0 unless both
+  units are non-null of type 0 or 1, the candidate and then the searcher are alive (`UnitIsDead`), the candidate's room
+  is not a town (`RoomIsTown`, no room counting as not a town; 25 refused) and the candidate's `+0xC4 & 4` is set (31
+  refused). A candidate with state 146: a **player** draws `RNG_Range(candidate seed, 100)` (one step, the seed
+  compared), and a draw below 80 reaches `InMeleeRange(searcher, cand, 0)` (5 cases; 2 at 80 or more go on); a
+  **monster** reaches `InMeleeRange(searcher, cand, 0)` with no draw (9). Every other path returns
+  `UnitsHostile(G, searcher; cand)` (73: 22 hostile). Controls: `cand player` 16, `draw<80` 7, `draw<80~` 1 (a draw of
+  exactly 80). (fn:sub_005DC970_AiHostileCandidate@0x005DC970, 0x005DC9BC, 0x005DC9FA, 0x005DC9FF,
+  fn:sub_00554200_UnitsHostile@0x00554200, run:2026-11-16-sweep2-s1ne-p3)
+- [I] **After `InMeleeRange`**: the player is refused when it is **not** in melee range and the monster when it **is**
+  (0x005DCA0F, 0x005DC9EA); what `InMeleeRange` computes is not run.
+- [C] **`MonAiForcedTarget(EAX G, ESI U; p, flag, outUnit, outDist)`** (machinery A3) to its boundaries. A unit that is
+  not a monster, or forced kind 0 (`MonsterData+0x38`), returns 0 with no store. A kind past 4 (unsigned) clears the
+  kind and guid (`+0x38`, `+0x34`) and returns 0 (31 cases). Kinds 1, 2 and 4 look the guid up with
+  `GameFindUnit(G, 0, 1 or 3; guid)` (31, 25, 28); none found clears (9). Then `d ← AiDistUnits(found, U)` (the found
+  unit's size). With `flag ≠ 0` the case reaches `UnitLineBlocked(found, U, 4)` (48). With `flag = 0`: a found unit not
+  of type 0, 1 or 3 clears, a dead player or monster clears (7), otherwise `*outUnit ← found`, `*outDist ← d` and it
+  returns 1 (14); a type-3 unit has no death test. Kind 3 draws `RNG_RangePow2(U seed, 2)` on the **acting unit's**
+  seed (48 cases, the seed compared), then calls `MonAlignSet(U, new; 1)` with `new` 2 for alignment 1 and draw 1, 0
+  for alignment 1 and draw 0, 2 for alignment 0 and draw 1, 0 for alignment 2 and draw 1 (26); with no call (alignment 0
+  or 2 and draw 0, or another alignment) it goes to the search: `flag ≠ 0` → `AiUnitSearch(G, U; &blk, 0, 6)` with
+  `blk = {0, 0x7FFFFFFF, 0, 0x7FFFFFFF}` (14), `flag = 0` → `LogicRegionIdAt(room, x, y)` of the unit (8), the kind-5
+  search after it. **Refinements:** kind 0 is not cleared, a kind past 4 is; the flag, not the caller, picks the line
+  test and the search kind. (fn:sub_005DD610_MonAiForcedTarget@0x005DD610, 0x005DD63B, 0x005DD668, 0x005DD6C5,
+  0x005DD6F5, 0x005DD75D, fn:sub_00573120_MonForcedTargetClear@0x00573120, run:2026-11-16-sweep2-s1ne-p3)
+- [I] **After those boundaries**: the clear on a blocked line, the kind-5 and kind-6 searches and the alignment
+  restore (0x005DD76F), the taking of the search's unit, and which callers pass a non-zero flag
+  (`MonAiFindHostile` 0x005DDC4C; `MonAiFindTarget` 0x005DD861).
+- **Not settled in S1ne** (no run; each stays `[I]`): `MonAiFindTarget` A2 a–f with the list walk, the range, the
+  list skip and the flag-`0x08`/`0x40` cases (machinery rows 5, 6, 11, 12), `MonAiFindHostile` (row 14),
+  `MonSpcWalkCheck` (README F4) and the hand maps (README G). Routes are in the inventory rows.
+  (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0, fn:sub_005DDC30_MonAiFindHostile@0x005DDC30,
+  fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0)
+
 ## Data touched
 
 - tbl:MonStats.txt:AI (`+0x1E`), tbl:MonStats.txt:aidel (`+0x4F`), tbl:MonStats.txt:aidist (`+0x52`),
