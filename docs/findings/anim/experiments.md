@@ -958,13 +958,13 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
   `Data.speeds` (109 rows per load with no walk record, 62 of them their own class: word 256 in 62 of 62); ALF: 4 834
   fallback returns (all 2 048/256, name and event bytes zero, names absent from `animdata.d2`; callers 0x00650F4D
   1 199, 0x00650FB3 3 003, 0x00620F40 632: FS 522, BN 104, MO 6, mode 14); floors: 105 monster moving calls below 25
-  (least X −15) and 111 monster attack calls below 15 (least 10), all equal, every control (floors 24/26/none, 14/16/none,
+  (X −15, −9, 5 and 8) and 111 monster attack calls below 15 (all at X 10: the constant 15 at one input value, the threshold for X 11–14 stays `[I]`), all equal, every control (floors 24/26/none, 14/16/none,
   the path speed without the floor) differing in all of them; the attack's 175: 37 player calls, controls differ in 37;
   the default branch below 15: 139 monster and 14 player calls equal. Not reached: a player moving X below 25 (least 150)
   or attack X below 15 (least 80), block q ≤ 0 (least block rate 100), q at or above 0x7FFF, a moving call with no
   path, a Velocity-0 class below 410 in S1–S4, an absent-record `HumanAttackFrames` (233 returns), the name look-up's
   absent branch, a row with a later `BaseId` (0 of 734). `+0x48` and `+0x44` are as at the call's entry in 48 118 of
-  48 118 calls (23 561 changed the record pointer, 23 489 of them at starts; 72 mid-mode, players). 833 shapeshift calls
+  48 118 calls (25 272 changed the record pointer, 25 200 of them at `UNIT_AnimInit`'s own calls; 72 elsewhere, all players). 833 shapeshift calls
   equal. 3 074 init attack calls: the rate equals the model fed the live entry `+0x48` in 3 074; that entry equals the
   previous record's length in 3 040 and differs in 34. Dual wield: 186 attack calls equal (152 with differing hands,
   control without the term differing in 141); the linked hand is inferred from stat 68 (left 32, right 96, undecided 24).

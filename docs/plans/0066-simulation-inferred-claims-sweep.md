@@ -2934,16 +2934,17 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (`check-h6d.txt` `22d6dbdf…`, `check-anim.txt` `8eeade97…`, `manifest.sha256` `2fe0f52c…`, 37 lines, passes from
   there). `H6D total checks=189882 bad=0`; the existing `tools/anim.py check` (the control) `rate`/`name`/`record`
   48 118/0. Dated notes in anim/0001 § 2, anim/0002 § 3 and anim/0003 § 1.1.
-- **Rows settled (19).** Raised: timing 9, 11, 82, 83; movement 4, 8, 13. Raised in part: timing 44, 87, 90; movement 6, 14.
-  Remainders raised: timing 23, 88, 128 (in part 29). Not raised (no stock session reaches the case; stay b): timing 80,
+- **Rows settled (19).** Raised: timing 9, 82; movement 4, 8, 13. Raised in part: timing 11, 83 (the floor 15 met at X 10 only; the default branch's 175
+  not reached), 44, 87, 90; movement 6, 14. Remainders raised: timing 23, 128 (in part 29 and 88: the monster half of 88 is
+  unmet). The Tier B check split 11, 83 and 88. Not raised (no stock session reaches the case; stay b): timing 80,
   81, 84, 91, 129; movement 5, 15. Not attempted (provisional, stay H6d): timing 62's refused path, movement 22 (`+0x24`,
   the `+0x90` drop) and 23 (`PathStepTargetCheck`). None contradicted. **Prediction 4 failed:** the moving floor 25
-  (105 monster calls, least X −15) and the attack floor 15 (111, least 10) are reached by `sp-pal-slow`, all equal, every
+  (105 monster calls, least X −15) and the attack floor 15 (111, all at X 10) are reached by `sp-pal-slow`, all equal, every
   control separating; no player reaches them. Class cells unchanged (b), the outcome is in each Route cell.
 - **Asked of the owner or architect.** (1) The unreached floors and block's 1, the cap and the wrap (timing 80, 81, 84, 129,
   91, movement 5) need a stock-data scan for d-edit (ruling (b)), or a session with a negative FBR or an absent record
-  name; none was forced here. (2) Movement 15 needs a hunt for a Velocity-0 classic class in S1–S4 (31 classes, e.g. BN,
-  TN, TE, 9A, K9, DH); a hunt session or owner play. (3) Timing 62, movement 22 and 23 remain H6d-provisional: S6g and a
+  name; none was forced here. (2) Movement 15 needs a hunt for a Velocity-0 classic class in S1–S4 (57 stock classes below 410 have Velocity 0, 33 of them an S1 record, the Tier B check's count, not kept; 228 S1–S4 classic
+  calls were met, none of them Velocity-0); a hunt session or owner play. (3) Timing 62, movement 22 and 23 remain H6d-provisional: S6g and a
   `PathStep` line would take them. No other owner-played case is needed.
 - **Corrections (refinements; the spec's text is Phase 3's):** the floors are reached by monsters; the first call's
   `+0x48` is the live length of the previous mode (3 040 of 3 074 equal the previous record's, 34 do not); the
