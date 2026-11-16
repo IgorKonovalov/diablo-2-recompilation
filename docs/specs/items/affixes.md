@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/quality, items/uniques-sets, data/excel]
 consumed_by: [items/properties, items/vendors, items/cube, save/d2s, chain]
-tags: {C: 153, I: 28, L: 4}
-updated: 2026-10-27
+tags: {C: 154, I: 28, L: 4}
+updated: 2026-11-16
 ---
 
 # Affixes: alvl, magic and rare picks, automagic, and the other builders
@@ -522,8 +522,15 @@ Step notes:
 - E2. **The names come first**: `name1` from `rareprefix`, then `name2` from `raresuffix`, both before the count and
   every affix. They depend on the item's type and version only, never on its affixes. All 105 logged rares drew both
   names before the count. [C] (0x005C1C06, 0x005C1C26, fn:ITEMS_PickRareName@0x005C1AB0, run:2026-10-14-affixes)
-- E2. This spec stops at the merged name ids. Which string a name id is shown as is not traced in any finding; the
-  string lookups themselves are specified in [data/strings](../data/strings.md), whose Open questions carry this gap.
+- E2. This spec stops at the merged name ids. The string each id is shown as is traced in
+  [data/strings § D](../data/strings.md#d-key--index--strtable_getbykey), step note *Rare names, a load-time key and a
+  client-side index*: the load stores `STRTABLE_GetByKey` of the merged record's `name` at record `+0x0C`, and the
+  client shows `STRTABLE_GetByIndex` of that index (every hovered record had a non-zero one; what a 0 index shows is
+  inferred there). [C] (fn:sub_00633F40_LoadRareAffixes@0x00633F40, fn:STRTABLE_GetByIndex@0x00524A30,
+  0x0048C5FD, 0x0048C6E0, run:2026-10-27-sweep-data-load,
+  [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+  How the two texts are joined into one name line is the next step note there (*The rare name line is `RareFormat`*);
+  the `%n` substitution itself stays among data/strings' Open questions.
 - R2–R4. A name pick has no level and no weight: one uniform draw over the type-eligible rows (cap 511). `rareprefix`
   `Warp` and `Rift` name no `itype`, so they are never picked. [C] (fn:ITEMS_PickRareName@0x005C1AB0,
   tbl:RarePrefix.txt:itype1, tbl:RareSuffix.txt:etype1, run:2026-10-14-affixes)

@@ -2,14 +2,16 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/items/0013-grids-belts-stacks.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/items/0013-grids-belts-stacks.md
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–9 in items/inventory and items/use [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 4 (`lane/n66z`, run:2026-11-16-sweep2-s4e-emu part 4) ran the other item request handlers,
 `InvItemToCursor`, `InvPlaceItem` as `0x18` calls it, `InvPageGet` and `InvRowForUnit` under emulation. Claims in
-[items/0013 § 13](../findings/items/0013-grids-belts-stacks.md#13-plan-0066-batch-s4e-part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-invpageget-invrowforunit-run2026-11-16-sweep2-s4e-emu);
+[items/0013 § 13](../../findings/items/0013-grids-belts-stacks.md#13-plan-0066-batch-s4e-part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-invpageget-invrowforunit-run2026-11-16-sweep2-s4e-emu);
 rows in the 0066 inventory (items/inventory 15, 17, 23, 32–34, 36–40, 42, 45, 46, 99). For Phase 3, not blocking.
 Refinements to carry into items/inventory (no contradiction):
 

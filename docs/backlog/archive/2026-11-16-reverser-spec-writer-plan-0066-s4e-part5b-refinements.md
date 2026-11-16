@@ -2,15 +2,18 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/items/0013-grids-belts-stacks.md", "../findings/items/0012-use-inventory.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/items/0013-grids-belts-stacks.md
+  - ../../findings/items/0012-use-inventory.md
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–4 in items/use and items/inventory; item 5 needs no text (G3's after stays [I], H4d) [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 5b (`lane/n66z`, run:2026-11-16-sweep2-s4e-emu part 5b) ran `GolemHealShare` and
 `GolemHeal`, `ItemUsePotion`'s doubling draw at chosen draws, kind 3's return for amounts at and below 0, and
 `StackRequest` under emulation. Claims in
-[items/0013 § 15](../findings/items/0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu);
+[items/0013 § 15](../../findings/items/0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu);
 rows in the 0066 inventory (items/use 34, 38, 52; items/inventory 57, 58). For Phase 3, not blocking. Re-tags and
 refinements to carry into items/use and items/inventory (no contradiction):
 

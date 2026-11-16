@@ -308,7 +308,7 @@ event open at a log's end (the session killed inside it).
   refreshes drew nothing. (3) states 5: `UNIT_HasState` answers for players, monsters and missiles (type 3), not objects
   (type 2 answers 0). (4) aggregate 4: `0x2` on the unit list is the drop-on-mode marker, not "timed". (5) aggregate
   29, 42: 136 is the commonest gap in 22 of the 28 logs, not in every session (six s1017 logs: 1). Backlog
-  [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../../backlog/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+  [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
 
 ## The stats sessions of run:2026-10-20-shortfalls
 

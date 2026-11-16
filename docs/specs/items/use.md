@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, data/calc, stats/aggregate, stats/states, items/inventory, quests/travel]
 consumed_by: [items/inventory, stats/states, quests/travel, items/quest-drops, skills/catalogue]
-tags: {C: 52, I: 64, L: 9}
-updated: 2026-11-04
+tags: {C: 80, I: 45, L: 9}
+updated: 2026-11-16
 ---
 
 # Item use: the requests, the dispatch by use kind, potions and their draws
@@ -33,11 +33,11 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| Client packet `0x20`, use an inventory item (13 bytes: guid, x, y) | fn:sub_0054B1E0_Pkt20UseInvItem@0x0054B1E0 → fn:sub_0055E170_PlayerUseInvItem@0x0055E170 | [I] |
-| Client packet `0x26`, use a belt item (13 bytes: guid, the mercenary flag) | fn:sub_0054B560_Pkt26UseBeltItem@0x0054B560 → fn:sub_00562390_PlayerUseBeltItem@0x00562390 | [I] |
+| Client packet `0x20`, use an inventory item (13 bytes: guid, x, y) | fn:sub_0054B1E0_Pkt20UseInvItem@0x0054B1E0 → fn:sub_0055E170_PlayerUseInvItem@0x0055E170 | [C] the handler and its call: 12 `PKT` `0x20` each run one `UP0` before their `PKR`, the handler is the packet table's row `0x20`, objdump reads its call (run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)); the length and fields as § B |
+| Client packet `0x26`, use a belt item (13 bytes: guid, the mercenary flag) | fn:sub_0054B560_Pkt26UseBeltItem@0x0054B560 → fn:sub_00562390_PlayerUseBeltItem@0x00562390 | [C] the handler and its call: 6 `PKT` `0x26`, five with a `UP0` before their `PKR` (one refused), row `0x26` of the table, objdump reads the call (run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)); the length and fields as § B |
 | Client packet `0x27`, an item on an item (9 bytes: target guid, used guid) | fn:sub_0054B280_Pkt27ItemOnItem@0x0054B280 → fn:sub_00561ED0_PlayerUseItemOnItem@0x00561ED0 | [I] |
 | Client packet `0x61`, the mercenary button (3 bytes) | fn:sub_0054D430_Pkt61MercItem@0x0054D430 → fn:sub_0054D230_MercGiveCursorItem@0x0054D230 | [I] |
-| Skill do 113 reaches the first two as well ([skills/catalogue N3](../skills/catalogue.md)) | fn:sub_005BF3D0_SkillDo113UseBookScroll@0x005BF3D0 | [I] |
+| Skill do 113 reaches the first two as well ([skills/catalogue N3](../skills/catalogue.md)) | fn:sub_005BF3D0_SkillDo113UseBookScroll@0x005BF3D0 | [C] direct calls of both, read by objdump beside the first reading ([items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) |
 
 ## Inputs
 
@@ -72,7 +72,7 @@ columns are bytecode ([data/calc](../data/calc.md)); `eval` below is `ITEMS_Eval
 | `g_ItemUseFns` | 31 `{test, use}` pairs; `use` in entries 1..11 only, `test` in entry 1 only | data:g_ItemUseFns@0x00741790, [Misc](../../tables/Misc.md#the-use-dispatch-pspell-selects-a-g_itemusefns-entry) | [C] |
 | exempt opcodes | `0x14`, `0x15`, `0x3C`, `0x43`, `0x66` | 0x0054D7DC, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan | [C] (ADR-0021, ADR-0029 (c)): they reach the import's call |
 | refused state, modes | state 54; modes 0 and `0x11` | fn:sub_0054D750_SrvPacketDispatch@0x0054D750, run:2026-11-04-ground-emu | [C] (ADR-0015) |
-| request position reach | 50 per axis, as `u16` | fn:sub_00548EF0_PktPosFar@0x00548EF0, 0x0054B222 | [I] |
+| request position reach | 50 per axis, as `u16`: refused when `abs(pos − u16(v)) > 50`, signed, with a 32-bit `neg`, so a difference of −2³¹ passes; `pos` is the static path's dwords for unit types 2, 4, 5, else the dynamic path's `u16`, 0 with no path; the 50 is the callers' `EBX` | fn:sub_00548EF0_PktPosFar@0x00548EF0, 0x0054B222, 0x0054B602 | [C] (ADR-0021) (family `pos`, 1 500 cases, run:2026-11-16-sweep2-s4e-emu, [items/0013 § 12](../../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu)) |
 
 ## Algorithm
 
@@ -112,7 +112,7 @@ flowchart TD
 ```
 
 ```
-A1. Drain (queue 1, FIFO, all clients and games):                    [I] (fn:sub_006BEAD0_NetQueuePop@0x006BEAD0, fn:sub_0053F3D0_SrvProcessClientMessage@0x0053F3D0, 0x0053F459, 0x0053F45E)
+A1. Drain (queue 1, FIFO, all clients and games):                    [C] queue 1 popped until −1, each message to SrvProcessClientMessage, its one call of SrvPacketDispatch, the return read by neither frame (objdump and the raw scan, 0x0052D02C–0x0052D034, 0x0053F459, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)); [I] FIFO, all clients and games, the lock (fn:sub_006BEAD0_NetQueuePop@0x006BEAD0, fn:sub_0053F3D0_SrvProcessClientMessage@0x0053F3D0, 0x0053F45E)
       while a packet pops:
         lock the client's game
         r: i32 ← SrvPacketDispatch(packet)
@@ -126,7 +126,7 @@ A2. SrvPacketDispatch(op: u8, …) → i32:
       else: pass                                                     [C] (ADR-0021, ADR-0029 (c)) (0x0054D7DC, run:2026-11-04-lock-scan)
       pass: call IsBadCodePtr(row(op).fn)                            ; the emulated pass stops at this call
       if it returned non-zero: fatal                                 [I] (0x0054D7E6)
-      return row(op).fn(…)                                           [I] (0x0054D818)
+      return row(op).fn(…)                                           [C] (0x0054D818; run:2026-11-04-inventory-2: 178 `PKT` lines entered at their opcode's row of g_SrvPacketTable, return address 0x0054D81A, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 ```
 
 - A1. [I] **Two item requests in one drain run in arrival order, to completion, and see each other's results**: `0x17` then
@@ -134,8 +134,8 @@ A2. SrvPacketDispatch(op: u8, …) → i32:
   too. No item request is reordered, batched or rate-limited. Scope: `SrvProcessClientMessage`, `SrvPacketDispatch` and
   `PlayerModeAllowed`'s bodies, not each handler's whole closure. (fn:sub_0054D750_SrvPacketDispatch@0x0054D750,
   fn:sub_0053F3D0_SrvProcessClientMessage@0x0053F3D0, [items/0014 § 4](../../findings/items/0014-ground-items.md#4-one-drain))
-- A1. [I] **A "refusal" return (2, 3) has no effect beyond the handler's own.** So in this spec a handler "returns 3" with
-  nothing further, and whatever the handler already did stands. (0x0053F459, 0x0053F45E)
+- A1. [C] **A "refusal" return (2, 3) has no effect beyond the handler's own**: neither `SrvProcessClientMessage` nor the drain loop reads the dispatch's return (objdump and the raw scan). So in this spec a handler "returns 3" with
+  nothing further, and whatever the handler already did stands. (0x0053F459, 0x0053F45E, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 - A1. [I] **What leaves the drain** is a pickup out of reach: it starts a walk, and the pickup runs in a later frame's mode
   pass ([items/inventory § I](inventory.md#i-pickup)). The other item handlers of §§ B and [items/inventory § D](inventory.md#d-the-requests),
   as read, do their moves in the handler; their callees' queued events and marks reach clients later and were not
@@ -149,8 +149,9 @@ A2. SrvPacketDispatch(op: u8, …) → i32:
   (0x0054D7DC, run:2026-11-04-lock-scan, run:2026-11-04-ground-emu, data:g_SrvPacketTable@0x006E0D18)
 - A2. [I] Not reached: `Game+0x1DC4` above 1, where the gate first overwrites that word with `0x00410A80`'s return.
   (0x0054D7C0, 0x0054D7CE)
-- A2. [I] The gate draws nothing on this path: `PlayerModeAllowed(1, 0, 0)` returns before its RNG line because its second
-  argument is 0. (0x0057EEFB, 0x0057EF75)
+- A2. [C] The gate draws nothing on this path: `PlayerModeAllowed(1, 0, 0)` returns before its RNG line because its second
+  argument is 0: objdump reads the pushes 0, 0, 1 and the test at 0x0057EEFB jumping to 0x0057EFF2, from which no draw is reachable; the
+  player's seed is the same at every `PKR` and the next `PKT`, 175 of 175, which agrees. (0x0057EEFB, 0x0057EF75, run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 
 ### B. The use requests
 
@@ -158,10 +159,10 @@ Each handler's tests, in order, before its caller function. All "returns" are di
 
 | Packet | Tests | Tag and anchor |
 |---|---|---|
-| `0x20` | Length 13, else 3. `PktInvItemBad` (the item exists, mode 0, and `0x0063AD50` finds it with the player), then `PktPosFar` (each axis of the player's position within 50 of the packet's x and y, as `u16`); either's non-zero is returned. A refusal flagged by the use function returns 3 | [I] (fn:sub_00549150_PktInvItemBad@0x00549150, fn:sub_00548EF0_PktPosFar@0x00548EF0, 0x0054B222) |
-| `0x26` | Length 13. Fields: guid (`+1`), flag (`+5`). The position tested and passed is the player's own, so the distance test holds with any input. `PktBeltItemBad` wants mode 2 | [I] (fn:sub_005492F0_PktBeltItemBad@0x005492F0, 0x0054B560) |
-| `0x27` | Length 9. `+1` is the target, `+5` the used item; both must pass `PktOwnedItemBad` | [I] (fn:sub_00549220_PktOwnedItemBad@0x00549220, 0x0054B280) |
-| `0x61` | Length 3; expansion games only (`game+0x70`), else 3. With a cursor item that is not a quest item the mercenary path runs; the player must have no used skill and be alive, and the pet of type 7 alive | [I] (0x0054D430) |
+| `0x20` | Length 13, else 3. `PktInvItemBad` (the item exists, mode 0, and `0x0063AD50` finds it with the player), then `PktPosFar` (each axis of the player's position within 50 of the packet's x and y, as `u16`); either's non-zero is returned. A refusal flagged by the use function returns 3 | [C] (ADR-0021) to `PlayerUseInvItem(guid, x, y, &flag)` (354 cases at the call; run:2026-11-16-sweep2-s4e-emu, [items/0013 § 12](../../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu)); [I] the 3 on a flagged refusal, after the call (fn:sub_00549150_PktInvItemBad@0x00549150, fn:sub_00548EF0_PktPosFar@0x00548EF0, 0x0054B222) |
+| `0x26` | Length 13. Fields: guid (`+1`), flag (`+5`). The position tested and passed is the player's own, so for a player (a dynamic path) the distance test holds with any input; a unit on a static path with a coordinate above `0xFFFF` can fail it. `PktBeltItemBad` wants mode 2 and an owned item | [C] (ADR-0021) to `PlayerUseBeltItem` (493 cases at the call; control `spec_anypos` separates 127; run:2026-11-16-sweep2-s4e-emu, [items/0013 § 12](../../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu)); [I] a flagged refusal's 3 after the call (fn:sub_005492F0_PktBeltItemBad@0x005492F0, 0x0054B560) |
+| `0x27` | Length 9. `+1` is the target, `+5` the used item; both must pass `PktOwnedItemBad`, `+1` first, which passes an owned item or else the player's cursor item | [C] (ADR-0021) to `PlayerUseItemOnItem` (577 cases at the call; control `owned_only` separates 26; run:2026-11-16-sweep2-s4e-emu, [items/0013 § 12](../../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu)); [I] a flagged refusal's 3 after the call (fn:sub_00549220_PktOwnedItemBad@0x00549220, 0x0054B280) |
+| `0x61` | Length 3; expansion games only (`game+0x70`), else 3. Then `PlayerIsBusy` and `InteractIsPlayer` both non-zero return 3; no inventory returns 3. With a cursor item that is not a quest item (Items `+0x12A`; a quest item returns 0) the mercenary path runs; the player must have no used skill (the skill block at `player+0xA8` with a non-zero `+0x10` returns 0) and be alive (`UnitIsDead`, the `+0xC6` bit 0), and the pet alive: the unit of the first type-7 node whose bit 0 is clear, only when the pet-type count is above 7; its room must be in the player's room's near list (`0x0065A590`); each failure returns 0. With no cursor item a non-zero `u16` at `+1` calls `0x0054D130(player, u16)`, a zero returns 0 | [C] (ADR-0021) to `MercGiveCursorItem` (122 cases) and `0x0054D130` (30), family `merc`, 3 000 cases; each test's control separates (0x0054D430, fn:sub_0054D230_MercGiveCursorItem@0x0054D230, run:2026-11-16-sweep2-s4e-emu, [items/0013 § 16](../../findings/items/0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu)) |
 
 ### C. The dispatch: `ItemUse`
 
@@ -197,10 +198,11 @@ C1. ItemUse(user, item, arg2, x: i32, y: i32) → i32:                 [C] (ADR-
       else:
         item flag 4 ← 1
         ends at use(item, arg2, x, y, skill)
-C2. After either boundary:                                           [I] (0x005BF320–0x005BF34C, 0x005BF38C–0x005BF3B6)
+C2. After either boundary:                                           [C] (ADR-0021) the marks and the returns, family `c2`, 2 500 cases with the stock entries run (run:2026-11-16-sweep2-s4e-emu, [items/0013 § 16](../../findings/items/0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu)); [I] message 0x7C and a use return other than 0 or 1 (0x005BF320–0x005BF34C, 0x005BF38C–0x005BF3B6)
       a test returning 0, or a use returning 0: InvClearUseMark, message 0x7C
       a test's non-zero leaves the marks
       after any test ItemUse returns 0;  otherwise the use's own return
+      ; a test returning 0 is a branch no stock entry takes: kind 1's test returns 1 on both its paths (0x005BE16F)
 ```
 
 - C1. [C] (ADR-0021) Family `dispatch`, 600 cases: 44 at the `test`, 226 at the `use` of 10 kinds, 330 refusals or empty slots. Only kind 1 has
@@ -279,21 +281,21 @@ D5. MercGiveCursorItem (packet 0x61):                                [I] (fn:sub
         CursorItemConsume(item)                                      ; whatever ItemUse returned
 ```
 
-- D. [I] **What clears the marks.** `InvClearUseMarks` has 36 direct calls, 35 of them in 24 other functions: `PlayerUseInvItem` and `PlayerUseBeltItem` before `ItemUse` (D1, D3), `PlayerUseItemOnItem` only after it (D4), and the moves: `PickupToInv`, `PickupToCursor`, `CursorDrop`, `InvPlaceItem`, `InvItemToCursor`, `ItemEquip`, `BodyToCursor`, both body swaps, `EquipCursorAtSlot`, `PageSwapCursor`, `StackRequest`, `ScrollIntoTome`, `ItemToBelt`, `BeltToCursor`, `BeltSwapCursor`, `BeltOverflow`, `CubeDropEmptied`, `KeyConsume`, `PlayerSwapWeapons`, `ITEMS_InsertSocket`. So a first identify's mark stands only until the next of these, and a `0x27` after one of them finds flag 4 clear and takes the test again (C1e). The calls were listed by target, and which request reaches each was not traced past those functions. (fn:sub_0055BF50_InvClearUseMarks@0x0055BF50, 0x0055E1C1, 0x00563627, 0x00563C47, 0x00560231)
+- D. [C] **What clears the marks.** `InvClearUseMarks` has 36 direct calls, 35 of them in 24 other functions (the raw scan; no abs32 reference): `PlayerUseInvItem` and `PlayerUseBeltItem` before `ItemUse` (D1, D3), `PlayerUseItemOnItem` only after it (D4), and the moves: `PickupToInv`, `PickupToCursor`, `CursorDrop`, `InvPlaceItem`, `InvItemToCursor`, `ItemEquip`, `BodyToCursor`, both body swaps, `EquipCursorAtSlot`, `PageSwapCursor`, `StackRequest`, `ScrollIntoTome`, `ItemToBelt`, `BeltToCursor`, `BeltSwapCursor`, `BeltOverflow`, `CubeDropEmptied`, `KeyConsume`, `PlayerSwapWeapons`, `ITEMS_InsertSocket`. So a first identify's mark stands only until the next of these, and a `0x27` after one of them finds flag 4 clear and takes the test again (C1e). [I] Which side of `ItemUse` each use request clears on and which request reaches each move: the calls were listed by target, and which request reaches each was not traced past those functions. (fn:sub_0055BF50_InvClearUseMarks@0x0055BF50, 0x0055E1C1, 0x00563627, 0x00563C47, 0x00560231, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 
 ### E. The kinds
 
 | Kind | Stock rows | Effect | Draws before the first callee | Tag |
 |---|---|---|---|---|
 | 1 | `isc`, `ibk` | Identify, two requests (§ H1) | 0 | [C] (ADR-0021) to the first callee (fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130, fn:sub_005BE230_ItemUseIdentify@0x005BE230, run:2026-11-03-use-emu) |
-| 2 | `tsc`, `tbk` | Town portal, player only; refused in town and on level 136 ([quests/travel G1](../quests/travel.md#g-town-portals)) | 0 in the entry's own body, direct calls; the opened portal's three draws are [quests/travel G2](../quests/travel.md#g-town-portals) | [I] (fn:ITEMUSE_TownPortal@0x005BE290) |
+| 2 | `tsc`, `tbk` | Town portal, player only; refused in town and on level 136 ([quests/travel G1](../quests/travel.md#g-town-portals)) | 0 in the entry's own body, direct calls; the opened portal's three draws are [quests/travel G2](../quests/travel.md#g-town-portals) | [C] objdump: no RNG call and no LCG operand in the body; the raw scan: no LCG constant in 0x005BE290..0x005BF240 (fn:ITEMUSE_TownPortal@0x005BE290, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) |
 | 3 | `hp1`..`hp5`, `mp1`..`mp5` | A total spread over `len`, with a chance of double (§ F) | 2 per amount slot when vitality or energy is above 0 | [C] (ADR-0021) to the first callee, and live in the scope of § F (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, run:2026-11-03-use-emu, run:2026-11-04-inventory-2) |
 | 4 | none | The kind-3 loop without the class scale and the draws (§ F) | 0 | [C] (ADR-0021) to the first callee (fn:sub_005BE7B0_ItemUseStatPlain@0x005BE7B0, run:2026-11-03-use-emu) |
 | 5 | `rvs`, `rvl` | A percent of the maximum, at once (§ G) | 0 | [C] (ADR-0021) to the first callee (fn:sub_005BEAC0_ItemUseRejuv@0x005BEAC0, run:2026-11-03-use-emu) |
-| 6 | `yps`, `wms` | Clear `cstate1`, `cstate2`, then as kind 9 (§ H3) | 0 in the entry's own body, direct calls | [I] (fn:sub_005BEF90_ItemUseCure@0x005BEF90) |
+| 6 | `yps`, `wms` | Clear `cstate1`, `cstate2`, then as kind 9 (§ H3) | 0 in the entry's own body, direct calls | [C] as kind 2 (fn:sub_005BEF90_ItemUseCure@0x005BEF90, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) |
 | 7 | `box` | Opens the cube; never used up (§ H2) | 0 | [C] (ADR-0021) to the first callee (fn:sub_005BF0C0_ItemUseCube@0x005BF0C0, run:2026-11-03-use-emu) |
 | 8 | `elx` | Adds the item's stat 71 (§ H4) | 0 | [C] (ADR-0021) to the first callee (fn:sub_005BF060_ItemUseElixir@0x005BF060, run:2026-11-03-use-emu) |
-| 9 | `vps`, `hrb` | A timed state, with the group clear (§ H3) | 0 in the entry's own body, direct calls | [I] (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0) |
+| 9 | `vps`, `hrb` | A timed state, with the group clear (§ H3) | 0 in the entry's own body, direct calls | [C] as kind 2 (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) |
 | 10, 11 | none | Cast skill 47 at level 1 | not read | [I] (0x005BF170, 0x005BF1F0) |
 
 ### F. Kinds 3 and 4: the amount and the two draws
@@ -351,10 +353,11 @@ F1. ItemUsePotion(item, arg2, x, y, skill), kind 3:                  [C] (ADR-00
 F1g. After the loop, when stat 6 got an amount, on a player:         [I] (0x005BE6F0–0x005BE738)
       when |stat 352 − pct| > 4:  MsgLifePct;  stat 352 ← UnitLifePct    ; life × 128 ÷ max, 128 at full
       ; no stock potion of kind 3 names stat 6; both rejuvenations do
-F1h. Returns 1 when any slot reached F1e's add or passed F1f's allocation, len + rem ≤ 0 included; else 0   [I] (0x005BE6D4, 0x005BE6DB, 0x005BE73D)
+F1h. Returns 1 when any slot reached F1e's add or passed F1f's allocation, len + rem ≤ 0 included; else 0   [C] (ADR-0021) every amount ≤ 0 returns 0, and the 1 of a refill slot with len + rem ≤ 0 and no callee (family `potret`, 2 400 cases, run:2026-11-16-sweep2-s4e-emu, [items/0013 § 15](../../findings/items/0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu)); [I] the 1 after a slot reached UnitAddStat or STATLIST_SetStat (0x005BE6D4, 0x005BE6DB, 0x005BE73D)
+      ; an amount the class scale, the doubling or the shift takes to ≤ 0 as i32 counts as ≤ 0
       ; so every amount ≤ 0 returns 0: C2's clear and message 0x7C, and D1 uses nothing up. A null record or a bad state also returns 0 (0x005BE41C)
 
-F2. A fresh list:                                                    [I] (0x005BE5E8–0x005BE673)
+F2. A fresh list:                                                    [C] for a player user: 16 fresh lists with words 2, end, user type 0 at 0x005BE602 (UAL), then STATE_Set, the callback and LinkToUnit read by objdump (run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)); [I] the non-player branch (0x005BE5E8–0x005BE673)
       STATLIST_Alloc(game+0x1C, 2, end, user type, user id);  its state;  STATE_Set(user, state, 1)
       a non-player user: UNIT_CancelEvents(3, 0), event 3 at frame + 1
       the remove callback 0x0056E900;  STATLIST_LinkToUnit(user, list, 1)
@@ -387,8 +390,8 @@ Step notes:
   the not-doubled outcome only, 5 of 5, all predicted not doubled by the same replay. (run:2026-11-04-inventory-2, 0x005BE544)
 - F1c. [I] **The `mp1` doubled branch is not observed in a game.** It is the code's map, `[C]` (ADR-0021) in F1, not a run. The draw's chance at `n` = 150 is about 37 %, and 0 in 5 has a chance of about 10 %, so this batch does not say the
   mana potion never doubles. (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, 0x005BE544)
-- F1c. [I] **The chance** for `n`: `Σ min(100, r >> 1) ÷ (100 n)` over `r < n`: 2.0 % at 10, 5.76 % at 25, 12.0 % at 50, 24.5 % at 100, 37.0 % at 150, 40.75 % at 165, 49.5 % at 200, 79.8 % at 500.
-  On a non-player user the stats read are whatever its list holds, usually none, so no draw. (tools/item_inventory.py `double_chance`, 0x005BE514–0x005BE53B)
+- F1c. [C] (ADR-0021) **The chance** for `n`: the amount is doubled exactly when `r2 < r1 >> 1`, at each chosen `(r1, r2)` over 146 `n`, for players and non-players (family `double`, 3 000 cases; controls `le`, `half`, `swap`, `nodraw_nonplayer` separate). Counted over the pairs, that is `Σ min(100, r >> 1) ÷ (100 n)` over `r < n`: 2.0 % at 10, 5.76 % at 25, 12.0 % at 50, 24.5 % at 100, 37.0 % at 150, 40.75 % at 165, 49.5 % at 200, 79.8 % at 500. Each pair weighs as the generator's `low mod n` and `low mod 100` make it, so the formula is the uniform-pair count.
+  A user whose stat (vitality for life, energy for mana) is 0 or below makes no draw and keeps its seed; on a non-player the stat is whatever its list holds. (tools/item_inventory.py `double_chance`, 0x005BE514–0x005BE53B, run:2026-11-16-sweep2-s4e-emu, [items/0013 § 15](../../findings/items/0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu))
 - F1f. [C] **Live: slot 0's stored rate, 16 fresh-list uses of 16**: `rate = total ÷ len`, truncated, with `total` 7 680 (`hp1`, not doubled) or 15 360 (doubled) and `len` 192: 40 or 80; `mp1`
   10 240 ÷ 128 = 80. The rate at the `SetStat` call was in the a-priori pair in all 16. The list's end was `frame + len`, and event 12 was queued with it. Scope: `hp1` and `mp1` of a Sorceress. (run:2026-11-04-inventory-2, 0x005BE6CF, 0x005BE602, 0x005BE6AE)
 - F1f. [C] (ADR-0021) The division's truncation (`floordiv`) and `(old × rem + v) ÷ (len + rem)` are the map on a slot after the first, reached by a slot 0 whose amount is 0; the stock path's slot 0 reaches the same instructions past the queue call. (0x005BE6D4, run:2026-11-03-use-emu)
@@ -399,7 +402,7 @@ Step notes:
 - F3, F4. [C] 800 cases: all 7 classes, other classes and types, odd and negative amounts, a null unit. In a game only the Sorceress's factors ran (`v` life, `2v` mana). (fn:sub_0062A5D0_PotionLifeMul@0x0062A5D0, fn:sub_0062A620_PotionManaMul@0x0062A620, run:2026-11-03-use-emu)
 - F. [I] **Stock totals**, in stored units (`calc1 << 8`, the class factor): `hp1` 30 gives 7 680 for a Sorceress, 11 520 for an Amazon, 15 360 for a Barbarian, i.e. 30, 45 or 60 life. The stored rate truncates: `hp3` (100, `len` 171) gives 25 600 ÷ 171 = 149 per frame, 25 479 over the 171 frames, 99 life and a remainder. Stock `ValShift` of stats 26 and 74 is blank, so 0. (tools/item_inventory.py, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0)
 - F. [C] (ADR-0021) **Kind 4** (`ItemUseStatPlain`) is this loop without the class scale and the draws: 800 cases with the seed compared, no stock row. The controls that separate the draws are `stat3`'s, and `stat4` holds no golem case. (fn:sub_005BE7B0_ItemUseStatPlain@0x005BE7B0, run:2026-11-03-use-emu)
-- F. [I] **Healing and mana potions do not run the group clear**: kind 3 has no call of `STATE_GroupClear` ([stats/states B3](../stats/states.md)). How the stored rate reaches life is [stats/states E2](../stats/states.md). (0x005BE3F0, 0x005BEE15)
+- F. [C] **Healing and mana potions do not run the group clear**: kind 3 has no call of `STATE_GroupClear` in its body or anywhere under it (objdump, 2 003 functions), and `GroupClear`'s 9 callers by the raw scan hold none in kind 3 ([stats/states B3](../stats/states.md)). How the stored rate reaches life is [stats/states E2](../stats/states.md). (0x005BE3F0, 0x005BEE15, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 
 ### G. Kind 5: rejuvenation
 
@@ -484,15 +487,15 @@ H6. Keys have no use entry: KeyConsume(player):                      [C] (ADR-00
 ```
 
 - H1. [I] A first identify through D1 has `r` = 0, so it falls to D2's codes and returns 0 with nothing used. The second request is `0x27`, which does not clear the marks, so flag 4 from the first request stands. (0x0055E263, 0x00561F60, fn:sub_00561ED0_PlayerUseItemOnItem@0x00561ED0)
-- H5. [I] `v = 0` sets the golem to full. Kind 3 tests `v > 0` first; kind 5 has no such test, and reaches the call with `v = 0` only at a maximum of 0, no stock case. (fn:sub_005C5F10_GolemHeal@0x005C5F10, 0x005C68AC, 0x005BEC10, 0x005BE54E)
-- H6. [I] `key` has `useable` 0 and no `pSpell`. Its callers: `OBJOP_Chest` and the case at `0x00581DC1`. (fn:OBJOP_Chest@0x00585F60, 0x00581DC1, 0x00585FB1)
+- H5. [C] (ADR-0021) `v = 0` sets the golem to full: `GolemHealShare`'s own branch calls `UnitSetStat(golem, 6, UnitGetMaxHp(golem), 0)` (0x005C68AC → 0x005C68F0, 190 of 190), not `GolemHeal`, which returns 0 with no call for a share ≤ 0; for a share > 0 `GolemHeal` sets `min(i32(life + share), max)` by a signed compare, so a sum past `2³¹ − 1` is stored wrapped, not capped (no stock golem comes near it). Kind 3 tests `v > 0` first; kind 5 has no such test, and reaches the call with `v = 0` only at a maximum of 0, no stock case. The returns after the set are step H5's last line. (fn:sub_005C6870_GolemHealShare@0x005C6870, fn:sub_005C5F10_GolemHeal@0x005C5F10, 0x005C68AC, 0x005BEC10, 0x005BE54E, family `golem`, 1 200 cases, run:2026-11-16-sweep2-s4e-emu, [items/0013 § 15](../../findings/items/0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu))
+- H6. [C] `key` has `useable` 0 (the `.txt` and the `.bin` at `+0x11D`) and no `pSpell`. Its callers by the raw scan: `OBJOP_Chest` (0x00585FB9, after its class-6 test) and the case at `0x00581DC1`. (fn:OBJOP_Chest@0x00585F60, 0x00581DC1, 0x00585FB1, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 
 ### I. What the columns gate
 
 - [I] **`useable` (`+0x11D`) is a required test of both use requests, `0x20` and `0x26`**, and it does not select a kind. Its absence sets the refuse flag, so the handler returns 3. A `useable` row with no `pSpell` (`hpo`, `rps`, …) passes the test and does nothing: `ItemUse` returns 0, and D1 returns 0 with nothing used unless the code is one of D2's four. (fn:sub_00628C20_ItemIsUseable@0x00628C20, 0x0055E212, 0x00562433)
 - [C] (data) The counts behind it: the getter has 5 calls, 2 of them those requests', and `useable` has 10 `u8` matches. The gate itself stays the `[I]` above: no family of run:2026-11-03-use-emu enters either handler. (`static.txt` of run:2026-11-03-use-emu, 0x0055E212, 0x00562433, [the a69 route](../../backlog/archive/2026-11-04-architect-reverser-a69-review-finding-notes.md))
-- [I] **`belt` (`+0x130`), `durwarning` and `qntwarning` gate no use** among direct calls; indirect callers and table pointers are unfollowed. `autobelt` gates only placement ([items/inventory § F](inventory.md#f-belts)). (fn:sub_00621ED0_ItemBeltByte@0x00621ED0, fn:sub_006297A0_ItemDurWarning@0x006297A0, fn:sub_00629800_ItemQntWarning@0x00629800, [items/0012 § 7](../../findings/items/0012-use-inventory.md#7-what-the-columns-gate))
-- [I] `sub_0063C830_BeltBoxQuery` tests `useable` and `belt` both 1 with size 1 × 1, called only from `0x004979AD`, so a client rule on this reading: out of scope. (fn:sub_0063C830_BeltBoxQuery@0x0063C830)
+- [C] **`belt` (`+0x130`), `durwarning` and `qntwarning` gate no use**: the raw scan finds `ItemBeltByte` at 3 sites (the client name builder, `BeltOverflow`, `BeltFreeSlot`), `ItemDurWarning` at none, `ItemQntWarning` at 1 (client), and no abs32 pointer to any of them, so no table holds them. `autobelt` gates only placement ([items/inventory § F](inventory.md#f-belts)). (fn:sub_00621ED0_ItemBeltByte@0x00621ED0, fn:sub_006297A0_ItemDurWarning@0x006297A0, fn:sub_00629800_ItemQntWarning@0x00629800, [items/0012 § 7](../../findings/items/0012-use-inventory.md#7-what-the-columns-gate), [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
+- [C] `sub_0063C830_BeltBoxQuery` has one caller, `0x004979AD` in the client's item name builder, and no abs32 reference ([items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)). [I] It tests `useable` and `belt` both 1 with size 1 × 1, so a client rule on this reading: out of scope. (fn:sub_0063C830_BeltBoxQuery@0x0063C830)
 
 ### J. Draws per seed
 
@@ -500,8 +503,8 @@ H6. Keys have no use entry: KeyConsume(player):                      [C] (ADR-00
 |---|---|---|---|
 | Kind 3 `hp1..5`, `mp1..5` | 2 per stat with an amount slot when vitality or energy > 0, else 0: one slot on all ten | the user's (`unit+0x20`) | [C] (ADR-0021) before the boundary; live for 17 uses of `hp1`, `mp1` (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, run:2026-11-03-use-emu, run:2026-11-04-inventory-2) |
 | Kinds 4, 5, 8, 1 (test and use), 7, a key | 0 | | [C] (ADR-0021) before the boundary, kind 4 no stock row (fn:sub_005BE7B0_ItemUseStatPlain@0x005BE7B0, fn:sub_005BEAC0_ItemUseRejuv@0x005BEAC0, fn:sub_005BF060_ItemUseElixir@0x005BF060, fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130, fn:sub_005BF0C0_ItemUseCube@0x005BF0C0, fn:sub_0055F140_KeyConsume@0x0055F140, run:2026-11-03-use-emu) |
-| Kinds 2, 6, 9 | 0 in the entry's own body | | [I] direct calls (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, `rcg-summary.txt`) |
-| The gate | 0 on this path | | [I] (0x0057EEFB, 0x0057EF75) |
+| Kinds 2, 6, 9 | 0 in the entry's own body | | [C] direct calls: objdump and the raw scan, § E (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, `rcg-summary.txt`, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) |
+| The gate | 0 on this path | | [C] as A2 (0x0057EEFB, 0x0057EF75, run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) |
 
 - [I] **No bound past the boundaries.** The counts hold only up to each entry's first callee, except the 17 live uses of § F, whose seed chain shows no other draw on the user's seed. Under `0x0055E000`, `0x0055E0D0`, `0x0055F140`, `0x00561E70`, `0x00562590` and the entries 1, 2, 5, 6, 7, 9 lie 2 097..2 115 functions with 118 holding a seed step (119 under entry 3: its own), indirect calls unfollowed, the steps at depth 5 or more, among them the room population and level creation, which no reading here connects to a use. The narrow closures: test `0x005BE130` 559 functions and 0 with a step, entry 8 `0x005BF060` 574 and 0, `0x0055EDC0` 636 and 0. (`rcg-summary.txt` of run:2026-11-03-use-emu, fn:sub_005BF240_ItemUse@0x005BF240)
 
@@ -531,7 +534,7 @@ Two stock `hp1` uses of a Sorceress at vitality 165, frames 111 and 909 of run:2
 - **A first identify request consumes nothing**; the second one, on an unidentified item in the user's inventory, does. `0x27` does not clear the marks first. [I] (0x00561F60, fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130)
 - **A belt scroll used on an item does not shift its column; every other belt use does**, and a used belt scroll on a target not in a grid is removed unused. [I] (0x00561F60–0x005621F4)
 - **`0x61` consumes the cursor item whatever `ItemUse` returned.** [I] (0x0054D3FD–0x0054D406)
-- **Don't refuse on a handler's "3" at the drain**: the return is discarded. [I] (0x0053F459)
+- **Don't refuse on a handler's "3" at the drain**: the return is discarded. [C] (0x0053F459, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 
 ## Evidence
 

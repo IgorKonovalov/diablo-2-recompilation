@@ -1913,3 +1913,100 @@ minutes under a 4 GB scope; no game, no Ghidra.
     (backlog item 5).
 - **Not settled** (reasons in the inventory rows): machinery 42 (`PathPlan`'s `0x40000` exit to `PathPlanStraight`
   0x006499B9 comes before the one `PathTargetNotTown` call, 0x00649AE5), 94; README 23, 33.
+
+## run:2026-11-16-sweep2-s1m
+
+Plan 0066 Phase 1, batch S1m (`lane/n66m1`, reverser-static). No game, no Ghidra: new checks over kept logs.
+
+- **Question:** do the kept AI logs reproduce the 40 a-logs statements of batch S1m (monsters/ai/machinery and
+  monsters/ai/README; rows as in [plan 0066's inventory](../../plans/0066-inventory/monsters-ai-machinery.md)): the AI
+  helpers' arguments, results and seeds, `MonSetMode`'s command blocks and seeds, the plan types, the next-event frames,
+  the next AID's control and head words?
+- **Inputs:** the 38 logs of S1a (`logs.txt`: the 21 rev 4 case logs of run:2026-11-03-ai-3 and the 17 rev 6 launch logs of
+  run:2026-11-04-ai-r5, hashed in `workspace/logs/ai/manifest-sweep2-s1a-inputs.sha256`); for the command-byte and pair
+  checks also the 31 case logs of run:2026-11-03-ai (`first-run-logs.txt`, in `manifest-run-2026-11-03-ai.sha256`); the
+  six gap walks of run:2026-11-04-h1's review (`workspace/logs/skills/review-p52d/gaps-*.txt`) with their logs; the image
+  (`MonModeEveryFrame`'s table, `g_MonAiTable`, the state rows, each read by Python and r2 through `tools/ai_s1fo.py`) and
+  the MonStats, MonStats2, MonAI, Skills and States tables (the plain `.txt` reader and the `.bin`).
+- **Procedure** (from `workspace/logs/ai`, the repo's tools by absolute path; tool `tools/ai_s1m.py`, sha256
+  `e7147b50…7456`):
+  ```
+  O=../n66m1/s1m
+  { systemd-run --user --scope -p MemoryMax=4G python3 -I tools/ai_s1m.py logs --logs $O/logs.txt --first $O/first-run-logs.txt
+    python3 -I tools/ai_s1m.py tables; python3 -I tools/ai_s1m.py gaps ../skills/review-p52d
+    python3 -I tools/ai_s1m.py totals; } > $O/check-s1m.txt
+  ```
+  Output `workspace/logs/n66m1/s1m/check-s1m.txt` (`8de1e5b7…7fa8`, 74 check lines, `S1m total bad=0` in each section; its `totals` line is the inventory's after the move of machinery 110, the first run's copy with 623 and 23 is `dev/check-s1m-before-totals.txt`),
+  `manifest-s1m.sha256` (passes from `workspace/logs/n66m1/s1m`, with the run's copy of the tool `ai_s1m.py.rev`);
+  development passes in `dev/` (`manifest-dev.sha256`, passes from `dev/`). Conventions: a helper's words are `CONV`'s of
+  `tools/ai_model_check.py` (ECX, EDX, then the stack); a draw is the stepped seed's low word mod 100.
+- [C] (run:2026-11-04-ai-r5, run:2026-11-03-ai-3, `check-s1m.txt`, fn:sub_005DDF90_MonAiSetModeAtUnit@0x005DDF90,
+  fn:sub_005DEAD0_MonAiUseSkill@0x005DEAD0, fn:sub_005DE000_MonAiUseSeqSkill@0x005DE000) **The commands.** Each
+  `SetModeAtUnit` (999), `UseSkill` (295) and `UseSeqSkill` (61) call holds exactly one `MSM0`, whose block has the call's
+  mode (14 for `UseSeqSkill`), the unit and the target or point; each `UseSkill` holds one `SST0` of the same skill and
+  returns 1 when the mode started (283; 12 with no `MSM1` logged); `Unit+0xC4` bit 0x40 is set after it in modes 4, 5, 7, 8
+  and 9 (151 of 151, 100 of them set by the call) and clear after it in mode 14 (144). `MonAiFindHostile`: 4 197 calls
+  from think code, ECX the decision's game and EDX its own unit in all. `MonSetMode`'s return addresses: `MonAiMove`
+  0x005DEBCC 5 482, `MonAiWanderNearUnit` 1 561, `SetModeAtUnit` 1 083, `UseSkill` 533, `MonAiMoveToUnitDist` 453,
+  `MonAiMoveToPoint` 210, `MonAiWalkToPoint` 198, `MonAiWalkToPointCmd` 134, `UseSeqSkill` 61, `MonAiWalkToPointOrStop` 42,
+  `MonAiWalkToUnitOrZero` 34, `MonAiIdle` 4, `MonAiWanderRingDirect` 4. No `MonAiSetMode` and no direct `MonAiMove`
+  call is logged; the logger's `MSM0` `flag` is the stack's first word (the game), so `MonSetMode`'s flag is not logged.
+- [C] (`check-s1m.txt`, fn:sub_005A7E60_MonCmdInit@0x005A7E60, fn:sub_005A6B10_MonModeEveryFrame@0x005A6B10,
+  fn:sub_005A63F0_MonMovePlan@0x005A63F0) **The path byte.** `MonModeEveryFrame`'s table 0x006E23D0 (16 × 3 words, Python
+  and r2 agree): modes 2, 13, 14, 15 always, 0, 1, 3, 6, 12 never, 4, 5, 7–11 by the class's MonStats2 bit at `+0x104`
+  (`*mv`, .txt = .bin over 734 records). Over 19 431 `MSM0` in 69 logs, `+0x15` is 101 exactly where that says every-frame
+  and 100 elsewhere, 0 other; modes 8 and 9 take both by class (475/283, 56/88). For commands of callers that set no
+  override, with no override-setting or unlisted call earlier in the decision and under the logger's per-decision cap,
+  100 plans nothing (805) and 101 plans type 13 first (2 214), 0 other.
+- [C] (`check-s1m.txt`, fn:sub_005DE190_MonAiPathOverride@0x005DE190, fn:sub_005F5830_AiAndariel@0x005F5830)
+  **The override.** `MonAiPathOverride(type)` and the first plan of the next command (whose `MSM1` is logged): type 1 → 7
+  (39, two of them Andariel's at 0x005F59FF), 2 → 2 (205), 7 → 7 (1 646), 13 → 13 (456), 0 → the command's own (13 in 839,
+  5 or 6 in 4); a non-zero byte is the path's `+0x90` in 127 of 127. Andariel's `UseSkill` after three draws on the
+  unit's seed (2 decisions).
+- [C] (`check-s1m.txt`, fn:sub_005DEB60_MonAiMove@0x005DEB60, fn:sub_005DEC80_MonAiWalkToUnit@0x005DEC80) **A refused
+  `MonAiMove` under `Walk`.** Flags 7: 1 step, no further command, result 1 where the step's low word mod 100 is 70 or
+  more (47; the next event 10 frames on in 28, 11 none, 8 later), 5 steps with the ring's command below 70 (96). Flags 0
+  (44): 0 steps, no command, result 0.
+- [C] (`check-s1m.txt`, fn:sub_005DE080_MonAiIdle@0x005DE080, fn:sub_005DE0F0_MonAiDelay@0x005DE0F0) **The next event.**
+  A rev 6 decision whose last call is `Idle(n)` (2 573, n ≥ 1 in all, no `MSM0` inside): the unit's next AID or AIN at
+  `fr + n` in 2 358; 111 none and 36 later (66 of them after the log's AIN cap, the rest outside the window or in a
+  capped row); 68 earlier, each an AID in mode NU 1 to 7 frames early (another queue, not attributed). `Delay(n)` (318,
+  no `MSM0` inside): at `fr + n` in 294, 5 earlier, 19 none or later.
+- [C] (`check-s1m.txt`, fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:SKILLS_SrvStart@0x0056F640) **`MonSetMode`'s seed.**
+  Of 9 416 calls with an `MSM1`, 9 166 leave the unit seed unmoved (362 with a skill start inside) and 175 move it with
+  one `SST0` inside, entered at `MSM0`'s seed and exiting at `MSM1`'s. [I] The other 75, A1 or A2 commands of
+  `SetModeAtUnit` (1 or 2 steps; classes such as 311, 97, 136), move it with no skill start logged and no skill of that
+  mode in the class's slots: the draw's source is not read here.
+- [C] (`check-s1m.txt`, fn:sub_005EFCF0_AiSkeleton@0x005EFCF0, fn:sub_005F0A20_AiWraith@0x005F0A20, 0x005B186F) **Rows 2
+  and 9 by their blocks.** Every decision (260 and 92) has the block's one call (callee, word and unit seed after the
+  block's draws) and no other, and exits with that call's `AIR` seed. Row 2: out of melee range `Walk(t, 7)` 163 and
+  `Idle(aip2)` 63 after one draw; in it A2 21 and A1 5 after two, `Idle` 8 after one. Row 9: `Toward(t, 12, 0)` 55,
+  `Idle` 35, A1 2. Row 125: 38 decisions, one call each.
+- [C] (`check-s1m.txt`, 0x005F283F, fn:sub_005F2540_AiScarab@0x005F2540) **Row 20's clear.** In the 85 decisions of step
+  4's walk (`Ovr(2, 0, 4)`, `Walk(t, 7)`, `v14 ≠ 0`, not melee) the exit seed is one step after the walk's `AIR` in all;
+  with a next AID logged (70), `AiCtl+0x14` is 0 there where that step's low word mod 100 is above 10 (59) and unchanged
+  where not (11). So the site no call can see is told apart by the next decision's control word; with
+  run:2026-11-04-ai-r5's census (`resume-run-…`: 205 decisions, 0 mismatches, 346 calls past the first; `flip-run-…`:
+  9 of 10 two-way sites failing alone on its 60-decision sample), row 20 meets README H1's rule. No row-20 decision has a
+  head record of another kind (7 kind 1, 183 none).
+- [C] (`check-s1m.txt`, fn:sub_005F2850_AiMummy@0x005F2850, tbl:MonStats.txt:aip1) **Row 21.** At `dist = aip1` the
+  in-range arm runs (15, the walk), at `aip1 + 1` the other (13); `aip3` is 100 in the 18 cells of the six Mummy records,
+  and all 29 melee draws pass, so the failed-`aip3` path is reached only on edited data.
+- [C] (`check-s1m.txt`, fn:sub_0058F730_MonHelpBlock@0x0058F730) **`MonHelpBlock`.** 146 calls (rows 13 126, 6 11, 20 2,
+  65 7): rows 6, 13 and 20 pass kind 1 with four other non-zero words; 81 blocks reappear word for word, all five words, as
+  a later AID head record of another unit. Row 30 has no decision with a head record in these logs.
+- [C] (`check-s1m.txt`, fn:sub_005B1740_MonAiEvent@0x005B1740, fn:sub_005B1650_MonAiTargetByKind@0x005B1650) **The
+  event.** 14 063 AID: ctx `+0x00` the AiCtl, `+0x1C` the MonStats record, `+0x04/+0x0C/+0x10` 0 in all; 18 076 AIN. Row
+  kinds (table read twice): 0 26, 1 104, 2 16, 4 1, 5 1; the 8 496 decisions of kind-1 states all have a target; 56
+  state-12 decisions (state row kind 0) of kind-1 classes have target, distance and melee 0. States: 0 13 241, 10 632,
+  11 134, 12 56; state 2 in none.
+- [C] (`check-s1m.txt`, run:2026-11-04-h1) **The 8 open H1 gaps:** first disagreement an `AD0` whose attacker is the gap's
+  unit, 1 (5), 3 (2) or 4 (1) steps past the walking seed.
+- [I] (`check-s1m.txt`) **Shown but not separating:** decision pairs of one unit with no AIN between keep the seed after S2,
+  S3, S4 and NU commands (94, 46, 172, 5) and in 9 094 of 9 203 WL, 1 536 of 1 541 RN and 11 692 of 11 818 commandless
+  ones; the moves are not attributed. Each unit's first logged decision shows the init words (−1, 1, −1, 1) in 1 076 of
+  1 635 (the rest written before the log saw them). Curse states: `s-barb-howl` 12 (56) and 11 (20), `s-necro-curse` 11
+  (78) and 10 (38), against `auratargetstate` Taunt 27, Howl and Terror 56, Dim Vision 23; states 10 (594) and 11 (36)
+  also occur in the Countess launches with no curse cast.
+- **Conclusion:** per inventory row in plan 0066's `monsters-ai-machinery.md` and `monsters-ai-README.md` (S1m notes):
+  raised 10, raised in part 24, not raised 3 (README 7, 32, 36: the [I] bullet above), not settled 2, moved 1. No symbol raised (no logged return names a role).

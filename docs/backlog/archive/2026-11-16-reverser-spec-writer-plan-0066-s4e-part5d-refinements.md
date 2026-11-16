@@ -2,16 +2,19 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: [../plans/0066-simulation-inferred-claims-sweep.md, ../findings/items/0013-grids-belts-stacks.md, ../findings/stats/0001-aggregate.md]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/items/0013-grids-belts-stacks.md
+  - ../../findings/stats/0001-aggregate.md
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–2 in items/inventory (2 as H1's [I] remainder), items 3–8 in stats/aggregate [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 5d (`lane/n66z`) raised or refined these spec statements. Not blocking. Re-tag when the
 inventory rows are accepted at the batch's Tier B review; the evidence is in the findings named.
 
 1. **items/inventory I6** (`ItemAutoEquipSlot`): the body of I6 with `skipReq` non-zero is `[C]` (ADR-0015,
-   ADR-0021) per [items/0013 § 17](../findings/items/0013-grids-belts-stacks.md#17-plan-0066-batch-s4e-part-5d-itemautoequipslot-under-emulation-and-cursordrops-cursor-clear-routed-run2026-11-16-sweep2-s4e-emu);
+   ADR-0021) per [items/0013 § 17](../../findings/items/0013-grids-belts-stacks.md#17-plan-0066-batch-s4e-part-5d-itemautoequipslot-under-emulation-and-cursordrops-cursor-clear-routed-run2026-11-16-sweep2-s4e-emu);
    with `skipReq` 0 the first call is `ItemReqCheck(item, user, 0, 0, 0, 0)`, and what follows its return stays `[I]`.
    Refinements to state: a location byte above 12 reads as empty (`InvGetBodyLocItem` returns 0 above 12, 0x0063BE00)
    and is returned; in an unequal pair a location of 0 is a slot like any other; the hands are tried 4 then 5. The
@@ -19,7 +22,7 @@ inventory rows are accepted at the batch's Tier B review; the evidence is in the
 2. **items/inventory H** (`CursorDrop`): the cursor clear is `InvSetCursor(inventory, 0)` at 0x00563CB8, after the
    search and the ground placement; it stays `[I]` (routed to the harness, H4d).
 3. **stats/aggregate A3**: "`AddStat` adds to an entry and removes it at 0" is `[C]` (ADR-0021) per
-   [stats/0001 § 12](../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu);
+   [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu);
    add: the key's param is its low 16 bits; the array shrinks by 4 entries through the pool when its spare room
    exceeds 8 after a removal.
 4. **stats/aggregate B1** (`StatListLinkOwner`): `[C]`, with the refinement that the damage switch is conditional
