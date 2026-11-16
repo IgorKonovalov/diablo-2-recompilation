@@ -46,3 +46,17 @@ run:2026-11-16-sweep2-s5e2). Phase 3's to apply:
    `k` = 4 with no player-count term.
 10. **Delivery E3 (lines 492–496).** `c ← (x·4 − dlvl + 10 + alvl [− 6])·5 [÷ 3]` with `x = max(stat 134 − 1, 0)`: the
     text's `(x − 1)·4` subtracts one twice. The draw is taken whenever stat 134 > 0, also at `c` = 0.
+
+**2026-11-16, reverser (`lane/n66t`), S5e part 3.** Three more, from
+[combat/0001 § 21](../findings/combat/0001-formulas.md#21-plan-0066-batch-s5e-part-3-the-defence-roll-with-a-shield-unit_getdefense-and-the-delivery-prologue-run2026-11-16-sweep2-s5e3)
+(run:2026-11-16-sweep2-s5e3):
+
+11. **To-hit B1 (lines 192–197).** For `d` ≤ 0 the percent term is subtracted: `d ← d − (d × p) ÷ 100` (the
+    code multiplies by the negated magic at 0x006224DD), so a percent moves a non-positive defence toward 0. For
+    `d` ≥ 1 the text holds. The Holy Shield term is gated by state 101's own stat list (base stats 350, 351 > 0), a
+    Skills record and a shield through `InvItemQuery`, and is `SKILLS_EvalCalc(unit, record +0x138, 350, 351)`.
+12. **To-hit C2 (lines 255–259).** `b ≥ 1` is tested before the `÷ 3`, not after: a moving player with a chance of
+    1 or 2 still draws once (the block fails). The moving test reads `0x00621190`'s mode (`+0x40` when `+0x30` ≠ 0);
+    the walking exception reads `+0x10`.
+13. **Delivery B1 (line 297).** A defender with no room (`UnitGetRoom` 0) also clears `0x3` and returns, as the
+    not-hostile case does.

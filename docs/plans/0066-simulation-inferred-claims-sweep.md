@@ -2167,6 +2167,57 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   unseparated strictness controls taken as inherent (equal output at the boundary, or a value a multiple of 256
   cannot take).
 
+### 2026-11-16 — Phase 1, batch S5e part 3 (reverser-static, `lane/n66t`): S5e done; 7 of the 8 items settled, README 35 named
+
+- **Done.** Merged `main` `2ffce327` first (merge commit `0b01864d`; the plan-log conflict kept both sides). New tools
+  `tools/combat_s5e3_emu.py` (`5f7cb4a6…`; imports parts 1–2's and S6f's tools, all unchanged with their kept runs)
+  and `tools/combat_s5e3_mas.py` (`71109513…`; reruns `tools/sweep2_s5a2.py` unchanged and adds a separation counter).
+  One kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66t` (`-Xmx3G`, `MemoryMax=4G`), after one
+  development launch (`--limit 80`, `workspace/logs/n66t/s5e/dev3/`, `manifest-dev.sha256`, not cited). Three
+  families (`blk`, `def`, `adp`), 12 000 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes (traced reads in
+  `g_BitMask32`, `g_WeaponClassTokens` and `LevelIsTown`'s two switch tables); 107 controls, 96 separating with
+  `passed` 0, the 11 others named in the record; two spec-reading controls (`spec_b_gt0_after` 2, `spec_def_plain`
+  648). Route check first (R2/ADR-0029): no allocator and no import on any path the cases take (the inventory page is
+  declared at the descriptor's size, so `InvPageGet` allocates nothing; `GameFindUnit` and `UNIT_AnimTransform` are
+  not reached); observed boundaries `SKILLS_EvalCalc` and 0x00621D50, return addresses checked. Record:
+  [run:2026-11-16-sweep2-s5e3](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e3);
+  `workspace/logs/n66t/s5e/run3/` (`check.txt` `ddbca2be…`, `mas-recount.txt` `97495c77…`, `manifest.sha256`
+  `03b20edd…`, 16 lines, passes from there; `cases` regenerates the case file byte for byte). Claims:
+  [combat/0001 § 21](../findings/combat/0001-formulas.md#21-plan-0066-batch-s5e-part-3-the-defence-roll-with-a-shield-unit_getdefense-and-the-delivery-prologue-run2026-11-16-sweep2-s5e3).
+- **Statements settled (5 of 5).** Raised: to-hit 22; to-hit 20 with a correction (the `b ≥ 1` test precedes the
+  divide; refinement: the moving test reads `0x00621190`, the exception `+0x10`); delivery 22 with a refinement (a
+  defender with no room also loses `0x3`). Raised in part: to-hit 15 (stats 171, 16, 182 and the Holy Shield gate up
+  to `EvalCalc`; the calc value stays `[I]`). Contradicted in part: to-hit 14 (for `d` ≤ 0 the percent term is
+  subtracted, 648 separating cases; the Holy Shield half as row 15).
+- **Remainders (2 of 3).** Raised: to-hit 24 (`UnitIsMoving`'s player set 2, 3, 6; row 24 now whole), to-hit 31 (three
+  defender draws: block, weapon block, dodge or avoid, 5 cases; row 31 now whole for player defenders). **Not
+  settled:** README 35's `Align` = 1 exception: the recount shows the two logged calls (classes 257, 405) have stats
+  19, 21, 22 all 0, so they do not separate; the emulated route needs `sub_006538A0_MonLvlStats` with a MonLvl image
+  and `STATLIST_Clear`/`STATLIST_SetStat`, whose allocator use is unread. It stays `[I]` in the row, no part 4.
+- **Corrections (Phase 3's):** to-hit B1 for `d` ≤ 0 and the Holy Shield gate (11), C2's test order and the two mode
+  fields (12), delivery B1's room-less defender (13). Appended to the
+  [corrections entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** after merging `main` `2ffce327`, from inventory README § 1, unchanged (no row moved class): a-logs 623,
+  a-run 334, b 474, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808.
+  README § 4's S5e row records the part. **S5e over parts 1–3** (52 statements, 12 remainders), counted from the
+  three log entries: statements raised 43 (19 + 21 + 3; five of them with a correction or refinement: to-hit 25,
+  delivery 44, 46, to-hit 20, delivery 22), raised in part 5 (to-hit 11, 24; damage 12's two; to-hit 15),
+  contradicted in part 4 (reductions 16, 18; damage 7; to-hit 14); remainders raised 8 (to-hit 10; README 12's two
+  halves; damage 9, 15, 34; to-hit 24, 31), in part 3 (damage 6, 13, 14), not settled 1 (README 35).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** To-hit 257 (with correction 12), 283, 304
+  (now whole), 354 (now whole); 192 and 202 with correction 11 (the calc value `[I]`); delivery 297 with correction 13.
+- **Review:** Tier B; the S5e [request](../backlog/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md) is
+  extended to S5e whole (parts 1–3). Judgment calls: (1) to-hit 14 filed contradicted in part, not raised with a
+  correction: B1's formula gives another output for every `d` ≤ 0 with `p` ≠ 0 (648 cases); (2) to-hit 20 raised with
+  a correction: the row's claim (the mode-2 exception) holds, the slip is the next line's test order (2 separating
+  cases, few because only chances 1 and 2 separate); (3) the item records carry types 45 and 51 together, a synthetic
+  input (ADR-0015 (4)) that lets one hand pass both the shield and the weapon-class tests; which stock items do is a
+  data question, not claimed; (4) to-hit 31 raised on 5 three-draw cases, each fixing the seed after three steps, so a
+  different draw count cannot match by chance; (5) README 35 named not settled rather than routed to b: no allocator
+  or import is known on its route, the stat-list writers are simply unread; (6) the 11 unseparated controls taken as
+  inherent (equal values at the cap and the running maximum; nine S6f `wc` branches that do not change index 13 here).
+
 ### 2026-11-16 — Phase 1, batch S2c part 1 (reverser-static, `lane/n66q`): 47 of 69 settled; resume note for part 2
 
 - **Done.** No game, no Ghidra. `main` is `1f507662`, the lane's base (nothing to merge). New tool `tools/skills_s2c.py`

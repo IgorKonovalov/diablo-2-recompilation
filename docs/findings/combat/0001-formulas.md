@@ -314,7 +314,8 @@ if (r < c) { sub_0057D810_PreventHealHook(); return 1; }  return 0;
 - [I] **Defence** (`UNIT_GetDefense`, any unit): `d = stat 31 + dex/4` (signed `/4`); `p = stat 171 + stat 16`
   (+ the Holy Shield bonus when state 101 is on: the skill's calc at Skills `+0x138` through `SKILLS_EvalCalc`);
   `d += d·p / 100`; then `+ MulDiv(d, stat 182, 100)` when stat 182 ≠ 0. (fn:UNIT_GetDefense@0x006223F0,
-  tbl:ItemStatCost.txt:Stat)
+  tbl:ItemStatCost.txt:Stat) *Corrected 2026-11-16:* for `d` ≤ 0 the term is subtracted, `d −= d·p / 100`
+  (0x006224DD–0x006224EE) (§ 21, run:2026-11-16-sweep2-s5e3).
 - [I] **Target modifiers** (players only, `COMBAT_ToHitTargetMods`): stat 115 sets `DEF = 0` against a monster that
   is not boss, unique, superunique (type flags `0x0A`) or hireling; stat 116 is halved (signed) against a player, a
   boss, a superunique or a hireling, clamped to 0..100, and `DEF −= MulDiv(DEF, p, 100)`; stat 123 adds to AR
@@ -356,7 +357,9 @@ if ((res & 1) && !HasState(def, 54 /*uninterruptable*/)) res |= 4;
   `NoShldBlock` (`+0x0F` bit 2) is set or it holds a shield, else 0; capped at 75. Then a player that is moving
   (mode 2, 3 or 6 by `0x00621190`) and not in mode 2 (walk) gets `b /= 3`. If `b > 0`, one inlined draw on the
   **defender's** seed, blocked when `r < b`. (fn:COMBAT_DefenceRoll@0x0057DFB0, fn:sub_00622720_UnitBlockChance@0x00622720,
-  0x0057DFD5, 0x0057E011–0x0057E01F, tbl:CharStats.txt:BlockFactor, tbl:MonStats.txt:NoShldBlock)
+  0x0057DFD5, 0x0057E011–0x0057E01F, tbl:CharStats.txt:BlockFactor, tbl:MonStats.txt:NoShldBlock) *Corrected
+  2026-11-16:* the `b > 0` test comes before the divide, so a moving player's chance of 1 or 2 still draws once
+  (0x0057DFE2–0x0057DFE4) (§ 21, run:2026-11-16-sweep2-s5e3).
 - [I] **When not blocked** (`COMBAT_AvoidRoll`, `missile` = the caller's flag): a player in mode 3 or 2, or a monster
   in mode 15 or 2, rolls **only evade**: stat 340 > 0 → one draw on the defender's seed, result 8 when `r < evade`.
   Otherwise: weapon block (stat 348 for the held weapon's item type, `sub_0057DCA0_WeaponBlockChance`) when > 0 and
@@ -504,7 +507,8 @@ In order, `(game, attacker; defender, doReductions, packet)`:
 
 1. [I] Not hostile and not `flags & 0x1000` → clear result 1 and 2, return. Defender in town and the attacker not a
    monster with the town-capable MonStats bit → clear 2, return. A monster defender that is not `killable` → return.
-   Dead → return. `0x00621D50` records the attacker. (0x0057C6D5–0x0057C78E)
+   Dead → return. `0x00621D50` records the attacker. (0x0057C6D5–0x0057C78E) *Refined 2026-11-16:* a defender
+   with no room (`UnitGetRoom` 0) also clears 1 and 2 and returns (0x0057C6F9–0x0057C700) (§ 21, run:2026-11-16-sweep2-s5e3).
 2. [I] `doReductions` → `COMBAT_ApplyReductions` (missiles); the melee queue already did it. (0x0057C793–0x0057C7A0)
 3. [I] Events, when `result & 1` and not `result & 0x20`: melee (`doReductions` = 0) → event 5 `domeleedamage` on the
    attacker, then event 1 `damagedinmelee` on the defender; missile → event 6 `domissiledamage` on the attacker unless
@@ -1330,6 +1334,83 @@ and the bytes written before it, and nothing after it. Each offset's meaning kee
 `InvItemQuery`), delivery 22 (`COMBAT_ApplyDamage`'s prologue reads the defender's room and town test,
 0x00620BB0, 0x0061AB00), README 35's `Align` = 1 exception (`sub_005A4F50_MonAttackStats`). Corrections are routed
 by the S5e corrections backlog entry.
+
+### 21. Plan 0066 batch S5e part 3: the defence roll with a shield, `UNIT_GetDefense` and the delivery prologue (run:2026-11-16-sweep2-s5e3)
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 3 (`lane/n66t`,
+2026-11-16), as §§ 19–20: each claim is the emulated map of the named function on declared inputs (ADR-0015),
+compared with `tools/combat_s5e3_emu.py`'s model over the kept run
+([run:2026-11-16-sweep2-s5e3](experiments.md#run2026-11-16-sweep2-s5e3), `check.txt`, 0 mismatches in 12 000 cases); brackets give the
+separating control counts (`sep`, each with `passed` 0) and the `ROWS` tallies. A claim ending at an observed boundary
+(ADR-0021) covers that call's arguments and nothing after it. The inventory, item and type tables are S6f's declared
+synthetic image (ADR-0015 (4)); what each offset means keeps its own tag.
+
+- [C] *To-hit 20, 22 (C2's walking exception).* `COMBAT_DefenceRoll` (ECX game, EDX attacker; defender, isMissile,
+  useBlock; `ret 0xC`) for a type-0 defender: `useBlock` = 0 goes straight to `COMBAT_AvoidRoll`; else
+  `b = UnitBlockChance(def, game +0x70)`, and `b` < 1 goes to `AvoidRoll` with no draw; then, when
+  `UnitIsMoving(def)` and the unit's `+0x10` mode ≠ 2, `b ← b ÷ 3`; then one inlined draw `low mod 100` on the
+  defender's seed and `r ≥ b` goes to `AvoidRoll`, else 1. A moving player whose `+0x10` mode is 2 keeps `b` undivided
+  [295 cases moving at mode 2 with `b` ≥ 1; `mode_ne2` 412, `useblock` 2 689, `b_ge1` 4 689, `r_ge_b` 2 113].
+  (fn:COMBAT_DefenceRoll@0x0057DFB0, 0x0057DFE4, 0x0057E00B–0x0057E01F, run:2026-11-16-sweep2-s5e3)
+- [C] *Correction to C2's pseudocode (the line after to-hit 20).* The `b ≥ 1` test comes **before** the divide and
+  is not repeated: a moving player with a chance of 1 or 2 has `b ÷ 3` = 0 and still draws (the block then always
+  fails and `AvoidRoll` follows) [`spec_b_gt0_after`, the text's order, 2 separating cases]. (0x0057DFE2–0x0057DFE4,
+  run:2026-11-16-sweep2-s5e3)
+- [C] *Refinement (to-hit 20).* The moving test reads `0x00621190`'s mode (`+0x40` when `+0x30` ≠ 0, part 1), the
+  exception reads `+0x10` itself, so a unit whose two modes differ takes each from its own field [`mv_f30` 339].
+  (fn:sub_00622D00_UnitIsMoving@0x00622D00, 0x0057E00B, run:2026-11-16-sweep2-s5e3)
+- [C] *To-hit 24's remainder (`UnitIsMoving`'s set).* For a type-0 unit `sub_00622D00_UnitIsMoving` is true exactly
+  when `0x00621190`'s mode, unsigned, is 2, 3 or 6 [`mv_gt1` 436 and its strictness 87, `mv_lt4` 540 and 101,
+  `mv_eq6` 446]. The type-1 branch (modes 2, 15; 8, 9 through `MonClassCheck`) and the fatal type 3 were not run.
+  (fn:sub_00622D00_UnitIsMoving@0x00622D00, run:2026-11-16-sweep2-s5e3)
+- [C] *The player's block chance through the shield.* `sub_00622720_UnitBlockChance` for a type-0 unit is 0 unless
+  `sub_0063C8F0_InvItemQuery(inv, 0)` finds, in hand 4 then hand 5 (the inventory magic `0x01020304` and page 0 of
+  size 13 × 1), an item that `sub_0062A4E0_ItemNotDisabled` passes (item data `+0x18` bits `0x100` and `0x4000`
+  clear, or not an item unit) and `ITEMS_UnitIsType(item, 51)`; then `b = stat 20 + CharStats[class] +0x49`, in
+  expansion `((stat 2 − 15) × b) ÷ (2 × L)` with `L = stat 12`, 1 below 2 (signed, 32-bit), and `min(b, 75)`
+  [`q_t51` 2 027, `q_notdis` 1 854, `magic_q` 2 139, `exp` 2 022, `lv_lt2` 1 202, `b_lt75` 2 424].
+  (fn:sub_00622720_UnitBlockChance@0x00622720, fn:sub_0063C8F0_InvItemQuery@0x0063C8F0, run:2026-11-16-sweep2-s5e3)
+- [C] *To-hit 31's remainder (three defender draws).* After a failed block, a player not in `+0x10` mode 2 or 3
+  takes `sub_0057DCA0_WeaponBlockChance` (the largest stat-348 value whose layer is an item type of hand 5 or hand 4,
+  a layer-0 entry setting the running value outright); when it is > 0 and `0x0064F380` gives weapon class index 13
+  (`ht2`, `COMPOSIT_WeaponClass` run whole), `RNG_Range(seed, 100)` < chance returns `0x10`; otherwise the dodge
+  (melee, stat 338) or avoid (missile, stat 339) draw follows. Block, weapon block and dodge or avoid make three
+  draws on the defender's seed in one call [5 cases at three draws, 490 at two, 3 394 at one, 1 970 at none, every
+  seed state compared; `wc_d` 1 180, `r_lt_wb` 166, `wb_l0` 87, `wb_lt` 207]. (fn:COMBAT_AvoidRoll@0x0057DD60,
+  fn:sub_0057DCA0_WeaponBlockChance@0x0057DCA0, 0x0064F380, run:2026-11-16-sweep2-s5e3)
+- [C] *To-hit 14, 15 (B1), with a correction for d ≤ 0.* `UNIT_GetDefense(unit)` (`ret 4`):
+  `d = stat 31 + stat 2 ÷ 4` (signed), `p = UnitGetStat 171 + UnitGetStat 16`; then, for `d` ≥ 1,
+  `d ← d + (p × d) ÷ 100` (32-bit product, signed, toward zero), and for `d` ≤ 0 the code multiplies by the negated
+  magic `0xAE147AE1`: `d ← d − (p × d) ÷ 100`, so a percent moves a negative or zero defence toward 0 by its share
+  instead of away from it; then, when stat 182 ≠ 0, `d ← d + MulDiv(d, stat 182, 100)` [`spec_def_plain`, B1's
+  text for every `d`, 648 separating cases; `d_ge1` 1 702, `s182` 1 324; 2 515 cases with a percent term non-zero].
+  (fn:UNIT_GetDefense@0x006223F0, 0x006224C1–0x006224EE, run:2026-11-16-sweep2-s5e3)
+- [C] *To-hit 14, 15 (the Holy Shield term, up to the call).* `p` gains a term only when `UNIT_HasState(unit, 101)`,
+  `UNIT_FindStatListByState(unit, 101)` finds a list, its base stats 350 and 351 are both > 0, `SKILLS_GetRecord(stat
+  350)` exists and `InvItemQuery` finds a shield as above; then `SKILLS_EvalCalc(unit, record +0x138, stat 350,
+  stat 351)` is the boundary (from 0x006224BA) [137 cases at it; `st101` 156, `sl_found` 182, `sk_gt0` 289, `lv_gt0`
+  267, `sk_rec` 200, `hs_shield` 183]. After, `[I]`: the calc's value and its addition to `p` (0x006224BF).
+  (fn:UNIT_GetDefense@0x006223F0, 0x00622447–0x006224BA, fn:SKILLS_EvalCalc@0x00646CA0, run:2026-11-16-sweep2-s5e3)
+- [C] *Delivery 22 (B1's prologue), with a refinement.* `COMBAT_ApplyDamage` (ECX game, EDX attacker; defender,
+  doReductions, packet): `sub_00554200_UnitsHostile` (the same unit or both null: 0; two players: the attacker's
+  PlayerData `+0x38` node for the defender's id `+0x0C`, its word `+4` & 8; otherwise 1 unless
+  `sub_00650D70_AlignSame02`, both `UnitAlignGet` 0 or both 2) = 0 with packet `+0` bit `0x1000` clear, **or a
+  defender with no room** (`sub_00620BB0_UnitGetRoom` 0), clears result bits `0x3` and returns; a room whose level
+  id is 1, 40, 75, 103 or 109 (`sub_0061AB00_RoomIsTown` through room `+0x10`, `+0x58`, level `+0x1D0`) clears
+  `0x2` and returns unless the attacker is a monster with MonStats `+0x0D` bit `0x04`; a monster defender without
+  MonStats `+0x0D` bit `0x80` returns unchanged; `sub_005541B0_UnitIsDead` (`+0xC6` bit 0; a player in mode 0 or
+  0x11, a monster in mode 0 or 0x0C, any other type) returns unchanged; else `0x00621D50(def, att)` is the boundary
+  (from 0x0057C78E) [216 cases at it; `hostile` 752, `f1000` 623, `room` 1 674, `town` 762, `ms0d4` 100, `ms0d80`
+  171, `dead` 1 002, `h_pp` 572, `pn_id` 8; 78 null defenders reach the fatal path in `UnitGetRoom`]. The refinement:
+  B1's first line omits the room-less defender, which also loses `0x3`. Not run: `MonsterOwner`'s redirect through
+  `GameFindUnit` (MonsterData `+0x28` null or its `+0x28` zero in every case) and a missile attacker's `+0xC8` bit
+  10. (fn:COMBAT_ApplyDamage@0x0057C6C0, 0x0057C6D5–0x0057C78E, run:2026-11-16-sweep2-s5e3)
+- [I] *README 35 (`Align` = 1), not settled.* A recount of the kept S5a part 2 check (`tools/combat_s5e3_mas.py`,
+  `mas-recount.txt` in the run directory, `S5a2 total bad=0`) finds the two classic Nightmare/Hell calls of an
+  `Align` = 1 class (257 and 405, both mode 8) logged all-zero stats 19, 21, 22, which the factors leave at zero: they
+  do not separate (562 of the 598 others do). The emulated route needs `MonLvlStats` and the MonLvl image, and
+  `STATLIST_Clear` / `STATLIST_SetStat`, unread for an allocator; it stays `[I]`. (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
+  0x005A5109–0x005A511B)
 
 ## Boundary recommendation for Phase 2
 

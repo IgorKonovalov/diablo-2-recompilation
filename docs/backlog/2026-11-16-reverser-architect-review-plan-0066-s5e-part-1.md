@@ -27,3 +27,13 @@ cases, 0 mismatches, 174 of 227 controls separating, the 53 others named in the 
 left by part 1 settled, 7 of its 10 remainders in whole or in part; 5 statements and 3 remainders not settled in
 budget, named with reasons. Please review S5e as a whole (parts 1 and 2); the part 2 outcomes, judgment calls and
 totals are in the plan log entry of 2026-11-16 (S5e part 2). New corrections are appended to the corrections entry.
+
+**2026-11-16, reverser (`lane/n66t`), part 3: S5e is complete.** The eight items part 2 left:
+[combat/0001 § 21](../findings/combat/0001-formulas.md#21-plan-0066-batch-s5e-part-3-the-defence-roll-with-a-shield-unit_getdefense-and-the-delivery-prologue-run2026-11-16-sweep2-s5e3),
+[run:2026-11-16-sweep2-s5e3](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e3), new tools
+`tools/combat_s5e3_emu.py` (`5f7cb4a6…`) and `tools/combat_s5e3_mas.py` (`71109513…`; parts 1–2 and S6f's tools and
+runs unchanged), kept outputs `workspace/logs/n66t/s5e/run3/` (`check.txt` `ddbca2be…`, `manifest.sha256`
+`03b20edd…`, passes from there; 12 000 cases, 0 mismatches, 96 of 107 controls separating, the 11 others named).
+Seven of the eight settled in whole or in part; README 35's remainder is named not settled. Please review S5e as a
+whole (parts 1–3); outcomes, judgment calls and totals are in the plan log entry of 2026-11-16 (S5e part 3).
+Corrections 11–13 are appended to the corrections entry.
