@@ -1859,3 +1859,56 @@ cells by the plain `.txt` reader and by the compiled `.bin`. Kept output `worksp
     of Diablo's block (rows 51 and 147) only. Row C422 is part 2's.
 - **Not covered by this run** (part 2): catalogue rows 171, 422, 431 and the S1e remainders 196 and 420; machinery 10, 15,
   19, 20, 40, 41, 42, 44, 45, 54, 88, 94; README 21, 23, 33, 38.
+
+### Part 2 (2026-11-16, same branch)
+
+S1f's catalogue rows 171, 422, 431 with the S1e remainders 196 and 420, and S1o's 16 other rows. Tool `tools/ai_s1fo.py`
+(`842c1e79…`) with two new sections, `p2f` and `p2o`, on the same helpers plus `tools/light_radius_scan.py`'s getter list;
+part 1's sections unchanged (their 91 lines of the new output equal `check-s1fo-p1.txt` but for the totals). Kept output
+`workspace/logs/n66x/s1fo/check-s1fo-p2.txt` (`68d4c1ee…`, `python3 -I tools/ai_s1fo.py all`, 178 check lines, 87 of
+them part 2's, `S1fo total bad=0`), `manifest-s1fo-p2.sha256` (`95c37bbc…`) passing from `workspace/logs/n66x/s1fo`;
+development outputs and the exploration scripts in `dev2/` with `manifest-dev2.sha256` (passing from `dev2/`). About 5
+minutes under a 4 GB scope; no game, no Ghidra.
+
+- **Results (each `[C]` by the second tool, at the scope stated; run:2026-11-16-sweep2-s1f, `check-s1fo-p2.txt`):**
+  - *Row 71's `v14`* (C171). The think 0x005FA710–0x005FAA8F stores `[esi+0x14]` **eleven** times by objdump and r2 (0,
+    3, 0, 0, 4, 0, 5, 2, 3, 0, 2; the register zeros from `xor`, 0x005FA7DD's `ecx` from `xor ecx,ecx` at 0x005FA771 on
+    both jumps to it), none 1; its other `+0x14` operands are the state read 0x005FA72E and `cmp [esi+0x14],0x1`
+    (0x005FA8D7) after `AiUnitSearch`. `EDX` = `eax − 1` under `state = 2` (0x005FA767), `eax − 2` under `state = 3`
+    (0x005FA803). The specs' "twelve" is a miscount (backlog item 4).
+  - *The arrow kind* (C196). `RNG_RandLoHi` 16 calls, one in 0x005DC000–0x005FE000 (`AiTrapArrowKind` 0x005FB69D); that
+    function's 2 calls are rows 78 and 79's thinks (0x005FB749, 0x005FB869); the image's six `[r+0x2d4]` operands
+    (objdump, r2, raw disp32 alike) are in `MonRegionsBuild` and `AiTrapArrowKind`; the three writes are the −1 at
+    0x00547AB4 and the guarded 0 or draw at 0x005FB682, 0x005FB6A2.
+  - *The inline picks* (C420). Diablo's 0x005E8E16–0x005E8EA1 and Baal's three (0x005FC280, 0x005FC3C1, 0x005FC5B0 to
+    their `ret`) have 0x005FC130's shape: one multiplier step, mask or `div`, sum ≤ 0 skipping the step with `edx` 0 from
+    the summing loop's counter, a signed scan from a zero running sum (`ebx` zeroed at entry, epilogue pops only), 17 words
+    and fallback 11 (Diablo), 16 and 1 (Baal).
+  - *Diablo's tables* (C422). The three templates' constant stores at `EBP−0xA4` equal ai/0012 § 2.3's start words; w0,
+    w11, w16 are stored only from the zero `ebx`, and no store, read-modify-write or indexed store touches them in the copy
+    at `EBP−0x60`; the score test `jbe` 0x005E8D48; the difficulty word `EBP−0xBC` of `EBP−0xC8`. `Skill8`: records 333,
+    705 and 709 (`uberbaal`, row 145).
+  - *Baal's tables* (C431). The three start words equal ai/0012 § 2.8 (melee `EBP−0x40`, blocked `EBP−0x48`, ranged
+    `EBP−0x54`); w0 only ever 0; the ranged w7 is stored 0 twice (0x005FC481, `P`'s 0x005FC5A4) and has no other write; the
+    level compare `0x84` at 0x005FC74F.
+  - *Target lists* (M10). `TargetListAddPlayer` 1 call (`SUnitCreate`), type 0, first free of slots 0–7, `Game+0x8C` ≤ 8;
+    `TargetListAttach` 15 calls in 14 functions, `i < 8`, after the head; `TargetListAdd` 9 calls, lists 8 (`WandererSpawn`,
+    `AiNpcBarb`, `AiWussie`) and 9 (six), at the head.
+  - *The unit search* (M15). `g_AiSearchKinds`: 13 pairs, walkers 0,0,1,0,0,2,0,0,0,3,3,2,0; the dispatch 0x005DD0B7–
+    0x005DD127; 29 calls, kind 1 ×19, 6 ×2, 2, 3, 5, 7, 8, 9, 11, 12 ×1 (three kind-1 pushes stand well before the call:
+    0x005EE8F8, 0x005FA8C0, 0x005FAF20).
+  - *Stat 89* (M19). The ten getters' 1 418 calls: 1 213 with an immediate id by the objdump walker, 161 ids, none 89, and
+    no 89 by r2's walker at the 11 calls where the two walkers differ; 7 `push 0x59` and 2 `mov r32,0x59`, none within ten
+    instructions before a getter call; the five search functions call no getter.
+  - *Others.* M20 13 calls in 10 AI functions, the mask byte 1 against Skills `+0x08`. M40 `MonAiPathOverride` 103 calls,
+    EDX 0 ×55, 7 ×12, 1 ×6, 2 ×10, 13 ×7, 15 ×3, 5 ×1, nine registers resolved by their decoded sources; `AiPathOverrideSet`
+    9 calls. M41 `PathPlan` 68 calls, the eight monster-mode and AI ones the claim's. M44 `AiCtlFollowSet` 4 calls and its
+    pair. M45 the owner link `AiCtl+0x28/+0x2C/+0x30`, written by `MonSetOwner`, read by `MonsterOwner` and
+    `MonGroupForEach` (then `+0x34`). M88 row 37's think and callees to depth 2 (19 functions, 1 447 instructions): no
+    displacement 0x170–0x19F. R21 `UnitQueueEvent` 265 calls, kind 2 ×30; `UNIT_CancelEvents` 141, kind 2 ×66. R38
+    Hireling's four classes all row 61; the 32 Skills `summon` classes' rows.
+  - *A finding against the specs.* M54: `UModTeleportTry` draws `Range(100)` twice on the acting unit's seed (0x005B12DB
+    `< 15`; 0x005B1355 `< 25` with life below 30) besides `SpawnPosPick` (0x005B1318); machinery § F gives none
+    (backlog item 5).
+- **Not settled** (reasons in the inventory rows): machinery 42 (`PathPlan`'s `0x40000` exit to `PathPlanStraight`
+  0x006499B9 comes before the one `PathTargetNotTown` call, 0x00649AE5), 94; README 23, 33.

@@ -568,6 +568,10 @@ flowchart TD
   | `UModTeleportTry` (`MonSpcWalkCheck`) | as drlg/lifecycle (`SpawnPosPick`) | — |
   | AI action helpers 0x005DF850, 0x005DF990, 0x005DFA00, 0x005DFBF0 (damage and missile helpers of a few AIs) | acting unit / other | catalogue |
 
+  *Corrected 2026-11-16 (`lane/n66x`, plan 0066 S1o part 2):* `UModTeleportTry` also draws twice on the acting unit's
+  seed (`ecx = unit+0x20`): `Range(100) < 15` at 0x005B12DB, then, with the life percentage below 30, `Range(100) < 25`
+  at 0x005B1355; its `SpawnPosPick` call is 0x005B1318. (run:2026-11-16-sweep2-s1f)
+
   Reached below the roots but not the machinery's: the combat, missile and spawn functions behind the action helpers
   (0x005DFA00 → `COMBAT_ApplyDamage`, 0x005DFDB0 → `MissileCreate`), read with the AIs that call them.
   (fn:sub_005DEB60_MonAiMove@0x005DEB60, fn:sub_005DD610_MonAiForcedTarget@0x005DD610, fn:sub_005DC970_AiHostileCandidate@0x005DC970)

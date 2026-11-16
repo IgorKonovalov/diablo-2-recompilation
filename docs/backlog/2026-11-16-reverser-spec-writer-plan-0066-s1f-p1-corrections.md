@@ -23,3 +23,14 @@ not blocking.
 3. **catalogue line 3933 (R51a), "`Skill8` is set only on `diabloclone` and `uberdiablo` at stock."** MonStats also sets
    `Skill8` on 709 `uberbaal` (Chilling Armor, row 145). Scope it to the records of Diablo's block (rows 51 and 147).
    Observed in part 1; the row (catalogue 422) is settled in part 2.
+
+*2026-11-16, part 2 (`lane/n66x`, same run record, `check-s1fo-p2.txt`):* two more.
+
+4. **catalogue line 1559 (R71a), "its twelve stores write 0, 2, 3, 4 or 5".** Row 71's think stores `AiCtl+0x14` eleven
+   times (0x005FA74B … 0x005FA9AA, objdump and r2 alike), none writing 1; the rest of the bullet stands. Write
+   "its eleven stores". The source is ai/0005 § 2.8 (dated note added). Inventory catalogue row 171.
+5. **machinery line 400 (§ F table, `UModTeleportTry`) and README F4's `; drlg/lifecycle`.** The row gives the seed as
+   `SpawnPosPick`'s and no draws, but the function draws twice on the acting unit's seed (`ecx = unit+0x20`):
+   `Range(100) < 15` at 0x005B12DB, then, with the life percentage below 30, `Range(100) < 25` at 0x005B1355; its
+   `SpawnPosPick` call is 0x005B1318. Add the two draws to the *Draws* cell (acting unit, before and after the pick).
+   The source is ai/0001 § 9's table (dated note added). Inventory machinery row 54.

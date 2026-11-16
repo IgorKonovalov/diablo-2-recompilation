@@ -2590,3 +2590,39 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **For the owner:** none. The 27 not-settled statements could be a later static batch (no pool entry in 23 of them);
   whether that is worth a batch is the architect's call.
 - **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s7e`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7e.md), covering S7e whole.
+
+### 2026-11-16 — Phase 1, batches S1f and S1o part 2 (reverser-static, `lane/n66x`): the 21 remaining rows; S1f and S1o done
+
+- **Done.** Merged `main` `72f003c8` first (plan-log conflict kept both; README § 1 checked against the 29 files' rows,
+  already equal). No game, no Ghidra. `tools/ai_s1fo.py` (`842c1e79…`) gains sections `p2f` and `p2o`; part 1's sections
+  unchanged and their lines reproduce `check-s1fo-p1.txt`. Kept output `workspace/logs/n66x/s1fo/check-s1fo-p2.txt`
+  (178 check lines, 87 of part 2, `S1fo total bad=0`), `manifest-s1fo-p2.sha256` passing from `workspace/logs/n66x/s1fo`;
+  development in `dev2/` (`manifest-dev2.sha256`). Record: [run:2026-11-16-sweep2-s1f](../findings/ai/experiments.md#run2026-11-16-sweep2-s1f), *Part 2*.
+  Every row's *Route* cell carries its dated note; README § 4's S1f and S1o rows updated.
+- **S1f (5).** Raised 1: S1e remainder 420 (the four inline picks have 0x005FC130's shape, n 17/16, fallback 11/1).
+  Raised in part 2: 196 (the caller set and the region word's three writers; "levels 1 and up" stays), 431 (Baal's start
+  words, w0, `P`'s w7, the level compare; the action map, `v18`, `S(t)`, `Skill5` stay). Raised in part with a correction
+  2: **171** (no store writes 1, but the stores are eleven, not twelve), **422** (Diablo's start words, weights 0/11/16
+  never non-zero, the unsigned score test, the difficulty word; `Skill8` also on 709 `uberbaal`, part 1's item 3).
+- **S1o (16).** Raised 4: machinery 10, 19, 20, 44. Raised in part 7: machinery 15, 40, 41, 45, 88; README 21, 38 (the
+  remainder named in each row). **Contradicted in part 1: machinery 54** (`UModTeleportTry`'s two own `Range(100)` draws
+  on the acting unit's seed). Not settled 4, a reason each: machinery 42, 94; README 23, 33.
+- **Batches whole.** S1f: all 24 rows and the five S1e remainders settled (part 1: 12 raised, 9 raised in part, 288
+  and 356 raised, 518 contradicted in part; part 2 above). S1o: 28 rows, 24 settled (13 raised, 9 raised in part, 2
+  contradicted whole or in part), 4 not settled.
+- **Corrections** to Phase 3 through the part 1 entry
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md)
+  (items 4 and 5 added); dated notes in ai/0005 § 2.8 (the store count) and ai/0001 § 9 (the draws), rule 20.
+- **Symbols:** none raised or added (no logged return compared).
+- **Totals** after merging `main` `72f003c8` (the kept check's `totals` line): a-logs 623, a-run 334, b 507, c 390,
+  c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No row moved class.
+- **Judgment calls for the review:** (1) a count off by one inside an otherwise held statement (171's "twelve") is filed
+  "raised in part with a correction", not contradicted; (2) machinery 54 filed contradicted in part: the seed reference
+  holds, the empty *Draws* cell does not; (3) machinery 19 raised whole at the claim's own scope (immediate ids, the ten
+  getters of `light_radius_scan.py`), the 11 calls where the two argument walkers differ checked on both; (4) machinery 88
+  scoped to the think and two levels of callees, `MonSetMode`'s indirect call and deeper levels named as the remainder;
+  (5) README 38's Bone Prison: its Skills `summon` cell names `bonewall` (row 84) while the claim says row 1 and
+  `boneprison1`–`4` are row 1; left `[I]` (the class mapping in `SkillSummonClass` is unread), not filed as a
+  contradiction; (6) the 196 and 420 remainders, routed to S1f from S1e, are counted as S1f rows here.
+- **Next:** Tier B review of S1f and S1o whole: the part 1 request, extended
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md)).
