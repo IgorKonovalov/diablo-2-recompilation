@@ -488,7 +488,7 @@ each cluster's re-tag.
 | quests (`lane/n66qr`) | [quests/README](quests-README.md) | 6 | 1 | 2 | 0 | 3 | C 11 / I 6 / L 2 | C 14 / I 5 / L 2 |
 | frame (`lane/n66pf`) | [sim/frame](sim-frame.md) | 127 | 33 | 43 | 2 | 49 | C 67 / I 130 / L 5 | C 144 / I 98 / L 5 |
 | frame (`lane/n66pf`) | [path/README](path-README.md) | 79 | 21 | 16 | 1 | 41 | C 85 / I 85 / L 13 | C 119 / I 64 / L 13 |
-| frame (`lane/n66pf`) | [path/search](path-search.md) | 36 | 10 | 6 | 0 | 20 | C 102 / I 36 / L 4 | C 117 / I 26 / L 4 |
+| frame (`lane/n66pf`) | [path/search](path-search.md) | 36 | 9 | 7 | 0 | 20 | C 102 / I 36 / L 4 | C 117 / I 27 / L 4 |
 | frame (`lane/n66pf`) | [drlg/lifecycle](drlg-lifecycle.md) | 78 | 27 | 19 | 2 | 30 | C 103 / I 78 / L 9 | C 147 / I 52 / L 8 |
 | frame (`lane/n66pf`) | [player/party](player-party.md) (the S7a rows; row 12 the combat cluster's) | 26 | 4 | 0 | 0 | 21 | C 47 / I 29 / L 3 | C 51 / I 25 / L 3 |
 

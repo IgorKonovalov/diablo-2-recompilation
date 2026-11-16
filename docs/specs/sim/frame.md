@@ -328,7 +328,7 @@ E1. EventQueueAt(kind: i32, game, frame: i32, unit, callback, a, b):   [C] (all 
       if frame = −1:
         EventQueueEveryFrame(kind, unit, game, callback: 0, a, b)  ; the callback is dropped
         return
-      if frame ≤ game.frame: frame ← game.frame + 1               ; signed
+      if frame ≤ game.frame: frame ← game.frame + 1               ; signed; at a negative current frame this can give −1, D9
       if unit ≠ 0 and unit.type = 1 and kind = 2 and UNIT_HasState(unit, 54):
         UninterruptibleEnd(unit, 0)                               ; [I] (0x00541701–0x00541712) past the UNIT_HasState boundary; E4, the one draw route in the queue
       rec ← EventRecordAlloc(game, unit)                          ; E3

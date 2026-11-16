@@ -2881,3 +2881,42 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Gate:** fast green (89 warnings; new: W4 on the eight wiki pages the refresh entry names); `--full` green (39 surveys);
   `tools/quirks.py check` 0 errors.
 - **Review:** Tier A, [request](../backlog/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-frame-cluster.md).
+
+### 2026-11-16 — Phase 3 frame cluster review (architect, Tier A, `lane/n66pf`): accept with fixes (4)
+
+- **Merged `main` first** (`0df309d6`: the quests and combat clusters, S1f/S1o, S7e): keep-both on this log and on
+  inventory README § 6; the research map, the quirks index and the findings merged clean; no markers left.
+- **Checked.** The five inventory files' *Phase 3* lines partition their rows exactly (frame 127, path/README 79,
+  path/search 36, lifecycle 78, party 25 with row 12 the combat cluster's; a script over the lists, no row twice or
+  missing, every bucket count as stated). § 6's five rows, the research-map rows and the eight touched specs' front
+  matter agree (gate). No `[L]` outside *Open questions* in the seven specs; no Mermaid block changed. The only
+  `docs/findings/` changes are the six link rewrites of `tools/backlog.py close` (drlg/0009, frame/0001, path/0001).
+  The five corrected rows read against their findings: frame 117 (frame/0001 § 9: the `0xB0` send with its
+  `[0x00883D50]` condition, the 751 indirect calls `[I]`), frame 33 (frame/0007 S7b, D6 still `[I]`), path/README 17
+  (path/0001 § 16; one fix below), lifecycle 2 (drlg/0009 § 12, the spawn's reach `[I]`) and 12 (§ 13). Promotion
+  re-check, sampled from the raises since each finding's last Tier A review: frame/0007 S7b (H2, H2c, H3a, the AI's
+  kind-0 draws for Q500, the rank-6 window), frame/0001 §§ 9–10 (C3, C5), frame/experiments s7e (D9, E2a, E3a, E6,
+  F3, `wtick`/`wroll` for lifecycle I1 and spawn K1), path/0004 § 10 (masks, vultures, slot call), path/0001 §§ 16–17
+  and drlg/0009 §§ 11.5, 12, 13: each anchor says what the sentence says, with the scopes below.
+- **Fixes (4).** *Overclaim (2):* path/README's `SizeY` bullet led with "unused by a monster's footprint mark" under
+  `[C]`, the claim path/0001 § 16 calls wrong for the two AI removals; it now leads "reaches a monster's footprint only
+  through the rectangle functions". path/search N (row 35, whole) kept "no server planner passes 78" in the `[C]`; it
+  rests on rows 33 and 34's `[I]` remainders (the `+0x90` stores outside the path module), so it moves to an `[I]`
+  (path/search C 117 / I 27 / L 4; row 35 whole → split: whole 9, split 7; the inventory line, § 6 and the
+  research-map row follow; the cluster: whole 94, split 85). *Misread (1):* path/README § A's "Leap, the flight" row
+  (judgment call 6) wrote "0 at Leap Attack's plans" into a row anchored to `SkillSt40Leap`: 0x005DA00C and the row's
+  own 0x005D9F9C both lie in `LeapAttackPath`, which path/0004 § 10 calls Leap Attack's and search F the player's
+  Leap. The cell now names the address and the function, not the skill; the label question goes to the reverser
+  ([entry](../backlog/2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count.md), with
+  drlg/0009 § 13's "11 functions" for the 10 its list names). *Omission (1):* sim/frame E1's pseudocode (`[C]`, all
+  of E1) showed the raise without the case D9 now states; its comment points there.
+- **Judgment calls.** (1) The six filed-raised rows split: accepted. (2) monsters/spawn K1 raised beside lifecycle
+  § I with no inventory line: accepted; `wtick` and `wroll` separate each test K1 names, and this log records it.
+  (3) Two `[I]` remainders in lifecycle 15 and frame 91: accepted. (4) Frame 33 and 117 as corrected: accepted.
+  (5) D3 kept with E5a cited: accepted. (6) The vulture row: accepted (path/0004 § 10's 249 plans and the r2-read
+  push); the Leap cell: changed, above. (7) H2's header scoped to one act: accepted; frame/0007 states the same
+  scope, and H2's emulated bullet covers the act order. (8) The J table's first-tool counts beside the second
+  walker's: accepted.
+- **Gate:** fast green (93 warnings after the merge, none from the fixes; the W4s the refresh entry answers);
+  `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
+- **Verdict: accept with fixes (4)**: overclaim 2, misread 1, omission 1. The review request stays open for the merge.

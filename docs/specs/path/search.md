@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/overview]
 consumed_by: [path/overview, anim/movement, skills/overview, skills/missiles, skills/catalogue, monsters/ai]
-tags: {C: 117, I: 26, L: 4}
+tags: {C: 117, I: 27, L: 4}
 updated: 2026-11-16
 ---
 
@@ -766,7 +766,7 @@ PathPlanType12(ctx): +0x24 ← 0;  +0x98 ← −4;  n ← PathWalkParam98(ctx); 
 | Search | 77 | `stair` 77 | [C] (0x0067ACE9, run:2026-11-03-path-emu-2) |
 
 - N. [C] Limit 77 is the most any path-module writer or immediate gives: `PathSetByte90` caps at 77, creation gives 73 or 14 ([path/0001 § 16](../../findings/path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n)). [I] That the 13 register dword stores at `+0x90` outside the path module (bases not traced) give no more is not read. Limit 78 would write `+0x1D4`; no server code path sets it, and the quest byte stores at the same offsets are not paths. (0x00648E7D, fn:QUESTS_FindById@0x00543640)
-- N. [C] `PathPlan` has no test of a count above 78: the return is stored at 0x00649BB8 and none of the tail's 8 compares holds 77 or 78, so a planner returning one would overrun the record. No server planner passes 78. (0x00649BA1–0x00649C6E, [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o))
+- N. [C] `PathPlan` has no test of a count above 78: the return is stored at 0x00649BB8 and none of the tail's 8 compares holds 77 or 78, so a planner returning one would overrun the record. (0x00649BA1–0x00649C6E, [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o)) [I] No server planner passes 78: it rests on the limits above, whose register stores outside the path module are not read.
 
 ## Outputs
 
