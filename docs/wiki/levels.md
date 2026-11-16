@@ -236,8 +236,9 @@ caption: Catacombs Level 3 (level 36) built room by room. A level draw picks the
   facing the right way or attaches a new room, then the theme pass locks up to max(2, rooms ÷ 5 + 1) rooms as their Theme records (§ D, § H). Every value shown is
   computed by our replay model (tools/maze_replay.py), not observed in the game, and the seed is an illustrative
   input, not a level seed a game produces. The last steps convert the rooms newest first and name each room's preset
-  file as the overview's step 9 picks it: a forced index if the room has one, else the level type's per-build file
-  rotation for the base Defs, else a level-seed draw over `Files` (drlg overview, steps 9a and 9b).
+  file as the overview's step 9 picks it: each instance first draws an index over `Files` on the level seed (9a);
+  a forced index replaces it if the room has one, else, for a Def strictly between the level type's rotation base
+  and base + 16, the level type's per-build file rotation does (9b) (drlg overview, steps 9a and 9b).
 ```
 
 ## Outdoor levels
