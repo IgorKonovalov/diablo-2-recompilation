@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/quirks/README.md 2026-11-10
+  - docs/specs/quirks/README.md 2026-11-16
 ---
 
 # Quirks: the traps a faithful rebuild must keep
@@ -9,7 +9,7 @@ This page is a reader's tour of the project's list of quirks. A quirk here is be
 careful programmer would "fix" by accident: a divide made signed, a random draw skipped because its result is thrown
 away, a "less than or equal" turned into "less than", a table edge read the sensible way. The reviewed specs each
 state their own traps in their notes. The [quirks index](../specs/quirks/README.md#purpose) gathers them in one place,
-529 entries in nine classes, so that a rebuild can be checked against the whole list. This page makes no claim of its
+538 entries in nine classes, so that a rebuild can be checked against the whole list. This page makes no claim of its
 own. It tells you what kinds of trap the game holds, shows a few of the most striking, and points into the index. The
 one-line entries of the index leave out conditions, so read the owning spec section an entry links before you rely on
 it; where the index and a spec differ, the spec is right
@@ -26,15 +26,15 @@ independent.
 | Class | Entries | Confirmed |
 |---|---|---|
 | [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 26 | 19 |
-| [2. Rounding and float](#2-rounding-and-float) | 21 | 15 |
+| [2. Rounding and float](#2-rounding-and-float) | 21 | 16 |
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 |
-| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 56 |
-| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 118 |
-| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 104 |
-| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 14 |
-| [8. Multiplayer edges](#8-multiplayer-edges) | 16 | 12 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 70 | 30 |
-| **Total** | 529 | 371 |
+| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 61 |
+| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 123 |
+| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 112 |
+| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 17 |
+| [8. Multiplayer edges](#8-multiplayer-edges) | 23 | 17 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 34 |
+| **Total** | 538 | 402 |
 
 ### 1. Arithmetic width and sign
 
@@ -82,8 +82,7 @@ unguarded modulus and in principle has no bound. Entries: [class 5](../specs/qui
 ### 6. Data-dependent branches
 
 Behaviour that depends on which row, flag or value is in play. A monster's critical strike doubles every damage field,
-physical and elemental, while the index records a player's critical or deadly strike as doubling only the physical part
-(that second one is read from the code). Leech uses the reduced, life-capped physical damage, and elemental damage never
+physical and elemental, while a player's critical or deadly strike doubles only the physical part. Leech uses the reduced, life-capped physical damage, and elemental damage never
 leeches. A monster with few hit points has no regeneration at all, because the product rounds to 0 (read from the code). A formula the game
 cannot compile is stored as an error and evaluates to 0, where a forgiving parser would succeed. Entries:
 [class 6](../specs/quirks/README.md#6-data-dependent-branches).
@@ -91,9 +90,9 @@ cannot compile is stored as an error and evaluates to 0, where a forgiving parse
 ### 7. Timing and frame edges
 
 When things happen, in frames. A scheduled action ends a number of frames after it starts, and the community
-breakpoint tables count one less. A scheduled action does not follow a rate change made after it starts, while an every-frame monster takes the new rate at its next advance (read from the code). A monster's attack
+breakpoint tables count one less. A scheduled action does not follow a rate change made after it starts, while an every-frame monster takes the new rate at its next advance. A monster's attack
 rolls its extra-damage draws when the attack begins, and the to-hit and damage at the hit frame, with the monster's
-own thinking drawing in between. Nearly half of this class is read from the code only (10 of 19 confirmed). Entries:
+own thinking drawing in between. Eleven of the class's 28 entries are read from the code only. Entries:
 [class 7](../specs/quirks/README.md#7-timing-and-frame-edges).
 
 ### 8. Multiplayer edges
@@ -165,7 +164,7 @@ page should keep two things apart.
   code does, not something a player saw. The party-share distance rule is one such: the code's map reproduced under
   emulation, with no logged kill separating it. Emulation shows what a function does with its inputs, not who calls it
   or how often in a real game ([what emulation can confirm](how-we-know.md#emulated-reproduction-one-function-run-on-its-own)).
-- **Read from the code is the weaker statement.** About three in ten of the entries (158 of 529) are only read from the
+- **Read from the code is the weaker statement.** About one in four of the entries (136 of 538) are only read from the
   code and not yet checked against anything independent. A trap in this group is probably real and has not been
   tested.
 

@@ -2433,7 +2433,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   Q376 and Q377 stay `[I]`, their notes now holding both tags and the entries restating the `[I]` clause. Research-map
   rows of anim/timing, anim/movement, the overview and quirks updated. wiki/animation and wiki/quirks are left with W4
   and two understated paragraphs on the run's turn; a refresh entry is filed
-  ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-animation-refresh-after-plan-0066-anim-re.md)).
+  ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-animation-refresh-after-plan-0066-anim-re.md)).
 - **Judgment calls for the review:** (1) anim/README note 1 (row 12) raised whole on timing J7's `fire` and S6c's
   callee closure of timing row 94, although row 12's route left its remainder to S6c, which did not take it;
   (2) movement Outputs (row 38) raised whole: it states the end on arrival only, row 26's remainder being the monster
