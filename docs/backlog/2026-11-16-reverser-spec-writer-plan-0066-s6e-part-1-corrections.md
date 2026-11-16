@@ -26,3 +26,9 @@ Plan 0066 batch S6e part 1 (`lane/n66l`, 2026-11-16) corrections for Phase 3 in 
 3. **J3, the predicates' other types.** `AnimRateIsMove` and `AnimRateIsAttack` fail fatally for a unit type other than
    0 or 1 (0x006214C5, 0x00621598); `AnimRateIsFixed`, `AnimRateIsCast` and the two mode tests 0x00621680 and
    0x006216B0 return 0. `AnimRateIsAttack`'s skill branch returns the masked byte (8), not 1.
+
+*2026-11-16, S6e part 2 (`lane/n66l`):* two more for anim/timing B3 (line 183 at `b5999f5e`), from
+run:2026-11-16-sweep2-s6e-2: (4) the gfxtype 2 map has the exception anim/0001 § 2 states and B3 omits: display class
+6 in monster mode 4 takes player mode 12, not `g_MonToPlrMode[4]` (0x00645328–0x0064533E); (5) the fallback's steps
+and the MonStats2 column names are now `[C]` (B3's second bullet can carry the tag). For anim/movement B6 (line 225):
+a component of −4096 reaches −2³¹ at `v = 32 768` and wraps from 32 769 (0x00650336–0x00650345).

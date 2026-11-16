@@ -231,6 +231,13 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
   `g_MonToPlrMode` (class 6 in mode 4 → 12). The record, the start frame and the rate all use the display values.
   (fn:UNIT_AnimTransform@0x00645270, fn:sub_00645190_PlrToMonMode@0x00645190, tbl:States.txt:gfxtype,
   tbl:States.txt:gfxclass, tbl:MonStats2.txt:mDT)
+  *2026-11-16, plan 0066 S6e part 2:* [C] this map holds whole under emulation, every callee run (`UNIT_HasState`,
+  `UNIT_TestStateBit`, `PlrToMonMode`): `PlrToMonMode` over the 20 player modes on all 734 stock MonStats classes
+  and 400 bound cases (15 080 of 15 080), `UNIT_AnimTransform` over 3 000 scratch transform lists (gfxtype 1 and 2,
+  players, monsters and other unit types, the class 6 mode 4 → 12 case among them), each named test separated; bit `m`
+  of the MonStats2 u16 at `+0xF0` is the `m<mode>` column (`mDT`…`mRN`) on all 609 rows. A form of the other kind
+  (gfxtype 1 on a monster, 2 on a player) sets the type and class and keeps the mode (0x00645367, 0x00645323).
+  (fn:sub_00645190_PlrToMonMode@0x00645190, fn:UNIT_AnimTransform@0x00645270, run:2026-11-16-sweep2-s6e-2)
 
 #### 2.1 The Phase 0 data questions (archivist, `lane/p50z`; folded into P1.1's *Done when* at its review)
 

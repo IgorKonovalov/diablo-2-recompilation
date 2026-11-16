@@ -764,3 +764,51 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
   `sub_00623990_SkillSrcDamWeapon`), `ANIMDATA_Lookup` (its name builder `COMPOSIT_BuildCofName`) and the loader
   itself (its allocator and file read), which the declared container models: the fallback's values and the block
   order stay the loader's static reading.
+
+## run:2026-11-16-sweep2-s6e-2
+
+- **Question:** (plan 0066 Phase 1, batch S6e, part 2, `lane/n66l`) Do `PathVelocityStep`, `PlrToMonMode` and
+  `UNIT_AnimTransform` map their inputs as [anim/0003 § Answer](0003-movement-gates.md#answer-summary) and
+  [anim/0001 § 2](0001-modes-frames.md) state, every named test separated by a case? Which S6e rows cannot run whole?
+- **Setup:** as [run:2026-11-16-sweep2-s6e](#run2026-11-16-sweep2-s6e): Ghidra 12.1 p-code emulator on the pinned
+  `game.exe` (`GHIDRA_PROJ_DIR=workspace/ghidra-n66l`, heap 3 GB, one instance, a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged, one `emuboundary` launch, no `observe` line and no declared callee
+  return (ruling R2): `UNIT_HasState` 0x00639DF0, `UNIT_TestStateBit` 0x00625B70 and `PlrToMonMode` run emulated under
+  `UNIT_AnimTransform`. New tool `tools/anim_s6e2_emu.py` (`51c04b41…`; `cases`/`check`/`manifest`, every draw from
+  `random.Random("n66l-s6e2-<family>")`; part 1's tool and seeds unchanged, its helpers imported). Declared image (the
+  tool's docstring): the DataTables pointer and its MonStats, MonStats2, States and transform-list fields, the stock
+  `monstats.bin` (734 records) and `monstats2.bin` (609) loaded `const` without their count word, scratch States
+  records, unit, stat list, state bits, path and out words. Guards on the fatal and allocator entries.
+- **Families:** `pvs` (3 064: `k` 0x400, 0, negative and random; speeds near 32 768, negative and random;
+  accelerations of both signs with counts 0–9 and caps at, below and above `v + acc`; plus a 64-case sweep of `v`
+  32 760–32 775 at `k` 0x400 with components ±4096 and ±2896); `p2m` (15 080: the 20 player modes on every stock class,
+  then 400 cases with the class or MonStats2 count at the class's own index, negative and past-the-end classes);
+  `xform` (3 000: unit types −1 and 0–5, `+0xC8` bit 3 set or clear, lists of 0–6 states with entries past the States
+  count and −1, gfxtype 0–3 and 0xFF, classes 0–6, 430, 431 and random, monster mode 4 weighted, stat lists absent or
+  without bit 31).
+- **Controls:** as part 1 (each named test reversed alone, each ordered compare's strictness switched alone; `passed`
+  must be 0). A control that reads a stock table past its end (a reversed bound) is scored a mismatch.
+- **Result:** `workspace/logs/n66l/s6e/run2/check.txt` (`d37ef05c…`, 186 lines; manifest `manifest.sha256`
+  `d5d968e6…`, 6 lines, passes from that directory; `cases` regenerates `s6e2.cases` (`701f36ba…`) byte for byte):
+  `S6E2 total cases=21144 bad=0 stops=0 controls=68 unseparated=5 unaccounted=0`. Every case of the three families
+  equal (`p2m` 7 619 direct, 7 461 down the fallback; `xform` 70 gfxtype 1, 72 gfxtype 2, 3 of them class 6 in mode 4
+  → 12, 2 855 unchanged; `pvs` 872 accelerating). `WRAP d=4096 … first_sign_flip=32768`, `d=-4096 … 32769`, the
+  diagonal none in the sweep. `P2M class=430` and `431` print the stock chain per player mode (3 → 15, 4 → 3, 7 → 4,
+  11 → 4, 17 and 18 → 1, …). `MS2COLS txt_rows=609 bin_rows=609 differing=0`: bit `m` of MonStats2 `+0xF0` is the
+  `m<mode>` column of `monstats2.txt`, `mDT` to `mRN`, on every row. 63 of 68 controls separate, `passed` 0 each; the 5
+  that do not: `pvs vneg~` (a speed of exactly 0 is 0 either way), `xform ccnt~` and `icnt~` (separated in `p2m`, 82
+  and 8), `xform scnt~` and `scnt2~` (the same state bound is tested twice, in `UNIT_HasState` and after it, so
+  either strictness alone is masked by the other). Every traced read is a listed image constant (`g_BitMask32`,
+  `g_PlrToMonMode`, `g_MonToPlrMode`, the jump table 0x00645248 and its index 0x00645260); no write outside the image.
+- **Not run (moved):** `UNIT_AnimSetRate`, `ANIMDATA_Lookup`, `MonStatsSpeeds` and `HumanAttackFrames`. A raw `E8`
+  scan (`dev2/callers.py`, output `dev2/callers.txt`) finds `ANIMDATA_Lookup` called by `UNIT_AnimSetRecord` and
+  `MonStatsSpeeds`, `COMPOSIT_BuildCofName` by `ANIMDATA_Lookup` and `HumanAttackFrames`, and `UNIT_AnimSetRecord` by
+  `SUNIT_AnimInit` and `UNIT_AnimSetRate`; `UNIT_AnimSetRate` calls `UNIT_AnimSetRecord` at 0x00623FAF before any
+  branch (types 0–3), and `UNIT_AnimSetRecord` calls `ANIMDATA_Lookup` at 0x00620F3B. `COMPOSIT_BuildCofName` writes
+  the name with `wsprintfA` (the USER32 slot 0x006CC468, calls 0x0064F9C2 and 0x0064F9E9) on every path that builds one.
+  ADR-0029 admits no stand-in for an import whose result a claim uses, so these rows go to the harness (plan 0066
+  inventory, H6d proposed).
+- **Dev run:** `workspace/logs/n66l/s6e/dev2/` (`manifest-dev.sha256`): a 670-case subset of the same cases
+  (`sub.cases`, `sub.out`, compared by `subcheck.py`: 0 differences) and the disassembly listings; not cited.
+- **Covers:** the three maps on the declared image. Not covered: what fills the transform list and the States records
+  (the loader), and the rates and record look-ups above.

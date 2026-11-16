@@ -31,6 +31,12 @@ hashes). Unit fields as in `re/types/game.h`, the path fields as in `re/types/an
   `MissileCreate`). (fn:sub_00554CA0_UnitMoveStep@0x00554CA0, fn:sub_00650840_PathStep@0x00650840,
   fn:sub_006502D0_PathVelocityStep@0x006502D0, fn:sub_00650090_PathStepSnap@0x00650090,
   fn:sub_00650660_PathStepMove@0x00650660, data:g_PathDirTable@0x006EB7E0, `p50d-calls.txt`)
+  *2026-11-16, plan 0066 S6e part 2:* [C] `PathVelocityStep` run whole (3 064 cases, every named test separated):
+  the step `(d · ((v · k) >> 6)) >> 12` with `k ≤ 0` taken as 0x400, and the acceleration: with `+0x88` ≠ 0 the count
+  `+0x8C` rises by one per call and at 5 the speed `+0x7C` takes `+0x88`, capped at `+0x84` (which clears `+0x88`) or
+  floored at 0, and the count restarts. At `k = 0x400` a component of +4096 wraps from `v = 32 768` and one of −4096
+  reaches −2³¹ there and wraps from 32 769; nothing guards it. (fn:sub_006502D0_PathVelocityStep@0x006502D0,
+  0x006502E6–0x00650345, run:2026-11-16-sweep2-s6e-2)
 - [I] **The speeds.** `UNIT_AnimSetRate`'s moving branch sets `v = (pbase · X) / 100`, `X = max(B_FRW + stat 67, 25)`,
   `pbase` = CharStats `WalkVelocity << 8` for a player and MonStats `Velocity << 8` for a monster in every moving mode
   (walk and run alike). A player's run is the walk base with a mode-scoped stat-67 list `RunVelocity × 100 /
