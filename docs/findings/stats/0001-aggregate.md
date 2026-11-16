@@ -642,6 +642,70 @@ statement below covers the code as a map from its arguments and the declared byt
   play. The phase of ops 6 and 7 (`owner +0x1C` → `+0x04` → `+0x08`, `+0x28`) as a time of day stays § 10's `[I]`.
   (fn:sub_00626200_StatEvaluate@0x00626200)
 
+### 12. Plan 0066 batch S4e part 5d: `AddStat`'s removal under emulation, and the static remainders (run:2026-11-16-sweep2-s4e-emu)
+
+Family `addst` of `tools/items_s4e8_emu.py`, 2 500 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced
+write; 5 controls, each separating, `passed` 0 (`workspace/logs/n66z/s4e/run8/check.txt`). The static reads are the
+tool's `static` (objdump; 23 family pins and 90 row pins, `static.txt`) and `xref` (raw bytes and rel32 scans,
+`xref.txt`) commands, each a second tool beside the Ghidra readings of §§ 2, 4, 6, 7 (`lane/n66z`). Record in
+[items experiments](../items/experiments.md#part-5d-itemautoequipslot-addstats-removal-and-the-static-remainders-2026-11-16).
+Rows: stats/aggregate 10, 11, 13, 17, 23, 37.
+
+- [C] (ADR-0021) **`AddStat`'s add and removal at 0** (A3), family `addst`: `STATLIST_AddStat(list, stat, add, param)`
+  (0x00627030, stdcall) on a plain list with no parent (flags 0, `0x40`, `0x2000` or `0x2040`). A null list or an
+  `add` of 0 changes nothing (`zeroadd` 31). The key is `stat << 16` plus the param's low 16 bits (`keyswap` 2 285),
+  looked up by a signed binary search (0x00624B90). A found entry takes `value + add` (`set`, the value replaced,
+  1 588); a sum of 0 removes it (`STATLIST_RemoveEntry` 0x00624D10): the later entries move down one (CRT memmove
+  0x00683840) and the count drops by 1 (545 returns with the array dumped; `noremove` 923), and when the capacity
+  then exceeds the count by more than 8 the array is resized to capacity − 4 entries through 0x0040B4B0 (observed:
+  size `(cap − 4) × 8`, EDX the array; 378; `shrink4` 185). A missing key goes to `STATLIST_InsertEntry` (observed,
+  EAX the key; 702). After the resize call, `[I]`; a parent's propagation and the client mark (flag bit 31) were not
+  run. (fn:STATLIST_AddStat@0x00627030, fn:STATLIST_RemoveEntry@0x00624D10, 0x00627073, 0x00624D57,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] (static, 15 pins) **`StatListLinkOwner`** (B1, 0x00627910): a null unit, item or item list (`+0x5C`) returns;
+  an item (type 4) whose location byte (item data `+0x44`, 0x00627D40) is 11 or 12 only goes to `STATLIST_Unlink`
+  0x006269F0; a list whose `+0x04` is the unit switches damage; otherwise `STATLIST_LinkToUnit(unit, list,
+  withDamage)` and `+0x04` ← the unit. **Refinement:** the switch is conditional on the list's flag `0x40000000`:
+  `withDamage` non-zero calls `STATLIST_EnableDamageStats` only when it is set, 0 calls `STATLIST_DisableDamageStats`
+  only when it is clear (0x00627956, 0x0062796D); the other two combinations return. (fn:sub_00627910_StatListLinkOwner@0x00627910,
+  0x00627936, 0x0062798F, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static, 30 pins) **The stat-point code's own addition** (D1): `PLAYER_SpendStatPoint` (0x00570D60; ECX the
+  unit, EDX the attribute 0..3) needs stat 4 above 0 (0x00570D6B); strength (0) and dexterity (2) move one point
+  from stat 4. Energy (1, 0x00570A80) and vitality (3, 0x00570B60) take `n` = 1 and the CharStats row (stride 0xC4,
+  DataTables `+0xBC4`, count `+0xBC8`): energy adds `+0x48` (`ManaPerMagic`) × n << 6 to stat 8 when n > 0 and to
+  stat 9, then sets 8 to 9 when above it; vitality adds `+0x46` × n << 6 to stat 7 and, when n > 0, to 6, clamping 6
+  to 7, then `+0x47` × n << 6 to 11 and (n > 0) 10, clamping 10 to 11. Every add is `UnitAddStat`, every clamp
+  `UnitSetStat` 0x00627260. (fn:PLAYER_SpendStatPoint@0x00570D60, 0x00570ADB, 0x00570BC3, 0x00570C1A,
+  tbl:CharStats.txt:ManaPerMagic, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static, `xref.txt`, 17 pins) **The stat callback's cases** (G3, `MonStatCallback` 0x0055B800): keys 7..204
+  map through the index bytes at 0x0055BE04 to 11 cases (0x0055BDD8): 7, 9, 11, 83, {97, 107}, 98, {126, 127}, 151,
+  188, 204, and the 186 others to the return. 126 runs 127's code: the case at 0x0055BCB0 passes the unit alone to
+  0x0056DFA0 and reads no key. 107 runs 97's case (0x0055BACA). The event registration, before the switch: when
+  ItemStatCost `itemevent1` (`+0x48`, s16) is above 0 and the fourth argument non-zero, `AddStatEvent` 0x0056E740
+  is called with `itemevent1`/`itemeventfunc1` (`+0x4C`) and, when `itemevent2` (`+0x4A`) is above 0, with
+  `itemevent2`/`itemeventfunc2` (`+0x4E`), unless 0x005C0BE0 reports one; with a fourth argument of 0 it calls
+  0x005C0B50. (fn:sub_0055B800_MonStatCallback@0x0055B800, fn:sub_0056E740_AddStatEvent@0x0056E740, 0x0055B867,
+  0x0055B8DE, run:2026-11-16-sweep2-s4e-emu)
+- [I] **Refinements** (one tool's reading): for 107 the case first requires a player (type 0) whose class equals the
+  skill row's `+0xC` byte (`SKILLS_GetRecord`, 0x0055BADC..0x0055BAF3), else it returns; the registration tests the
+  callback's fourth argument, non-zero or 0, and a lookup, not a crossing of 0. What 0x005C0BE0 and 0x005C0B50 do
+  was not read. (0x0055BADC, 0x005C0BE0, 0x005C0B50)
+- [C] (static, 10 pins) **The set lookup reads each set list's own stat 71** (J3): for each of the six entries of
+  `g_SetBonusStates` (0x006EE424, loop bound 6 at 0x00663C35) `UNIT_FindStatListByState` 0x006256B0 gives the list,
+  and `sub_00625D00_StatListGetBaseStatJ(list, 71, 0)` jumps to `StatListGetBaseStat` 0x00625350, which reads through
+  `StatListGetBaseValue` 0x00624ED0, the own entries (§ 11's `read` family); the value is compared with the set id.
+  (0x00663BC4, 0x00663BDD, 0x0062539A, 0x00663BE2, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static, 18 pins, `xref.txt`) **List fields** (A2): `STATLIST_Alloc` (0x006251F0) allocates 0x3C bytes, zeroes
+  them and stores the pool at `+0x00`, its fourth argument at `+0x08`, its fifth at `+0x0C`, flags at `+0x10` and
+  its third at `+0x18`; the set code passes the unit's `+0x00` (type) and `+0x0C` (guid) (0x00663C5F..0x00663C6E; the
+  other 70 of 71 rel32 callers unread). `STATLIST_SetRemoveCallback` writes `+0x38` (0x00625CED; 39 rel32 callers,
+  no abs32; other writers of `+0x38` were not scanned). `UnitStatListCreate` (0x00626D40) allocates 0x64 bytes, sets flag bit 31, `+0x44` the
+  unit and `+0x58` one block of 8 × ((DataTables `+0xC4` + 31) >> 5) bytes, and stores the list at the unit's
+  `+0x5C`. (fn:STATLIST_Alloc@0x006251F0, fn:STATLIST_SetRemoveCallback@0x00625CE0,
+  fn:sub_00626D40_UnitStatListCreate@0x00626D40, run:2026-11-16-sweep2-s4e-emu)
+- [I] **Not covered:** the reader that calls `+0x38`, the two child chains, the changed keys and the stat callback
+  field of an extended list; the 70 other `STATLIST_Alloc` callers' fifth argument. (fn:STATLIST_Alloc@0x006251F0)
+
 ## Data touched
 
 tbl:ItemStatCost.txt:op, tbl:ItemStatCost.txt:op param, tbl:ItemStatCost.txt:op base, tbl:ItemStatCost.txt:op stat1,

@@ -4257,3 +4257,41 @@ request handlers, inventory families) will add their own sections under this hea
   entries does); `ItemSkillQtyAdjust` after the message builder (the send, the skill resets, the grant, the 1).
 - **Moved, not run** (`sites.txt`): items/inventory 20 and items/use 54 (classes c-emu → b), the remainders of
   inventory 25, 26, 27, 39, 42, 45/99 and use 22, 34; reasons in items/0013 § 16's last bullet.
+
+### Part 5d: ItemAutoEquipSlot, AddStat's removal and the static remainders (2026-11-16)
+
+- **Question:** does `ItemAutoEquipSlot` choose the location as [items/inventory](../../specs/items/inventory.md) I6
+  states, does `STATLIST_AddStat` remove an entry at 0 as [stats/aggregate](../../specs/stats/aggregate.md) A3 states,
+  and do the static remainders of S4c/S4d (stats/aggregate 10, 13, 17, 23, 37) read the same with a second tool;
+  which row's route crosses an allocator (ruling R2)? Claims in
+  [items/0013 § 17](0013-grids-belts-stacks.md#17-plan-0066-batch-s4e-part-5d-itemautoequipslot-under-emulation-and-cursordrops-cursor-clear-routed-run2026-11-16-sweep2-s4e-emu)
+  and [stats/0001 § 12](../stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu).
+- **Setup:** `main` `31a4949c` merged at the part's start (it changes only `tools/d2pilot.py` and `tools/gdb/`). One kept launch per family on `workspace/ghidra-n66z`
+  (`-Xmx3G`, `MemoryMax=4G`, about 20 s for the two), after four development passes, each with its `check-dev.txt`
+  and `manifest-dev.sha256` passing from its directory, not cited: `dev8a/` (300 per family; the `addst` cases with an
+  empty array wrote an empty `w` line, which the script rejects, so `addst` did not run; three `auto` controls did
+  not separate), `dev8b/` (1 500 per family; the CRT memmove's jump tables not yet declared, 5 undeclared reads),
+  `dev8c/` (the full counts, reweighted), `dev8d/` (`auto` only, 4 000, with the ammunition and one-handed
+  scenarios). New tool `tools/items_s4e8_emu.py` (`ab66b398…`; draws from `random.Random("n66z-s4e8-<family>")`), its
+  world declared from scratch; parts 1–5c's tools and `run/` to `run7/` untouched (run7's `check` reproduces its
+  `check.txt`). Guards: 0x00408A60, 0x00681E09 and the allocator entries 0x0040B430, 0x0040B480, 0x0040B4B0 (the
+  last observed in `addst`); none is hit. Observed: `auto` `ItemReqCheck` 0x0062EAF0; `addst`
+  `STATLIST_InsertEntry` 0x00624C80 and 0x0040B4B0; both the error routine 0x00408090.
+- **Families:** `auto` 6 000, `addst` 2 500.
+- **Result:** `workspace/logs/n66z/s4e/run8/check.txt` (`097e2c36…`), `static.txt` (`9842c53a…`, 23 family pins and
+  90 row pins in five sets, each as cited), `sites.txt` (`05cfb200…`, 5 roots), `xref.txt` (`9615a76c…`: the stat
+  callback's switch from the raw bytes, the rel32 callers of `STATLIST_SetRemoveCallback` and `STATLIST_Alloc`),
+  `manifest.sha256` (`9c5d612d…`, 14 lines, passes from that directory); `cases` regenerates every `.cases`, `.mem` and
+  `.json` byte for byte, and `check` reproduces `check.txt` from the committed revision. 8 500 cases, 0 mismatches,
+  0 stops, 0 undeclared reads, no traced write; outcomes per family in `check.txt` (each count in the two sections is
+  copied from it). **19 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): the declared scratch world (ItemTypes, their equivalence bits, Items rows, the user,
+  its inventory and body page, the worn items; a plain stat list, its array and the ItemStatCost rows); the image
+  reads are the DataTables pointer and the Items count and rows (both declared), the body page's 13 × 1 row
+  (0x0074479C), the bit masks (0x006CE200..0x006CE300), the stack cookie and the CRT memmove's own jump tables
+  (0x00683840..0x00683C00).
+- **Not covered** (ADR-0015 (3), ADR-0021): `ItemReqCheck` and the path past its return; `STATLIST_InsertEntry`, the
+  resize and what follows; a parent's propagation and the client mark; the meanings of the offsets. The static rows
+  are code readings by objdump and the raw bytes, a second tool beside the findings' Ghidra readings, not runs.
+- **Routed, not run** (`sites.txt`): items/inventory 61's remainder (the cursor clear after `GroundDropCell` and
+  `ItemPlaceOnGround`) to H4d; reasons in items/0013 § 17's last bullet.

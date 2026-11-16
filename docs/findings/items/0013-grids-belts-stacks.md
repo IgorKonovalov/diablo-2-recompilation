@@ -596,6 +596,47 @@ notes) and items/inventory 25–27.
   and the remainders of 22 and 34 (H4c). (0x0063ABA4, 0x00626B24, 0x00626BE7, 0x0063B133, 0x0055E1C1, 0x005623E1,
   run:2026-11-16-sweep2-s4e-emu)
 
+## 17. Plan 0066 batch S4e part 5d: `ItemAutoEquipSlot` under emulation, and `CursorDrop`'s cursor clear routed (run:2026-11-16-sweep2-s4e-emu)
+
+Family `auto`, 6 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 14 controls, each separating,
+`passed` 0 (`tools/items_s4e8_emu.py`, `workspace/logs/n66z/s4e/run8/check.txt`; record in
+[experiments](experiments.md#part-5d-itemautoequipslot-addstats-removal-and-the-static-remainders-2026-11-16)). The
+world is declared from scratch: ItemTypes (70 rows), their equivalence bits (DataTables `+0xC00`, `+0xC04`), Items
+rows, the user, its inventory with page 0 (13 × 1, so `InvPageGet` finds the page made and never allocates) and the
+worn items. Every callee runs emulated; `ItemReqCheck` 0x0062EAF0 is observed (ADR-0021; `lane/n66z`). Row: items/inventory 67.
+
+- [C] (ADR-0015, ADR-0021) **`ItemAutoEquipSlot(user, item, &loc, skipReq)`** (0x0055D710; ECX the user, EDX the
+  item). With `skipReq` 0 the first call is `ItemReqCheck(item, user, 0, 0, 0, 0)` (return 0x0055D7A1; 792; control
+  `reqinv`, the argument's sense reversed, 6 000). With `skipReq` non-zero, to the return: 0 when `ItemTypeBodyByte`
+  is 0 (no `BodyLoc1`/`BodyLoc2`, or ItemTypes `+0x9` 0; `nobodybyte` 237), when item data `+0x18` lacks `0x10`
+  (`noflag10` 113), has `0x100` or `0x4000` (`nodisabled` 205), or the base type is 38 (`no38` 68). Then the hands,
+  `InvGetBodyLocItem` 4 and 5. A type whose ItemTypes `Quiver` (`+0xE`, s16) is non-zero needs a hand item whose
+  `Shoots` (`+0xC`, s16) `ITEMS_UnitIsType` gives for the item, hand 4 tried before hand 5, else 0 (`noquiver` 1 099,
+  `firsthand` 10; 101 such items placed). `BodyLoc1` = `BodyLoc2`: that slot if empty, else 0 (`nooccupied` 134).
+  Unequal: both empty give `BodyLoc1` (`secondfirst` 505); one empty gives that one when
+  `EquipPairCompatible(worn, item)` holds, else 0 (`nocompat` 269); both taken, 0. The pair test as
+  items/inventory I6 states it: bow with bow quiver, crossbow with crossbow quiver, a type-45 item that is not
+  two-handed (Items `+0x11C`) with a type-51 one (`no2h` 18), two such type-45 items when both have flag 7, set for a
+  class-4 player or a class-6 player's type-67 item (`classall` 11), and two of type 10 (`no10` 22). The location is
+  written through `&loc` (dumped) only on a return of 1. Outcomes: 0 4 170, 1 1 038 (353 equal locations, 604
+  `BodyLoc1`, 81 `BodyLoc2`), the observed call 792. (fn:sub_0055D710_ItemAutoEquipSlot@0x0055D710,
+  fn:sub_0055D560_EquipPairFlags@0x0055D560, fn:sub_0055D670_EquipPairCompatible@0x0055D670,
+  fn:sub_0063BDE0_InvGetBodyLocItem@0x0063BDE0, 0x0055D74D, 0x0055D7FA, 0x0055D841, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) **Refinements:** `InvGetBodyLocItem` returns 0 for a slot above 12 (0x0063BE00), so a location
+  byte of 13..15 reads as empty and is returned (115 cases; control `bigslot`, such a slot read as taken, 89); an
+  unequal pair treats a location of 0 as a slot like any other and returns it when it is the one taken (27). Whether
+  a stock ItemTypes row has either shape was not checked in this part. (0x0063BE00, 0x0055D8A5, 0x0055D8D5,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] `EquipPairFlags` also fills a ninth word (`ItemTypeThrowable`, else `UnitGetStat(item, 125, 0)`; 0x0055D643)
+  that `EquipPairCompatible` never reads (objdump 0x0055D670..0x0055D701). (fn:sub_0055D560_EquipPairFlags@0x0055D560)
+- [I] **Not covered:** `ItemReqCheck` and what follows its return with `skipReq` 0 (the same four tests in another
+  order, 0x0055D7A1..0x0055D7D8). Its closure reaches no allocator or import (`sites.txt`), so it stays for
+  emulation (S4e part 5e). (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0)
+- [C] (static, `sites.txt`) **`CursorDrop`'s cursor clear** is `InvSetCursor(inventory, 0)` 0x0063C180 at 0x00563CB8,
+  after `GroundDropCell` (0x00563C96, whose search reaches 0x0040B430) and `ItemPlaceOnGround` (0x00563CAD, which
+  reaches 0x0040B480); ruling R2 sends items/inventory 61's remainder to the harness (H4d). (fn:sub_00563C00_CursorDrop@0x00563C00,
+  fn:sub_0063C180_InvSetCursor@0x0063C180, run:2026-11-16-sweep2-s4e-emu)
+
 ## Data touched
 
 tbl:Inventory.txt:gridX, tbl:Inventory.txt:gridY, tbl:Belts.txt:numboxes, tbl:Armor.txt:belt, tbl:Misc.txt:autobelt, tbl:Misc.txt:stackable, tbl:Misc.txt:invwidth, tbl:Misc.txt:invheight, tbl:ItemStatCost.txt:Stat, tbl:ItemTypes.txt:Beltable, tbl:ItemTypes.txt:AutoStack.
