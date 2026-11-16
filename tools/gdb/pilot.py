@@ -209,6 +209,12 @@ def _pilot_main():
                      "dx": s32(reg("ebp") + 0xC), "dy": reg("ecx") - (1 << 32 if reg("ecx") & 0x80000000 else 0), "rec": (reg("edi") - u32(G_LVLWARP)) // 0x30})
 
     Bp(0x0052C312, on_game)
+
+    def on_frame():     # GameTick entry, ECX = game: a logger attached after the game began (d2run --attach-file) never saw 0x0052C312
+        if not st["game"]:
+            st["game"] = reg("ecx")
+
+    Bp(0x0052D870, on_frame)
     Bp(0x0066E21F, on_wrp)
     Bp(0x0066B970, on_rl)
     Bp(0x0066EE40, on_rreseed)

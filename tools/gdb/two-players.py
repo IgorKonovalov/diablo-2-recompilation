@@ -139,7 +139,11 @@ def _two_players_main():
     Bp(0x0052C312, on_game)
     Bp(0x0064EA90, on_mark)
     Bp(0x00648C30, on_tick)
-    Bp(0x0052D870, on_tick)
+    def on_frame():     # GameTick entry, ECX = game: a logger attached after the game began (d2run --attach-file) never saw 0x0052C312
+        st["game"] = reg("ecx")
+        on_tick()
+
+    Bp(0x0052D870, on_frame)
     # PLRK: the same list, unthrottled, at XP_OnMonsterKill entry 0x0057E990 (ECX game), so a kill's credited player,
     # the party and every position are logged right before the kill's XK0 line (tools/mp_check.py xpshare).
     Bp(0x0057E990, lambda: scan("PLRK"))
