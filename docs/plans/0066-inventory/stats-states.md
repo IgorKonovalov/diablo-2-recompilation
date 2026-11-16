@@ -3,6 +3,10 @@
 - **Spec:** [stats/states](../../specs/stats/states.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 54; the *Count* column sums to 54.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66si`, 2026-11-16, the stats/items cluster): re-tagged.** The spec's front matter is now C 72 / I 48 / L 6 (it was
+  C 52 / I 54 / L 6 at `main` `845aa88f`). Statement `[C]` whole: rows 7, 13, 14, 16, 32, 34, 51 (7). Split, the `[C]` half and the
+  remainder `[I]` as the *Route* cell names: 17, 23, 31, 37, 41, 42, 46 (7). Corrected to the finding: 5 (1). Kept `[I]`
+  (H4e, d-none, d-edit, d-2c, d-owner): 1–4, 6, 8–12, 15, 18–22, 24–30, 33, 35, 36, 38–40, 43–45, 47–50, 52–54 (39). Row 5 (A2) is corrected to S4d part 2's reading: `UNIT_HasState` answers for types 0, 1 and 3 (an object answers 0), `UNIT_SetStateBit` keeps `+0xC8` bit 3, all `[C]`. Row 13 moves the gate anchor to 0x0056E9C7–0x0056EA08 (correction 6), and row 7, the B1 gate line (kept a-run, H4e), is raised whole beside it on the same static reading (review-fixes 8). Row 14 carries S4d's 19 functions and the self-call and S4e part 5e's appliers with their callbacks; row 17 the C2 call order (`PetLimitRefresh` for type 0 after 0x005C0B50, the S4c/S4d refinement); row 37 the stamina shrine's list holding stat 28 alone (likewise); row 46 (moved c → b, H4e) splits the H table row: the three closures, the player-expiry call, the release chain and 149 seeds `[C]`, a stock release `[I]` (correction 2). Rows 37, 41 and 42, filed raised, are split: G4's other SHRINE_Stamina stats, B1's curse replacement and the skill shrine's reader are not the runs'. Row 25 (E3, kept) is reworded: its "the record does not count the ticks by mode" is stale after row 23. The owner's note on the move conventions of inventory 61, states 46 and aggregate 41 is left as filed.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

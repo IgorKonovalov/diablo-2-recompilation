@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 407, I: 140, L: 3}
+tags: {C: 411, I: 136, L: 3}
 updated: 2026-11-16
 ---
 
@@ -66,11 +66,11 @@ flowchart LR
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 | 7 |
 | [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 61 | 18 |
 | [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 123 | 21 |
-| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 112 | 23 |
-| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 17 | 11 |
+| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 114 | 21 |
+| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 18 | 10 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 23 | 17 | 6 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 34 | 38 |
-| **Total** | 538 | 402 | 136 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 35 | 37 |
+| **Total** | 538 | 406 | 132 |
 
 ### 1. Arithmetic width and sign
 
@@ -498,7 +498,7 @@ flowchart LR
 | Q366 | A target is written twice when its source recomputes it; the second write changes nothing and fires no callback unless the target is itself a source whose own target took (no stock case). | [C] | fn:sub_006266C0_StatRecompute@0x006266C0, 0x00626786, run:2026-10-17-stats | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) n4 |
 | Q367 | A state refresh does not rewrite the stats; only the end frame moves. | [C] | fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats | [stats/states](../stats/states.md#reimplementation-notes) n1 |
 | Q368 | A lower level of a held state is refused, not queued. | [C] | fn:STATE_ApplyTimed@0x0056E970, run:2026-10-17-stats | [stats/states](../stats/states.md#reimplementation-notes) n3 |
-| Q369 | The group test is not in the apply: only callers that run `STATE_GroupClear` exclude a group. | [I] | fn:STATE_GroupClear@0x0056C740, fn:STATE_ApplyTimed@0x0056E970 | [stats/states](../stats/states.md#reimplementation-notes) n4 |
+| Q369 | The group test is not in the apply: only callers that run `STATE_GroupClear` exclude a group. | [C] | fn:STATE_GroupClear@0x0056C740, fn:STATE_ApplyTimed@0x0056E970 (its nine call sites and the closure by a second tool, plan 0066 S4d) | [stats/states](../stats/states.md#reimplementation-notes) n4 |
 | Q370 | Shrines share the curse slot: a shrine removes the player's curse, and the next curse removes the shrine's state. | [I] | tbl:States.txt:curse, fn:STATE_ApplyTimed@0x0056E970 | [stats/states](../stats/states.md#reimplementation-notes) n5 |
 | Q371 | A player's run speed is the walk base plus a +50 stat-67 list that lives while the run lasts; a monster runs at its walk path speed unless its AI command carries a velocity. | [I] | fn:sub_00620E80_RunVelocityStat@0x00620E80, fn:sub_005A6380_MonModeVelocity@0x005A6380 | [anim/movement](../anim/movement.md#reimplementation-notes) n1 |
 | Q372 | Two bases: the path speed moves the unit, the animation base only paces the animation; both take the same factor `X`. | [C] | fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-30-anim-p3b | [anim/movement](../anim/movement.md#reimplementation-notes) n2 |
@@ -507,7 +507,7 @@ flowchart LR
 | Q461 | Prevent Monster Heal's hook tests for a player attacker, so stat 117 on a mercenary's items applies no state. | [I] | fn:sub_0057D810_PreventHealHook@0x0057D810 | [combat/to-hit § A](../combat/to-hit.md#a-the-chance-to-hit-combat_tohitroll) |
 | Q488 | The drop's base room moves between lookups: a fixed-room search agrees with all 118 live searches, on open ground, and still fails on declared rooms. | [C] | 0x0064E043, run:2026-11-04-ground-emu | [items/inventory](../items/inventory.md#reimplementation-notes) n1 |
 | Q489 | A player's inventory search and any other owner's differ, in score against first fit and in the one-cell-high order. | [C] | fn:sub_0063B850_InvSpotFindBySize@0x0063B850, run:2026-11-04-inventory-emu | [items/inventory](../items/inventory.md#reimplementation-notes) n4 |
-| Q490 | `DropGoldAmount` passes `fallback` 0; every other direct drop passes 1. | [I] | 0x0055A15C | [items/inventory](../items/inventory.md#reimplementation-notes) n6 |
+| Q490 | `DropGoldAmount` passes `fallback` 0; every other direct drop passes 1. | [C] | 0x0055A15C, the 20 search sites and the four pair-form drop bodies by a second tool (plan 0066 S4c) | [items/inventory](../items/inventory.md#reimplementation-notes) n6 |
 | Q491 | The AI row kind follows the stored state, not the class: a unit in state 12 (kind 0) skips the search, when the gate allows it, even when its class's row has kind 1. | [I] | fn:sub_005B1650_MonAiTargetByKind@0x005B1650, 0x005B1663 | [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n4 |
 | Q492 | A planner's grid is the live one after `PathPlan`'s unmarks: a unit does not block itself, nor a target under flag `0x800`. An unmark there can take a neighbour's `0x1000`, and the tail's re-mark gives back only the marked unit's footprint. | [I] | 0x00649B07, 0x00649B25, 0x00649BE0 | [path/README](../path/README.md#reimplementation-notes) n1 |
 | Q493 | `PathPlan`'s refusals differ: step 5 clears nothing, the others clear `+0x24`, `+0x28` and flag `0x20`. | [C] | 0x006499D3, 0x006499F0, run:2026-11-03-path-emu-1 | [path/README](../path/README.md#reimplementation-notes) n3 |
@@ -538,7 +538,7 @@ flowchart LR
 | Q388 | A trap fires later: `OBJ_TrapFire` only queues event 4, and the effect comes 35 frames later among the timer events. | [C] | fn:OBJ_TrapFire@0x00582510, fn:OBJ_TrapEvent@0x005817A0, run:2026-10-19-h5b-objects | [objects](../objects/README.md#reimplementation-notes) n14 |
 | Q389 | An NPC act change moves the player before it writes the travel word. | [C] | fn:NPC_MenuAction@0x00579D60, fn:sub_005467E0_NpcActTravel@0x005467E0, run:2026-10-17-quests | [quests/travel § E](../quests/travel.md#e-act-change-through-an-npc); [quests/travel](../quests/travel.md#reimplementation-notes) n4 |
 | Q390 | While `+0x4C` = 1 the player can operate nothing and open no waypoint menu until packet 0x48. | [I] | fn:OBJ_OperateDispatch@0x00584420, fn:sub_00535060_PlayerIsBusy@0x00535060 | [quests/travel § E](../quests/travel.md#e-act-change-through-an-npc); [quests/travel](../quests/travel.md#reimplementation-notes) n5 |
-| Q391 | Equipment requirements are checked once per refresh, and the refresh also runs every 136 frames on its own. | [I] | fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) n6 |
+| Q391 | Equipment requirements are checked once per refresh, and the refresh also runs on its own from the act clock pass (idle gap 136 frames in 22 of 28 kept logs). | [C] | fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_0052D7B0_ActsClockPass@0x0052D7B0 (plan 0066 S4e part 5f) | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) n6 |
 | Q392 | Queue one end event per state apply and per refresh, and let a stale one fire: it frees only lists whose end frame has passed. | [C] | fn:EVENT_TimedListExpire@0x00580800, run:2026-10-17-stats | [stats/states](../stats/states.md#reimplementation-notes) n2 |
 | Q498 | A monster's drop has `+0x24` 0 and a player's does not, so "items last 10 minutes" holds for one of them only, on the path run. | [C] | run:2026-11-04-inventory, 0x0055A6B4 | [items/inventory](../items/inventory.md#reimplementation-notes) n2 |
 | Q499 | The save recomputes a ground item's expiry, so leaving a room can lengthen any item's life, a player's drop too. | [C] | run:2026-11-04-inventory-2, 0x00541B6C | [items/inventory](../items/inventory.md#reimplementation-notes) n3 |
@@ -640,7 +640,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q511 | A first identify request consumes nothing; the second, on an unidentified item in the user's inventory, does. `0x27` does not clear the marks first. | [I] | 0x00561F60, fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130 | [items/use](../items/use.md#reimplementation-notes) n4 |
 | Q512 | A belt scroll used on an item does not shift its column, every other belt use does, and a used belt scroll on a target not in a grid is removed unused. | [I] | 0x00561F60, 0x005621F4 | [items/use](../items/use.md#reimplementation-notes) n5 |
 | Q513 | Packet `0x61` consumes the cursor item whatever `ItemUse` returned. | [I] | 0x0054D3FD, 0x0054D406 | [items/use](../items/use.md#reimplementation-notes) n6 |
-| Q514 | Do not refuse on a use handler's "3" at the drain: the return is discarded. | [I] | 0x0053F459 | [items/use](../items/use.md#reimplementation-notes) n7 |
+| Q514 | Do not refuse on a use handler's "3" at the drain: the return is discarded. | [C] | 0x0053F459, the return read by neither frame (plan 0066 S4b) | [items/use](../items/use.md#reimplementation-notes) n7 |
 | Q515 | Two life readers: AI row 11 calls `UnitLifePct`, rows 4, 8 and 15 `AiLifePct`; keep them apart. | [I] | fn:sub_00621F20_UnitLifePct@0x00621F20, fn:sub_005DD280_AiLifePct@0x005DD280 | [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) n3 |
 | Q516 | AI row 21's `Idle` does not return: the walk runs in the same event. | [I] | 0x005F29D7, 0x005F29E6 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n2 |
 | Q517 | A leader's stack block carries four words the code does not write, and row 30 reads `+0x0C/+0x10` of a kind-1 head record for its `GameFindUnit`. | [I] | 0x005F04AA, 0x005F04D5, 0x005F53E0 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n5 |

@@ -3,6 +3,7 @@
 - **Spec:** [items/use](../../specs/items/use.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 64; the *Count* column sums to 64.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66si`, 2026-11-16, the stats/items cluster): re-tagged.** The spec's front matter is now C 80 / I 45 / L 9 (it was C 52 / I 64 / L 9 at `main` `845aa88f`). Statement `[C]` whole: rows 1, 2, 5, 6, 11, 13, 17, 21, 29–31, 38, 41, 52, 53, 56, 58, 59, 64 (19). Split, the `[C]` half and the remainder `[I]` as the *Route* cell names: 9, 18–20, 22, 28, 34, 35, 57 (9). Corrected to the finding: none (0). Kept `[I]` (H4c, moved to b, a-run, d-none, d-edit): 3, 4, 7, 8, 10, 12, 14–16, 23–27, 32, 33, 36, 37, 39, 40, 42–51, 54, 55, 60–63 (36). Rows 1 and 2 are `[C]` for the handler and its call, the lengths and fields left to § B (the S4a/S4b Tier B fix 2); rows 6, 18–21, 38 and 52 carry the S4e part 3, 5b and 5c refinements (`PktPosFar`'s position and signed compare, the `0x27` cursor-item pass, the `0x61` tests, the uniform-pair chance, the golem's `v = 0` branch in `GolemHealShare` and its wrapped cap); row 22's C2 names the test-returning-0 branch no stock entry takes (the Tier B check's entry-table reading, items/0013 § 16); row 56 is reworded to "no abs32 pointer to any of them" (the S4a/S4b ready list).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

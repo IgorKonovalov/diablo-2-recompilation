@@ -2,18 +2,20 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: [../plans/0066-simulation-inferred-claims-sweep.md, ../findings/items/0011-economy.md]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/items/0011-economy.md
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items/economy F (max buy read, unused), G3, B2/B3 order, B6, D5, Encode 4, H7/H8 (32-bit idiv, none-queued test), H2 [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.
 
 Plan 0066 batch S4e part 2 (`lane/n66z`, run:2026-11-16-sweep2-s4e-emu,
-[items/0011 § S4e part 2](../findings/items/0011-economy.md#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu))
-corrects and refines [items/economy](../specs/items/economy.md). Not blocking; for Phase 3's items cluster (lines at
+[items/0011 § S4e part 2](../../findings/items/0011-economy.md#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu))
+corrects and refines [items/economy](../../specs/items/economy.md). Not blocking; for Phase 3's items cluster (lines at
 `b5999f5e`, match by text). The raises themselves (27 rows whole, 6 in part) are listed in the inventory file
-[items-economy](../plans/0066-inventory/items-economy.md).
+[items-economy](../../plans/0066-inventory/items-economy.md).
 
 1. **F (line 551), contradicted in part.** "difficulty 3 indexes past `Level(H)` and `max buy (H)`, neither of which
    mode 0 reads for an ordinary item": the price core reads `max buy [d]` (0x0062FCFA, `rec + 0x40 + 4d`; `d = 3` is

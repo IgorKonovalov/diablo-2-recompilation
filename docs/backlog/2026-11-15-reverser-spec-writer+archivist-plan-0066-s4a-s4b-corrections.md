@@ -16,3 +16,9 @@ Plan 0066 batches S4a and S4b (lane/n66h) found two corrections for Phase 3, and
 3. **archivist:** docs/tables/ItemTypes.md line 181 repeats "the 13 `nodurability` crossbows"; correct it as in 1.
 
 No owner decision is needed.
+
+**2026-11-16 (spec-writer, `lane/n66si`, plan 0066 Phase 3, the stats/items cluster).** Items 1 and 2 applied in
+items/economy: F1 now names the 13 `nodurability` bases of a `Repair` type as 12 crossbows and the Phase Blade `7cr`
+(row 40, corrected); H3 lists the six monster-code `useAmmo` sites, values `[C]`, functions `[I]` (the spec never
+copied skills/0002's five entries; no spec, wiki page or table doc names 0x005A35D0). Item 3 (ItemTypes.md line 181)
+is the archivist's and keeps this entry open.

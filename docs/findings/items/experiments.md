@@ -3874,7 +3874,7 @@ Plan 0060 Phase 2, first lane run (`lane/p60`, reverser, harness, slot 2, seed 6
 - **Contradicted, row 60.** items/inventory § G and items/0013 § 1 say the `0x22` handler returns 0; by r2 and objdump it
   returns 3 for an owned item and `PktOwnedItemBad`'s non-zero otherwise. The drain discards the return (items/use A1), so
   no outcome changes: "there is no split on the server" holds. A reading of two tools on one path; no case logs `0x22`.
-  Backlog: [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../../backlog/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+  Backlog: [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
 - **Not evidenced here:** the `InteractIsPlayer`, ownership, empty-cursor and trade refusals of `0x17` and `0x19` (no case);
   the cursor's clearing at `0x17` (no cursor field logged); what a held item's `+0x24` does later; the send of a freed item
   to more than one player; the 13 server calls' reads of the copied record fields; ownership in a pickup.

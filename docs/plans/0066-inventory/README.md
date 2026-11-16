@@ -503,6 +503,12 @@ each cluster's re-tag.
 | frame (`lane/n66pf`) | [path/search](path-search.md) | 36 | 9 | 7 | 0 | 20 | C 102 / I 36 / L 4 | C 117 / I 27 / L 4 |
 | frame (`lane/n66pf`) | [drlg/lifecycle](drlg-lifecycle.md) | 78 | 27 | 19 | 2 | 30 | C 103 / I 78 / L 9 | C 147 / I 52 / L 8 |
 | frame (`lane/n66pf`) | [player/party](player-party.md) (the S7a rows; row 12 the combat cluster's) | 26 | 4 | 0 | 0 | 21 | C 47 / I 29 / L 3 | C 51 / I 25 / L 3 |
+| stats/items (`lane/n66si`) | [stats/aggregate](stats-aggregate.md) | 42 | 16 | 15 | 2 | 9 | C 65 / I 43 / L 4 | C 102 / I 27 / L 4 |
+| stats/items (`lane/n66si`) | [stats/states](stats-states.md) | 54 | 7 | 7 | 1 | 39 | C 52 / I 54 / L 6 | C 72 / I 48 / L 6 |
+| stats/items (`lane/n66si`) | [stats/README](stats-README.md) | 3 | 0 | 1 | 0 | 2 | C 16 / I 3 / L 3 | C 17 / I 3 / L 3 |
+| stats/items (`lane/n66si`) | [items/economy](items-economy.md) | 86 | 32 | 22 | 2 | 30 | C 127 / I 86 / L 12 | C 183 / I 55 / L 12 |
+| stats/items (`lane/n66si`) | [items/use](items-use.md) | 64 | 19 | 9 | 0 | 36 | C 52 / I 64 / L 9 | C 80 / I 45 / L 9 |
+| stats/items (`lane/n66si`) | [items/inventory](items-inventory.md) | 101 | 48 | 16 | 1 | 36 | C 75 / I 105 / L 13 | C 143 / I 58 / L 13 |
 
 A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
 `[C]` count rises by more than the `[I]` count falls.
