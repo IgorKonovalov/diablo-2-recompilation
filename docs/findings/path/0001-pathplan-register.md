@@ -588,6 +588,79 @@ describes, the call sites from the raw bytes decoded by r2). Output `workspace/l
   (fn:sub_00663E00_PathPlanType16A@0x00663E00, fn:sub_00663ED0_PathPlanType16B@0x00663ED0)
 - Not settled in part 1 (part 2 of the batch): README rows 6, 17, 38, 41, 56, 63, 76, 77, 79; search rows 5, 14, 34.
 
+### 16. Plan 0066 batch S7a, part 2: stores, masks and flag readers with a second tool (2026-11-16, `lane/n66n`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7a.py` (`246c8301…`) with three new sections: `stores` and `masks` scan
+objdump's listing of all of `.text` for stores to fixed offsets, flag tests and mask arguments, and re-decode each site
+named here with r2; `p2xrefs` adds the call scans of drlg/0009 § 13 and frame/0001 § 9. The part-1 sections rerun
+unchanged. Output `workspace/logs/n66n/s7a-p2/check-s7a-p2.txt` (`95d0ebe5…`, 351 lines, `S7a total bad=0`; its part-1 lines
+identical to `check-s7a.txt`'s), `manifest-s7a-p2.sha256` (`7a4af9fc…`, with `totals-s7a-p2.txt`) passing from `workspace/logs/n66n/s7a-p2`;
+development outputs in `dev/` with `dev/manifest-dev.sha256`.
+
+- [C] **The context's `+0x10` in `PathPlan`** (README row 6, in part): `PathPlan`'s body (0x00649970–0x00649C91) has no
+  store and no `lea` at `EBP − 0x24`; it takes the context's address four times (`lea` of `EBP − 0x34` into `EBX`, `ESI`,
+  `EAX`, `ECX` for the helpers and the slot). In `PathPlan`, its four helpers and the ten distinct planners of
+  `g_PathPlanFuncs`, the only stores at `+0x10` are four to the path record: `PathPlan`'s 0x00649C3C (`EDI` its path
+  argument, 0x00649977) and three in `PathTargetRefresh` and the object step it jumps into (0x00649883, 0x0064988E,
+  0x006498DA; `EDI` = `ctx.pPath`, 0x006498A2 and 0x006497D2). [I] stays: the planners' 65-function graph has 22 more
+  `+0x10` stores in 10 deeper functions (7 of them to a stack argument, `[EBP + 0x10]`), their bases not traced.
+  (0x00649A0A, 0x00649C3C, fn:sub_006498A0_PathTargetRefresh@0x006498A0)
+- [C] **The type flags** (README row 38, with a correction; search row 5): `g_PathTypeFlags[2] ^ g_PathTypeFlags[13]` is
+  `0x100` (`0x0` and `0x100`). Over all of `.text`, one `test`, `bt` or `and` names `0x100` or `0x200` at a dword
+  `+0x34` or bits 0–1 at `+0x35`: 0x0064FED5, `test [esi+0x34], 0x200` in `PathAimNextPoint`. The ten planners' direct
+  graph (65 functions, no indirect call) holds seven `+0x34` operands: that test, `PathFaceDir`'s `test byte [ecx+0x34],
+  0x40` (0x0064862B) and five search-node link moves in `T1Insert`/`T1Pop`; no load of `+0x34` into a register is
+  tested there. Correction: a planner's graph also reads flag `0x40`, outside the `0x0007FF00` that `PathSetType`
+  copies; of the type flags, `0x200` is the only one. (0x0064FED5, 0x0064862B, data:g_PathTypeFlags@0x006EB690)
+- [C] **The missile's "current" type** (README row 41, in part): of the 34 server `PathSetType` calls, the seven on a
+  missile's path give 4 (`PATH_DynamicCreate`'s type-3 arm, 0x00649DBB after `sub eax, 2`), 10 (the five reseed
+  callbacks) or 14 (`SkillDo73BlessedHammer`, 0x005D0107). [I] stays: the monster's "last request type" and the
+  player's 7 after a reset (README row 4's emulation, c-emu); and the direct `+0x3C` stores of row 63.
+  (fn:sub_00648CF0_PathSetType@0x00648CF0)
+- [C] **Masks built in registers or read from tables** (README rows 56, 76, 79, in part): `PathSetCollMask` has 28
+  calls, 20 with an immediate and 8 with a register. The eight: five selects `neg; sbb; and 0xFFFFE008; add 0x3C01`,
+  giving `0x1C09` or `0x3C01` (the client's 0x004C923E, 0x004C93C3; Whirlwind's two restores of the slot it stored at
+  0x005D904D; `WhirlwindEnd`, which reuses its argument slot, 0x005D94C6); two `CollideType` tables (server
+  `g_MissileCollideTypes` at 0x0073C724 for `MissileCreate`, the client's at 0x0072A354): masks `0, 0x84, 0x104,
+  0x184, 0, 0x104, 4, 0x40, 0x185`, and Missiles `CollideType` is at most 8 in its 684 rows; one restore of the mask
+  `PathGetCollMask` read before the reach test (0x0054CB5C). `PATH_MonTestMask` returns `0x1804`, `0x3C01` or `0x3401`;
+  creation stores 0 (missile), `PATH_MonTestMask`'s return, `0x804` and `0x1C09`. None has `0x8000`. [I] stays: 81
+  register dword stores at `+0x50` in `.text`, 77 outside the path module, their bases not traced.
+  (fn:sub_00648CE0_PathSetCollMask@0x00648CE0, fn:PATH_MonTestMask@0x00648480, data:g_MissileCollideTypes@0x0073C720)
+- [C] **The 22 `+0x3C` stores path/0003 § 12 left** (README row 63, in part): each re-decoded by r2 with the
+  instruction its reading rests on. Ten resolve without a reading of the base: the value 0 (0x005BBC61), a pointer (a
+  room tested non-null, 0x005B5389; a stat list, 0x00626E9D; an allocation, 0x006C3DE9), a SHA-1 schedule word (`rol 1`
+  of an xor of the buffer's words, 0x00529481, 0x0052981A, 0x00529BD7, 0x00529F12) and a CRT stack frame (0x0068CFFB,
+  0x0068CDCF). [I] stays for the other twelve, resolved by what the owner's block is: `ItemCreate`'s own block,
+  `COMBAT_Leech`'s, `GfxCelPath`'s cel block (four), `UNIT_AnimSetRate`'s unit, a maze level record, `CALC_Compile`'s
+  block, the A3Q5 counter, the inventory's corpse count (two). (0x0046525A, `check-s7a-p2.txt` `pathR63_3c`)
+- [C] **`unflatDead`'s readers** (README row 77): the 40 calls of `MonStats2FlagTest`, the index in `EDX` resolved at
+  each (a `mov` of an immediate, or a `lea` of a register the preceding `test`/`and`/`cmp` and `jne` or an `xor` fix):
+  indices 2–0x14, `0x14` once, at 0x004648AB; `UnitFlatDrawTest` has one call, 0x004DDAD6. The register indices are
+  `0x13` in `COMBAT_ApplyCold` (`ESI` 0, 0x0057B109) and 7, 8, 2 or `0xC` elsewhere. No direct `test`/`and`/`bt` of
+  `+0x006` bit 4 in `.text`. (0x004648AB, 0x004DDAD6, fn:sub_004638A0_MonStats2FlagTest@0x004638A0)
+- [C] **Writers of `+0x90` and `+0x91`** (search rows 14 and 34, in part): 47 stores in `.text` cover either byte. In the
+  path module: `PathSetByte90` writes both from an argument capped at 77 (`cmp al, 0x4d; jb; mov al, 0x4d`,
+  0x00648E7D), creation writes `+0x91` = 14 twice and 73 (0x00649E4D, 0x00649E67, 0x00649E86), `PathSetKnockDist` and
+  `PathStepMove` write `+0x90` only. Every immediate elsewhere is at most 77 (quest bytes of 0 or 1). So the limit
+  byte never exceeds 77 through these, and `lim` above 80 needs a byte none gives. `PathSetByte90` has 27 calls (15
+  server), with values 0, 5, 20, 30, 77, 90 (capped) and registers. [I] stays: 13 register dword stores at `+0x90`
+  above 0x00520000 (game, unit event, gold and level records by their owners, three CRT frames), bases not traced; and
+  search H's "a target unit with `+0x91` below 40 is a monster with its creation's 14", which the calls with 0, 5 and 20
+  (`MonSetMode`, the jump, leap and swarm skills, Charge) leave open. (0x00648E7D, 0x00649E86, 0x0067C045)
+- **Contradicted in part: `SizeY` and a monster's footprint** (README row 17). `UNIT_GetSizeY`'s ten calls: eight on an
+  object only (the four `ObjEvent7Thunk` and the `OBJ_OperateDispatch` call by their function; 0x00623754 behind
+  0x00623660's type-2 return; `UNIT_CollMark`'s type-2 branch, 0x00649420; `UNIT_CollUnmark`'s third dispatch arm,
+  0x00649589). Two lie in functions with no type test, `UNIT_CollMarkRect` (0x00620AA5) and `UNIT_CollUnmarkRect`
+  (0x0062389A), and `UNIT_GetSizeY`'s type-1 arm reads MonStats2 `+0x09` (0x006205EC). `UNIT_CollUnmarkRect` is called
+  on a monster: `AiWussie` (0x005EE452) and `AiBaalToStairs` (0x005EF6B7) pass the AI's unit (`EDX`, kept in `ESI` from
+  0x005EE3CC and 0x005EF62E), so their removal clears a `SizeX × SizeY` rectangle at the monster's mask. [C] for the
+  calls and the read; the claim that no monster footprint uses `SizeY` is wrong for those two removals. Stock data
+  cannot separate it (the columns are equal in every row). [I] stays: `UNIT_CollMarkRect`'s 7 client callers and
+  `UNIT_CollUnmarkRect`'s 7 are not followed. Backlog
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
+  (fn:UNIT_GetSizeY@0x006205A0, fn:UNIT_CollUnmarkRect@0x00623830, fn:sub_005EF620_AiBaalToStairs@0x005EF620)
+
 ## Data touched
 
 - `tbl:MonStats.txt:npc` (`+0x0D`, MonIsNpc), MonStats `+0x18` (the MonStats2 index) and MonStats2 `+0x08`

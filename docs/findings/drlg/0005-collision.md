@@ -386,7 +386,7 @@ RectOrWH(r, x, y, w, h, m): w = h = 1: CellOr(m); else RectOr({x - w/2, y - h/2,
   `npc`) missed by the `npc`-only reading. `[I]` for the `npc` half and the `+0xC4` branch: every stock row with `npc` and
   without `inTown` (406, 527, 537–539) also has `interact`, so no creation separates them (§ Plan 0038 batch H5d). (run:2026-10-14-collision, run:2026-10-27-sweep-collision, fn:PATH_PatternFromSize@0x00648580, data:g_CollPatternBySize@0x006EB3DC, fn:sub_0063E860_MonIsNpc@0x0063E860, fn:MONSTATS_FlagTest@0x00457490, tbl:MonStats.txt:npc, tbl:MonStats.txt:inTown, tbl:MonStats.txt:interact)
 - [I] **Sizes** (`UNIT_GetSizeX`): player 2, monster MonStats2 `SizeX` (`+0x08`, signed byte), object Objects `SizeX` (`+0xD0`), missile Missiles `+0x18A`, item 1,
-  type 5 0. `UNIT_GetSizeY` reads MonStats2 `+0x09` and Objects `+0xD4`. Only objects use Y. (fn:UNIT_GetSizeX@0x00620510, fn:UNIT_GetSizeY@0x006205A0, tbl:MonStats2.txt:SizeX)
+  type 5 0. `UNIT_GetSizeY` reads MonStats2 `+0x09` and Objects `+0xD4`. Only objects use Y (corrected 2026-11-16, plan 0066 S7a: `UNIT_CollUnmarkRect` also reads a monster's Y when `AiWussie` (0x005EE452) and `AiBaalToStairs` (0x005EF6B7) remove their unit, [path/0001 § 16](../path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n)). (fn:UNIT_GetSizeX@0x00620510, fn:UNIT_GetSizeY@0x006205A0, tbl:MonStats2.txt:SizeX)
 - [I] **Masks** (fn:PATH_DynamicCreate@0x00649D00, fn:UNIT_GetCollMask@0x006209D0):
 
 | Unit | Footprint | Mark mask | Move test mask | Tag |

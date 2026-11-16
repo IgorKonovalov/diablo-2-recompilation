@@ -603,6 +603,25 @@ differ from Ghidra's (the walker draws bodies by recursive descent, not by Ghidr
   scan of `GameTick`'s graph). (data:g_HitClassCounter@0x0088CAD0, 0x0057CE4F)
 - Not settled in part 1 (part 2 of the batch): sim/frame row 117 (the send-queue writers).
 
+### 9. Plan 0066 batch S7a, part 2: the frame's reach to the packet senders (2026-11-16, `lane/n66n`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7a.py` (`246c8301…`, section `p2xrefs`; the walker of § 8). Output
+`workspace/logs/n66n/s7a-p2/check-s7a-p2.txt` (`95d0ebe5…`, `S7a total bad=0`).
+
+- **Contradicted in part: "nothing else leaves the frame but queued packets, flushed after it"** (frame row 117).
+  `ClientFlushPackets` (0x0052E320) has three calls: `ServerGamesFlush` (0x0052FE29), `SrvJoinAct` (0x005304A6) and
+  itself (0x0052E459); `GameTick`'s direct-call graph (2 422 functions, fatal path stopped) does not reach it. But it
+  reaches the transmit routine `0x0052B330` (it compresses the bytes and hands them to 0x0052AEB0 or to
+  0x006C03A0), which `ClientFlushPackets` also uses (0x0052E3B5), at one site: `GameTick` → `ClientsRoomSync`
+  (0x0052D8F9) → `AutosaveTick` (0x0052D4A9) → 0x0052CAF0 (0x0052D40E) → 0x0053B220 (0x0052CB88) → `0x0052B330`
+  (0x0053B231). 0x0053B220 sends a one-byte packet `0xB0` at once (0x0053B22D–0x0053B231), not through the queue.
+  `AutosaveTick` makes that call per client when its save conditions hold and `[0x00883D50]` is non-zero
+  (0x0052D3D9); what sets that word, and so whether a stock single-player game takes the branch, is not read. [C] for
+  the call chain and the packet; [I] stays for the rest of the claim: 751 indirect call sites of the graph are not
+  followed. Backlog
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
+  (fn:sub_0052D350_AutosaveTick@0x0052D350, fn:sub_0052E320_ClientFlushPackets@0x0052E320, 0x0053B231)
+
 ## Data touched
 
 - `struct:Game+0xA8` (frame), `struct:Game+0xAC..+0xB4` (fps), `struct:Game+0xBC` (acts), `struct:Game+0x88`

@@ -1430,3 +1430,44 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Next:** Tier B review of part 1 requested
   ([`2026-11-16-reverser-architect-review-plan-0066-s7a-part1`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s7a-part1.md));
   part 2 by a fresh lane on `lane/n66n`.
+
+### 2026-11-16 — Phase 1, batch S7a part 2 of 2 (reverser-static, `lane/n66n`): 17 of 18 settled; S7a done
+
+- **Done.** No game, no Ghidra. `main` unmoved since part 1 (`997fb18d`, already merged). `tools/sweep2_s7a.py`
+  (`246c8301…`) gains sections `stores`, `masks` and `p2xrefs` (objdump scans of all of `.text` for stores to fixed
+  offsets, flag tests and mask arguments, every named site re-decoded by r2; the part-1 walker for the graphs). Run
+  `all` under a 4 GB scope: `workspace/logs/n66n/s7a-p2/check-s7a-p2.txt` (`95d0ebe5…`, 351 lines, `S7a total bad=0`;
+  its part-1 lines identical to `check-s7a.txt`'s), `totals-s7a-p2.txt`, `manifest-s7a-p2.sha256` (`7a4af9fc…`) passing
+  from `workspace/logs/n66n/s7a-p2`; development outputs in `dev/` with `dev/manifest-dev.sha256`. Records:
+  [path/0001 § 16](../findings/path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n),
+  [drlg/0009 § 13](../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n),
+  [frame/0001 § 9](../findings/frame/0001-tick-and-messages.md#9-plan-0066-batch-s7a-part-2-the-frames-reach-to-the-packet-senders-2026-11-16-lanen66n).
+  Every row's *Route* cell carries its dated S7a note; README § 4's S7a row updated.
+- **Raised 5:** path-README 38 (with a correction: a planner's graph also tests `0x40`, `PathFaceDir`), 77; path-search 5;
+  lifecycle 29, 48.
+- **Raised in part 9**, remainder and home in each Route cell: path-README 6 (22 deeper `+0x10` stores → c), 41 (monster
+  and player halves → c-emu row 4, row 63), 56, 76, 79 (77 register `+0x50` stores outside the path module → c), 63 (12
+  base readings → d-none); path-search 14, 34 (13 register dword stores at `+0x90` → c; 14's "below 40 is a monster's
+  14" → c); lifecycle 36 (whole-field writes → d-none).
+- **Contradicted in part 3**, one backlog entry
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md):
+  path-README 17 (`UNIT_CollUnmarkRect` reads a monster's `SizeY` when `AiWussie` and `AiBaalToStairs` remove their
+  unit); lifecycle 12 (four `ItemPlaceOnGround` callers missing: `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate`,
+  `TargetBeltItemToGround`); frame 117 (`AutosaveTick` sends a one-byte `0xB0` through 0x0052B330 inside the frame,
+  gated on `[0x00883D50]`).
+- **Not raised 1:** lifecycle 11: `ItemCreate`'s direct graph reaches every item `+0x24` writer through `UnitFree`'s
+  chains, so reach cannot separate; class left c (the review may move it to d-none).
+- **S7a whole (63):** raised 35, raised in part 23, contradicted in part 4, not raised 1.
+- **Symbols:** none added or raised (no logged return compared).
+- **Totals** after merging `main` `997fb18d` (`totals-s7a-p2.txt`, the 29 files' *Totals by class*): a-logs 628, a-run
+  340, b 446, c 390, c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged (no row moved class);
+  Phase 1 1 512, Phase 2 786, blocked 328.
+- **Judgment calls for the review:** (1) row 63's ten "resolved without a reading of the base" (value 0, pointers, SHA-1
+  schedule words, CRT frames) raised and the twelve resolved by the owner's block left [I]; (2) row 17 filed contradicted
+  in part on the two AI removals, `AiWussie`'s and `AiBaalToStairs`'s unit taken from the AI signature (ECX game, EDX
+  unit) that ai/0011–0012 read; Iron Golem's call (0x005C53A5) left out, its unit being `UNIT_GetTargetUnit`'s;
+  (3) lifecycle 12 filed contradicted in part (as lifecycle 2 in part 1), where path-README 3 was "raised with a
+  correction"; path-README 38 filed raised with a correction, a wording scope; (4) frame 117's branch gate
+  `[0x00883D50]` not read, so whether single player takes it is open; (5) lifecycle 11 left in class c rather than
+  moved; (6) row 56's Whirlwind restores read in linear order (the slot's last store before them, 0x005D904D).
+- **Next:** Tier B review of S7a whole (the part-1 request, extended); then the spec-writer entry above.

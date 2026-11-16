@@ -14,9 +14,16 @@ Sections (the inventory rows each check serves are in the check names):
             by r2 (party 20; frame 6, 18, 20, 24, 38, 45, 53, 63, 93, 117, 125; path README 1, 3, 24, 41, 60, 65,
             search 28; lifecycle 2, 7, 12, 20, 27)
   reads     operand scans over the objdump listing next to r2's decoding: stack-block reads after MonPlayerBonus
-            (party 14, 22), excel accessors in the frame's own code (frame 7), stores to fixed offsets (path README
-            6, 38, 63, search 5, 14, 34; frame 20, 24, 63; lifecycle 11, 29, 36, 48), immediate move masks (path
-            README 56, 76, 79), readers of unflatDead and SizeY (path README 17, 77)
+            (party 14, 22), excel accessors in the frame's own code (frame 7)
+  Part 2 (the 18 rows left by part 1; output check-s7a-p2.txt):
+  stores    stores to fixed offsets over all of .text, each site re-decoded by r2: the context's +0x10 (path README
+            6), the 22 unresolved +0x3C stores (README 63), +0x90/+0x91 (search 14, 34), item +0x24 reach (lifecycle
+            11), 0x200000 at room +0x28 (29), the champion bit (36), 0x2000 at unit +0xC4 (48)
+  masks     flag and mask readers: the type flags 0x100/0x200 at +0x34/+0x35 (README 38, search 5), the move masks
+            in registers and tables (README 56, 76, 79), UNIT_GetSizeY's ten calls (README 17), the MonStats2 flag
+            index at every flag-test call (README 77), PathSetType's server arguments (README 41)
+  p2xrefs   call scans and graphs: ItemPlaceOnGround's callers (lifecycle 12), the frame's reach to the packet
+            senders (frame 117)
 
 Each section prints `S7a <section> <check> key=value ...` lines and detail lines; `bad=` counts an observation that
 contradicts the statement the check tests. Stdlib only, plus objdump (through tools/sweep_s4b.py) and r2. Read-only.
@@ -815,9 +822,576 @@ def chk_reads():
     return bad
 
 
+# ================================================================================================== part 2
+STOPS = {0x00408090, 0x00408A60, 0x00681E09}          # the fatal path's three calls
+WIDTH = {"BYTE": 1, "WORD": 2, "DWORD": 4, "QWORD": 8}
+MEMOP = re.compile(r"^(\w+) PTR \[(e[a-z]{2})([+-]0x[0-9a-f]+)\]$")
+PLANNERS = (0x0067AD00, 0x0067B850, 0x00679C80, 0x00679E50, 0x00679ED0, 0x0067A000, 0x00679F70, 0x00679FD0,
+            0x00679E60, 0x0067C2D0)                    # the ten distinct non-null entries of g_PathPlanFuncs
+PATH_MOD = (0x00648000, 0x00651000)                   # the path module's address range (re/symbols.csv path rows)
+
+
+def memop(ops):
+    """(width bytes, base register, signed offset) of an objdump operand list's first operand, or None."""
+    m = MEMOP.match((ops or "").split(",")[0].strip())
+    if not m or m.group(1) not in WIDTH:
+        return None
+    return WIDTH[m.group(1)], m.group(2), int(m.group(3), 16)
+
+
+def ival(ops):
+    """The second operand's immediate, or None."""
+    p = (ops or "").split(",", 1)
+    if len(p) < 2:
+        return None
+    t = p[1].strip()
+    m = re.match(r"^(?:0x([0-9a-f]+)|(\d+))$", t)
+    return None if not m else int(m.group(1), 16) if m.group(1) else int(m.group(2))
+
+
+WRITES = ("mov", "or", "and", "add", "sub", "xor", "inc", "dec", "bts", "btr", "btc", "not", "neg", "adc", "sbb",
+          "shl", "shr", "sar", "rol", "ror", "movs", "stos", "xchg", "cmpxchg", "setne", "sete", "pop")
+
+
+def stores(A, lo=None, hi=None):
+    """[(va, mnemonic, ops, width, base, offset)] of every instruction writing a [reg+disp] first operand."""
+    it = A.range(lo, hi) if lo is not None else sorted(A.ins.items())
+    out = []
+    for va, (mn, ops) in it:
+        if mn.split()[0] not in WRITES and not mn.startswith("set"):
+            continue
+        m = memop(ops)
+        if m:
+            out.append((va, mn, ops) + m)
+    return out
+
+
+def r2s(va):
+    mn, ops = r2ins(va)
+    return "%s %s" % (mn, ops)
+
+
+def zero_or_cmp(entry, site, reg):
+    """The value reg holds at site when site lies on the fall-through of a `jne` right after a `test reg, reg`,
+    `and reg, k` or `cmp reg, k`, or after `xor reg, reg`, with no write of reg between (r2's linear listing)."""
+    ins = lin(entry, site)
+    if not ins:
+        return None, "no linear listing"
+    for i in range(len(ins) - 2, -1, -1):
+        va, mn, ops = ins[i]
+        dst = ops.split(",")[0].strip()
+        if mn == "xor" and ops.replace(" ", "") == "%s,%s" % (reg, reg):
+            return 0, "0x%08X xor %s" % (va, ops)
+        if dst == reg and mn in ("test", "and", "cmp") and i + 1 < len(ins) and ins[i + 1][1] == "jne":
+            k = 0 if mn in ("test", "and") else T.imm(ops.split(",")[1].strip())
+            return k, "0x%08X %s %s; jne" % (va, mn, ops)
+        if dst == reg and mn not in ("test", "cmp", "push"):
+            return None, "0x%08X %s %s writes %s first" % (va, mn, ops, reg)
+    return None, "none"
+
+
+def no_write(lo, hi, reg):
+    """The objdump instructions in [lo, hi) whose destination is reg (a write)."""
+    A = S.asm()
+    return [(va, mn, ops) for va, (mn, ops) in A.range(lo, hi)
+            if ops and ops.split(",")[0].strip() == reg and mn not in ("cmp", "test", "push")]
+
+
+# ---------------------------------------------------------------------------------------------- stores
+# README 63: the 22 sites path/0003 § 12 left (18 register stores of unresolved base, 4 read-modify-write), each with
+# the reading that resolves it and the r2 text that reading rests on (checked at the value or base instruction).
+B3C = [
+    # (site, class, instruction checked, text it must hold, reason)
+    (0x00529481, "hash", 0x0052947A, "rol edx, 1", "SHA-1 schedule word: rol 1 of an xor of the buffer's +0x30/+0x1C"),
+    (0x0052981A, "hash", 0x00529815, "rol edx, 1", "SHA-1 schedule word, as above"),
+    (0x00529BD7, "hash", 0x00529BD2, "rol edx, 1", "SHA-1 schedule word, as above"),
+    (0x00529F12, "hash", 0x00529F10, "rol edx, 1", "SHA-1 schedule word, as above"),
+    (0x00559002, "base", 0x00558FF1, "cmp eax, 0xff", "ItemCreate's clamp to 0xFF of its own block's +0x3C"),
+    (0x0057C628, "base", 0x0057C620, "sar eax, 6", "COMBAT_Leech: a leech amount / 64 into its damage block"),
+    (0x005B5389, "value", 0x005B537C, "call 0x620bb0", "a room pointer, tested non-null"),
+    (0x005BBC61, "value", 0x005BBC2A, "xor ecx, ecx", "the value 0"),
+    (0x005FFF92, "base", 0x005FFF85, "call 0x5fec50", "GfxCelPath's cel block, a call's return"),
+    (0x00600225, "base", 0x00600222, "cmp dword [esi + 0x34], ebx", "GfxCelPath's cel block"),
+    (0x00600230, "base", 0x0060022B, "call 0x601840", "GfxCelPath's cel block, a call's return"),
+    (0x006003B2, "base", 0x006003AB, "call 0x5fec50", "GfxCelPath's cel block, a call's return"),
+    (0x006242FF, "base", 0x00623F57, "mov edi, dword [ebp + 8]", "UNIT_AnimSetRate's unit argument: a unit, not a path"),
+    (0x00626E9D, "value", 0x00626E92, "mov dword [edi + 0x2c], eax", "a stat list pointer (edi dereferenced)"),
+    (0x00670869, "base", 0x00670866, "mov edx, dword [ecx + 0x10]", "a maze level record's room field"),
+    (0x0068CFFB, "base", 0x0068CFF6, "cmp eax, dword [ebp + 0x3c]", "a CRT routine's stack frame (ebp = esp - 0x290)"),
+    (0x006C3CF6, "base", 0x006C3CE6, "and dword [eax + 0x3c], ecx", "CALC_Compile's own block, flag word"),
+    (0x006C3DE9, "value", 0x006C3DDD, "call 0x413020", "an allocation's return pointer (SCMD.CPP)"),
+    (0x005BB82C, "base", 0x005BB82C, "add dword [ebx + 0x3c], 1", "A3Q5 cube count: a quest counter"),
+    (0x0063D4CF, "base", 0x0063D4CF, "add dword [esi + 0x3c], 1", "InvCorpseAdd: the inventory's corpse count"),
+    (0x0063D54C, "base", 0x0063D54C, "add dword [esi + 0x3c], 0xffffffff", "InvCorpseRemove: the inventory's corpse count"),
+    (0x0068CDCF, "base", 0x0068CDCF, "or dword [ebp + 0x3c], 0xffffffff", "a CRT routine's stack frame"),
+]
+
+
+def chk_stores():
+    bad = 0
+    A = S.asm()
+    # README 6: the context +0x10 (PathPlan's EBP-0x24) is never written
+    r = Rep("stores", "pathR6_ctx10")
+    vas = body2(A, 0x00649970)[0]
+    for va in sorted(vas):
+        mn, ops = A.ins[va]
+        m = memop(ops)
+        if m and m[1] == "ebp" and m[2] - 0 <= -0x21 and m[2] + m[0] > -0x24 and mn.split()[0] in WRITES:
+            r.c["pathplan_ctx10_stores"] += 1
+            r.note("  store 0x%08X %s %s" % (va, mn, ops))
+        if mn == "lea" and "ebp-0x24" in ops.replace(" ", ""):
+            r.c["pathplan_ctx10_lea"] += 1
+    ctxlea = sorted(va for va in vas if A.ins[va][0] == "lea" and "[ebp-0x34]" in A.ins[va][1].replace(" ", ""))
+    r.c["pathplan_ctx_leas"] = len(ctxlea)
+    r.note("PathPlan ctx leas: %s" % ", ".join("0x%08X %s" % (v, A.ins[v][1]) for v in ctxlea))
+    # the base of each +0x10 store in the five bodies: the one definer named here, no other write but a pop
+    helpers = {0x00649970: [(0x00649977, "mov edi, dword [ebp + 8]")],     # PathPlan's path argument
+               0x006498A0: [(0x006498A2, "mov edi, dword [ebx + 0x30]"),  # ctx.pPath (EBX the context)
+                            (0x006497D2, "mov edi, dword [eax + 0x30]")],  # its jump into 0x006497D0 (EAX the context)
+               0x00648120: None, 0x006483A0: None, 0x00648050: None}
+    for e in list(helpers) + list(PLANNERS):
+        body = body2(A, e)[0]
+        for va in sorted(body):
+            mn, ops = A.ins[va]
+            m = memop(ops)
+            if m and m[2] == 0x10 and mn.split()[0] in WRITES:
+                r.c["own_plus10_stores"] += 1
+                h = helpers.get(e)
+                defs = [d for d, _ in h] if h else []
+                others = [x for x in sorted(body) if (A.ins[x][1] or "").split(",")[0].strip() == m[1]
+                          and A.ins[x][0] not in ("cmp", "test", "push", "pop") and x not in defs]
+                ok = bool(h) and all(r2s(d) == t and t.split(",")[0].split()[-1] == m[1] for d, t in h) and not others
+                r.c["plus10_base_path"] += int(ok)
+                r.c["bad"] += int(not ok)
+                r.note("  %s 0x%08X %s %s; base %s%s" % (nm(e), va, mn, ops, h, "" if ok else " other writes %s" %
+                                                         ["0x%08X" % x for x in others]))
+    r.c["bodies"] = len(helpers) + len(PLANNERS)
+    r.c["bad"] += r.c["pathplan_ctx10_stores"] + r.c["pathplan_ctx10_lea"]
+    G = graph2(list(PLANNERS), stop=STOPS)
+    deeper = [(e, va) for e, v in G.items() if e not in PLANNERS for va in sorted(v[2])
+              if memop(A.ins[va][1]) and memop(A.ins[va][1])[2] == 0x10 and A.ins[va][0].split()[0] in WRITES]
+    r.c["planner_graph_functions"] = len(G)
+    r.c["deeper_plus10_stores"] = len(deeper)
+    r.c["deeper_plus10_functions"] = len(set(e for e, _ in deeper))
+    r.c["deeper_stack_arg"] = sum(1 for e, va in deeper if memop(A.ins[va][1])[1] == "ebp")
+    for e, va in deeper:
+        r.note("  deeper %s 0x%08X %s %s" % (nm(e), va, A.ins[va][0], A.ins[va][1]))
+    bad += r.done()
+
+    # README 63: the 22 sites
+    r = Rep("stores", "pathR63_3c")
+    for site, cls, iv, text, why in B3C:
+        got = r2s(site)
+        chk = r2s(iv)
+        ok = text in chk and "0x3c" in got
+        r.c[cls] += 1
+        r.c["bad"] += int(not ok)
+        r.note("  0x%08X %-28s %-38s %s: %s [0x%08X %s]%s" % (site, nm(site), got, cls, why, iv, chk,
+                                                            "" if ok else " MISMATCH"))
+    r.c["sites"] = len(B3C)
+    bad += r.done()
+
+    # search 14, 34: writers of +0x90 and +0x91
+    r = Rep("stores", "search14_34_plus90")
+    ws = [x for x in stores(A) if x[4] != "esp" and x[5] <= 0x91 and x[5] + x[3] > 0x90]
+    for va, mn, ops, w, base, off in ws:
+        v = ival(ops)
+        inmod = PATH_MOD[0] <= va < PATH_MOD[1]
+        covers91 = off <= 0x91 < off + w
+        if inmod:
+            r.c["path_module"] += 1
+            r.note("  path 0x%08X %s %s %s value=%s" % (va, nm(va), mn, ops, v))
+            if covers91 and v is not None and v > 77:
+                r.c["bad"] += 1
+        elif v is not None:
+            b = (v >> (8 * (0x91 - off))) & 0xFF if covers91 else None
+            r.c["other_imm"] += 1
+            r.c["bad"] += int(b is not None and b > 77 and w == 1)
+            if w == 1:
+                r.note("  imm 0x%08X %s %s %s" % (va, nm(va), mn, ops))
+        else:
+            k = "other_reg_w%d" % w
+            r.c[k] += 1
+            if va >= 0x00520000 and covers91:
+                r.c["other_reg_server_cover91"] += 1
+                r.note("  reg 0x%08X %s %s %s" % (va, nm(va), mn, ops))
+    cap = [r2s(x) for x in (0x00648E7D, 0x00648E7F, 0x00648E81)]
+    r.c["byte90_cap_77"] = int(cap == ["cmp al, 0x4d", "jb 0x648e83", "mov al, 0x4d"])
+    r.c["bad"] += 1 - r.c["byte90_cap_77"]
+    calls = calls_of(0x00648E70)[0]
+    r.c["byte90_calls"] = len(calls)
+    r.c["byte90_server_calls"] = sum(1 for s in calls if s >= 0x00520000)
+    r.note("PathSetByte90 calls: %s" % ", ".join("0x%08X %s %s" % (s, nm(s), args(s, 2)[1:]) for s in calls))
+    r.c["stores"] = len(ws)
+    bad += r.done()
+
+    # lifecycle 11: ItemCreate's direct-call graph and the item +0x24 writers
+    r = Rep("stores", "life11_item24")
+    G = graph2([0x00558D90], stop=STOPS)
+    r.c["itemcreate_graph"] = len(G)
+    r.c["indirect"] = sum(len(v[4]) for v in G.values())
+    for w, n in ((0x00558A10, "ItemGroundExpiry"), (0x00558AA0, "ItemPlaceOnGround"), (0x00554A30, "UnitRelocate"),
+                 (0x00541990, "InactiveItemRestoreOne")):
+        r.c["reached_" + n] = int(w in G)
+        if w in G:
+            r.note("  %s reached: %s" % (n, path_to(G, w)))
+    r.c["ground_expiry_calls"] = len(calls_of(0x00558A10)[0])
+    bad += r.done()
+
+    # lifecycle 29: 0x200000 at DRLG room +0x28
+    r = Rep("stores", "life29_room28")
+    for va, (mn, ops) in sorted(A.ins.items()):
+        m = memop(ops)
+        if not ops:
+            continue
+        v = ival(ops)
+        if m and m[1] != "esp" and v is not None and ((m[2] == 0x28 and m[0] == 4 and v in (0x200000, 0xFFDFFFFF))
+                                                      or (m[2] == 0x2A and m[0] == 1 and v in (0x20, 0xDF))):
+            r.c["mem_imm"] += 1
+            r.note("  mem 0x%08X %s %s %s" % (va, nm(va), mn, ops))
+            r.c["bad"] += int(va != 0x0066F232)
+        dst = ops.split(",")[0].strip()
+        if mn in ("test", "and", "bt") and re.match(r"^e[a-z]{2}$", dst) and v is not None and \
+                (v == 0x15 if mn == "bt" else v == 0x200000):
+            r.c["reg_tests"] += 1
+            d = reg_before(va, dst)
+            from28 = bool(d and "+ 0x28]" in d[2])
+            r.c["reg_tests_from_28"] += int(from28)
+            r.c["bad"] += int(from28)
+            r.note("  reg 0x%08X %s %s %s; loaded %s" % (va, nm(va), mn, ops, d))
+    r.c["write_r2_or_200000"] = int(r2s(0x0066F232) == "or dword [esi + 0x28], 0x200000")
+    bad += r.done()
+
+    # lifecycle 36: the champion bit 0x04 of monster data +0x16 set, 0x08 cleared
+    r = Rep("stores", "life36_champion")
+    for va, mn, ops, w, base, off in stores(A):
+        if base == "esp" or not (off <= 0x16 < off + w):
+            continue
+        v = ival(ops)
+        sh = 8 * (0x16 - off)
+        op = mn.split()[0]
+        if v is None:
+            r.c["reg_writes"] += 1
+            continue
+        if op == "or" and (v >> sh) & 4:
+            r.c["or_sets"] += 1
+            r.note("  or 0x%08X %s %s; r2 %s" % (va, nm(va), ops, r2s(va)))
+        elif op in ("and", "btr") and not (v >> sh) & 8:
+            crt = base == "ebp" and nm(va).startswith("CRT_")
+            r.c["and_clears_crt_frame" if crt else "and_clears"] += 1
+            r.note("  and 0x%08X %s %s%s" % (va, nm(va), ops, " (a CRT stack frame)" if crt else ""))
+        elif op == "mov":
+            r.c["mov_imm"] += 1
+            r.c["mov_imm_bit4"] += int(bool((v >> sh) & 4))
+            r.c["mov_imm_no8"] += int(not (v >> sh) & 8)
+    r.c["bad"] += int(r.c["or_sets"] != 3) + r.c["and_clears"]
+    seq = [r2s(0x005A48F4), r2s(0x005A4905)]
+    r.c["member_mark_after_monmarkspecial"] = int(seq == ["call 0x5a0320", "or word [eax + 0x16], 5"])
+    bad += r.done()
+
+    # lifecycle 48: bit 0x2000 into unit +0xC4
+    r = Rep("stores", "life48_c4")
+    V = sorted(A.ins)
+    idx = {va: i for i, va in enumerate(V)}
+    for va, mn, ops, w, base, off in stores(A):
+        if base == "esp" or not (off <= 0xC5 < off + w):
+            continue
+        v = ival(ops)
+        op = mn.split()[0]
+        if v is not None:
+            if op in ("or", "mov") and (v >> (8 * (0xC4 - off) if off <= 0xC4 else 0)) & 0x2000 and off <= 0xC4:
+                r.c["mem_imm"] += 1
+                isfn = T.pad_entry(v) == v
+                r.c["mem_imm_code_pointer"] += int(isfn)
+                r.c["bad"] += int(not isfn)
+                r.note("  imm 0x%08X %s %s%s" % (va, nm(va), ops, " (a function entry)" if isfn else ""))
+            elif off == 0xC5 and w == 1 and op in ("or", "mov") and v & 0x20:
+                r.c["mem_imm_byte"] += 1
+                r.c["bad"] += 1
+            continue
+        if op == "mov" and w == 4 and off == 0xC4:
+            R = ops.split(",")[1].strip()
+            r.c["reg_stores"] += 1
+            i = idx[va]
+            for j in range(i - 1, max(-1, i - 11), -1):
+                m2, o2 = A.ins[V[j]]
+                if o2 and o2.split(",")[0].strip() == R:
+                    x = ival(o2)
+                    if m2 == "or" and x is not None and x & 0x2000:
+                        r.c["reg_or_2000"] += 1
+                        r.note("  reg 0x%08X %s %s <- 0x%08X or %s" % (va, nm(va), ops, V[j], o2))
+                        r.c["bad"] += int(va != 0x0064C097)
+                    break
+    bad += r.done()
+    return bad
+
+
+# ---------------------------------------------------------------------------------------------- masks
+SIZEY_SITES = [
+    # (site, class, evidence instruction, its r2 text, reading)
+    (0x00581D73, "object", None, None, "ObjEvent7Thunk, an object event handler"),
+    (0x00581EDC, "object", None, None, "ObjEvent7Thunk"),
+    (0x00581F90, "object", None, None, "ObjEvent7Thunk"),
+    (0x005820B0, "object", None, None, "ObjEvent7Thunk"),
+    (0x00584628, "object", None, None, "OBJ_OperateDispatch"),
+    (0x00620AA5, "any", 0x00620A9D, "call 0x620510", "UNIT_CollMarkRect: no type test; its callers decide"),
+    (0x00623754, "object", 0x00623673, "cmp eax, 2", "0x00623660: returns 0 unless [ebp+0xC] is type 2"),
+    (0x0062389A, "any", 0x00623893, "call 0x6209d0", "UNIT_CollUnmarkRect: no type test; its callers decide"),
+    (0x00649432, "object", 0x00649420, "cmp eax, 2", "UNIT_CollMark: the type-2 branch"),
+    (0x00649684, "object", 0x00649586, "sub eax, 1", "UNIT_CollUnmark: the third dispatch arm (type 2, 0x00649589)"),
+]
+# README 56: the eight register masks given to PathSetCollMask, each with the objdump instructions its value rests on.
+# "sel" is the compiler's select `neg r; sbb r, r; and r, K; add r, B`: B or B + K (mod 2^32).
+REGMASK = [
+    (0x004C923E, "sel", [(0x004C9200, "and ebx,0xffffe008"), (0x004C9206, "add ebx,0x3c01")], "client"),
+    (0x004C93C3, "sel", [(0x004C93B5, "and edi,0xffffe008"), (0x004C93BB, "add edi,0x3c01")], "client"),
+    (0x004CD132, "table", [(0x004CD129, "mov ecx,DWORD PTR [eax*8+0x72a354]")], "client CollideType table"),
+    (0x0054CBE7, "saved", [(0x0054CB5C, "mov DWORD PTR [ebp-0x4],eax"), (0x00648CD6, "mov eax,DWORD PTR [eax+0x50]")],
+     "PlrReachTest: the mask PathGetCollMask (0x00648CD0) read before the test"),
+    (0x0059FD7C, "table", [(0x0059FD73, "mov edx,DWORD PTR [ecx*8+0x73c724]")], "MissileCreate: g_MissileCollideTypes"),
+    (0x005D9082, "sel", [(0x005D903D, "and eax,0xffffe008"), (0x005D9047, "add eax,0x3c01"),
+                         (0x005D904D, "mov DWORD PTR [ebp-0x14],eax")], "Whirlwind start: the slot's last store"),
+    (0x005D90DC, "sel", [(0x005D903D, "and eax,0xffffe008"), (0x005D9047, "add eax,0x3c01"),
+                         (0x005D904D, "mov DWORD PTR [ebp-0x14],eax")], "Whirlwind start, second restore"),
+    (0x005D94FF, "sel", [(0x005D94B8, "and eax,0xffffe008"), (0x005D94BD, "add eax,0x3c01"),
+                         (0x005D94C6, "mov DWORD PTR [ebp+0xc],eax")], "WhirlwindEnd: the argument slot reused"),
+]
+MONTESTMASK = [(0x006484B4, "mov eax,0x1804"), (0x006484C7, "and eax,0xfffff800"), (0x006484CC, "add eax,0x3c01")]
+
+
+# Monster units passed to UNIT_CollUnmarkRect: the AI function's unit (EDX) kept in ESI to the call
+UNMARK_MON = [(0x005EE3C0, 0x005EE3CC, 0x005EE452, "AiWussie"), (0x005EF620, 0x005EF62E, 0x005EF6B7, "AiBaalToStairs")]
+
+
+def chk_masks():
+    bad = 0
+    A = S.asm()
+    # README 38, search 5: the type flags at path +0x34
+    r = Rep("masks", "pathR38_S5_typeflags")
+    fl = S.dwords(0x006EB690, 17)
+    r.c["flags2_xor_flags13"] = fl[2] ^ fl[13]
+    r.c["bad"] += int(fl[2] ^ fl[13] != 0x100)
+    r.note("g_PathTypeFlags: %s" % " ".join("%d:%X" % (i, x) for i, x in enumerate(fl)))
+    G = graph2(list(PLANNERS), stop=STOPS)
+    gv = {va: e for e, v in G.items() for va in v[2]}
+    r.c["planner_graph"] = len(G)
+    r.c["planner_graph_indirect"] = sum(len(v[4]) for v in G.values())
+    for va, (mn, ops) in sorted(A.ins.items()):
+        m = memop(ops)
+        if not m or mn not in ("test", "and", "bt", "or", "cmp"):
+            continue
+        v = ival(ops)
+        if v is None or not (mn in ("test", "bt") or (mn == "and" and v in (0x100, 0x200, 0x300, 1, 2, 3))):
+            continue
+        if (m[2] == 0x34 and m[0] >= 2 and (v & 0x300 if mn != "bt" else v in (8, 9))) or \
+                (m[2] == 0x35 and (v & 3 if mn != "bt" else v in (0, 1))):
+            r.c["text_tests_100_200"] += 1
+            r.c["planner_graph_tests"] += int(va in gv)
+            r.note("  0x%08X %s %s %s%s" % (va, nm(va), mn, ops, " (planner graph)" if va in gv else ""))
+            r.c["bad"] += int(va in gv and not (v == 0x200 and va == 0x0064FED5))
+    for va in sorted(gv):
+        mn, ops = A.ins[va]
+        m = memop(ops) or (re.search(r"\+0x3[45]\]", ops or "") and (0, "", 0x34))
+        if m and re.search(r"\+0x3[45]\]", ops or ""):
+            r.c["planner_graph_34_operands"] += 1
+            r.note("  graph 0x%08X %s %s %s" % (va, nm(va), mn, ops))
+    r.c["abs_refs_flags"] = len(T.raw(0x006EB690)[2])
+    bad += r.done()
+
+    # README 56, 76, 79: move masks through PathSetCollMask, the tables, the creation and PATH_MonTestMask
+    r = Rep("masks", "pathR56_mask8000")
+    calls = calls_of(0x00648CE0)[0]
+    for s in calls:
+        a = args(s, 2)
+        v = T.imm(a[1]) if a and len(a) > 1 else None
+        if v is not None:
+            r.c["imm_args"] += 1
+            r.c["bad"] += int(bool(v & 0x8000))
+        else:
+            r.c["reg_args"] += 1
+    rm = {x[0]: x for x in REGMASK}
+    r.c["bad"] += int(sorted(rm) != sorted(s for s in calls if T.imm((args(s, 2) or [0, 0])[1]) is None))
+    for site, kind, ev, why in REGMASK:
+        ok = all((A.ins.get(va) and "%s %s" % A.ins[va] == t) for va, t in ev)
+        r.c["reg_" + kind] += 1
+        r.c["bad"] += int(not ok)
+        vals = ""
+        if kind == "sel":
+            k, b = (int(ev[0][1].split(",")[1], 16), int(ev[1][1].split(",")[1], 16))
+            vv = {b, (b + k) & 0xFFFFFFFF}
+            r.c["sel_bit8000"] += sum(1 for x in vv if x & 0x8000)
+            vals = " values %s" % sorted("%X" % x for x in vv)
+        r.note("  reg 0x%08X %s %s: %s%s%s" % (site, nm(site), kind, why, vals, "" if ok else " MISMATCH"))
+    r.c["bad"] += r.c["sel_bit8000"]
+    r.c["calls"] = len(calls)
+    for tab, n in ((0x0073C720, "server"), (0x0072A350, "client")):
+        ent = S.dwords(tab, 18)
+        masks = ent[1::2][:9]
+        r.c["table_%s_bit8000" % n] = sum(1 for x in masks if x & 0x8000)
+        r.c["bad"] += r.c["table_%s_bit8000" % n]
+        r.note("  table 0x%08X %s masks %s" % (tab, n, " ".join("%X" % x for x in masks)))
+    ct = [int(x.get("CollideType") or 0) for x in S.tsv("missiles")]
+    r.c["missiles_rows"] = len(ct)
+    r.c["missiles_collidetype_max"] = max(ct)
+    r.c["bad"] += int(max(ct) > 8)
+    comp = [r2s(x) for x in (0x004C93B5, 0x004C93BB)]
+    r.c["client_computed_1c09_3c01"] = int(comp == ["and edi, 0xffffe008", "add edi, 0x3c01"])
+    ok = all("%s %s" % A.ins[va] == t for va, t in MONTESTMASK)
+    mv = {0x1804, 0x3C01, (0x3C01 + 0xFFFFF800) & 0xFFFFFFFF}
+    r.c["montestmask_values"] = len(mv) if ok else 0
+    r.c["montestmask_imm_8000"] = sum(1 for x in mv if x & 0x8000) + int(not ok)
+    r.note("  PATH_MonTestMask returns %s" % sorted("%X" % x for x in mv))
+    r.c["bad"] += r.c["montestmask_imm_8000"]
+    for va, mn, ops, w, base, off in stores(A, 0x00649D00, 0x00649F00):
+        if off == 0x50:
+            r.c["create_50_stores"] += 1
+            r.note("  create 0x%08X %s %s" % (va, mn, ops))
+    ws = [x for x in stores(A) if x[5] == 0x50 and x[3] == 4 and x[4] != "esp" and x[1].split()[0] == "mov"]
+    r.c["text_50_dword_movs"] = len(ws)
+    r.c["text_50_reg_movs"] = sum(1 for x in ws if ival(x[2]) is None)
+    pm = [x for x in ws if ival(x[2]) is None and PATH_MOD[0] <= x[0] < PATH_MOD[1]]
+    r.c["text_50_reg_movs_path_module"] = len(pm)
+    for x in pm:
+        r.note("  path-module reg mov 0x%08X %s %s; source %s" % (x[0], nm(x[0]), x[2], reg_before(x[0], x[2].split(",")[1].strip())))
+    bad += r.done()
+
+    # README 17: UNIT_GetSizeY's ten calls
+    r = Rep("masks", "pathR17_sizey")
+    calls = calls_of(0x006205A0)[0]
+    r.c["calls"] = len(calls)
+    r.c["bad"] += int(sorted(calls) != sorted(s for s, _, _, _, _ in SIZEY_SITES))
+    tab = S.dwords(0x0062062C, 6)
+    r.c["sizey_monster_reads_ms2_09"] = int(tab[1] == 0x006205E0 and r2s(0x006205EC) == "movsx eax, byte [eax + 9]")
+    for s, cls, ev, txt, why in SIZEY_SITES:
+        r.c[cls] += 1
+        ok = ev is None or txt in r2s(ev)
+        r.c["bad"] += int(not ok)
+        r.note("  0x%08X %-30s %-6s %s%s" % (s, nm(s), cls, why, "" if ok else " MISMATCH"))
+    for e, mv, site, n in UNMARK_MON:
+        w = no_write(mv + 1, site, "esi")
+        ok = r2s(mv) == "mov esi, edx" and not w and r2s(site - 1) == "push esi"
+        r.c["contra_monster_unmark"] += int(ok)
+        r.note("  CONTRA %s: unit EDX kept in ESI 0x%08X..0x%08X, UNIT_CollUnmarkRect(ESI) at 0x%08X%s" %
+               (n, mv, site, site, "" if ok else " (unverified: %s)" % w))
+    mr = calls_of(0x00620A70)[0]
+    ur = calls_of(0x00623830)[0]
+    r.c["markrect_callers"] = len(mr)
+    r.c["unmarkrect_callers"] = len(ur)
+    r.c["markrect_client_callers"] = sum(1 for s in mr if s < 0x00520000)
+    r.c["unmarkrect_client_callers"] = sum(1 for s in ur if s < 0x00520000)
+    bad += r.done()
+
+    # README 77: the MonStats2 flag index at each flag-test call
+    r = Rep("masks", "pathR77_unflatdead")
+    calls = calls_of(0x004638A0)[0]
+    r.c["calls"] = len(calls)
+    idx14 = []
+    for s in calls:
+        e = T.pad_entry(s)
+        d = reg_before(s, "edx", entry=e)
+        k, how = None, ""
+        if d and d[1] == "mov":
+            k = T.imm(d[2].split(",")[1].strip())
+            how = "mov"
+        elif d and d[1] == "lea":
+            m = re.match(r"edx, \[(e[a-z]{2}) \+ (0x[0-9a-f]+|\d+)\]", d[2])
+            if m:
+                base, how = zero_or_cmp(e, d[0], m.group(1))
+                k = None if base is None else base + int(m.group(2), 0)
+        if k is None:
+            r.c["unresolved"] += 1
+            r.c["bad"] += 1
+        r.c["index_%02X" % k if k is not None else "index_none"] += 1
+        if k == 0x14:
+            idx14.append(s)
+        if d and d[1] != "mov":
+            r.note("  0x%08X %s edx %s -> index %s (%s)" % (s, nm(s), d[2], k, how))
+    r.c["index14_sites"] = len(idx14)
+    r.c["bad"] += int(idx14 != [0x004648AB])
+    up = calls_of(0x00464860)[0]
+    r.c["flatdrawtest_calls"] = len(up)
+    r.c["bad"] += int(up != [0x004DDAD6])
+    r.note("index 0x14 at %s; UnitFlatDrawTest called at %s" % (["0x%08X" % x for x in idx14], ["0x%08X" % x for x in up]))
+    for va, (mn, ops) in sorted(A.ins.items()):
+        m = memop(ops)
+        v = ival(ops)
+        if m and v is not None and (mn in ("test", "bt") or (mn == "and" and v in (0x10, 0x100000))) and (
+                (m[2] == 6 and m[0] == 1 and v & 0x10) or (m[2] == 4 and m[0] == 4 and v & 0x100000 and mn != "bt")
+                or (mn == "bt" and m[2] == 4 and v == 0x14)):
+            r.c["direct_bit_tests"] += 1
+            r.note("  direct 0x%08X %s %s %s" % (va, nm(va), mn, ops))
+    bad += r.done()
+
+    # README 41: the types the server's PathSetType calls give, by owner
+    r = Rep("masks", "pathR41_types")
+    calls = calls_of(0x00648CF0)[0]
+    srv = [s for s in calls if s >= 0x00520000]
+    r.c["calls"], r.c["server"] = len(calls), len(srv)
+    for s in srv:
+        a = args(s, 2)
+        n = nm(s)
+        v = T.imm(a[1]) if a and len(a) > 1 else None
+        missile = "MissCb" in n or "BlessedHammer" in n or s == 0x00649DBB
+        if missile:
+            r.c["missile_sites"] += 1
+            r.c["bad"] += int(v not in (4, 10, 14))
+        r.note("  0x%08X %-40s type %s%s" % (s, n, a[1] if a else "?", " (missile path)" if missile else ""))
+    r.c["create_missile_arm_4"] = int([r2s(x) for x in (0x00649DA9, 0x00649DB2)] == ["sub eax, 2", "push 4"])
+    bad += r.done()
+    return bad
+
+
+# ---------------------------------------------------------------------------------------------- p2xrefs
+LIFE12_SPEC = {"CursorDrop", "DropGoldAmount", "NPC_MenuAction", "CubeDropEmptied", "BeltOverflow",
+               "CorpseOverflowDrop"}   # the spec's list: CursorDrop, "an overflow", DropGoldAmount, NPC menus, the cube's
+
+
+def chk_p2xrefs():
+    bad = 0
+    # lifecycle 12
+    r = Rep("p2xrefs", "life12_placeonground")
+    calls = rep_calls(r, 0x00558AA0)
+    extra = sorted(set(nm(T.owner(s)[0]) for s in calls
+                       if not any(k in nm(T.owner(s)[0]) for k in LIFE12_SPEC)))
+    r.c["contra_unlisted_callers"] = len(extra)
+    r.note("callers outside the spec's list: %s" % ", ".join(extra))
+    bad += r.done()
+    # frame 117
+    r = Rep("p2xrefs", "frame117_flush")
+    A = S.asm()
+    G = graph2([0x0052D870], stop=STOPS)
+    r.c["gametick_graph"] = len(G)
+    r.c["indirect"] = sum(len(v[4]) for v in G.values())
+    fc = calls_of(0x0052E320)[0]
+    r.c["flushpackets_calls"] = len(fc)
+    r.note("ClientFlushPackets called at %s" % ", ".join("0x%08X %s" % (s, nm(s)) for s in fc))
+    r.c["flushpackets_reached"] = int(0x0052E320 in G)
+    r.c["bad"] += r.c["flushpackets_reached"]
+    send = 0x0052B330
+    sc = calls_of(send)[0]
+    r.c["send_calls"] = len(sc)
+    for e, v in G.items():
+        for s, t in v[3]:
+            if t == send:
+                r.c["contra_send_in_frame"] += 1
+                ch, x = [], e
+                while x is not None:
+                    par = G[x][1]
+                    site = [s2 for s2, t2 in G[par][3] if t2 == x][0] if par is not None else None
+                    ch.append("0x%08X %s%s" % (x, nm(x), " @0x%08X" % site if site else ""))
+                    x = par
+                r.note("  direct send 0x%08X <- %s" % (s, " <- ".join(ch)))
+    pk = [r2s(x) for x in (0x0053B22D, 0x0053B224)]
+    r.c["send_one_byte_b0"] = int(pk == ["mov byte [ebp - 1], 0xb0", "push 1"])
+    r.c["autosave_gate_883d50"] = int(r2s(0x0052D3D9) == "cmp dword [0x883d50], 0")
+    bad += r.done()
+    return bad
+
+
 # ================================================================================================== main
 CHECKS = collections.OrderedDict([("graphs", chk_graphs), ("xrefs", chk_xrefs), ("xrefs2", chk_xrefs2),
-                                  ("reads", chk_reads)])
+                                  ("reads", chk_reads), ("stores", chk_stores), ("masks", chk_masks),
+                                  ("p2xrefs", chk_p2xrefs)])
 
 
 def main(argv):
