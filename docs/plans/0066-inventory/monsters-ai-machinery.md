@@ -3,6 +3,17 @@
 - **Spec:** [monsters/ai/machinery](../../specs/monsters/ai/machinery.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 114; the *Count* column sums to 114.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66ai`, 2026-11-16, the monsters/ai cluster part 1): re-tagged.** The spec's front matter is now C 87 / I 85 / L 4
+  (it was C 28 / I 114 / L 4). Statement `[C]` whole: rows 1, 2, 7–10, 20, 21, 24, 28–33, 36, 37, 44, 48–52, 57, 59, 69, 73,
+  108, 112, 114 (30). Split, the `[C]` half and the remainder `[I]` as the *Route* cell names: 3, 4, 13, 15–19, 23, 25–27, 34,
+  40, 41, 43, 45, 47, 55, 58, 63, 65, 67, 71, 84, 88, 107, 111, 113 (29). Corrected to the finding: 46, 54, 82 (3; E4's
+  `AiParamsFind` scan order, `[C]` with `Alloc`/`Push`/`Pop` `[I]`; the § F `UModTeleportTry` row's two gated draws and T30a's
+  writer, row 65's kind-14 block, both static readings kept `[I]`). Kept `[I]`: 5, 6, 11, 12, 14, 22, 35, 38, 39, 42, 53, 56,
+  60–62, 64, 66, 68, 70, 72, 74–81, 83, 85–87, 89–106, 109, 110 (52; S1ne not settled 5, 6, 11, 12, 14; S1o 42, 94; S1m 53,
+  68; d-edit 110; H1m, H1n). Row 43 (E1 `MonAiKeepNear`, H1n) is split by the README row 39 raise, which ran it whole inside
+  `MonAiPreChecks` (S1ne correction 15). The S1m corrections 1 and 2 are B7a (`[C]`) and an *Open questions* line (`[I]`); the
+  S1ne corrections 3–11 and 13–15 are in rows 36, 17, 73, 65, 46, 29, 24, 27, 112, 13, 16 and 43; S1f-p1 corrections 1, 5 and 6
+  are in rows 82, 54 and 19.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

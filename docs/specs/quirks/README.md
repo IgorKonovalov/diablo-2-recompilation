@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 411, I: 136, L: 3}
+tags: {C: 414, I: 133, L: 3}
 updated: 2026-11-16
 ---
 
@@ -64,13 +64,13 @@ flowchart LR
 | [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 26 | 19 | 7 |
 | [2. Rounding and float](#2-rounding-and-float) | 21 | 16 | 5 |
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 | 7 |
-| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 61 | 18 |
+| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 62 | 17 |
 | [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 123 | 21 |
-| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 114 | 21 |
+| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 115 | 20 |
 | [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 18 | 10 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 23 | 17 | 6 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 35 | 37 |
-| **Total** | 538 | 406 | 132 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 36 | 36 |
+| **Total** | 538 | 409 | 129 |
 
 ### 1. Arithmetic width and sign
 
@@ -224,7 +224,7 @@ flowchart LR
 | Q457 | `MAX_DROP` stops a monster's call at 6 items against `Picks` 7, the act bosses' rows, logged on Duriel's; do not raise it to the picks. | [C] | fn:TC_ResolveDrops@0x0055A6D0, tbl:TreasureClassEx.txt:Picks, run:2026-10-12-quality, run:2026-10-16-quest-drops | [items/tc](../items/tc.md#constants) |
 | Q458 | The TC level walk reads `TC[idx+1]` with no bound check; stock data never reaches the table's end, by a full-table check. | [C] | fn:TC_GetByIndex@0x00654E00, tbl:TreasureClassEx.txt:group | [items/tc § C](../items/tc.md#c-level-upgrade--tc_dropbyindex-and-tc_getbyindex) |
 | Q479 | `MonAiEntryGet` is not bounded on the state branch; the bound is `MonAiInit`'s, and it is signed. | [I] | fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, 0x005B0E4D | [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n3 |
-| Q480 | AI row 125 uses the constant mode 5 and no sign test on `Skill1`. | [I] | 0x005E3799 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n4 |
+| Q480 | AI row 125 uses the constant mode 5 and no sign test on `Skill1`. | [C] | 0x005E3799, 0x005E378C, run:2026-11-16-sweep2-s1ne-p2 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n4 |
 | Q481 | Path type 15 reads the byte `+0x91`, not `ctx.limit`, and `lim` is 40 at least under a target unit. | [C] | 0x0067C348, run:2026-11-03-path-emu-3 | [path/search](../path/search.md#reimplementation-notes) n3 |
 | Q482 | The search's `cell(n)` takes `g` before the bound test, and the cells survive between passes, so a later pass can refuse a cell an earlier one wrote. | [C] | 0x0067A7EB, 0x0067A80D, run:2026-11-03-path-emu-2 | [path/search](../path/search.md#reimplementation-notes) n6 |
 
@@ -508,7 +508,7 @@ flowchart LR
 | Q488 | The drop's base room moves between lookups: a fixed-room search agrees with all 118 live searches, on open ground, and still fails on declared rooms. | [C] | 0x0064E043, run:2026-11-04-ground-emu | [items/inventory](../items/inventory.md#reimplementation-notes) n1 |
 | Q489 | A player's inventory search and any other owner's differ, in score against first fit and in the one-cell-high order. | [C] | fn:sub_0063B850_InvSpotFindBySize@0x0063B850, run:2026-11-04-inventory-emu | [items/inventory](../items/inventory.md#reimplementation-notes) n4 |
 | Q490 | `DropGoldAmount` passes `fallback` 0; every other direct drop passes 1. | [C] | 0x0055A15C, the 20 search sites and the four pair-form drop bodies by a second tool (plan 0066 S4c) | [items/inventory](../items/inventory.md#reimplementation-notes) n6 |
-| Q491 | The AI row kind follows the stored state, not the class: a unit in state 12 (kind 0) skips the search, when the gate allows it, even when its class's row has kind 1. | [I] | fn:sub_005B1650_MonAiTargetByKind@0x005B1650, 0x005B1663 | [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n4 |
+| Q491 | The AI row kind follows the stored state, not the class: a unit in state 12 (kind 0) skips the search, when the gate allows it, even when its class's row has kind 1. | [C] | fn:sub_005B1650_MonAiTargetByKind@0x005B1650, 0x005B1663, run:2026-11-16-sweep2-s1m | [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n4 |
 | Q492 | A planner's grid is the live one after `PathPlan`'s unmarks: a unit does not block itself, nor a target under flag `0x800`. An unmark there can take a neighbour's `0x1000`, and the tail's re-mark gives back only the marked unit's footprint. | [I] | 0x00649B07, 0x00649B25, 0x00649BE0 | [path/README](../path/README.md#reimplementation-notes) n1 |
 | Q493 | `PathPlan`'s refusals differ: step 5 clears nothing, the others clear `+0x24`, `+0x28` and flag `0x20`. | [C] | 0x006499D3, 0x006499F0, run:2026-11-03-path-emu-1 | [path/README](../path/README.md#reimplementation-notes) n3 |
 | Q494 | The search refuses a free straight line and path type 1 accepts one; do not merge their reductions. | [C] | 0x0067AA6B, 0x0067B6C0, run:2026-11-03-path-emu-2, run:2026-11-03-path-emu-3 | [path/search](../path/search.md#reimplementation-notes) n1 |
@@ -542,7 +542,7 @@ flowchart LR
 | Q392 | Queue one end event per state apply and per refresh, and let a stale one fire: it frees only lists whose end frame has passed. | [C] | fn:EVENT_TimedListExpire@0x00580800, run:2026-10-17-stats | [stats/states](../stats/states.md#reimplementation-notes) n2 |
 | Q498 | A monster's drop has `+0x24` 0 and a player's does not, so "items last 10 minutes" holds for one of them only, on the path run. | [C] | run:2026-11-04-inventory, 0x0055A6B4 | [items/inventory](../items/inventory.md#reimplementation-notes) n2 |
 | Q499 | The save recomputes a ground item's expiry, so leaving a room can lengthen any item's life, a player's drop too. | [C] | run:2026-11-04-inventory-2, 0x00541B6C | [items/inventory](../items/inventory.md#reimplementation-notes) n3 |
-| Q500 | The AI has two entries, the queue and a mode end; at a mode end it runs inside that mode-end event, so its draws come at that event's place in the frame, not at the kind-2 record's. | [C] | fn:sub_005B1740_MonAiEvent@0x005B1740, run:2026-11-04-frame2, run:2026-11-04-frame3 | [sim/frame](../sim/frame.md#reimplementation-notes) n8 |
+| Q500 | The AI has two entries, the queue and a mode end; at a mode end it runs inside that mode-end event, so its draws come at that event's place in the frame, not at the kind-2 record's. | [C] | fn:sub_005B1740_MonAiEvent@0x005B1740, run:2026-11-04-frame2, run:2026-11-04-frame3 | [sim/frame](../sim/frame.md#reimplementation-notes) n8; [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n1 |
 | Q501 | `Idle` queues; a think that queues nothing leaves no kind-2 record, so such a unit next thinks at a mode's end. AI row 6 cancels its pending event on every decision. | [I] | fn:UNIT_CancelEvents@0x00540E60, fn:sub_005F02C0_AiFallen@0x005F02C0 | [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) n2 |
 | Q502 | The frame stamp a packet reads is the frame before the one it acts in: handlers run with `Game+0xA8 = N` after tick N, and their effect is seen by tick N + 1's passes. | [C] | 0x0052D87B, fn:sub_0052CFE0_SrvDrainMessages@0x0052CFE0, run:2026-11-04-frame2 | [sim/frame](../sim/frame.md#reimplementation-notes) n1 |
 | Q503 | `EventQueueAt` with frame −1 drops its callback, and a frame at or below the current one is raised rather than refused. | [C] | 0x005416D5, run:2026-10-30-frame-emu-2 | [sim/frame](../sim/frame.md#reimplementation-notes) n2 |
@@ -644,7 +644,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q515 | Two life readers: AI row 11 calls `UnitLifePct`, rows 4, 8 and 15 `AiLifePct`; keep them apart. | [I] | fn:sub_00621F20_UnitLifePct@0x00621F20, fn:sub_005DD280_AiLifePct@0x005DD280 | [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) n3 |
 | Q516 | AI row 21's `Idle` does not return: the walk runs in the same event. | [I] | 0x005F29D7, 0x005F29E6 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n2 |
 | Q517 | A leader's stack block carries four words the code does not write, and row 30 reads `+0x0C/+0x10` of a kind-1 head record for its `GameFindUnit`. | [I] | 0x005F04AA, 0x005F04D5, 0x005F53E0 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n5 |
-| Q518 | AI row 34's override type 1 plans type 7, so `Ovr(1, …)` is no type-1 request. | [I] | fn:sub_005DE190_MonAiPathOverride@0x005DE190 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n6 |
+| Q518 | AI row 34's override type 1 plans type 7, so `Ovr(1, …)` is no type-1 request. | [C] | fn:sub_005DE190_MonAiPathOverride@0x005DE190, run:2026-11-16-sweep2-s1m | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n6 |
 | Q519 | `PathPlan`'s tail re-marks the unit even when the free step returned 0; a plan's tail is one of the two things that end the unmarked state. | [I] | 0x00649BE0 | [path/README](../path/README.md#reimplementation-notes) n2 |
 | Q520 | `PathReplan` changes the path type without the flags. | [I] | 0x006503AF, 0x006503D2 | [path/README](../path/README.md#reimplementation-notes) n4 |
 | Q521 | Knockback clears the path's target unit whether or not it finds a point. | [C] | 0x00648AE2, 0x00648AEA, run:2026-11-03-path-emu-3 | [path/README](../path/README.md#reimplementation-notes) n5 |
@@ -725,11 +725,9 @@ One row per spec with a *Reimplementation notes* section: its note count, the no
 and the skipped ones by reason. "Weaker duplicate" is a note that restates, at a weaker tag, a statement another spec
 holds raised; the entry takes the raised statement and the disagreement is routed to the spec-writer's backlog
 ([entry](../../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md); the three overviews it
-named now state the raised clause). Skipped: 35 notes, presentation 5, table rule 12, not a trap 12, wall-clock 3,
-weaker duplicate 3: skills/dispatch n2 and n7, which plan 0066's combat re-tag raised in combat/delivery n13 and n14
-and which wait for the skills cluster's re-tag ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-skills-dispatch-notes-2-and-7.md)),
-and monsters/ai/README n1, which the frame re-tag raised in sim/frame n8 and which waits for the monsters/ai cluster's
-re-tag ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-monsters-ai-readme-note-1-after.md)).
+named now state the raised clause). Skipped: 34 notes, presentation 5, table rule 12, not a trap 12, wall-clock 3,
+weaker duplicate 2: skills/dispatch n2 and n7, which plan 0066's combat re-tag raised in combat/delivery n13 and n14
+and which wait for the skills cluster's re-tag ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-skills-dispatch-notes-2-and-7.md)).
 
 | Spec | Notes | Taken | Presentation | Table rule | Not a trap | Wall-clock | Weaker duplicate |
 |---|---|---|---|---|---|---|---|
@@ -769,7 +767,7 @@ re-tag ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-monst
 | [items/vendors](../items/vendors.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
-| [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) | 4 | 3 | — | — | — | — | n1 |
+| [monsters/ai/README](../monsters/ai/README.md#reimplementation-notes) | 4 | 4 | — | — | — | — | — |
 | [monsters/pool](../monsters/pool.md#reimplementation-notes) | 11 | 11 | — | — | — | — | — |
 | [monsters/spawn](../monsters/spawn.md#reimplementation-notes) | 13 | 13 | — | — | — | — | — |
 | [monsters/special](../monsters/special.md#reimplementation-notes) | 12 | 11 | n1 | — | — | — | — |
@@ -791,7 +789,7 @@ re-tag ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-monst
 | [skills/README](../skills/README.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [stats/states](../stats/states.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
-| **Total** | 522 | 487 | — | — | — | — | — |
+| **Total** | 522 | 488 | — | — | — | — | — |
 
 Step notes taken beyond the *Reimplementation notes*: player/creation § G (the /256 factors, the `0x7FFFFF` clamp,
 the ratio shift's overflow branch) and § J (the party share's f32 quotient, its wraps, edge and cap, the distance's origin and the n = 1 credit), monsters/stats § A (`MulDiv`), stats/states

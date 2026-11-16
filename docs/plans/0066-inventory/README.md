@@ -511,6 +511,8 @@ each cluster's re-tag.
 | stats/items (`lane/n66si`) | [items/economy](items-economy.md) | 86 | 32 | 22 | 2 | 30 | C 127 / I 86 / L 12 | C 183 / I 55 / L 12 |
 | stats/items (`lane/n66si`) | [items/use](items-use.md) | 64 | 19 | 9 | 0 | 36 | C 52 / I 64 / L 9 | C 80 / I 45 / L 9 |
 | stats/items (`lane/n66si`) | [items/inventory](items-inventory.md) | 101 | 48 | 16 | 1 | 36 | C 75 / I 105 / L 13 | C 143 / I 58 / L 13 |
+| monsters/ai part 1 (`lane/n66ai`) | [monsters/ai/README](monsters-ai-README.md) | 56 | 14 | 20 | 1 | 21 | C 41 / I 56 / L 10 | C 78 / I 45 / L 10 |
+| monsters/ai part 1 (`lane/n66ai`) | [monsters/ai/machinery](monsters-ai-machinery.md) | 114 | 30 | 29 | 3 | 52 | C 28 / I 114 / L 4 | C 87 / I 85 / L 4 |
 
 A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
 `[C]` count rises by more than the `[I]` count falls.

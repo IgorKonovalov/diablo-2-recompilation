@@ -16,5 +16,5 @@ manifest-s1m.sha256` from `workspace/logs/n66m1/s1m`; the four sections of `tool
 reproduce `check-s1m.txt`; the 40 rows' notes (machinery 2–4, 7, 21, 23, 25–26, 34, 47, 49, 53, 55, 58–59, 63, 67–69, 71,
 84, 107, 110, 113–114; README 7, 9–11, 13–14, 18–19, 22, 27, 32, 36, 45, 47, 51) against their Route cells; the move of
 machinery 110 to d-edit and the totals; the corrections entry
-[`2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections`](../2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections.md);
+[`2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections`](2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections.md);
 the judgment calls in the log entry. Not blocking.

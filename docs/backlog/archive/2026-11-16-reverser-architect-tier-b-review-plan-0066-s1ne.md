@@ -24,7 +24,7 @@ records [run:2026-11-16-sweep2-s1ne](../../findings/ai/experiments.md#run2026-11
 `tools/ai_s1ne_routes.py`, `tools/ai_s1ne_emu.py`, `tools/ai_s1ne2_emu.py`, `tools/ai_s1ne3_emu.py`; kept outputs
 `workspace/logs/n66ne/s1ne/run/`, `run2/`, `run3/`, `routes/` (each `manifest.sha256` passes from its directory).
 Outcome: raised 22, raised in part 15, not settled 7 (machinery 5, 6, 11, 12, 14; README 42, 43), no class moves;
-corrections 1–16 in [the corrections entry](../2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md). Points to
+corrections 1–16 in [the corrections entry](2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md). Points to
 check:
 
 1. ADR-0029 (c) used for `MonAiInit` (README 29, 31): the cases stop at the call instructions 0x005B0F18 (the row's
