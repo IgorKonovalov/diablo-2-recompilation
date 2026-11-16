@@ -4041,7 +4041,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   [`2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections.md)
   (five items). No contradiction filed: each item is a refinement or a remainder.
 - **Symbols:** none raised or added.
-- **Totals** (the kept check's `totals` line, against this branch's base `main` `845aa88f`): a-logs 622, a-run 334,
+- **Totals** (the kept check's `totals` line; `main` `c6c85ae8` merged after, which changes no inventory file, and `tools/ai_s1m.py totals` gives the same line): a-logs 622, a-run 334,
   b 517, c 389, c-emu 435, d-2c 59, d-owner 68, d-edit 24, d-none 178 = 2 626. Inventory README § 1 updated.
 - **Judgment calls for the review:** (1) README 10, 11 and 14 raised in part on other lanes' kept checks (S7a, S7b, S7f,
   frame/0004), as their Route cells name, with no new pass of the frame corpus; (2) machinery 69 (T20c, "stays a
