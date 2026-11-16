@@ -3383,3 +3383,58 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     (m27, 95), d144's passive stats; m63 `MISSILE_BuildDamage`; m85's no-reference half (`0x00645390`) by a full
     reference scan with two tools.
 - **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 8 (reverser-static, `lane/n66sa`): the stat setter run whole; 2 more settled (60 of 89), 3 remainders raised; resume note for part 9
+
+- **Done.** Merged `main` `31a4949c` (`02c6bf0e`; only `tools/d2pilot.py` and `tools/gdb/` changed); totals from the
+  29 files' *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) equal README § 1 (a-logs 623, a-run 334, b 510,
+  c 390, c-emu 441, d 328). New tool `tools/skills_s2ae8_emu.py` (`8af90127…`; reuses parts 1, 5, 6 and 7's
+  machinery in module state only; the world after batch S4e part 5d's `addst`, `lane/n66z`, read on its branch, not
+  imported; part 7's `check` still reproduces `run7/check.txt`). One kept `tools/ghidra.sh emuboundary` launch on
+  `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after three development launches (`dev17/`–`dev19/`,
+  `workspace/logs/n66sa/s2ae/manifest-dev-p8.sha256`, not cited). Five families (`set`, `h18w`, `h26w`, `wearw`,
+  `mdts`), 18 000 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 241 controls, 199 separating,
+  `passed` 0. Record: [run:2026-11-16-sweep2-s2ae8](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae8);
+  `workspace/logs/n66sa/s2ae/run8/` (`check.txt` `2a37b7c0…`, `reach.txt` `fe367583…`, `static.txt` `24013e3c…`,
+  `manifest.sha256` `45f538e0…`, 15 lines, passes from there). Claims:
+  [skills/0002 § 24](../findings/skills/0002-missiles.md#24-plan-0066-batch-s2ae-part-8-the-stat-setter-run-whole-behind-handlers-18-26-skillweaponwear-and-in-missiledamagetostats-2026-11-16-lanen66sa);
+  § 23's *After* bullet carries a dated note.
+- **The setter world.** One declared list per unit: base `+0x24`, cache `+0x48`, changed-key array `+0x50`, callback
+  `+0x5C` (0 or 0x0055B800), up to two parents (`+0x34`), declared ItemStatCost rows. `UnitSetStat` →
+  `SetStatEx` → `RemoveEntry` (memmove whole) → `Propagate` → `CacheAdd` → `MarkClientDirty` run whole while the key
+  is present and no array resizes; `InsertEntry` 0x00624C80, the resize 0x0040B4B0 (0x00624D7E, 0x00624E73), the
+  callback and `StatRecompute` are the observed boundaries, so those routes → b (H2a, R2).
+- **Rows (5).** Raised: missiles 27 (C1, `MissileDamageToStats` whole: order, flags, the owner's stat-180 entries)
+  and 95 (315 overwritten by word 26). Remainders raised, rows now settled: dispatch 124 (h18's write), 130 (h26's
+  write and the packet's `max(0, +0x4C − loss)`), 156 (wear's write); their allocating routes → b (H2a). None moved,
+  none contradicted.
+- **Refinements** (Phase 3's): the setter's rules, K 26's packet reduction, C1's data bits and stat-180 source.
+  Routed by backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-8-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-8-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** unchanged (no class move): a-logs 623, a-run 334, b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit
+  23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README § 4's S2ae row updated; skills-dispatch rows
+  124, 130, 156 and skills-missiles rows 27, 95 annotated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Dispatch 788, 796, 981 (K 18, K 26, N2,
+  now whole); missiles 298, 672 (C1).
+- **Judgment calls for the review:** (1) ItemStatCost rows are declared inputs (S1e ruling 3); the 37 stats the
+  handlers and C1 use carry the shipped `.bin` bytes at `+0x04`, `+0x05`, `+0x50`..`+0x53` (read from
+  `workspace/merged` at case time, not copied into git), the others random; `+0x05` bit 2 (the getter's minimum) is
+  kept clear everywhere so parts 6 and 7's getters read as before; whether the loader writes `+0x51`/`+0x52` at run
+  time is outside this claim (a non-zero row reaches `StatRecompute`, observed); (2) the wrapped families reuse parts
+  6 and 7's generators and rebuild the target's list after them, keeping the live entries the handler read; MonStats
+  and Skills images merged so both parts' models read the same bytes; (3) the CRT copy-path flag 0x00994C88 is set
+  to 1 (memmove's result does not depend on it); (4) the rows are settled by composition: the handler to the setter
+  call (parts 6 and 7) and the setter whole on the same call in one case (`h18w`, `h26w`, `wearw`), where the
+  setter's routes that allocate go to b; (5) `spec_sorted` was added after the emulation (a model-side control;
+  cases and `reach.txt` unchanged, `check.txt` reproduced on the committed revision).
+- **Resume note for part 9 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 29 rows (dispatch
+  3, 30, 32–35, 83, 84, 89, 92, 96, 110–112, 127–129, 142–144, 152–154; missiles 26, 63, 71, 72, 74, 85), the 5 S2a
+  remainders (dispatch 31, 63, 79, 164, 172), part 1's 4 (dispatch 39, 69, missiles 29, 81), missiles 69's and 82's,
+  and handlers 1–4, 23–25 in rows 135 and 178. `tools/skills_s2ae8_emu.py` gives `unit_set_stat`, `put_world`,
+  `put_parent` and `entries` (stat-list reads by lower bound) for reuse. Order, cheapest first:
+  - **Setter-backed, now runnable:** handler 25 → `StatListSetStat` 0x00627150 (d129: 0x006256B0 the list by state,
+    0x00625D00, 0x005C8780, `MulDiv`) — `STATLIST_SetStat` is `SetStatEx` without the unit mark; handler 23 (d127),
+    24 (d128); `SummonSetLevel` (d142, 143); `MonAttackStats` (d152); d144's passive stats.
+  - **No calc, no page:** handler 1 to `MissileCreate` (d110).
+  - **A constant calc pool**, **a declared inventory page**, **a declared room**: as part 7's note.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.

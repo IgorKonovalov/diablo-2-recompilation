@@ -1471,6 +1471,85 @@ unless named as an observed boundary (ADR-0021); bracketed counts are the cases 
   classes past the items count and first types past the ItemTypes count (0x00628700's type is used unchecked); the
   strictness of a clamp at its own bound (`lvl_gt0~`, `lvl_lt_max~`, `nv_lt256~`, `v_ge_cap~`: the bound gives the
   bound either way). (run:2026-11-16-sweep2-s2ae7)
+- *2026-11-16 (part 8, § 24):* the two setter writes and handler 26's packet reduction now run whole,
+  run:2026-11-16-sweep2-s2ae8.
+
+### 24. Plan 0066 batch S2ae part 8: the stat setter run whole, behind handlers 18, 26, `SkillWeaponWear` and in `MissileDamageToStats` (2026-11-16, `lane/n66sa`)
+
+Five families under `tools/ghidra.sh emuboundary` with `tools/skills_s2ae8_emu.py` (record:
+[run:2026-11-16-sweep2-s2ae8](experiments.md#run2026-11-16-sweep2-s2ae8)): 18 000 cases, 0 mismatches, 0 stops, 0
+unaccounted reads or writes; 241 controls, 199 separating, `passed` 0. The world is a unit's whole stat list (base
+array `+0x24`, cache `+0x48`, the client's changed-key array `+0x50`, the stat callback `+0x5C`/`+0x60`, a parent
+chain `+0x34` of up to two lists) and declared ItemStatCost rows (`+0x04`, `+0x05`, `+0x50`..`+0x53`; the handlers'
+and `MissileDamageToStats`' stats carry the shipped table's bytes there), after batch S4e part 5d's `addst` approach
+(`lane/n66z`). The calls that allocate or leave the claim are observed boundaries (ADR-0021): `STATLIST_InsertEntry`
+0x00624C80, the resize 0x0040B4B0, the callback 0x0055B800 and `sub_006266C0_StatRecompute`; the CRT memmove
+0x00683840 runs whole. Bracketed counts are the cases a reversed test changes (`check.txt`).
+
+- [C] *The setter (`set`, 6 000 cases), `sub_00627260_UnitSetStat(unit, stat, value, param)`, whole.* The key is
+  `(stat << 16) + (param & 0xFFFF)` (32-bit, wrapping) [`sx_found` 5 663]. `STATLIST_SetStatEx` on the unit's
+  `+0x5C` list: no list returns 0 [`sx_list` 4 740]; the key absent from the base array returns 0 for a value of 0
+  [`sx_val` 690], else calls `InsertEntry` (observed, from 0x006270F2); `delta = value − old` (wrapping), 0 returns 0
+  [`sx_delta` 4 774; adding instead of setting, `spec_add`, 4 539]. A value of 0 removes the entry
+  (`STATLIST_RemoveEntry`: memmove of the tail [`rm_mid` 538], count − 1, and when `cap − count > 8` (signed words)
+  the capacity − 4 written and the resize called with `(cap − 4) · 8` [`rm_shrink` 816, `rm_shrink~` 102]), any other
+  value is written [`sx_zero` 4 032]. `STATLIST_Propagate(list, key, delta)`: a stat ≥ the ItemStatCost count
+  [`pr_isc` 2 794] or list flag `0x2000` [`pr_2000` 3 207] stops; the walk starts at the list itself when `+0x10` bit
+  31 is set, else at its parent [`pr_ext` 2 729]; per list, a row with `+0x51` or `+0x52` non-zero calls
+  `StatRecompute` (observed) [`pr_op` 2 540], else `STATLIST_CacheAdd`; then the walk stops at a list with `0x2000`
+  [`pr_stop` 684] or, for a row with `+0x04` bit 2, with `0x40000000` [`pr_nodmg` 416], else moves to `+0x34` until
+  null [`pr_cur` 2 729]. `CacheAdd`: the key absent from the cache calls `InsertEntry` (from 0x006250D5) [`ca_found`
+  2 071]; the cache value += delta; a result `> 0` (signed) with row `+0x53` sets list flag `0x20000000` [`ca_pos`
+  370, `ca_pos~` 56, `ca_53` 775]; a result 0 removes the entry unless row `+0x50` is set [`ca_zero` 1 415, `ca_keep`
+  334]; a callback with row `+0x05` bit 3 is called with `ECX` = `+0x60`, `EDX` = `+0x44` and (0, key, old, new)
+  [`ca_cb` 665, `ca_cbbit` 1 211]. Then, for a list with bit 31 and `+0x08` = 0 [`sx_ext` 114, `sx_8` 164],
+  `STATLIST_MarkClientDirty`: stats 6, 8, 10, 13 and 14 return at the switch 0x00624DFD, stats 7, 9, 11, 12 go on
+  [`md_sw` 125; no switch, `spec_md_all`, 43]; a stat below the count [`md_isc` 381] whose row has `+0x05` bit 4
+  [`md_send` 426] is inserted in the sorted int32 array at `+0x50` unless present, the array grown by 4 through the
+  resize when full [`md_room` 167, `md_room~` 64]. Back in `UnitSetStat`, a changed value on a type-0 unit marks the
+  key once more [`us_ret` 71, `us_player` 64]. 3 831 returns; 848 `InsertEntry`, 405 resize, 447 callback, 469
+  `StatRecompute` calls. (fn:sub_00627260_UnitSetStat@0x00627260, fn:STATLIST_SetStatEx@0x006270B0,
+  fn:STATLIST_RemoveEntry@0x00624D10, fn:STATLIST_Propagate@0x00626920, fn:STATLIST_CacheAdd@0x006250B0,
+  fn:STATLIST_MarkClientDirty@0x00624DD0, run:2026-11-16-sweep2-s2ae8)
+- [C] *d124 (dispatch K 18), the setter's write.* Part 6's `h18` with the setter run whole (`h18w`, 3 000 cases):
+  with stat 6 in the base array and the cache, `UnitSetStat(unit, 6, x, 0)` writes `x` and adds `x − old` to the
+  cache, and the handler goes on to `sub_00621E40_UnitSetOverlayStat(unit, 0x97, 0)` from 0x005C02E9 (1 876 cases,
+  dumps compared). Row 6's shipped bytes (`+0x05` = 0x10, no callback, no op link) keep the callback and
+  `StatRecompute` off; the switch keeps stat 6 off the changed-key array. A key absent from the base or cache (317
+  `InsertEntry`) and an `x` of 0 with the shrink (367 resize) reach the allocator. (0x005C02DC, 0x005C02E9,
+  run:2026-11-16-sweep2-s2ae8)
+- [C] *d130 (dispatch K 26), the write and the packet's reduction.* Part 7's `h26` with the setter whole (`h26w`,
+  3 000 cases): after `UnitSetStat(owner, 6, x, 0)` the packet word `+0x4C` becomes `max(0, +0x4C − loss)` (signed;
+  `setle`/`sub 1`/`and`) and the handler returns 1 [`pk_pos` 1 949; no floor, `spec_no_zero_floor`, 281]. 2 633
+  returns (both kinds), 364 `InsertEntry`, 3 resize. (0x005C6731, 0x005C6736–0x005C6749, run:2026-11-16-sweep2-s2ae8)
+- [C] *d156 (dispatch N2), the setter's write.* Part 7's `wear` with the setter whole (`wearw`, 3 000 cases):
+  `UnitSetStat(item, 72, d, 0)` writes `d` (row 72's shipped bytes: no callback, no send bit), then
+  `sub_005531C0_PlayerGetClient` with `ECX` the unit, `EDX` 0x006E32E4 and the five words pushed for 0x0053D130
+  (0x9B, 1, 0x48, `d`, 0) from 0x005DAB1D (2 091 cases). 398 `InsertEntry`, 15 resize. (0x005DAB05, 0x005DAB1D,
+  run:2026-11-16-sweep2-s2ae8)
+- [C] *m27, m95 (missiles C1), `sub_0064AC60_MissileDamageToStats(owner, missile, block, level)`, whole* (`mdts`,
+  3 000 cases). A null missile or one not of type 3 returns [`mi_nz` 2 844, `mi_type3` 3 000]. The missile data's
+  `+0x14` gets bit 0 for block flag 0x1 and bit 1 for 0x4 [`f_1` 1 305, `f_4` 1 340] (the data pointer tested
+  [`mi_data` 2 844]). Then `UnitSetStat(missile, s, v, 0)` in this order: 12 = the fourth argument, then block words 1
+  to 30 to 21, 22, 48, 49, 315, 50–59, 326, 60–66, 316, 317, **315**, 121, 122, 120, 25; 315 ends with word 26 (the
+  burn length), not word 5 [`spec_315_once` 1 123; the calls in stat order, `spec_sorted`, 977]. Block flag 0x100,
+  0x200, 0x400 and 0x2 set stats 103, 104, 106 and 141 to 1 [`fl_67` 994, `fl_68` 1 041, `fl_6a` 1 009, `fl_8d`
+  1 010]. With an owner [`own_nz` 893], `sub_006261D0_StatListGetEntries(owner, 180, buf, 128)` reads only an
+  extended list's cache [`ge_list` 836, `ge_ext` 890], from the lower bound of key `180 << 16` (0x00624C10) while
+  the entry's stat is 180 [`ge_stat` 979] and fewer than 128 [`ge_max` 741], and each entry is set on the missile at
+  its layer. 1 648 returns, 360 `InsertEntry`, 992 resize. (fn:sub_0064AC60_MissileDamageToStats@0x0064AC60,
+  0x0064ACFD, 0x0064AE2F, 0x0064AE72–0x0064AEBD, 0x0064AEDC, fn:sub_006261D0_StatListGetEntries@0x006261D0,
+  run:2026-11-16-sweep2-s2ae8)
+- *After, `[I]` (ADR-0021).* `InsertEntry` (0x0040B4B0 at 0x00624CC8), the resize 0x0040B4B0 itself (from 0x00624D7E
+  and 0x00624E73), the callback 0x0055B800 and `StatRecompute` are past their calls: a key absent from a list, a
+  removal past 8 spare slots, a full changed-key array, a callback row or an op-linked row take the setter to the
+  allocator or out of the claim, so those routes go to b (ruling R2). h18's overlay call and wear's client packet are
+  past their calls.
+- [I] *Not covered.* Rows with `+0x05` bit 2 (the getter's minimum, kept clear so parts 6 and 7's getters read as
+  before); parent chains longer than two; the strictness of `idx < count − 1` (`rm_mid~`: the last entry moves 0
+  bytes either way) and of `count < 128` (`ge_max~`: at most 8 entries declared); in `h18w`, `h26w`, `wearw` the
+  callback, `+0x08` and player tests (rows 6 and 72 send nothing or stop at the switch, so those reversals change no
+  case). (run:2026-11-16-sweep2-s2ae8)
 
 ## Data touched
 
