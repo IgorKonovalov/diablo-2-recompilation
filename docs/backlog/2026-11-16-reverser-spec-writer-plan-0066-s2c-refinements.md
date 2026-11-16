@@ -30,3 +30,24 @@ and `workspace/logs/n66q/s2c/check-s2c-p1.txt`.
   loss → HandsRefresh → PlrModeStartSkillUnit). The spec should say so, or scope the line to the attacker.
 - skills/dispatch E1 (rows 56–57, part 2 of S2c will settle them): `sub_005A77C0_MonModeStartKnockback` clears bit 6,
   and 44 of the 124 set sites and 7 of the 17 clear sites are in client-range functions.
+
+**2026-11-16, S2c part 2 (`lane/n66q`).** More rewordings for Phase 3. The evidence is [skills/0002 § 16](../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q) and `check-s2c-p2.txt`.
+- skills/dispatch E2, its reimplementation note and the entry table (rows 57 and 193, **contradicted in part**): the
+  "AI sets bit 6, its mode start does not clear it, so the do runs only through the attack-frame handler and the
+  `+0x4E` = 4 case" holds for modes 4, 5, 7, 8, 9 and 16–20 (`MonModeStartSkill`, frame `MonAttackFrame`). Mode 14's
+  start `sub_005A7870_MonModeStartSeq` clears bit 6 (0x005A7884). Its frame `MonSeqFrame` then runs the do on a code 1
+  or 2 with the bit clear, as the player frame does, and on `+0x4E` = 4 untested. skills/README § C and dispatch § M1
+  need the same scope (S2a's backlog list).
+- skills/missiles B2 (row 23, **contradicted in part**): "five monster functions (six sites)" should read six functions.
+  The sites lie in six recursive-descent bodies: 0x005A2620, 0x005A2840, 0x005A2C20, 0x005A3F30, 0x005A6D50 and
+  0x005A6FF0.
+- skills/missiles D7 (row 48): mdo 31 (0x005B0325) also unmarks `0x40` (`COLL_SizeUnmark`). The writer of a `Collision`
+  row's mark is `MissileCreate` setting the path's mark mask (0x0059FD54–0x0059FD64).
+- skills/missiles reimplementation note "the weapon terms are frozen at creation" (row 94): `MISSILE_BuildDamage` reads
+  only the missile, but two damage-table functions read the owner at the hit: mdmg 13 reads the owner's stat 25, and
+  mdmg 11 reads the owner's elemental length (catalogue D8, D10). Scope the note to `BuildDamage`, or name both.
+- skills/catalogue C3 (row 14): 93 calls of `MISSDATA_SetSeedLow` write `MissileData+0x28`, so do 10 is one writer of
+  bit 0, not the only one.
+- skills/catalogue J2 (row 58): Smite's closure reaches `SKILLS_SrvDo`'s set site through the durability path, the same
+  path as dispatch row 42's.
+- skills/dispatch I1 (row 88): 0x005D8B10 lies after `SkillDo75GrimWard`'s `ret`, inside that symbol's range.

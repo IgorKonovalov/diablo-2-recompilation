@@ -822,6 +822,77 @@ directory. The rows, and what each raise covers, are in the plan 0066 inventory 
   the two monster-AI callers. The refinements are in backlog
   [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
 
+### 16. Plan 0066 batch S2c part 2: bit 6, the flag bits, packets and the creators (2026-11-16, `lane/n66q`)
+
+No session, no Ghidra. `tools/skills_s2c.py` gained the sections `bits` and `more` (revision `28ff8ac9…`; the part-1
+sections are unchanged, so `check-s2c-p1.txt` stays tied to `13cda266…`). Kept output:
+`workspace/logs/n66q/s2c/check-s2c-p2.txt` (`S2c total bad=0`), under `manifest-s2c-p2.sha256` in that directory. The
+rows are the plan 0066 inventory files' Route cells "S2c 2026-11-16 (part 2)". The checks' labels are named below.
+
+- [C] **Bit 6 of `Unit+0xC4`.** 124 `or …, 0x40` and 17 `and …, 0xFFFFFFBF`, objdump and r2 alike, 44 sets and 7 clears in
+  client-range functions (D56). `SKILLS_SrvDo` sets it once its missile row exists (0x0056F97D–0x0056F98A) and
+  `MonAiUseSkill` before `MonSetMode` (0x005DEB08). The server readers that skip the do when it is set are
+  `PlrModeSkillFrame` (0x005804C2–0x005804E2) and `MonSeqFrame` (0x005A86FD–0x005A871A), each on a code 1 or 2.
+- [C] **The monster modes (D57).** `g_MonModeRecords` (16-byte records, read by python and r2) gives
+  `MonModeStartSkill` as the start of modes 4, 5, 7, 8, 9 and 16–20, all with `MonAttackFrame` as frame function. That
+  start's direct-call closure (703 functions, 536 indirect calls unfollowed) reaches none of the 17 clears. With every
+  start-table entry added as a root it reaches one, do 48's (0x005D68F5) through start 26, Blade Fury. `MonAttackFrame`
+  runs the do when the skill's flag bit 0 is clear or the move step does not return 2 (0x005A7694–0x005A76E3), with no
+  bit-6 test. Its one bit-6 test is behind `mode = 14` (0x005A76C9–0x005A76DD).
+- [C] **Mode 14 is different (contradicts dispatch § E2 and its reimplementation note for that mode).** Its record's
+  start, 0x005A7870 (`sub_005A7870_MonModeStartSeq`, new, `I`), calls `SUNIT_SetMode(14)`, **clears bit 6**
+  (0x005A7884) and tail-jumps to `SKILLS_StartUsedSkill` (0x005A7891). Its frame function `MonSeqFrame` runs the do
+  when `+0x4E` = 4 without a test, else when bit 6 is clear on code 1 or 2. This is the store that S2a's 566 mode-14
+  starts with the bit clear were missing (backlog `2026-11-10-reverser-reverser-skills-mode-14-start-bit-6`, closed
+  by this section).
+- [C] **Smite (C58).** Do 150's body has no `+0xC4` operand. Its direct-call closure (2 085 functions, 622 indirect calls
+  unfollowed) reaches one set site, `SKILLS_SrvDo` 0x0056F98A, by `COMBAT_DeliverQueued` → `COMBAT_DurabilityLoss` →
+  `ITEMS_DurabilityLossRoll` → `HandsRefresh` → `PlayerSetSkill` → `AuraSelect` → `SKILLS_SrvDo`. Which unit that
+  path sets the bit on is not followed.
+- [C] **Do 10 and mdo 7 (C14).** Do 10 calls `MISSDATA_SetSeedLow(missile, target ? 1 : 2)` with `esi` the
+  `UNIT_GetTargetUnit` result (0x005DB71B–0x005DB7FE). `SetSeedLow` and `GetSeedLow` store and load the same
+  `MissileData+0x28` (0x0064A729, 0x0064A746), and mdo 7 tests its bit 0 (0x005AE806). `SetSeedLow` has 93 calls, so
+  the word has other writers.
+- [C] **The Skills flag bits (D76, D95).** Four mask-form tests of `+0x05` bit 3 (`repeat`, mask 0x006CE274): a client
+  site, `MissileDoFrame` on a Missiles row (0x005ADBD9–0x005ADC43), and `STATLIST_CacheAdd/Write`, neither of which
+  makes a Skills row. Fourteen tests of bit 1 (`Kick`, 0x006CE26C), nine of them server-range. Of those, only
+  `GetPhysMin` (0x00647BF5) and `GetPhysMax` (0x00647D38) test a Skills row. The others test the row returned by
+  `MonStats2Rec`, `ITEMSTATCOST_GetRecord`, `MissileRec` or a 0x144 or 0x134 stride, the call or stride just before
+  each. The 15 immediate-form tests of either bit lie in no function that makes a Skills row. Kick rows are 1, 255, 270
+  and 275, in both the .txt and the .bin. `SkillKickDamage` has one call (0x00647D41), `SkillKickPhysDamage` three and
+  `DragonTalonHit` two. Of the 18 calls of each `GetPhysMin/Max`, 15 pass a variable skill id, not counting
+  `SkillKickPhysDamage`'s own call. Start 2 and do 2's closure (2 062 functions, 622 indirect) reaches four of their
+  sites: `SkillDamagePair` through `COMBAT_GetHit`'s monster stats, and `MissileDamageBlock` through the durability path.
+- [C] **The conversion writers (D88).** 15 byte stores follow a read of the Skills row's `+0x1DC`. Each is to
+  `[ebp−k]`, with `[ebp−(k+0x65)]` referenced near it. The function holding 0x005D8BED lies in
+  `SkillDo75GrimWard`'s symbol range but after its `ret` (0x005D8B0D); this is the spec's 0x005D8B10.
+- [C] **The skill packets (D1, D2, D25).** `g_SrvPacketTable` 0x05–0x11 (python and r2): 0x05/0x0C location, 0x06/0x0D
+  unit with walk 1, 0x07/0x0E unit with walk 0, left (`GetLeftSkill`, SkillList+0x08) below 0x0B, right (+0x0C) above
+  (data:g_SrvPacketTable@0x006E0D18, 0x006201B9, 0x00643953).
+  0x08–0x0A and 0x0F–0x11 re-read the packet and call the matching direct handler. The direct handlers set base stat
+  328 + 1 before calling `SkillAtXY` or `SkillAtUnit`. 0x0B has no call and no store. The forms are 5 bytes (x +1, y
+  +3) and 9 bytes (type +1 below 6, guid +5).
+- [C] **Other calls.** `SKILLS_SrvStart` has 4 callers, and only `ITEMSKILL_Cast` passes noCost 1 (D50).
+  `PreventHealHook` tests attacker type 0, defender type 1, the attacker's stat 117 and the defender's class outside
+  0x2C0–0x2C5 before `STATE_ApplyTimed` (0x0057D81A–0x0057D891) (D137). Smite's monster branch passes mode 5 and keeps
+  the test's word (0x005CEBB6–0x005CEBEB) (C57). Dragon Talon's and Psychic Hammer's two stat-12 reads both push the
+  target (C74, C75). The rings of prg 37 and 143 step `esi` by `4·calc` up to 0x100 with no test of the step, so a
+  calc of 0 never ends (C108). `PathPlanSpiral` reads only the path and the sine table (M5).
+- [C] **Missiles (M23, M25, M48, M70, M94, R24).** The `useAmmo` argument is 1 at 14 of the 33 line and lob call sites
+  and 0 at 19. Six of the pushes are shared before a lob/line branch. Magicarrow takes the 0 site, item type 38 takes
+  the lob, and `cmp [owner], 0` gates the use. `MissileCreate` has 97 calls, none from an `ITEM`/`INV` function and
+  three from shrine functions. The `0x40` marks are written by `MissileCreate` (a `Collision` row's path mark mask,
+  0x0059FD54–0x0059FD64), mdo 3 and mdo 5, and cleared by `HitUnit` (0x005AE1B1–0x005AE1CB) and mdo 31 (0x005B0325).
+  Collide type 7 is the only type whose mask holds 0x40. No server-range word read at `+0x16` is in a function that
+  makes a Missiles row. `MISSILE_BuildDamage` reads all 23 of its stats from the missile; its closure has 16 functions,
+  no indirect call and no item or owner function. `MissileCritRoll`'s only references are two calls in
+  `MissileDamageBlock`, which `COMBAT_BuildDamage`'s closure does not reach.
+- **Not settled:** dispatch 41 (the client's request sender is not located) and missiles 15 (`MissileCreate` reloads
+  its block register and holds the flags in registers, which needs a data-flow read).
+- **Contradicted in part:** dispatch 57 and 193 (mode 14, above), and missiles 23's "five monster functions": the six
+  sites lie in six recursive-descent bodies (0x005A2620, 0x005A2840, 0x005A2C20, 0x005A3F30, 0x005A6D50, 0x005A6FF0).
+  The rewordings are in the S2c refinements backlog.
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,

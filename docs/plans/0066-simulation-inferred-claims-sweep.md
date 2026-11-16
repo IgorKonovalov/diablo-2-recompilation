@@ -290,7 +290,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   with bit 6 clear, the AI command (`MonAiUseSkill`) returns with bit 6 clear in 176 of 176 mode-14 calls (set at the
   call in 70), while modes 4, 5, 7, 8, 9 return with it set (174). dispatch's entry table (row 4), § E2, § M1 (row 150)
   and skills/README § C (row 16) need rewording for mode 14. Backlog
-  [2026-11-10-reverser-reverser-skills-mode-14-start-bit-6](../backlog/2026-11-10-reverser-reverser-skills-mode-14-start-bit-6.md)
+  [2026-11-10-reverser-reverser-skills-mode-14-start-bit-6](../backlog/archive/2026-11-10-reverser-reverser-skills-mode-14-start-bit-6.md)
   asks for the read. (2) Slow (dispatch § K row 19, inventory row 125): the logged `STATE_ApplyTimed` block carries
   stat 67 = −v, which the row does not name.
 - **Ready for re-tagging (Phase 3, spec-writer), parts 1 and 2 together,** by inventory row (spec lines at `b5999f5e`;
@@ -2067,3 +2067,59 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     0x006CE274).
   A fresh lane on `lane/n66q`.
 
+
+### 2026-11-16 — Phase 1, batch S2c part 2 (reverser-static, `lane/n66q`): S2c closed; 20 of 22 settled, 2 not settled; mode-14 bit 6 found
+
+- **Done.** Merged `main` `0c3cd6c9` into the branch at `d4ed5dca` (plan log kept both sides). No game and no Ghidra.
+  `tools/skills_s2c.py` has a new revision, `28ff8ac9…`, with sections `bits` and `more`. The part-1 sections are
+  unchanged. Kept outputs: `workspace/logs/n66q/s2c/check-s2c-p2.txt` (`1f8a4cc9…`, 506 lines, `S2c total bad=0`) and
+  `totals-s2c-p2.txt`, both under `manifest-s2c-p2.sha256` (`cda44950…`), which passes from that directory. The
+  development runs are in `workspace/logs/n66q/dev2/` under `manifest-dev2.sha256`. They were made with earlier,
+  unhashed revisions of the same sections. Those revisions differ only in four filters (the C14 `esi` window, the
+  GetPhysMax test address, the D88 packet-base window, the M70 read filter) and in two added decodes (D76, M23).
+  Record: [skills/0002 § 16](../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q).
+  Every row's Route cell carries an "S2c 2026-11-16 (part 2)" note, and README § 4's S2c row is updated.
+- **Raised 12:** README 24; catalogue 14, 57, 74, 75, 108; dispatch 56, 76 (its reader half; part 1 held the data half,
+  so the row is now whole), 88, 185; missiles 5, 70.
+- **Raised in part 8**, with the remainders `[I]` and out of this plan:
+  - catalogue 58: the durability path's unit, and 622 indirect calls;
+  - dispatch 95: the skill ids at the four sites Kick's closure reaches;
+  - missiles 23: the function count, contradicted below;
+  - missiles 25: the function count, and item code's reach;
+  - missiles 48: when the marks are set and cleared;
+  - missiles 94: the damage-table functions read the owner;
+  - dispatch 57 and 193: true for modes 4, 5, 7, 8, 9 and 16–20.
+- **Contradicted in part 3:** dispatch 57 and 193, because mode 14's start `sub_005A7870_MonModeStartSeq` clears bit 6
+  (0x005A7884); and missiles 23, whose six monster sites lie in six bodies, not five. Backlog
+  `2026-11-10-reverser-reverser-skills-mode-14-start-bit-6` is closed. The rewordings are added to
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
+- **Not settled 2, both still c:**
+  - dispatch 41: the client's request sender is not located, and finding it is a search of its own;
+  - missiles 15: `MissileCreate` reloads `esi` (0x0059FE51) and keeps the flags in registers, so a data-flow read is
+    needed.
+- **Remainders routed here, now raised:**
+  - dispatch 1, 2 and 25 (the packet table) and 137 (K3's tests) are now whole;
+  - dispatch 50's noCost-1 half (only `ITEMSKILL_Cast`) is raised, and Blade Fury stays in H2b;
+  - README 22's `0x40` half is raised, and durability stays in H4b.
+- **S2c whole:** 67 of 69 rows settled. 46 raised, 21 raised in part, 4 contradicted in part (missiles 2, dispatch 57,
+  193, missiles 23), none moved, 2 not settled.
+- **Symbols:** one new `I` row, `0x005A7870 sub_005A7870_MonModeStartSeq`. None raised: the run is static, and rule 14
+  covers logged returns.
+- **Totals** at the merged `0c3cd6c9` (`quests_s3c.py totals`, `totals-s2c-p2.txt`): a-logs 623, a-run 341, b 469, c 390,
+  c-emu 475, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No class moved.
+- **Ready for Phase 3 (spec-writer).** Line numbers are at `b5999f5e`; match them by text.
+  - Whole: README 167; catalogue 233, 730, 968, 970, 1413; dispatch 40, 41, 170, 428, 535, 617, 832, 1094; missiles 84, 545.
+  - Split: catalogue 732; dispatch 366, 430, 680, 1124; missiles 237, 248, 405, 669; README 153.
+- **Judgment calls for the review:**
+  1. D76 and D95 identify the tested row by the row-making call or stride just before each mask test, plus a
+     whole-function criterion: a function with no `SKILLS_GetRecord` call, no 0x23C stride and no `+0xB98` base makes no
+     Skills row. A row passed in as an argument would escape that criterion. Every server site found names its table.
+  2. M70 is raised by its operand pattern: word reads and compares at `+0x16`. A dword read spanning `+0x14..+0x17` was
+     scanned by eye only. The criterion is the same kind as in call 1, for a Missiles row.
+  3. M23's "contradicted in part" rests on recursive-descent bodies from entries with table pointers. 0x005A3F30's body
+     is also reached from 0x005A3EF0. So two entries may share it, and the count of six bodies stands.
+  4. D57 and D193 stay "raised in part" rather than all-contradicted. The non-14 modes hold, and the mode-14 store is
+     named.
+  5. C108 is raised whole on the zero case the line states. A negative calc is not claimed.
+- **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s2c`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s2c.md),
+  now extended to S2c whole.

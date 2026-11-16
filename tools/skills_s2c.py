@@ -20,9 +20,12 @@ Sections (inventory rows: R = skills-README.md, C = skills-catalogue.md, D = ski
            MonStats, ItemStatCost), .txt against .bin
   consts   D21 D22 D23 D24 D187 D68: the delay state 121 and its unit event, state 114, the periodic floor, the charge cap
   calls    D42 D46 D48 D195 D60 C80 D81 D194 D82 D151 D157 D98 C53 M2 M58 R17: callers and their arguments
-  bits     D56 D57 D185 D193 C58 C14 D76 D88: the Unit+0xC4 bit-6 stores and clears, the skill-row flag-bit readers,
-           the packet +0x65 byte stores, the missile +0x... bit 0 pair
-  more     the rest (filled per row)
+  bits     (part 2) D56 D57 D185 D193 C58 C14 D76 D95 D88: the Unit+0xC4 bit-6 sets, clears and readers, the monster
+           mode records, the do-150 closure, the MissileData+0x28 pair, the Skills +0x05 flag-bit readers, the packet
+           +0x65 byte stores
+  more     (part 2) D1 D2 D25 D50 D137 C57 C74 C75 C108 M5 M23 M25 M48 R22 M70 M94 R24: the skill packets, noCost, the
+           prevent-heal hook, Smite's mode, the knockback pushes, the rings' step, the spiral, useAmmo, the creators, the
+           0x40 marks, ExplosionMissile, BuildDamage's reads, the two critical chains
   totals   plan 0066's class totals over the per-spec inventory files
 Stdlib, objdump and r2. Read-only.
 """
@@ -692,6 +695,518 @@ def sec_calls():
                r"mov \[ebp-0x14\],eax"])
     k = [va for va, m, o in listing(0x0056ECB0, 0x0056EDE0) if "0x1000" in o or "ebp-0x14" in o]
     out(sec, "R17 to-hit flag and +0x48 writes in SkillMissileCreate", sites=len(k), bad=int(k != [0x0056ED97, 0x0056ED9E]))
+    BAD[sec] += sum(Q.BAD.values())
+    Q.BAD.clear()
+
+
+# ------------------------------------------------------------------------------------------------ part 2: bits
+def bit6_sites():
+    """(sets, clears) of Unit+0xC4 bit 6 in objdump's whole .text: `or [r+0xc4], 0x40`, `and [r+0xc4], ~0x40`."""
+    sets, clrs = [], []
+    for va, (mn, ops) in sorted(A().ins.items()):
+        o = norm_ops(ops)
+        if "+0xc4]" not in o or not o.split(",")[0].endswith("+0xc4]"):
+            continue
+        if mn == "or" and o.endswith(",0x40"):
+            sets.append(va)
+        elif mn == "and" and o.endswith(",0xffffffbf"):
+            clrs.append(va)
+    return sets, clrs
+
+
+def r2_bit6_count(vas, want):
+    """r2 re-decodes each site; the count of agreeing decodes."""
+    dec = Q.r2_many(vas)
+    return sum(1 for v in vas if dec[v] and norm_ops(dec[v][1]).split(",")[-1] == want and dec[v][0] in ("or", "and"))
+
+
+def other_c4_writes():
+    """Every other write to a `+0xC4` dword in the server range (0x00540000..0x00680000) whose immediate or register
+    operand could clear bit 6: `and` with an immediate that has bit 6 clear, any `mov`, `and`/`xor` with a register."""
+    w = []
+    for va, (mn, ops) in sorted(A().ins.items()):
+        o = norm_ops(ops)
+        if not (0x00540000 <= va < 0x00680000) or not o.split(",")[0].endswith("+0xc4]"):
+            continue
+        src = o.split(",")[-1]
+        if mn == "and" and src.startswith("0x") and not int(src, 16) & 0x40:
+            w.append((va, mn, o))
+        elif mn in ("mov", "xor") or (mn == "and" and not src.startswith("0x")):
+            w.append((va, mn, o))
+    return w
+
+
+def body_set(entry):
+    return set(fn_body(entry)[0])
+
+
+def closure_hits(roots, sites):
+    import sweep2_s7a as W
+    G = W.graph2(roots)
+    where = {}
+    for e, v in G.items():
+        if v:
+            for x in v[2]:
+                where.setdefault(x, e)
+    hits = [s for s in sites if s in where]
+    paths = []
+    for h in hits:
+        e, ch = where[h], []
+        while e is not None:
+            ch.append(nm(e))
+            e = G[e][1]
+        paths.append("0x%08X: %s" % (h, " <- ".join(ch)))
+    return G, hits, paths, sum(len(v[4]) for v in G.values() if v)
+
+
+MODE_REC = 0x006E2260  # g_MonModeRecords: 16-byte records {start, frame, end, flag}
+
+
+@section("bits")
+def sec_bits():
+    sec = "bits"
+    Q.BAD.clear()
+    sets, clrs = bit6_sites()
+    r2s, r2c = r2_bit6_count(sets, "0x40"), r2_bit6_count(clrs, "0xffffffbf")
+    own = sorted(set(nm(v).split("+")[0] for v in sets))
+    out(sec, "D56/D185 Unit+0xC4 bit-6 sets and clears (.text, objdump; r2 re-decodes each)", sets=len(sets),
+        sets_r2=r2s, clears=len(clrs), clears_r2=r2c, set_owners=len(own),
+        set_client_range=sum(1 for v in sets if v < 0x00540000), clear_client_range=sum(1 for v in clrs if v < 0x00540000),
+        bad=int(len(sets) != 124 or len(clrs) != 17 or r2s != 124 or r2c != 17))
+    note("set owners: " + " ".join(own))
+    for v in clrs:
+        note("clear 0x%08X %s" % (v, nm(v)))
+    w = other_c4_writes()
+    out(sec, "D56 other server-range writes of a +0xC4 dword that could clear bit 6", sites=len(w))
+    for va, mn, o in w:
+        note("0x%08X %s %s %s" % (va, nm(va), mn, o))
+    site_line(sec, "D56 SKILLS_SrvDo sets the bit once its missile row exists", [0x0056F97D, 0x0056F982, 0x0056F984, 0x0056F98A],
+              [r"call 0x46ace0", r"test eax,eax", r"je 0x56fa3d", r"or \[edi\+0xc4\],0x40"])
+    site_line(sec, "D56/D57 the AI's set before MonSetMode", [0x005DEAFF, 0x005DEB08, 0x005DEB33],
+              [r"call 0x620210", r"or \[esi\+0xc4\],0x40", r"call 0x5a7c20"])
+    # readers: `mov r, [x+0xc4]; shr r, 6`
+    vas = sorted(A().ins)
+    idx = {v: i for i, v in enumerate(vas)}
+    rd = []
+    for va in vas:
+        mn, ops = A().ins[va]
+        o = norm_ops(ops)
+        if mn == "mov" and o.split(",")[-1].endswith("+0xc4]"):
+            m2, o2 = A().ins[vas[idx[va] + 1]]
+            if m2 == "shr" and norm_ops(o2).endswith(",0x6"):
+                rd.append(va)
+    srv = [v for v in rd if 0x00540000 <= v < 0x00680000]
+    out(sec, "D56 bit-6 readers (mov [x+0xC4]; shr 6)", sites=len(rd), server_range=len(srv))
+    for v in srv:
+        note("0x%08X %s" % (v, nm(v)))
+    site_line(sec, "D56 PlrModeSkillFrame: bit 6 set skips the do; else code 1 or 2 runs it",
+              [0x005804C2, 0x005804C8, 0x005804CB, 0x005804CE, 0x005804D3, 0x005804D6, 0x005804D8, 0x005804DB, 0x005804E2],
+              [r"mov ecx,\[esi\+0xc4\]", r"shr ecx,0x6", r"and ecx,0x1", r"jne 0x5804e7", r"cmp eax,0x1", r"je 0x5804dd",
+               r"cmp eax,0x2", r"jne 0x5804e7", r"call 0x56fc50"])
+    # the monster mode records
+    recs = []
+    for m in range(0, 21):
+        s, f = dword(MODE_REC + 16 * m), dword(MODE_REC + 16 * m + 4)
+        recs.append((m, s, f))
+    r2w = Q.r2_words(MODE_REC, 21 * 4) if hasattr(Q, "r2_words") else None
+    agree = r2w is not None and all(r2w[4 * m] == s and r2w[4 * m + 1] == f for m, s, f in recs)
+    sk = [m for m, s, f in recs if s == 0x005A75C0]
+    out(sec, "D57 g_MonModeRecords start and frame words (python and r2)", r2_agree=int(agree),
+        modes_with_MonModeStartSkill=" ".join(map(str, sk)), mode14_start="0x%08X" % recs[14][1], mode14_frame=nm(recs[14][2]),
+        bad=int(not agree or recs[14][1] != 0x005A7870 or recs[14][2] != 0x005A8670))
+    note("frames of the MonModeStartSkill modes: " + " ".join("%d:%s" % (m, nm(f)) for m, s, f in recs if s == 0x005A75C0))
+    site_line(sec, "D57 the mode-14 start: SetMode(14), clear bit 6, tail-jump to SKILLS_StartUsedSkill",
+              [0x005A7875, 0x005A787B, 0x005A7884, 0x005A7891],
+              [r"push 0xe", r"call 0x553570", r"and \[esi\+0xc4\],0xffffffbf", r"jmp 0x56faf0"])
+    st = [dword(0x00732140 + 4 * i) for i in range(0x5B)]
+    G, hits, paths, ic = closure_hits([0x005A75C0], clrs)
+    out(sec, "D57 MonModeStartSkill's direct-call closure against the 17 clears", functions=len(G), icalls=ic, hits=len(hits),
+        bad=len(hits))
+    G, hits, paths, ic = closure_hits([0x005A75C0] + [x for x in st if x], clrs)
+    out(sec, "D57 the same closure with every start-table entry as a root", functions=len(G), icalls=ic, hits=len(hits))
+    for p in paths:
+        note(p)
+    Q.ref_line(sec, "D57 SKILLS_DoUsedSkill callers", 0x0056FC50)
+    site_line(sec, "D57 MonSeqFrame: +0x4E = 4 runs the do untested; else bit 6 clear and code 1 or 2",
+              [0x005A86ED, 0x005A86F1, 0x005A86F5, 0x005A86FD, 0x005A8703, 0x005A8706, 0x005A8709, 0x005A870B, 0x005A8710, 0x005A871A],
+              [r"movzx eax,\[esi\+0x4e\]", r"cmp eax,0x4", r"je 0x5a8715", r"mov ecx,\[esi\+0xc4\]", r"shr ecx,0x6", r"and ecx,0x1",
+               r"jne 0x5a871f", r"cmp eax,0x1", r"cmp eax,0x2", r"call 0x56fc50"])
+    site_line(sec, "D57 MonAttackFrame: skill flag bit 0 clear or no step end runs the do with no bit-6 test",
+              [0x005A7694, 0x005A7697, 0x005A76AB, 0x005A76AE, 0x005A76DF, 0x005A76E3],
+              [r"test bl,0x1", r"je 0x5a76df", r"cmp eax,0x2", r"jne 0x5a76df", r"mov edx,esi", r"call 0x56fc50"])
+    site_line(sec, "D57 MonAttackFrame's bit-6 test is behind `mode = 14`",
+              [0x005A76C9, 0x005A76CD, 0x005A76CF, 0x005A76D5, 0x005A76DD, 0x005A76FA, 0x005A76FE],
+              [r"cmp \[esi\+0x10\],0xe", r"jne 0x5a76fa", r"mov eax,\[esi\+0xc4\]", r"shr eax,0x6", r"je 0x5a76e8",
+               r"cmp \[esi\+0x4e\],0x1", r"je 0x5a76df"])
+    # C58: Smite
+    sm = [v for v in body_set(0x005CE9F0) if "+0xc4]" in norm_ops(A().ins[v][1])]
+    out(sec, "C58 do 150's own body: +0xC4 operands", sites=len(sm), bad=len(sm))
+    G, hits, paths, ic = closure_hits([0x005CE9F0], sets)
+    out(sec, "C58 do 150's direct-call closure against the 124 sets", functions=len(G), icalls=ic, hits=len(hits))
+    for p in paths:
+        note(p)
+    # C14: do 10 and mdo 7
+    site_line(sec, "C14 do 10: esi = the target unit, unwritten to the store",
+              [0x005DB71B, 0x005DB720, 0x005DB798], [r"call 0x553540", r"mov \[ebp-0x10\],eax", r"mov esi,\[ebp-0x10\]"])
+    wr = [x for x in listing(0x005DB79B, 0x005DB7F3) if (norm_ops(x[2]).startswith("esi,") and x[1] not in ("test", "cmp"))
+          or (x[1] == "pop" and x[2] == "esi")]
+    out(sec, "C14 esi writes between 0x005DB798 and the test", writes=len(wr), bad=len(wr))
+    site_line(sec, "C14 do 10 writes 1 with a target, 2 without, through MISSDATA_SetSeedLow",
+              [0x005DB7E8, 0x005DB7F3, 0x005DB7F5, 0x005DB7F7, 0x005DB7FB, 0x005DB7FD, 0x005DB7FE],
+              [r"call 0x59fa30", r"test esi,esi", r"je 0x5db7fb", r"push 0x1", r"push 0x2", r"push ebx", r"call 0x64a710"])
+    site_line(sec, "C14 SetSeedLow and GetSeedLow: the same MissileData+0x28 (unit+0x14)",
+              [0x0064A71F, 0x0064A729, 0x0064A73F, 0x0064A746],
+              [r"mov eax,\[eax\+0x14\]", r"mov \[eax\+0x28\],ecx", r"mov eax,\[eax\+0x14\]", r"mov eax,\[eax\+0x28\]"])
+    site_line(sec, "C14 mdo 7 tests bit 0 of it", [0x005AE800, 0x005AE801, 0x005AE806, 0x005AE808],
+              [r"push esi", r"call 0x64a730", r"test al,0x1", r"je 0x5ae882"])
+    Q.ref_line(sec, "C14 MISSDATA_SetSeedLow callers (other writers of +0x28)", 0x0064A710)
+    # D76 / D95: the Skills +0x05 flag bits
+    srcs = skills_row_fns()
+    for lab, mask, bit in (("D76 repeat (+0x05 bit 3)", 0x006CE274, 3), ("D95 Kick (+0x05 bit 1)", 0x006CE26C, 1)):
+        rows = mask_tests(mask)
+        out(sec, lab + " mask-form tests of [r+0x5]", sites=len(rows), server_range=sum(1 for v, *_ in rows if v >= 0x00540000),
+            in_fn_with_skills_row=" ".join("0x%08X" % r[0] for r in rows if r[0] >= 0x00540000 and r[1] in srcs))
+        for v, e, o, rt, src in rows:
+            note("0x%08X %s test %s (r2 %s) skills_row_source=%d; row from %s" % (v, nm(v), o, rt, int(e in srcs), src))
+    site_line(sec, "D76 MissileDoFrame's tested row is a Missiles row (stride 0x1A4, base +0xB64)", [0x005ADBD9, 0x005ADBDF, 0x005ADBE6, 0x005ADC43],
+              [r"imul eax,eax,0x1a4", r"add eax,\[ecx\+0xb64\]", r"mov ebx,eax", r"test \[ebx\+0x5\],cl"])
+    imm = imm_flag_tests()
+    out(sec, "D76/D95 immediate forms (test/and [r+5] bit 3 or 1, [r+4] bit 11 or 9)", sites=len(imm),
+        in_fn_with_skills_row=sum(1 for v, e, o in imm if e in srcs), bad=sum(1 for v, e, o in imm if e in srcs and v >= 0x00540000))
+    site_line(sec, "D95 GetPhysMax's test", [0x00647D30, 0x00647D38], [r"mov al,\[0x6ce26c\]", r"test \[esi\+0x5\],al"])
+    for t in (0x00647BC0, 0x00647D00):
+        cs = Q.ref_line(sec, "D95 %s callers" % nm(t), t)
+        var = []
+        for s in cs:
+            a, b, ag = args(s, 2)
+            if a and len(a) > 1 and not a[1].isdigit() and T.owner(s)[0] != 0x005D54B0:
+                var.append(s)
+        out(sec, "D95 %s sites with a variable skill id, KickPhysDamage's apart" % nm(t), sites=len(var), bad=int(len(var) != 15))
+    Q.ref_line(sec, "D95 SkillKickDamage callers", 0x00644C20, want=[0x00647D41])
+    Q.ref_line(sec, "D95 SkillKickPhysDamage callers", 0x005D54B0)
+    Q.ref_line(sec, "D95 DragonTalonHit callers", 0x005D5880)
+    sd = [dword(0x00732140 + 4 * 2), dword(0x007322B0 + 4 * 2)]
+    G, hits, paths, ic = closure_hits(sd, [s for t in (0x00647BC0, 0x00647D00) for s in Q.refs(t)[2]])
+    out(sec, "D95 start 2 and do 2's direct-call closure against the GetPhysMin/Max sites", roots=" ".join(nm(x) for x in sd),
+        functions=len(G), icalls=ic, hits=len(hits))
+    for p in paths:
+        note(p)
+    hs, st_ = Q.tab("skills")
+    sb = Q.binrecs("skills")
+    kick = [i for i, r in enumerate(sb) if r.get("Kick")]
+    kt = [i for i, r in enumerate(st_) if r.get("Kick") == "1"]
+    out(sec, "D95 Kick rows (.bin, .txt)", bin=" ".join(map(str, kick)), txt=" ".join(map(str, kt)),
+        bad=int(kick != [1, 255, 270, 275] or kick != kt))
+    # D88: the EType stores
+    ety = etype_stores()
+    out(sec, "D88 byte stores of a Skills +0x1DC read (whole .text)", stores=len(ety),
+        packet_base_found=sum(1 for *_, b in ety if b), bad=int(len(ety) != 15 or not all(b for *_, b in ety)))
+    for va, st_va, o, e, b in ety:
+        note("0x%08X -> 0x%08X %s in %s (symbol owner 0x%08X); packet base within -0x180..+0x100: %s" % (va, st_va, o, nm(st_va), e, b))
+    rowsn = {"Concentrate": None, "Berserk": None, "Vengeance": None, "Power Strike": None}
+    for i, r in enumerate(st_):
+        if r.get("skill") in rowsn:
+            rowsn[r["skill"]] = (i, r.get("EType"), sb[i].get("EType"), r.get("calc4"))
+    out(sec, "D88 the named rows' EType (.txt, .bin) and calc4", rows=" | ".join("%s %s" % kv for kv in rowsn.items()),
+        bad=int(any(v is None or not v[1] for v in rowsn.values())))
+    BAD[sec] += sum(Q.BAD.values())
+    Q.BAD.clear()
+
+
+def skills_row_fns():
+    """Functions (by re/symbols.csv owner) that make a Skills row: SKILLS_GetRecord, a 0x23C stride, the +0xB98 base."""
+    s = set()
+    for va, (mn, ops) in A().ins.items():
+        o = norm_ops(ops)
+        if (mn == "call" and S.branch_target(ops or "") == 0x0045C4B0) or (mn == "imul" and "0x23c" in o) or "+0xb98]" in o:
+            s.add(T.owner(va)[0])
+    return s
+
+
+def mask_tests(mask):
+    """`mov r8, [mask]` followed within four instructions by `test [x+0x5], r8`: (test va, owner, objdump, r2)."""
+    vas = sorted(A().ins)
+    idx = {v: i for i, v in enumerate(vas)}
+    tag = "[0x%x]" % mask
+    rows = []
+    for va in vas:
+        if tag in norm_ops(A().ins[va][1]):
+            for j in range(idx[va] + 1, idx[va] + 5):
+                m2, o2 = A().ins[vas[j]]
+                if m2 == "test" and "+0x5]" in norm_ops(o2):
+                    ot, rt, ag = site(vas[j])
+                    src = "?"
+                    for k in range(idx[va] - 1, idx[va] - 13, -1):
+                        mk, ok = A().ins[vas[k]]
+                        if mk in ("call", "imul"):
+                            so, sr, sa = site(vas[k])
+                            src = "0x%08X %s%s%s" % (vas[k], so, "" if sa else " [r2 %s]" % sr,
+                                                     " (%s)" % nm(S.branch_target(ok)) if mk == "call" else "")
+                            break
+                    rows.append((vas[j], T.owner(va)[0], ot if ag else ot + " [r2 differs]", rt, src))
+                    break
+    return rows
+
+
+def imm_flag_tests():
+    r = []
+    for va, (mn, ops) in A().ins.items():
+        o = norm_ops(ops)
+        m = re.search(r"\+0x([45])\],0x([0-9a-f]+)$", o)
+        if mn in ("test", "and", "bt") and m:
+            off, v = int(m.group(1), 16), int(m.group(2), 16)
+            if (off == 5 and v & 0xA) or (off == 4 and v & 0xA00):
+                r.append((va, T.owner(va)[0], o))
+    return sorted(r)
+
+
+def etype_stores():
+    vas = sorted(A().ins)
+    idx = {v: i for i, v in enumerate(vas)}
+    res = []
+    for va in vas:
+        mn, ops = A().ins[va]
+        o = norm_ops(ops)
+        if mn == "mov" and o.split(",")[-1].endswith("+0x1dc]") and re.match(r"[abcd]l,", o):
+            reg = o.split(",")[0]
+            for j in range(idx[va] + 1, idx[va] + 4):
+                m2, o2 = A().ins[vas[j]]
+                o2 = norm_ops(o2)
+                if m2 == "mov" and o2.endswith("," + reg) and o2.startswith("[ebp-"):
+                    k = int(re.match(r"\[ebp-(0x[0-9a-f]+)\]", o2).group(1), 16)
+                    base = "[ebp-0x%x]" % (k + 0x65)
+                    e = T.owner(vas[j])[0]
+                    b = [v for v, m3, o3 in listing(vas[j] - 0x180, vas[j] + 0x100) if base in norm_ops(o3)]
+                    ot, rt, ag = site(vas[j])
+                    res.append((va, vas[j], ot if ag else ot + " [r2 " + rt + "]", e,
+                                "%s at %s" % (base, ",".join("0x%08X" % x for x in b[:2])) if b else None))
+                    break
+    return res
+
+
+# ------------------------------------------------------------------------------------------------ part 2: more
+PKT = 0x006E0D18  # g_SrvPacketTable: 8-byte records {handler, flag}
+
+
+@section("more")
+def sec_more():
+    sec = "more"
+    Q.BAD.clear()
+    # D1 D2 D25: the skill packets
+    py = [(dword(PKT + 8 * i), dword(PKT + 8 * i + 4)) for i in range(0x12)]
+    rw = Q.r2_words(PKT, 2 * 0x12)
+    agree = all(rw[2 * i] == py[i][0] for i in range(0x12))
+    out(sec, "D1/D2/D25 g_SrvPacketTable 0x05..0x11 (python and r2)", r2_agree=int(agree), bad=int(not agree))
+    want = {5: ("L", "XY", None), 6: ("L", "U", "1"), 7: ("L", "U", "0"), 0xC: ("R", "XY", None), 0xD: ("R", "U", "1"),
+            0xE: ("R", "U", "0")}
+    alt = {8: 5, 9: 6, 0xA: 7, 0xF: 0xC, 0x10: 0xD, 0x11: 0xE}
+    LS, RS, RXY, RU, SXY, SU, SET = 0x00620190, 0x006201D0, 0x005496F0, 0x00549830, 0x00549AD0, 0x00549BA0, 0x00627260
+    bad = 0
+    for i in range(5, 0x12):
+        h = py[i][0]
+        cl = fn_calls(h)
+        ts = [t for _, t in cl]
+        tx = ", ".join(nm(t) for t in ts)
+        if i in want:
+            side, form, walk = want[i]
+            ok = (LS if side == "L" else RS) in ts and (RXY if form == "XY" else RU) in ts and (SXY if form == "XY" else SU) in ts
+            st = [va for va, t in cl if t == SET]
+            a = args(st[0], 3)[0] if st else None
+            ok = ok and a is not None and a[1] == "328"
+            if walk is not None:
+                su = [va for va, t in cl if t == SU][0]
+                ok = ok and args(su, 4)[0][3] == walk
+            note("0x%02X %s: %s; stat set %s%s" % (i, nm(h), tx, a, "" if walk is None else ", walk %s" % walk))
+        elif i in alt:
+            tgt = py[alt[i]][0]
+            ok = tgt in ts and (RXY if alt[i] in (5, 0xC) else RU) in ts and (LS if i < 0xC else RS) in ts
+            note("0x%02X %s: %s (-> 0x%02X)" % (i, nm(h), tx, alt[i]))
+        else:
+            ok = not ts and not [v for v in fn_body(h)[0] if A().ins[v][0] == "mov" and norm_ops(A().ins[v][1]).startswith("[")]
+            note("0x%02X %s: no call, no store" % (i, nm(h)))
+        bad += 0 if ok else 1
+    out(sec, "D1/D2/D25 handlers: side, form, stat 328, walk, re-read", handlers=0x11 - 5 + 1, bad=bad)
+    site_line(sec, "D25 left and right entries: SkillList+0x08 and +0x0C", [0x006201B9, 0x00643953],
+              [r"mov ecx,\[eax\+0xa8\]", r"mov eax,\[ecx\+0x8\]"])
+    rsk = [v for v in fn_body(0x006201D0)[0] if A().ins[v][0] == "call"]
+    for v in rsk:
+        t = S.branch_target(A().ins[v][1])
+        if t and t not in (0x00408090, 0x00408A60, 0x00681E09):
+            note("GetRightSkill calls %s" % nm(t))
+            for x in listing(t, t + 0x30):
+                if x[1] == "mov" and norm_ops(x[2]).startswith("eax,[ecx+"):
+                    site_line(sec, "D25 the right entry's read", [x[0]], [r"mov eax,\[ecx\+0xc\]"])
+                    break
+    site_line(sec, "D25 the location form: 5 bytes, x u16 +1, y u16 +3", [0x005496F9, 0x00549734, 0x00549739],
+              [r"cmp \[ebp\+0xc\],0x5", r"movzx eax,\[ebx\+0x3\]", r"movzx edi,\[ebx\+0x1\]"])
+    site_line(sec, "D25 the unit form: 9 bytes, type u32 +1 below 6, guid u32 +5", [0x00549833, 0x00549855, 0x00549859, 0x0054985C, 0x0054985F],
+              [r"cmp \[ebp\+0xc\],0x9", r"mov ebx,\[eax\+0x5\]", r"mov esi,\[eax\+0x1\]", r"cmp esi,0x6", r"jb 0x54986c"])
+    # D50: noCost
+    cs = Q.ref_line(sec, "D50 SKILLS_SrvStart callers", 0x0056F640)
+    one = []
+    for s in cs:
+        a, b, ag = args(s, 3)
+        note("0x%08X %s noCost %s%s" % (s, nm(s), a[2] if a and len(a) > 2 else None, "" if ag else " [r2 %s]" % b))
+        if a and len(a) > 2 and a[2] != "0":
+            one.append(nm(s).split("+")[0])
+    out(sec, "D50 callers passing a non-zero noCost", callers=len(cs), nonzero=" ".join(one), bad=int(one != ["ITEMSKILL_Cast"]))
+    # D137: PreventHealHook
+    site_line(sec, "D137 the hook's tests and its block", [0x0057D81A, 0x0057D823, 0x0057D825, 0x0057D82C, 0x0057D834, 0x0057D838,
+                                                          0x0057D83B, 0x0057D840, 0x0057D842, 0x0057D847, 0x0057D879, 0x0057D880,
+                                                          0x0057D88A, 0x0057D891],
+              [r"cmp \[edi\],0x0", r"mov eax,\[esi\]", r"cmp eax,0x1", r"push 0x75", r"test eax,eax", r"mov eax,\[esi\+0x4\]",
+               r"cmp eax,0x2c0", r"jl 0x57d849", r"cmp eax,0x2c5", r"jle 0x57d896", r"mov \[ebp-0x14\],0x1d4c0",
+               r"mov \[ebp-0x10\],0x1f", r"mov \[ebp-0x8\],0x34", r"call 0x56e970"])
+    site_line(sec, "D137 ToHitRoll: edi = ebx, esi = [ebp-0xc] at the hook's call", [0x0057DB7B, 0x0057DB7E, 0x0057DB80],
+              [r"mov esi,\[ebp-0xc\]", r"mov edi,ebx", r"call 0x57d810"])
+    # C57: Smite's monster branch
+    site_line(sec, "C57 Smite's monster branch: mode 5 to MonAttackStats, the test's word kept",
+              [0x005CEBB6, 0x005CEBBD, 0x005CEBE4, 0x005CEBE9, 0x005CEBEB, 0x005CEBA8, 0x005CEBB0, 0x005CEBB4],
+              [r"mov edx,0x5", r"call 0x5a4f50", r"call 0x57ec10", r"test al,0x1", r"mov \[ebp-0x84\],ax", r"call 0x57ec10",
+               r"or ax,0x1", r"jmp 0x5cebe9"])
+    site_line(sec, "C57 MonAttackStats: edx is the mode, 5 tested first, then 7..8",
+              [0x005A4F5B, 0x005A5015, 0x005A5018, 0x005A501B, 0x005A5021, 0x005A5026, 0x005A50D0, 0x005A5042, 0x005A5084],
+              [r"mov \[ebp-0x24\],edx", r"mov eax,\[ebp-0x24\]", r"cmp eax,0x5", r"je 0x5a50b9", r"cmp eax,0x6", r"cmp eax,0x8",
+               r"push 0x10", r"push 0x20", r"push 0x8"])
+    # C74 C75: the knockback level difference
+    for lab, ent, tgt, pushes, rr in (("C74 do 42", 0x005D5A30, 0x005D5A74, [0x005D5AE3, 0x005D5AF4], "edi"),
+                                       ("C75 do 33", 0x005D3140, 0x005D31A3, [0x005D31D8, 0x005D31E2], "ebx")):
+        site_line(sec, "%s: target from UNIT_GetTargetUnit" % lab, [{0x005D5A74: 0x005D5A6F, 0x005D31A3: 0x005D3196}[tgt], tgt], [r"call 0x553540", r"mov %s,eax" % rr])
+        site_line(sec, "%s: both stat-12 reads push the target" % lab, pushes, [r"push %s" % rr] * 2)
+        ws = [v for v in fn_body(ent)[0] if norm_ops(A().ins[v][1]).startswith(rr + ",") and A().ins[v][0] in ("mov", "lea", "xchg")
+              and tgt < v < pushes[1]]
+        out(sec, "%s: %s writes between the target and the second push" % (lab, rr), writes=len(ws), bad=len(ws))
+        call_args_line(sec, "%s stat reads" % lab, ent, {0x00625480}, 3)
+    site_line(sec, "C74 the difference: s1 + [ebp+0xc] (the level) - s2", [0x005D5AFC, 0x005D5AFF, 0x005D5B01],
+              [r"mov ecx,\[ebp\+0xc\]", r"add esi,ecx", r"sub esi,eax"])
+    site_line(sec, "C75 the difference", [0x005D31EA, 0x005D31ED, 0x005D31EF], [r"mov edx,\[ebp\+0xc\]", r"add esi,edx", r"sub esi,eax"])
+    # C108: the rings' step
+    for lab, ent, ld, lp in (("prg 37 ring", 0x005D4150, 0x005D43A1, 0x005D4605), ("prg 143 ring", 0x005D4870, None, 0x005D4D25)):
+        ed = [(v, A().ins[v][0], norm_ops(A().ins[v][1])) for v in fn_body(ent)[0] if "edi" in norm_ops(A().ins[v][1])]
+        out(sec, "C108 %s: every edi operand" % lab, sites=len(ed),
+            tests=sum(1 for _, m, o in ed if m in ("test", "cmp") or (m.startswith("j"))), bad=sum(1 for _, m, o in ed if m in ("test", "cmp")))
+        for v, m, o in ed:
+            note("0x%08X %s %s" % (v, m, o))
+        site_line(sec, "C108 %s loop" % lab, [lp, lp + 2, lp + 4, lp + 0x68, lp + 0x6A, lp + 0x70] if ent == 0x005D4150 else
+                  [lp, lp + 2, lp + 4, lp + 0x75, lp + 0x77, lp + 0x7D],
+                  [r"add edi,edi", r"add edi,edi", r"xor esi,esi", r"add esi,edi", r"cmp esi,0x100", r"jl "])
+    for prg, ring in ((0x005D4E70, 0x005D4150), (0x005D4F40, 0x005D4870)):
+        call_args_line(sec, "C108 %s's ring call (8 stack args, the calc last)" % nm(prg), prg, {ring}, 8)
+    # M5: types 4, 10, 14
+    import sweep2_s7a as W
+    G = W.graph2([0x0067A140])
+    mem = [v for v in fn_body(0x0067A140)[0] if "[" in A().ins[v][1] and not re.search(r"\[(ebp|esp)", norm_ops(A().ins[v][1]))]
+    out(sec, "M5 PathPlanSpiral: closure and non-stack memory operands", functions=len(G),
+        callees=" ".join(nm(e) for e in G if e != 0x0067A140), mem=len(mem))
+    for v in mem:
+        ot, rt, ag = site(v)
+        note("0x%08X %s%s" % (v, ot, "" if ag else " [r2 %s]" % rt))
+    # M23: useAmmo
+    shared = {0x0056F524: 0x0056F4F7, 0x0056F614: 0x0056F5E7, 0x0056FA29: 0x0056F9FD, 0x005CE08B: 0x005CE050,
+              0x005CE18B: 0x005CE150, 0x005D8952: 0x005D892F}
+    site_line(sec, "M23 the shared useAmmo pushes", sorted(shared.values()),
+              [r"push 0x%d" % (0 if p in (0x0056F9FD, 0x005CE050, 0x005CE150) else 1) for p in sorted(shared.values())])
+    vals = {}
+    for t in (0x0056ECB0, 0x0056EE90):
+        for s in Q.ref_line(sec, "M23 %s callers" % nm(t), t):
+            a, b, ag = args(s, 8)
+            v = a[7] if a and len(a) > 7 else None
+            if s in shared:
+                v = "1" if shared[s] not in (0x0056F9FD, 0x005CE050, 0x005CE150) else "0"
+            vals[s] = v
+            note("0x%08X %s useAmmo %s (pad entry 0x%08X)" % (s, nm(s), v, T.pad_entry(s)))
+    ones = sorted(s for s, v in vals.items() if v == "1")
+    out(sec, "M23 useAmmo values", sites=len(vals), ones=len(ones), zeros=sum(1 for v in vals.values() if v == "0"),
+        unresolved=sum(1 for v in vals.values() if v not in ("0", "1")), bad=int(len(vals) != 33 or len(ones) != 14))
+    mon = [s for s in ones if 0x005A0000 <= s < 0x005A8000]
+    hold = []
+    for s in mon:
+        for e in (0x005A2620, 0x005A2840, 0x005A2C20, 0x005A3F30, 0x005A6D50, 0x005A6FF0):
+            if s in body_set(e):
+                hold.append(e)
+                break
+    out(sec, "M23 the monster sites' recursive-descent bodies", sites=len(mon), bodies=len(set(hold)),
+        entries=" ".join("0x%08X" % e for e in hold))
+    site_line(sec, "M23 SKILL_AttackDo: 27 (magicarrow) takes the 0 site", [0x0056F0B6, 0x0056F0BB, 0x0056F0BE, 0x0056F0C6],
+              [r"call 0x645f00", r"cmp eax,0x1b", r"je 0x56f0e9", r"push 0x1"])
+    site_line(sec, "M23 Throw and Left Hand Throw: item type 38 takes the lob", [0x0056F4EB, 0x0056F4F0, 0x0056F501, 0x0056F510, 0x0056F524],
+              [r"push 0x26", r"call 0x629bb0", r"je 0x56f517", r"call 0x56ee90", r"call 0x56ecb0"])
+    site_line(sec, "M23 the player-owner gates", [0x0056EDA1, 0x0056EDA7, 0x0056EDB0, 0x0056EF44, 0x0056EF4A, 0x0056EF53, 0x0056C406],
+              [r"cmp \[ebp\+0x24\],0x0", r"cmp \[esi\],0x0", r"call 0x56c3f0", r"cmp \[ebp\+0x24\],0x0", r"cmp \[esi\],0x0",
+               r"call 0x56c3f0", r"cmp \[edi\],0x0"])
+    # M25: MissileCreate's callers
+    mc = Q.ref_line(sec, "M25 MissileCreate callers", 0x0059FA30)
+    own = collections.Counter(nm(s).split("+")[0] for s in mc)
+    outside = [s for s in mc if s not in body_set(T.owner(s)[0])]
+    out(sec, "M25 the sites' owners", sites=len(mc), symbol_owners=len(own), sites_outside_their_owner_body=len(outside),
+        item_owners=" ".join(n for n in own if n.startswith(("ITEM", "INV"))) or "none")
+    note("owners: " + " ".join("%s:%d" % kv for kv in sorted(own.items())))
+    # M48 / R22: the 0x40 marks
+    import csv
+    coll = [(int(r[0], 16), r[2]) for r in csv.reader(open(os.path.join(HERE, "..", "re", "symbols.csv")))
+            if r and r[0].startswith("0x") and r[2].startswith("COLL_")]
+    found = []
+    for e, n in coll:
+        for s in Q.refs(e)[2]:
+            a, b, ag = args(s, 5)
+            if a and any(x.isdigit() and int(x) & 0x40 and int(x) < 0x10000 for x in a):
+                found.append((s, n, a, ag))
+    out(sec, "M48 calls of the COLL_ functions with a constant mask holding 0x40", coll_functions=len(coll), sites=len(found),
+        server_range=sum(1 for s, *_ in found if s >= 0x00540000))
+    for s, n, a, ag in found:
+        note("0x%08X %s %s(%s)%s" % (s, nm(s), n, ", ".join(a), "" if ag else " [walkers differ]"))
+    site_line(sec, "M48 HitUnit's unmark (push before the size calls)", [0x005AE1B1, 0x005AE1CB], [r"push 0x40", r"call 0x64eba0"])
+    site_line(sec, "M48 MissileCreate: a Collision row's path mark mask is 0x40", [0x0059FD54, 0x0059FD5B, 0x0059FD5D, 0x0059FD61, 0x0059FD64],
+              [r"cmp \[edx\+0x184\],0x0", r"je 0x59fd61", r"push 0x40", r"push 0x0", r"call 0x648c30"])
+    pm = Q.ref_line(sec, "M48 PATH_SetMarkMask callers", 0x00648C30)
+    pv = []
+    for s in pm:
+        a, b, ag = args(s, 2)
+        if a and len(a) > 1 and (not a[1].isdigit() or int(a[1]) & 0x40):
+            pv.append("0x%08X %s %s" % (s, nm(s), a[1]))
+    note("callers with a variable or 0x40 mask: " + "; ".join(pv))
+    ct = [(dword(0x0073C720 + 8 * i), dword(0x0073C724 + 8 * i)) for i in range(9)]
+    out(sec, "M48 g_MissileCollideTypes masks holding 0x40", types=" ".join(str(i) for i, (f, m) in enumerate(ct) if m & 0x40))
+    # M70: ExplosionMissile (+0x016)
+    mrow = set()
+    for va, (mn, ops) in A().ins.items():
+        o = norm_ops(ops)
+        if (mn == "call" and S.branch_target(ops or "") == 0x0046ACE0) or (mn == "imul" and "0x1a4" in o) or "+0xb64]" in o:
+            mrow.add(T.owner(va)[0])
+    w16 = []
+    for va, (mn, ops) in sorted(A().ins.items()):
+        o = norm_ops(ops)
+        if re.search(r"\+0x16\]", o) and "word" in (ops or "").lower() and (
+                (mn in ("mov", "movzx", "movsx") and not o.startswith("[")) or mn in ("cmp", "test")):
+            w16.append(va)
+    srv = [v for v in w16 if 0x00540000 <= v < 0x00680000]
+    out(sec, "M70 word operands at +0x16 (objdump), server range, in a function that makes a Missiles row", sites=len(w16),
+        server_range=len(srv), server_in_missile_row_fn=sum(1 for v in srv if T.owner(v)[0] in mrow),
+        client_in_missile_row_fn=" ".join("0x%08X" % v for v in w16 if v < 0x00540000 and T.owner(v)[0] in mrow),
+        bad=sum(1 for v in srv if T.owner(v)[0] in mrow))
+    site_line(sec, "M70 the server-range sites, decoded twice", srv, None)
+    # M94: BuildDamage
+    G = W.graph2([0x005A89A0])
+    out(sec, "M94 MISSILE_BuildDamage's closure", functions=len(G), icalls=sum(len(v[4]) for v in G.values() if v),
+        item_or_owner=" ".join(nm(e) for e in G if re.search(r"ITEM|INV|Owner|Weapon", nm(e))) or "none")
+    rows = call_args_line(sec, "M94 BuildDamage's stat reads", 0x005A89A0, {0x00625480, 0x00625500, 0x006253B0, 0x005A8910}, 2)
+    out(sec, "M94 every read on esi", reads=len(rows), not_esi=sum(1 for r in rows if "(esi," not in r), bad=sum(1 for r in rows if "(esi," not in r))
+    ws = [v for v in fn_body(0x005A89A0)[0] if norm_ops(A().ins[v][1]).startswith("esi,") and A().ins[v][0] in ("mov", "lea", "xchg")]
+    out(sec, "M94 esi writes in BuildDamage", writes=" ".join("0x%08X" % v for v in ws), bad=int(ws != [0x005A89B9]))
+    site_line(sec, "M94 esi is the first stack argument; HitUnit pushes edi there", [0x005A89B9], [r"mov esi,\[ebp\+0x8\]"])
+    call_args_line(sec, "M94 HitUnit's BuildDamage call", 0x005ADF10, {0x005A89A0}, 1)
+    call_args_line(sec, "M94 MissileElemRoll's stat reads", 0x005A8910, {0x00625480}, 1)
+    ents = sorted(set(dword(0x0073C960 + 4 * i) for i in range(31)) - {0})
+    G2 = W.graph2(ents)
+    out(sec, "M94 the damage-table entries' closure (the remainder)", entries=len(ents), functions=len(G2),
+        icalls=sum(len(v[4]) for v in G2.values() if v), owner_fns=" ".join(nm(e) for e in G2 if "Owner" in nm(e)))
+    # R24: the two critical chains
+    Q.ref_line(sec, "R24 MissileCritRoll references", 0x0064A850, kinds=("call", "jmp", "jcc"))
+    Q.ref_line(sec, "R24 MissileDamageBlock references", 0x0064B860, kinds=("call", "jmp", "jcc"))
+    G3 = W.graph2([0x0057B7D0])
+    out(sec, "R24 COMBAT_BuildDamage's closure", functions=len(G3), icalls=sum(len(v[4]) for v in G3.values() if v),
+        reaches_MissileCritRoll=int(0x0064A850 in G3), reaches_MissileDamageBlock=int(0x0064B860 in G3),
+        bad=int(0x0064A850 in G3 or 0x0064B860 in G3))
     BAD[sec] += sum(Q.BAD.values())
     Q.BAD.clear()
 
