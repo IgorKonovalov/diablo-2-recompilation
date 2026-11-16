@@ -453,7 +453,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x005444B0,func,QUESTS_IsActive,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00544520,func,QUESTS_SendGameRecord,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x00544590,func,QUESTS_NpcHasQuest,,I,quests/progression,docs/findings/quests/0001-progression.md
-0x00544720,func,sub_00544720_GameQuestSet,,I,items/cube,docs/findings/items/0008-cube.md
+0x00544720,func,sub_00544720_GameQuestSet,,C,items/cube,docs/findings/quests/0001-progression.md
 0x00544760,func,sub_00544760_GameQuestGet,,I,items/cube,docs/findings/items/0008-cube.md
 0x00544840,func,sub_00544840_QuestsItemUseCode,,I,quests/progression,docs/findings/quests/0001-progression.md
 0x005449D0,func,sub_005449D0_JoinMarkFlagClear,,I,quests/progression,docs/findings/quests/0001-progression.md

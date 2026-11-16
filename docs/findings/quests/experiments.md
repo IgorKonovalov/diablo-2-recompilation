@@ -530,6 +530,36 @@ No game, no Ghidra: a new check over the kept logs of the three runs above and o
   [quests/0001 § 18](0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)
   and [quests/0002 § 16](0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g).
 
+### Addendum 2026-11-16: plan 0066 batch S3b, kill and service steps over the kept quests.gdb logs (`lane/n66p`)
+
+No game, no Ghidra: a new check over kept logs of five runs whose loggers source `tools/gdb/quests.py` (the QS/QC
+lines with the call's return address and the word before the call).
+
+- **Question:** (plan 0066 batch S3b, 36 inventory rows of quests/progression) which inferred statements on kill steps,
+  service steps, quest objects and the quest seed do these logs already decide?
+- **Inputs:** 108 logs: the 53 of run:2026-10-16-quest-drops (`quests-run.lst`) and its 7 owner-played ones
+  (`quests-owner-run.lst`), the 16 kept of run:2026-10-17-sweep-quest-b6 (`h6d/`), the 14 kept of
+  run:2026-10-27-sweep-quest-items (`h6e2/`, no `dev-` log), the 14 of run:2026-10-27-sweep-quest-npc (`h6e1/`) and the
+  four den host logs of run:2026-10-20-two-clients (the host process's own lines). List
+  `workspace/logs/n66p/s3b/s3b-logs.lst`; hashes `manifest-s3b-inputs.sha256` (`29748993…`, 108 lines, passes from
+  `workspace/logs/`).
+- **Procedure:** `python3 -I tools/quests_s3b.py check $(cat workspace/logs/n66p/s3b/s3b-logs.lst)` and
+  `python3 -I tools/quests_s3b.py static` (tool `e8454b5a…`; stdlib, with objdump and r2 through
+  `tools/sweep2_s7a.py` for `static`), each under a 4 GB scope.
+- **Outputs:** `check-s3b.txt` (`81021927…`, 244 lines, `SUMMARY mismatches=0 checks=286 logs=108`) and
+  `static-s3b.txt` (`905d610e…`, 110 lines), with `totals-s3b.txt` (`c44dd283…`, the inventory totals), under `workspace/logs/n66p/s3b/manifest-s3b.sha256` (`9324e605…`, passes
+  from that directory); development outputs (four earlier check outputs, the first static and site scans) in `dev/` with
+  `dev/manifest-dev.sha256` (`4e4b25f3…`).
+- **Observed:** the site table (every logged QS/QC/QK site with its function); the game record's 2 092 writes (518 from
+  `GameQuestSet`, 1 574 from the join's 0x0054633E); the 3 leaves (one e10 each, no e9); 10 operates reaching their
+  slot's function and 19 event-7 calls; one `ListSetPending` pair; 35 StepBits writes, each with b0 and b1 clear; the
+  services 19 / 24 / 22; Baal's gold draw; 388 quest-seed observations with 56 moves, all after a `QGS`; 19 boss kills
+  (11 credited, 8 refused with the word's b0, b1 or b5 set); the report, death and cow-portal game writes;
+  the staff, five chests and six third strikes; 18 `B60` groups before their credits; Malah's three `tr2 ` gives; two
+  Chamber portal operates. The statements, with their sites, are in
+  [quests/0001 § 19](0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p).
+- **Result:** 0 mismatches. No contradiction; one refinement (Radament's credit sites) for Phase 3.
+
 ## The travel sessions of run:2026-10-20-shortfalls
 
 The run is defined in [combat/experiments § run:2026-10-20-shortfalls](../combat/experiments.md#run2026-10-20-shortfalls);
