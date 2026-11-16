@@ -2,9 +2,9 @@
 from: reverser
 to: archivist
 date: 2026-11-16
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "lane/wall80: ds1.md Preview notes the wall base offset (+80, matched to the screenshots), the hidden blank floor and the 3/4 pairing; tools/ds1.py WALL_DY"
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.
