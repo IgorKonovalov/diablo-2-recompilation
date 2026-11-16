@@ -32,12 +32,16 @@ The exclusions are rules, not a list; a path under one of them may not be added,
   the wiki's working rules and links the plans; the export's front page replaces it), and this folder's README and
   manifest.
 - **The method page:** `docs/wiki/how-we-know.md`.
-- **Art and data:** every illustration, every file of game art, any file that is not Markdown; table pages that list
-  constants of the code image ([ADR-0031](../adrs/0031-constants-of-the-code-image.md)).
+- **Art and data:** every file of game art and every game-art illustration, any file that is not Markdown; table pages
+  that list constants of the code image ([ADR-0031](../adrs/0031-constants-of-the-code-image.md)). The one exception
+  is a schematic illustration the builder generates from a named page's block
+  ([ADR-0036](../adrs/0036-schematic-illustrations-in-the-export.md)); it is never named here.
 - **Not before their cut:** `docs/specs/<subsystem>/` enters at the second cut (plan 0070 Phase 9), each spec only
   once a trial cut of it is green; `docs/formats/` and `docs/tables/` are outside the approved scope.
 
-Inside a named page the builder also drops, by rule: front matter, *Open questions* sections, ```` ```illustration ````
-blocks, and the targets of links to pages not in the manifest (their text stays). A wiki page's *What is not known
+Inside a named page the builder also drops, by rule: front matter, *Open questions* sections, and the targets of links
+to pages not in the manifest (their text stays). It runs each ```` ```illustration ```` block in schematic mode and
+drops a block whose tool has none. Its simplifier drops any sentence, list item, table row, block or section that
+fails the check's text rules, and logs each drop (plan 0070, decision 6). A wiki page's *What is not known
 yet* section is kept: it states unknowns in words, holds no lead tag and no source id, and leaving it out would present
 the page as complete.
