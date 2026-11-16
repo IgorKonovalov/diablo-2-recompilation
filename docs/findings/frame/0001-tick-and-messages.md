@@ -622,6 +622,62 @@ Static, no game, no Ghidra. `tools/sweep2_s7a.py` (`246c8301…`, section `p2xre
   [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
   (fn:sub_0052D350_AutosaveTick@0x0052D350, fn:sub_0052E320_ClientFlushPackets@0x0052E320, 0x0053B231)
 
+### 10. Plan 0066 batch S7f: constants, tables and the net queue with a second tool (2026-11-16, `lane/n66o`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7f.py` (`df779d0e…`, section `frame`): every site read in objdump's
+listing and in r2's decoding of the same address, both compared with the instruction the reading expects; the raw-byte
+xref scan of `tools/sweep2_s7a.py`. Output `workspace/logs/n66o/s7f/check-s7f.txt` (`b7d57335…`, 182 lines,
+`S7f total bad=0`). Inventory rows are sim/frame's.
+
+- **Row 8, `g_ServerFps`:** the image word at 0x00731014 is 25. `SetServerFps` (0x0052DF80) has no call, jump or
+  abs32 reference; the word has two references, `SetServerFps`'s store (0x0052DF8E) and the initializer's `idiv`
+  (0x006CAF16), so no other code writes it. [C] (fn:sub_0052DF80_SetServerFps@0x0052DF80, data:g_ServerFps@0x00731014)
+- **Row 9, the frame interval:** 0x006CAF10 is `mov eax, 1000; cdq; idiv [g_ServerFps]; mov [0x00883D60], eax; ret`,
+  40 on the image. Its one reference is the dword at 0x006CC6F8 in `.rdata`, inside the table 0x006CC614..0x006CC720
+  that `CRT_cinit` walks (`mov esi, 0x6CC614` at 0x00681CDE, `mov edi, 0x6CC720`, every non-null entry called at
+  0x00681CF5). `g_ServerFrameInterval` has two stores, `SetServerFps` (0x0052DF95) and the initializer (0x006CAF1C),
+  and two reads in `ServerGamesFrame` (0x0052FC5E, 0x0052FCD3). [C] (0x006CAF10, data:g_ServerFrameInterval@0x00883D60)
+- **Row 10, `g_GameSlots`:** 1 024 dwords. Its 19 references: 16 slot loops whose pointer ends at `cmp reg, 0x883D38`
+  (14) or, in the two four-way unrolled counts 0x0052BFE0 and 0x0052DB30, `cmp ecx, 0x883D3C` from `0x882D3C`; two
+  reads of slot 0 in `HostAbendMsg` (0x0052F6EF, 0x0052F850); one clear, `ecx = 0x400; rep stosd` in `SrvJoinAct`
+  (0x005306A9). The dword after the array, 0x00883D38, is a separate variable with two stores (0x0052C047,
+  0x0052C0CD). No reference indexes past it. [C] (data:g_GameSlots@0x00882D38)
+- **Row 11, `g_UnitTypeEventList`:** six dwords, types 0..5 → `0, 1, 3, 2, 4, −1`. Its readers are 7 scaled loads
+  (`[reg*4 + 0x6E0B9C]`) in 5 functions: `EventQueueAt` (2), `EventQueueEveryFrame` (1), `EventFree` (2) and two
+  unnamed list-address helpers at 0x00540B30 and 0x00540B70 (1 each); no reference to a byte inside the table. [C]
+  for the values and the reader list; the spec names two readers, a refinement in backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+  (data:g_UnitTypeEventList@0x006E0B9C)
+- **Row 23:** 0x0052D8DF–0x0052D907 holds seven calls and no `j*` or `ret`, and no branch anywhere in `.text` targets
+  an address inside the run (both tools agree on every instruction). [C] (0x0052D8DF–0x0052D907)
+- **Row 27, the net queue:** `NetQueuePop` (0x006BEAD0) returns −1 for a null context, an index at or past `+0x87C`, or an
+  empty head; it takes the head at `[+0x870][i]` under `EnterCriticalSection(+0x854)`, moves the head to the record's
+  `+0x5BC` link and clears the tail word `[+0x874][i]` when the taken record was the tail (0x006BEB13–0x006BEB4C). Both
+  appends, in 0x006BF370 (0x006BF46C–0x006BF4BE) and 0x006C08A0 (0x006C0A5A–0x006C0AB8), set the new record's link to
+  0, write it to the old tail's link or to the empty head, then make it the tail, under the same lock. The other
+  functions that touch `+0x870`, `+0x874` or `+0x5BC` are the clear (0x006BE3C0), two read-only walks (0x006BEA70,
+  0x006BF580), the array setup (0x006BF985) and the teardown (0x006C0170); the pop pushes the taken record on the free
+  list `+0x878` (0x006BEB96) and 0x006BF370 takes from it (0x006BF3D7). The drain pops each queue until −1 (0x0052D004,
+  0x0052D031, 0x0052D061), from the one context word `[0x00882D08]`. [C] (fn:sub_006BEAD0_NetQueuePop@0x006BEAD0,
+  0x006BF493–0x006BF4BB, fn:sub_0052CFE0_SrvDrainMessages@0x0052CFE0)
+- **Row 29, the packet table:** `SrvPacketDispatch` returns 3 for type 0, a type ≥ 0x67 (`cmp al, 0x67; jae`) or a
+  null entry. 91 of the types 0x01..0x66 have a handler; the 11 nulls are 0x2B, 0x4A, 0x4E, 0x55–0x57, 0x5A–0x5C,
+  0x64, 0x65. The switch on `type − 0x14` (index bytes 0x0054D848, jump table 0x0054D838) skips the mode test for
+  0x14, 0x15, 0x3C, 0x43, 0x66, sends 0x41 to `cmp [esi+0x10], 0x11` (refused when the player is null or not in mode
+  0x11), and every other type to `PlayerModeAllowed(1, 0, 0)`, refused when it returns 0. [C] for the table and the
+  exceptions. Queue 1 is popped only by `NetQueuePop1` (one caller, the drain) from the one context; [I] stays for
+  "all clients and all games share queue 1": which queue index the two appends receive is the network layer's, not
+  read. (fn:sub_0054D750_SrvPacketDispatch@0x0054D750, data:g_SrvPacketTable@0x006E0D18)
+- **Row 44, the dispatches:** player (0x00581226) and monster (0x005A7F89) test `kind ≤ 14` unsigned (`cmp …, 0xE; ja`)
+  and skip a null entry; the runners load the kind as a zero-extended byte (`movzx`, 0x00540FB9, 0x0054101D,
+  0x005410B9), so a stored −1..−15 arrives as 241..255 and fails the test. Objects (0x00586AD7) and items (0x00562DA7)
+  load the entry with no compare and call `IsBadCodePtr` on it (import 0x006CC34C), the fatal path on a bad one.
+  Entry 14 is 0 in all four tables and the object table's 12..14 are 0. `MissileFrameEvent` calls `MissileDoFrame`
+  (0x005ADCC4) and drops the kind (`ret 4`); each dispatch has exactly the two calls of its own runner. [C]; "kind 14
+  is queued only with a callback" stays [I] (F2's site scan, not repeated). (fn:sub_00581220_PlayerEventDispatch@0x00581220,
+  fn:sub_005A7F80_MonEventDispatch@0x005A7F80, fn:OBJ_EventDispatch@0x00586AD0, fn:sub_00562DA0_ItemEventDispatch@0x00562DA0,
+  fn:sub_005ADCC0_MissileFrameEvent@0x005ADCC0)
+
 ## Data touched
 
 - `struct:Game+0xA8` (frame), `struct:Game+0xAC..+0xB4` (fps), `struct:Game+0xBC` (acts), `struct:Game+0x88`

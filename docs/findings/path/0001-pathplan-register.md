@@ -661,6 +661,55 @@ development outputs in `dev/` with `dev/manifest-dev.sha256`.
   [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
   (fn:UNIT_GetSizeY@0x006205A0, fn:UNIT_CollUnmarkRect@0x00623830, fn:sub_005EF620_AiBaalToStairs@0x005EF620)
 
+### 17. Plan 0066 batch S7f: constants, tables and mask pairs with a second tool (2026-11-16, `lane/n66o`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7f.py` (`df779d0e…`, section `path`; objdump and r2 at every site, as
+frame/0001 § 10). Output `workspace/logs/n66o/s7f/check-s7f.txt` (`b7d57335…`, `S7f total bad=0`). Rows are
+path-README's and path-search's.
+
+- **README 7, the point slots:** `PATH_DynamicCreate` allocates 0x200 bytes (`mov edx, 0x200` at 0x00649D17, the
+  allocator 0x0040B430) and zeroes 0x200 (0x00649D21–0x00649D2A). `+0x9C` + 78 × 4 = `+0x1D4`, a separate field with 13
+  references in the path module. [C] (0x00649D17)
+- **README 8, the two masks:** in the `PATH_` functions (0x00648000–0x0064A000) `+0x4C` is stored only by
+  `PATH_SetMarkMask` (0x00648C8A) and creation (0x00649DB5, 0x00649DCA, 0x00649E73), `+0x50` only by `PathSetCollMask`
+  (0x00648CE9) and creation (0x00649DB8, 0x00649E4A, 0x00649E60, 0x00649E7A). `PATH_SetMarkMask` passes the old `+0x4C`
+  to `COLL_SizeUnmark` or `COLL_PatternUnmark` and the new mask to `COLL_SizeMark` or `COLL_PatternMark`; `PathPlan`
+  reads `+0x50` (0x00649A1E, 0x00649B3A), as does the getter 0x00648CD0. [C] for those writers and readers; [I] stays
+  for readers elsewhere in `.text`, where `+0x4C`/`+0x50` are also the room rectangle's fields and the base was not
+  resolved. (fn:PATH_SetMarkMask@0x00648C30, fn:sub_00648CE0_PathSetCollMask@0x00648CE0)
+- **README 11, the missile's test mask:** `MissileCreate` reads the row's `+0x183` byte (`CollideType`), loads
+  `[ct·8 + 0x0073C724]` and calls `PathSetCollMask(path, mask)` (0x0059FD6C–0x0059FD7C), the one call of
+  `PathSetCollMask` in the missile module. Missiles.txt over 684 rows: `CollideType` 0 ×301, 1 ×6, 3 ×339, 6 ×24,
+  8 ×14, masks 0, `0x84`, `0x184`, `0x4`, `0x185`. [C] (fn:sub_0059FA30_MissileCreate@0x0059FA30, data:g_MissileCollideTypes@0x0073C720)
+- **README 16, Whirlwind's masks:** `push 0xC01` (0x005D9042) before the plan's call (0x005D9050) and `push 0x401`
+  (0x005D90AE) before the flight's (0x005D90B4). Neither holds `0x100`, `0x1000` or `0x2000`; `0x800` is in the plan's
+  mask only. [C] (0x005D90B4)
+- **README 44, the missile path types:** of `PathSetType`'s 34 server calls, the six on a missile's path push a
+  constant: 10 in the five reseed callbacks (0x005AC07B, 0x005C92D9, 0x005CD19B, 0x005D4131, 0x005D46D1) and 14 in
+  `SkillDo73BlessedHammer` (0x005D0107); creation pushes 4 (0x00649DBB). No call takes its type from a record. [C] for
+  the calls; the direct `+0x3C` stores of unresolved base stay as README row 63 left them. (fn:sub_00648CF0_PathSetType@0x00648CF0,
+  fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290)
+- **README 67, `Jump`:** over the 92 excel `.txt` tables, one cell equals `Jump` (case folded): `skills.txt`, column
+  `skill`; `srvstfunc` 47 is on that row alone (Id 165). [C] (tbl:Skills.txt:srvstfunc)
+- **Search 3, `g_DirOctant`:** the 75 dwords take the values 0..7 only. The assert test is `cmp [eax+8], 0xFF` then
+  `push 0x4C` (0x006794BC, 0x006794C5). [C] (data:g_DirOctant@0x006F1518)
+- **Search 26, the bounds:** the pass loop adds 5 to the bound (0x0067ACB0) and runs while it is below
+  `max(first, b1C)` (0x0067ACD1), `b1C` a byte (0x0067AC69, 0x0067AC7B); the walk's try counter returns past 10 000
+  (`cmp eax, 0x2710; jg`, 0x0067A77E). Over every `h0` 0..599 and `b1C` 0..255, for type 0 (`first = h0`) and type 16
+  (`first = h0 + h0 ÷ 2`), the most passes is 51, so the bound holds for any `h0`, not only `h0` ≥ 2. The loop also
+  ends when a walk returns a node or the node pool is full (900, 0x0067ACB7). [C] (0x0067ACB0, 0x0067A77E)
+- **Search 27, the turn rows:** entry 0 is 0 in rows 0, 1, 2, 6 and 7 (rows 3, 4, 5: 1, 6, 7). [C] for the table; under
+  type 16 step 18 adds a draw to the turn, so "keeps the parent's direction" is the non-drawing types' (search § L3).
+  (data:g_PathSearchTurnRows@0x006F17D8)
+- **Search 30, the largest room:** `tools/room_extent.py scan` rerun into `workspace/logs/n66o/s7f/room_extent/`:
+  `report.txt`, `levels.tsv` and `lvlprest.tsv` byte-identical to the kept `workspace/logs/a67/` outputs. `LvlMaze.txt`
+  (81 rows, a second source beside `lvlmaze.bin`) gives the same largest maze room, 64 × 64; the arithmetic 60 + 20 = 80,
+  86² = 7 396, 60 + 25 + 60 = 145, 151² = 22 801 is recomputed. [C] for the data and the arithmetic; [I] stays for the
+  room rule (which maze rooms stay whole), a builder reading of Levels § Largest room.
+- **Search 35, `PathPlan`'s tail:** the planner's return is stored to `+0x28` (0x00649BB8); none of the eight compares
+  of 0x00649BA1–0x00649C6E holds 77 or 78 (the context's end point against the target, a local, `+0x28` against 0
+  and against `+0x24`, flag `0x10`, `+0x58`, the count against 0). [C] (0x00649BA1–0x00649C6E)
+
 ## Data touched
 
 - `tbl:MonStats.txt:npc` (`+0x0D`, MonIsNpc), MonStats `+0x18` (the MonStats2 index) and MonStats2 `+0x08`
