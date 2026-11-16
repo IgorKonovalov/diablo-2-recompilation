@@ -474,7 +474,7 @@ each cluster's re-tag.
 |---|---|---|---|---|---|---|---|---|
 | anim (`lane/n66v`) | [anim/timing](anim-timing.md) | 134 | 49 | 52 | 2 | 31 | C 65 / I 135 / L 22 | C 168 / I 91 / L 22 |
 | anim (`lane/n66v`) | [anim/movement](anim-movement.md) | 44 | 15 | 18 | 0 | 11 | C 26 / I 46 / L 8 | C 58 / I 32 / L 8 |
-| anim (`lane/n66v`) | [anim/README](anim-README.md) | 13 | 4 | 5 | 0 | 4 | C 14 / I 13 / L 2 | C 23 / I 9 / L 2 |
+| anim (`lane/n66v`) | [anim/README](anim-README.md) | 13 | 3 | 6 | 0 | 4 | C 14 / I 13 / L 2 | C 23 / I 10 / L 2 |
 
 A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
 `[C]` count rises by more than the `[I]` count falls.

@@ -2210,7 +2210,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   exception, K3's `X_m = 15`, F1's endless wrap `[I]`, C2's truncating divide, C3's no-path arguments, movement B6's
   −4096 wrap); S6f 1–5 (B1's primary hand, G1's readings `[I]`, G2's three lookups, B4's flag `0x8`, B5's step pair).
   S6a item 5 (monsters/stats § G's `fanatic`, a lead outside anim) is routed to the reverser
-  ([entry](../backlog/2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part.md)).
+  ([entry](../backlog/archive/2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part.md)).
 - **Also:** quirks Q40, Q117, Q249, Q372, Q373 and Q375 follow their notes to `[C]` (quirks C 388 / I 159); Q371,
   Q376 and Q377 stay `[I]`, their notes now holding both tags and the entries restating the `[I]` clause. Research-map
   rows of anim/timing, anim/movement, the overview and quirks updated. wiki/animation and wiki/quirks are left with W4
@@ -2227,3 +2227,42 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   data" kept `[I]`, since slows and curses are not scanned (the H6d ruling (b)).
 - **Gate:** fast green (73 warnings, none new in anim but W4 on the two wiki pages); `--full` green (39 surveys).
 - **Review:** Tier A, [request](../backlog/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-anim-cluster.md).
+
+### 2026-11-16 — Phase 3 anim cluster review (architect, Tier A, `lane/n66v`): accept with fixes (3)
+
+- **Checked.** The three inventory files' *Phase 3* lines partition their rows exactly (timing 134, movement 44, README
+  13; a script over the lists, no row twice or missing). Sampled against the Route cells and the S6a, S6b, S6c addenda
+  (anim/experiments): timing rows 5, 38, 42, 49, 62, 67, 75, 92, 94, 112, 117, 125, 128; movement 11, 26, 38, 44 and
+  the A1–E1 diff; README all 13. Every new `[C]` in the diff carries a run, a kept-output or a second-tool anchor; the
+  split remainders keep `[I]` where the Route cells put them; twelve `fn:` anchors resolve in `re/symbols.csv`. No
+  `[L]` outside *Open questions*; no Mermaid block changed and none now disagrees with its text. The promotion
+  re-check read the S6a, S6b and S6c raises the spec imports; they say what the sentences say, with the two scopes below.
+- **Fixes (3).** *Overclaim (2):* timing I2 `MonAttackFrame`: "a code-1 event strikes … a code-2 event strikes none" is
+  restated as the logs hold it (followed in its frame by a hit of the attacker, 18 160 of 18 637; by none, 2 248 of
+  2 248), the strike through `MON_MeleeHit` moved to the `[I]`, and the unread cause now says it leaves open whether a
+  code-2 event reaches the to-hit test and its draw (the finding records hits, not strikes or draws). anim/README § A's
+  frame-event row (inventory row 5) was `[C]` for every unit on S6c's walk of `PlrModeSkillFrame` alone: `[C]` for a
+  player, `[I]` for a monster's frame functions, which the second tool did not walk; the README goes to C 23 / I 10 /
+  L 2, row 5 moves from whole to split (README: whole 3, split 6; the cluster: whole 67, split 76), inventory § 6 and
+  the research-map row follow. *Misread (1):* S6a item 5, routed to the reverser as a `fanatic` contradiction, is none:
+  monsters/stats § G defines "champion part" without its velocity and G3 gives `fanatic` the clamp only (both `[C]`),
+  so 175 at `Velocity` 4 agrees; the entry is closed with that resolution. The S6b addendum's "a lead against
+  monsters/stats § G" (anim/experiments) is stale for the same reason; the reverser may strike it at its next anim pass.
+- **Judgment calls.** (1) README row 12 whole: accepted; row 94's S6c closure (the rate reaches no queue, cancel or
+  scheduler) is the static second source the route asked of S6c. (2) Movement Outputs (row 38) whole: accepted, it
+  states the arrival end only. (3) Timing 69 and 70 whole with the S6c corrections: accepted. (4) J5's mods as movement
+  row 11 raises them: accepted (spec-writer review-fixes 8). (5) M1/M4 headers `[I]` with a `[C]` bullet: accepted.
+  (6) The `0x00520000` bound stated as an address fact, the client reading `[I]`: accepted. (7) J1 kept `[I]`: accepted.
+- **Ruling on the cluster pattern (binding for the later clusters).** Accepted, with four rules. (a) Each inventory file
+  gets one *Phase 3* line under its header naming the four buckets in this order (whole, split, corrected, kept), each
+  with its row list and its count; the lists partition the file's rows, and the line states the front matter before
+  (at the branch point, naming any `[I]` of another plan that is not in the inventory) and after. (b) Inventory
+  README § 6 gets one row per spec with the same counts; "after" equals the spec's front matter at the cluster's merge.
+  (c) A row whose route waits on a later batch (S6g here: timing 49's schedule half, 62) stays in *kept*; when that
+  batch lands, the re-tag adds a second dated *Phase 3* line to the file and a new § 6 row, never an edit of the first.
+  (d) Judgment calls go in the lane's plan-log entry, and the review's acceptance or change of each is recorded here, not
+  in the inventory line. Phase 3's *Done when* "the inventory's final totals are recorded" is met by a totals row added
+  to § 6 at the last cluster's review.
+- **Gate:** fast green (73 warnings, the W4s on wiki/animation and wiki/quirks the lane's refresh entry answers);
+  `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
+- **Verdict: accept with fixes (3)**: overclaim 2, misread 1. The review request stays open for the merge.

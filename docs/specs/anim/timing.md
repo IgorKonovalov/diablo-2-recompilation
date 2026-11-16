@@ -651,13 +651,15 @@ stateDiagram-v2
   set it with no case of the switch (404, 546–550, 559, 571–573), so they keep the plain records.
   (fn:sub_005A78A0_MonModeRecord@0x005A78A0, 0x005A7923–0x005A7990, tbl:MonStats.txt:SplGetModeChart; the jump tables
   and a full-table check, [anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)) [I] Rows 18 and 19 each end in a mode-8 command. (fn:sub_005A78A0_MonModeRecord@0x005A78A0)
-- I2. [C] **`MonAttackFrame`, no used skill, scheduled.** A code-1 event strikes (`MON_MeleeHit`,
-  `COMBAT_DeliverQueued`): a hit of the attacker follows in its frame in 18 160 of 18 637 dispatches; a code-2 event
-  of a no-skill A1 or A2 strikes none (0 of 2 248 dispatches). (fn:sub_005A7670_MonAttackFrame@0x005A7670,
-  run:2026-10-30-anim-p3b, [anim/experiments § S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)) [I] The code reading that every code 1–4 strikes is contradicted for code 2;
-  codes 3 and 4 keep it, untested. Which test drops code 2 is not read: the frame function gets no code
-  (`MonModeFrameEvent` passes only `ECX` and `EDX`, 0x005A7BD2–0x005A7BD6), so the drop lies below `MON_MeleeHit` or in
-  its gates. (fn:sub_005A7BA0_MonModeFrameEvent@0x005A7BA0)
+- I2. [C] **`MonAttackFrame`, no used skill, scheduled.** A code-1 kind-0 event of a no-skill A1 or A2 is followed in
+  its frame by a hit of the attacker in 18 160 of 18 637 dispatches; a code-2 event by none, in 2 248 of 2 248
+  dispatches. (fn:sub_005A7670_MonAttackFrame@0x005A7670,
+  run:2026-10-30-anim-p3b, [anim/experiments § S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)) [I] A code-1 event strikes through `MON_MeleeHit` and
+  `COMBAT_DeliverQueued` (the code reading). The reading that every code 1–4 strikes is contradicted for code 2;
+  codes 3 and 4 keep it, untested. Which test drops code 2, and so whether a code-2 event reaches the strike's
+  to-hit test and its draw at all, is not read: the frame function gets no code (`MonModeFrameEvent` passes only `ECX`
+  and `EDX`, 0x005A7BD2–0x005A7BD6), so the drop lies below `MON_MeleeHit` or in its gates.
+  (fn:sub_005A7BA0_MonModeFrameEvent@0x005A7BA0)
 - I2. [I] An every-frame mode steps, advances and strikes only on a frame whose event byte is 1 (mode 14: bit 6 set).
   With a used skill it runs `SKILLS_DoUsedSkill` on every call, then advances. (fn:sub_005A7670_MonAttackFrame@0x005A7670,
   0x005A76DF–0x005A7741)

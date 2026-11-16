@@ -6,7 +6,7 @@ status: done
 context:
   - ../../plans/0066-simulation-inferred-claims-sweep.md
   - ../../findings/anim/experiments.md
-resolution: "Done in plan 0066 Phase 3 (lane/n66v): items 1-4 and 6 written into anim/timing (I2 MonAttackFrame code 1 strikes, code 2 none, the drop [I]; E3 RescheduleSkip's +0x44; M4's refusal sentence; F1's two restart rules) and anim/movement D2 (the turn's frame, open question closed); item 5 (a monsters/stats lead) routed to the reverser in [2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part](../2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part.md)."
+resolution: "Done in plan 0066 Phase 3 (lane/n66v): items 1-4 and 6 written into anim/timing (I2 MonAttackFrame code 1 strikes, code 2 none, the drop [I]; E3 RescheduleSkip's +0x44; M4's refusal sentence; F1's two restart rules) and anim/movement D2 (the turn's frame, open question closed); item 5 (a monsters/stats lead) routed to the reverser in [2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part](2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part.md)."
 ---
 
 Plan 0066 batch S6a (`lane/n66k`, 2026-11-15) corrections for Phase 3 in specs/anim/timing.md (lines at `b5999f5e`, match by text). Record: findings/anim/experiments.md, the S6a addendum to run:2026-10-30-anim-p3b; `workspace/logs/n66k/check.txt`.

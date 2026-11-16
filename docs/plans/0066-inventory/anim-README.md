@@ -3,9 +3,10 @@
 - **Spec:** [anim/README](../../specs/anim/README.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 13; the *Count* column sums to 13.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
-- **Phase 3 (`lane/n66v`, 2026-11-16): re-tagged.** The spec's front matter is now C 23 / I 9 / L 2 (it was C 14 /
-  I 13). Statement `[C]` whole: rows 2, 5, 9, 12 (4; row 12 on timing J7's `fire` and the S6c callee closure of timing
-  row 94, a judgment call for the review). Split: 1, 3, 6, 7, 10 (5). Kept `[I]` (H6b, d-none): 4, 8, 11, 13 (4).
+- **Phase 3 (`lane/n66v`, 2026-11-16): re-tagged.** The spec's front matter is now C 23 / I 10 / L 2 (it was C 14 /
+  I 13). Statement `[C]` whole: rows 2, 9, 12 (3; row 12 on timing J7's `fire` and the S6c callee closure of timing
+  row 94, accepted at the review). Split: 1, 3, 5, 6, 7, 10 (6; row 5 split at the review: S6c walked the player's
+  frame function only, a monster's stays `[I]`). Kept `[I]` (H6b, d-none): 4, 8, 11, 13 (4).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

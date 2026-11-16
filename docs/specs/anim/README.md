@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, skills/dispatch, combat/overview, monsters/stats, objects, drlg/collision]
 consumed_by: [skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects, monsters/stats]
-tags: {C: 23, I: 9, L: 2}
+tags: {C: 23, I: 10, L: 2}
 updated: 2026-11-16
 ---
 
@@ -86,7 +86,7 @@ rate and mode machine.
 | Kind | Inputs | Outputs | Draws | Tag |
 |---|---|---|---|---|
 | mode start | the mode, type, class, transform states, used skill, weapon items, record, stats, `T` | `+0x10`, the frame fields, the queued kind-0/1 events | an object's `RangeB` on its unit seed when `Sync` is 0 | [C] (run:2026-10-27-anim) |
-| frame event (kind 0) | the code and index | the mode's frame function: the do, the strike | the do's and the hit's (skills, combat), none of the animation's | [C] (fn:sub_00580460_PlrModeSkillFrame@0x00580460: its closure under the modes scan's 19 stops draws nothing, [anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)) |
+| frame event (kind 0) | the code and index | the mode's frame function: the do, the strike | the do's and the hit's (skills, combat), none of the animation's | [C] for a player: `PlrModeSkillFrame`'s closure under the modes scan's 19 stops draws nothing (fn:sub_00580460_PlrModeSkillFrame@0x00580460, [anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)); [I] a monster's frame functions (`MonAttackFrame`, `MonSeqFrame`), which the second tool did not walk (fn:sub_005A7670_MonAttackFrame@0x005A7670) |
 | mode end (kind 1) | the mode | the next mode and its start | the next start's, `PlayerModeAllowed`'s, the hand refresh's (`HandsRefresh`), the AI's | [C] for a player: `PlayerModeEnd`'s body draws nothing, its draws lie below `PlayerModeAllowed`, `PlrModeStartNeutral`, `PlayerDeathModeEnd` and `HandsRefresh` (fn:sub_00581020_PlayerModeEnd@0x00581020, [anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)); [I] the monster ends' AI draws (under the stopped AI entry) |
 | frame advance | every-frame monsters' frame fields | `+0x44`, `+0x4E` | none | [C] (run:2026-10-27-anim) |
 | rate change | the unit's display type, class, mode, record, stats, items, states | `+0x50`, `+0x4C`, `+0x3C`, the path speed | none | [C] (run:2026-10-27-anim) |
