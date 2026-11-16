@@ -81,7 +81,7 @@ class Renderer:
                 for cy in range(d["rows"]):
                     for cx in range(d["cols"]):
                         c = layers[name][cy * d["cols"] + cx]
-                        if not c or c >> 31:
+                        if not c or c >> 31 or (kind == "floor" and ds1.blank_floor(c)):
                             continue
                         o = 0 if kind == "floor" else (orients[cy * d["cols"] + cx] if orients else 0)
                         if o in ds1.SKIP_ORIENT:
@@ -90,6 +90,8 @@ class Renderer:
                         if gx >= gw or gy >= gh:
                             continue
                         cells.append((gx, gy, kind, (o, (c >> 20) & 63, (c >> 8) & 63), own))
+                        if o == 3:                   # second pick for orientation 4 (drlg/0001, 0x0066E9B0)
+                            cells.append((gx, gy, kind, (4, (c >> 20) & 63, (c >> 8) & 63), own))
                         (floor_map if kind == "floor" else wall_map)[gy * gw + gx] = 1
         # isometric composite: floors first, then walls in depth order
         tw, th = self.tw, self.th

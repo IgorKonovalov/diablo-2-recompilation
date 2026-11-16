@@ -946,6 +946,13 @@ def warps_survey(root, exe=None, quiet=False):
 
 TILE_W, TILE_H = 160, 80          # floor diamond in pixels; a cell steps (+80, +40) in x, (-80, +40) in y
 SKIP_ORIENT = (10, 11)            # special-tile orientations, not drawn (docs/formats/ds1.md, Preview)
+
+
+def blank_floor(c):
+    """Floor key (0, 30, 0/1), the blank.dt1 tile: the game forces it hidden (docs/formats/ds1.md, 0x42 floors)."""
+    return (c >> 20) & 63 == 30 and (c >> 8) & 63 in (0, 1)
+
+
 MARKER = 255                      # palette index used to fill the diamond of a missing tile key
 
 
@@ -1175,6 +1182,9 @@ def render_one(f, tiles, max_pixels=60_000_000, hidden=False):
                     continue
                 if c >> 31 and not hidden:
                     st[kind + " skipped (hidden, bit 31)"] += 1
+                    continue
+                if kind == "floor" and blank_floor(c) and not hidden:
+                    st["floor skipped (blank, forced hidden)"] += 1
                     continue
                 o = 0 if kind == "floor" else (orients[cy * cols + cx] if orients else 0)
                 if o in SKIP_ORIENT:
