@@ -1060,7 +1060,8 @@ Part 2 of the batch. The claims are maps of the named functions on declared inpu
   and whose row has bit 4 of `+4` [`m_type3` 246, `m_ge0` 149, `m_lt_n` 179, `m_candestroy` 195]. The type table's
   filters and masks (`0x0084`, `0x0104`, `0x0184`, `0x0185`, `0x0040`, `0x0004`) read from the image as the spec gives
   them (`static.txt` `GCT`, `.data`), but of the four `.text` operands inside the table two are `lea`s (0x005AE30B,
-  0x005AE355) whose uses were not followed for a store, so the mask cells keep their tags. (fn:sub_005A87F0_CollidePlayerOrAlly@0x005A87F0,
+  0x005AE355) whose uses were not followed for a store, so the mask cells keep their tags. *(Part 3, § 19: the two
+  `lea`s followed, no store through them; the mask cells raised.)* (fn:sub_005A87F0_CollidePlayerOrAlly@0x005A87F0,
   fn:sub_005A87B0_CollideMonster@0x005A87B0, fn:sub_005A8850_CollideUnit@0x005A8850,
   fn:sub_005A8890_CollideMissile@0x005A8890, run:2026-11-16-sweep2-s2ae2)
 - [I] *Not covered.* `MonsterOwner`'s game lookup (`0x00552F60`, a guard, never reached) and a type-3 owner with
@@ -1069,6 +1070,71 @@ Part 2 of the batch. The claims are maps of the named functions on declared inpu
   `lvl_lt0~`, `lvl_lt_max~` and `b_cap3~` in both families, `b_cap3n~`), and `spec_any_flag` in `cun` (none of its
   matched pair nodes had a word without bit 3; `filt` and `cpa` separate it on the same code).
   (fn:sub_0058F0D0_MonsterOwner@0x0058F0D0, run:2026-11-16-sweep2-s2ae2)
+
+### 19. Plan 0066 batch S2ae part 3: the mask uses read, `CallDoFunc`, hit 27 and unique mod 29 emulated (2026-11-16, `lane/n66sa`)
+
+Part 3 of the batch. The emulated claims are maps of the named functions on declared inputs (ADR-0015), compared with
+`tools/skills_s2ae3_emu.py`'s model over the kept run
+([run:2026-11-16-sweep2-s2ae3](experiments.md#run2026-11-16-sweep2-s2ae3), `check.txt`, 4 800 cases, 0 mismatches,
+0 stops, 0 unaccounted reads or writes; no import). Brackets give separating control counts (`sep`, each with `passed`
+0). The mask cells rest on a static read of the same run (`masks.txt`, `static.txt`).
+
+- [C] *m40, m41, m42, m45, m46 (the mask cells; with § 18 these rows are whole).* `g_MissileCollideTypes` (0x0073C720,
+  `.data`) holds the nine `(filter, mask)` pairs of § 18 in the image bytes (run2 `static.txt` `GCT`), and no `.text`
+  instruction stores into it. The four operands that name it are two reads (0x0059FD73, 0x005AE303) and two `lea`s in
+  `sub_005AE1F0_MissileMoveCollide`, now followed (`masks.txt`, `stores-through=0`): 0x005AE30B's `EAX` (the filter
+  word) is spilled to `[ebp-0x20]` and dead at the call at 0x005AE325; that slot is written once and read once
+  (0x005AE393), and the read is loaded through (`mov ecx,[eax]` at 0x005AE397, the filter passed to 0x00641CB0).
+  0x005AE355's `EDX` (the mask word) is spilled to `[ebp-0x18]` and dead at 0x005AE375; after that write the slot is
+  read only at 0x005AE370, loaded through at 0x005AE373 (the mask pushed to 0x0064D9B0); the only backward branch,
+  0x005AE3BF, goes to 0x005AE361, after the write. The two frame addresses that leave the function are `[ebp-0x1C]`
+  (to 0x00648F40, which writes one dword there: `static.txt` `pathlist`) and `[ebp-0x34]` (the filters' four-word
+  context, § 18). (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0, 0x005AE30B, 0x005AE355,
+  data:g_MissileCollideTypes@0x0073C720, run:2026-11-16-sweep2-s2ae3)
+- [C] *m73 (G1 table, grim wards).* Hit function 27 (0x005ABA00) returns 1 and pops one argument (`mov eax, 1;
+  ret 4`), whatever `ECX`, `EDX` and the argument hold [`spec_ret0` 300]. (0x005ABA00, run:2026-11-16-sweep2-s2ae3)
+- [C] *m69 (G2), raised in part.* `sub_0056D810_CallDoFunc` (`ECX`, `EDX`; `n`, `skill`, `lvl`; `ret 0xC`) calls
+  `g_SkillDoFuncs[n]` (0x007322B0, `.data`, image bytes) when `n ≤ 0xBE` **unsigned** [`n_le_be` 1 312, `n_le_be~` 203,
+  `spec_signed` (a signed bound) 268] and the entry is non-null [`entry_nz` 943], with `ECX` and `EDX` unchanged (the
+  do function's game and unit: do 14 passes the missile in `EDX`, 0x005AEFFC) and the stack `(skill, lvl)`; `ESI`
+  holds `skill` at the call. Otherwise it returns with `EAX` = `n` (past the bound) or 0 (a null entry). 132 of the
+  152 distinct non-null entries were reached as observed boundaries. The direct-call scan finds two callers, 0x005AD03C
+  (hit 23) and 0x005AF000 (do 14), and entry 30 is 0x005C37C0 (`SkillDo30Curse`); the five `.text` operands naming the
+  table are reads (`static.txt` `CALLERS`, `DOF`, `DOF-REF`). (fn:sub_0056D810_CallDoFunc@0x0056D810,
+  data:g_SkillDoFuncs@0x007322B0, run:2026-11-16-sweep2-s2ae3)
+- [I] *m69's remainder.* What do 30 then does (the creator's `auratargetstate` around the missile's path target) is not
+  run here: its direct calls reach no allocator to depth 4, but `SKILLS_EvalCalc` (0x00646CA0) brings 5 indirect calls
+  (`sites.txt`). (fn:sub_005C37C0_SkillDo30Curse@0x005C37C0)
+- [C] *m21 (B1), raised in part, to the first creation.* `sub_005A43B0_MissileOwnerUModEvent` (`ECX` game, `EDX`
+  monster; missile; `ret 4`) does nothing for a null monster, a monster whose type is not 1, or a null missile
+  [`e_mon` 2 256, `e_type1` 2 348, `e_arg` 2 222]; else `sub_005A4270_UModEventRun(game, missile, 5)` with `EBX` the
+  monster: with monster data and a non-zero first unique-mod byte at data `+0x1C` [`r_data` 2 261, `r_first` 2 361], it
+  walks **all nine** bytes (a 0 later in the list does not stop it) and calls each non-null
+  `g_UModEventFns[6 · mod + 5]` [`r_fn` 2 377] with `ECX` game, `EDX` the missile and the stack `(mod, flag)`, `flag`
+  being bit 3 of the monster data's byte `+0x16`; mods 19 (0x005A2E00) and 27 (0x005A30B0) were observed boundaries.
+  Mod 29's function (0x005A3610) returns without creating unless `flag` is set, the missile is type 3, its owner
+  (`UnitGetOwner`: `+0xC8` bit 10, then `GameFindUnit(game, +0x94, +0x98)`, a bucket walk by `+0x0C` along `+0xE4`) is
+  found, its signed class lies in the Missiles count, the row's `+5` bit 4 is clear and the owner (a monster with data)
+  lacks data `+0x16` bit 0x80 [`z_flag` 1 043, `z_type3` 994, `o_bit10` 1 039, `z_owner` 1 165, `z_cls_ge0` 1 037,
+  `z_cls_lt` 1 060, `z_rowbit` 980, `z_busy` 1 018]. Then the point `(x0, y0)` is the owner's path target after
+  `PathTargetRevalidate` (cleared when `GameFindUnit` by the path's `+0x5C`/`+0x60` finds another unit, or an item in
+  mode 1 or 2; a target that is the owner counts as none) [`t_has` 380, `t_moved` 691, `t_item` 214, `t_mode12` 167,
+  `t_self` 559, `z_tgt` 939], else the missile's path position (`+0x10`, `+0x12`). The local seed is
+  `RNG_SeedInit(0x53454953)`, after which its high word is overwritten with the owner's `+0x0C`; nothing reads it
+  before the first creation (the two words in the observed frame). `(dx, dy)` are the signs of the owner's
+  sub-tile position minus `(x0, y0)`, both 0 for classes 0x3F–0x42 [`z_c3f` 771, `z_c42` 398, `spec_no_zero` 230]; a
+  monster owner with data gets `+0x16 |= 0x80` [`z_ownmon` 727, `z_owndata` 510]; the first creation is
+  `sub_0056ECB0_SkillMissileCreate(game, class; owner, MISSDATA_GetSkill (+0x0A), MISSDATA_GetLevel (+0x0C), 0, 0,
+  x0 − dy, y0 + dx, 0)` [`spec_same_side` (the other side first) 709]. (fn:sub_005A43B0_MissileOwnerUModEvent@0x005A43B0,
+  fn:sub_005A4270_UModEventRun@0x005A4270, 0x005A3610–0x005A37C8, fn:sub_00552F60_GameFindUnit@0x00552F60,
+  fn:sub_00553490_PathTargetRevalidate@0x00553490, data:g_UModEventFns@0x0073C0B8, run:2026-11-16-sweep2-s2ae3)
+- *m21's remainder → b (H2a).* The second creation (`x0 + dy, y0 − dx`, 0x005A37AB) and the clear of bit 0x80 after it
+  come after the first creation's allocation: 0x005A377C → `SkillMissileCreate` → `MissileCreate` → `SUnitCreate`, pool
+  allocation 0x0040B430 at 0x005553BE (`sites.txt`). Before 0x005A377C no call reaches the allocator or an import
+  (`sites.txt`, to depth 3 below each call; each of those callees also ran whole in `uev` with no guard reached).
+- [I] *Not covered.* A monster owner with no data block (every type-1 owner drawn had one: `reach.txt` `z_owndata`
+  false 0), unique-mod bytes above 42 (the table rows past them are not read as code pointers here) and owner or
+  target types above 5 (`GameFindUnit` reads address 0 for them). (run:2026-11-16-sweep2-s2ae3)
 
 ## Data touched
 
