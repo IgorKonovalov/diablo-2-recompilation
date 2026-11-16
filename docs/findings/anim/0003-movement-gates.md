@@ -701,8 +701,8 @@ return 0;
 - [L] Whether any stock source gives a moving `X` of 854 (a monster with `Velocity` 15) or 2 134 (a player) or more,
   where the step product wraps (§ 2); not surveyed.
 - [L] The readers of `Unit+0xB0` (the stored hit class) on the server.
-- [L] What the 44 unread `FrameCnt1 >> 8` queue sites schedule (other operate kinds, portals, quest objects), and
-  `0x00679720` (the knockback point's adjustment).
+- [L] What the 44 unread `FrameCnt1 >> 8` queue sites schedule (other operate kinds, portals, quest objects).
+  (`0x00679720`, the knockback point's adjustment, is `PathLineFree`: § 4's S6f note, plan 0066 S6f.)
 - [L] Whether a player under stun is refused anything other than through the get-hit it takes; no state-21 test was
   found in `PlrModeLeaveOk` or `PlayerModeAllowed`.
 - ~~Whether an every-frame event queued during a frame's monster or player list run first runs in that frame or the
