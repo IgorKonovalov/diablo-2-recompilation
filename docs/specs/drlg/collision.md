@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [drlg/overview, drlg/room-tiles, drlg/preset, drlg/warps, rng]
 consumed_by: [monsters/spawn, objects, chain, path/overview, path/search]
-tags: {C: 183, I: 70, L: 11}
-updated: 2026-11-04
+tags: {C: 183, I: 71, L: 11}
+updated: 2026-11-16
 ---
 
 # Room collision grid, unit marks, logic regions and the spawn position tests
@@ -381,7 +381,10 @@ E3. PlusTest(hint, x, y, mask):                                   [C] (fn:COLL_P
 
 E4. RectTest(hint, Q = {left, top, right, bottom} inclusive, mask):   [C] (fn:COLL_RectTest@0x0064CEB0, fn:COLL_RectSplit@0x0064CDF0, run:2026-10-14-collision)
       r ← RoomAtSubtile(hint, Q.left, Q.top)
-      if r = none or r has no cells: return 0x27
+      if r = none or r has no map: return 0x27                    ; 0x0064CEDE. [I] the map's cell pointer is not tested: with a null
+                                                                  ; one fn:COLL_RectTestInMap@0x0064CC30 reads 0 + 2·index (0x0064CCA0),
+                                                                  ; a fault in the game; whether a stock map has one is not read
+                                                                  ; (run:2026-11-16-sweep2-s7e, family ffn)
       pieces ← RectSplit(Q, r);  if pieces is empty: return 0x27
       res ← OR over the cells of pieces[0] of (cell & mask)
       for k ≥ 1: res ← res | RectTest(r, pieces[k], mask)          ; recursive, hint = r

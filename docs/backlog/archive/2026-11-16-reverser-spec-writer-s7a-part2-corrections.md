@@ -2,13 +2,13 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../findings/path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n
-  - ../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n
-  - ../findings/frame/0001-tick-and-messages.md#9-plan-0066-batch-s7a-part-2-the-frames-reach-to-the-packet-senders-2026-11-16-lanen66n
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n
+  - ../../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n
+  - ../../findings/frame/0001-tick-and-messages.md#9-plan-0066-batch-s7a-part-2-the-frames-reach-to-the-packet-senders-2026-11-16-lanen66n
+resolution: "Done 2026-11-16 in plan 0066 Phase 3, frame cluster (lane/n66pf): path/README's SizeY bullet names the two AI removals, drlg/lifecycle lists ItemPlaceOnGround's 12 calls, sim/frame Outputs states the one-byte 0xB0 send inside the frame, path/README D4 adds flag 0x40 [log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-frame-cluster-re-tagged-spec-writer-lanen66pf)"
 ---
 
 Plan 0066 batch S7a part 2 (lane/n66n) contradicted three spec statements in part and corrected one; each needs the spec text changed after the review.

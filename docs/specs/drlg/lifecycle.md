@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, sim/frame, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain, monsters/ai/overview, monsters/ai/machinery, sim/frame]
-tags: {C: 103, I: 78, L: 9}
-updated: 2026-11-04
+tags: {C: 147, I: 52, L: 8}
+updated: 2026-11-16
 ---
 
 # Room lifecycle: activation, release, the inactive records and the restore
@@ -44,10 +44,10 @@ stateDiagram-v2
 
 | When | Function | Tag |
 |---|---|---|
-| Every game frame | fn:sub_0052D870_GameTick@0x0052D870 | [I] |
+| Every game frame | fn:sub_0052D870_GameTick@0x0052D870 | [C] (5 500 frames, one tick each, run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3, [drlg/0009 § 14](../../findings/drlg/0009-room-lifecycle.md#14-plan-0066-batch-s7b-the-frame-windows-room-and-timer-lines-2026-11-16-lanen66o)) |
 | A client's room changes | fn:sub_00537B50_ClientRoomChange@0x00537B50 → fn:sub_0061B6F0_DrlgRefMove@0x0061B6F0 | [C] |
 | A room gains its first distance-1 reference | fn:sub_0061B2D0_DrlgEnter1Activate@0x0061B2D0 → fn:sub_0061B190_RoomActivateA@0x0061B190 | [C] |
-| A room is needed at once (warp, waypoint, level point, preset level build) | fn:sub_0061B730_RoomActivateB@0x0061B730 | [I] |
+| A room is needed at once (warp, waypoint, level point, preset level build, a unit spawn at coordinates) | fn:sub_0061B730_RoomActivateB@0x0061B730; for the spawn through fn:sub_0061B7B0_RoomAtCoordsActivate@0x0061B7B0 | [C] the ten direct calls: nine in the four families, the tenth (0x0061B7CA) in 0x0061B7B0, the room at given coordinates, whose one caller 0x0061A140 is called only from 0x00553790 in `PortalPartnerGet` ([drlg/0009 § 12](../../findings/drlg/0009-room-lifecycle.md#12-plan-0066-batch-s7a-part-1-caller-and-pin-scans-with-a-second-tool-2026-11-16-lanen66n)); [I] what reaches the spawn at coordinates (fn:sub_00553720_PortalPartnerGet@0x00553720) |
 | New rooms of an act, start of the next frame | fn:sub_0052D160_NewRoomsUpdate@0x0052D160 | [C] |
 | Release pass, `frame mod 12 = 0` | fn:sub_0052D240_RoomsDeactivate@0x0052D240 | [C] |
 | Save test per unit of a released room | fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0 | [C] |
@@ -100,7 +100,7 @@ stateDiagram-v2
 | life kept | 7500 frames, unsigned test | 0x00542819 | [C] (run:2026-10-17-lifecycle) |
 | item expiry | frame + 15000, 30000 or 45000; 0 never | fn:sub_00558A10_ItemGroundExpiry@0x00558A10 | [C] for every branch, emulated to the return (ADR-0015, run:2026-11-04-ground-emu); logged in the game for the branches G1 counts (run:2026-10-17-lifecycle) |
 | restored item expiry floor | frame + 15000 | fn:sub_00541990_InactiveItemRestoreOne@0x00541990 | [C] (run:2026-10-17-lifecycle) |
-| wanderer gate | `low & 0x7FFF = 0` | 0x0054F089 | [C] (run:2026-10-17-lifecycle), the mask's width [I] (§ I) |
+| wanderer gate | `low & 0x7FFF = 0` | 0x0054F089 | [C] (run:2026-10-17-lifecycle), the mask's width under emulation (family `wtick`, run:2026-11-16-sweep2-s7e, [frame/experiments](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e); § I) |
 | wanderer roll | `low mod 100 < 3`, region `+0x2C4` < 3 | 0x0054F024–0x0054F041 | [C] for the draw and the `mod 100` ≥ 3 return (run:2026-10-21-sweep-monsters-a), [I] for the region test and the pass below 3 (fn:sub_0054EFF0_WandererRoll@0x0054EFF0) |
 | wanderer list | act I: class 270 (`rogue2`), start 0, count 1; other acts count 0 | 0x00731B2C, 0x00731B30 | [C] (objdump and r2 of the image; the only code naming them are the readers at 0x0054EF64, 0x0054EF71 and 0x0054EF92, fn:sub_0054EF50_WandererSpawn@0x0054EF50, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a)) |
 
@@ -110,26 +110,27 @@ stateDiagram-v2
 
 The whole frame, its passes named and its order evidence stated, is [sim/frame § B](../sim/frame.md#b-gametick). This section keeps the rooms' part of it.
 
-- [I] `NewRoomsUpdate` (rank 3, § D), the unit events, where players move (ranks 4 to 13), `ClientsRoomSync` (rank 14, § B, § C), `RoomsDeactivate` at `frame mod 12 = 0`
-(rank 18, § E), the level-unload tick at `frame mod 11 = 0` (rank 19, § E5) and the sweep tick every frame (rank 20, below). (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D8EB, 0x0052D938)
+- [C] `NewRoomsUpdate` (rank 3, § D), the unit events, where players move (ranks 4 to 13), `ClientsRoomSync` (rank 14, § B, § C), `RoomsDeactivate` at `frame mod 12 = 0`
+(rank 18, § E), the level-unload tick at `frame mod 11 = 0` (rank 19, § E5) and the sweep tick every frame (rank 20, below): 0 inversions over 58 678 ranked lines, and the 84 server releases of a walked act each after its frame's rank-18 line. (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D8EB, 0x0052D938, run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3, [drlg/0009 § 14](../../findings/drlg/0009-room-lifecycle.md#14-plan-0066-batch-s7b-the-frame-windows-room-and-timer-lines-2026-11-16-lanen66o))
 
-- [I] The remainders are signed `%` on the incremented frame. A room activated in frame N by the client sync is
-populated or restored by `NewRoomsUpdate` at the start of frame N+1. (fn:sub_0052D870_GameTick@0x0052D870,
-fn:sub_0052D440_ClientsRoomSync@0x0052D440, fn:sub_005380D0_ClientRoomSync@0x005380D0)
+- [C] The remainders are taken on the incremented frame (every timer line at its due frames only, 5 500 frames). A room activated in frame N by the client sync is
+populated or restored by `NewRoomsUpdate` at the start of frame N+1 (80 of 80). (fn:sub_0052D870_GameTick@0x0052D870,
+fn:sub_0052D440_ClientsRoomSync@0x0052D440, fn:sub_005380D0_ClientRoomSync@0x005380D0, run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3, [drlg/0009 § 14](../../findings/drlg/0009-room-lifecycle.md#14-plan-0066-batch-s7b-the-frame-windows-room-and-timer-lines-2026-11-16-lanen66o)) [I] The `%` is signed (no negative frame met).
 - [C] The release pass runs on every frame with `frame mod 12 = 0` (15 614 passes), and the new active rooms of a
 client's room change are walked at the start of the next frame. (run:2026-10-17-lifecycle,
 fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
-- [I] Three other callers populate a room at once through `RoomUpdateOne` (the same body for one room): a unit spawn
+- [C] Three other callers populate a room at once through `RoomUpdateOne` (the same body for one room): a unit spawn
 at coordinates whose room was not active (`0x0055379D`), the creation of a portal's other end at a level point
-(`0x0056CF7D`) and a quest spawn in level 40 (`0x0059E018`). (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0)
-- [I] **The expiry sweep of item records runs every 1 500 frames.** `GameTick` calls 0x0052D310 on every frame
+(`0x0056CF7D`) and a quest spawn in level 40 (`0x0059E018`); no jump or absolute reference names it. (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, [drlg/0009 § 12](../../findings/drlg/0009-room-lifecycle.md#12-plan-0066-batch-s7a-part-1-caller-and-pin-scans-with-a-second-tool-2026-11-16-lanen66n))
+- [C] **The expiry sweep of item records runs every 1 500 frames.** `GameTick` calls 0x0052D310 on every frame
 (0x0052D96C). That function computes `frame mod 1500` (a signed `idiv` by `0x5DC`, 0x0052D310–0x0052D320) and, when it
-is 0, calls 0x00558B90 and the sweep 0x00542AC0 for acts 0 to 4 (0x0052D322–0x0052D33D). The sweep frees an act's item
+is 0, calls 0x00558B90 and the sweep 0x00542AC0 for acts 0 to 4 (0x0052D322–0x0052D33D): the sweep's line at the two
+in-window frames ≡ 0 mod 1500 and at no other of 5 500, none at the 9 ≡ 750 (run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3, [drlg/0009 § 14](../../findings/drlg/0009-room-lifecycle.md#14-plan-0066-batch-s7b-the-frame-windows-room-and-timer-lines-2026-11-16-lanen66o)). [I] The sweep frees an act's item
 records whose expiry is non-zero and below the game frame (0x00542AF0–0x00542AFF). The `frame mod 20` call is
 0x00543E10, not the sweep; this spec's earlier "20-frame sweep" was that call. run:2026-10-17-h7a-lifecycle agrees and
 excludes a 20-frame sweep: five records with expiries 18 720 and 18 324 were still present at frame 19 158, and the
 1 500-frame sweep has no pass between those expiries and that frame (18 000 and 19 500). No pass fell between an expiry
-and its restore, so in a game the records' period stays a reading. (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D310, 0x00542AC0,
+and its restore, so that the pass frees records in a game stays a reading. (fn:sub_0052D870_GameTick@0x0052D870, 0x0052D310, 0x00542AC0,
 [drlg/0009 § 11.3 (4)](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle))
 - [C] (ADR-0021) **The tick's map**: the period 1 500, acts 0 to 4, an act's items before its records, up to the first unit reached or record freed. Family `sweep` of run:2026-10-30-frame-emu-3 (a period of 20 fails 34 of 300, acts 4..0 fails 73); the code's map, not a game. (fn:sub_0052D310_ExpirySweepTick@0x0052D310, run:2026-10-30-frame-emu-3)
 - [C] (ADR-0021) **The other call of that pass, `0x00558B90`, sweeps ground items in active rooms.** A type-4 unit with
@@ -153,7 +154,7 @@ active: 22 of 22 restored copies resolved. A saved 0 staying 0 is not observed (
 0x005419F5, fn:sub_00541990_InactiveItemRestoreOne@0x00541990)
 - [C] **`ItemPlaceOnGround` writes `ItemGroundExpiry` at once**: logged for qualities 1 to 8 and the filler, 80 of 80, and swept at the
 first multiple of 1 500 at or past it for quality 2, 4 of 4. (run:2026-11-04-inventory-2, run:2026-11-04-inventory, fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0)
-- [I] Its callers beyond `CursorDrop` are a reading: an overflow, `DropGoldAmount`, NPC menus, the cube's. (fn:sub_0055A090_DropGoldAmount@0x0055A090, fn:sub_00563840_CubeDropEmptied@0x00563840)
+- [C] `ItemPlaceOnGround` has 12 direct calls in 11 functions, no jump or pointer: `CursorDrop`; an overflow, `BeltOverflow` and `CorpseOverflowDrop`; `DropGoldAmount`; `NPC_MenuAction` three times; `CubeDropEmptied`; `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate` and `TargetBeltItemToGround`. (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0, fn:sub_0055A090_DropGoldAmount@0x0055A090, fn:sub_00563840_CubeDropEmptied@0x00563840, fn:QUESTS_GiveItem@0x005466B0, fn:sub_0055A200_DropEar@0x0055A200, fn:PLAYER_CorpseCreate@0x0057F700, fn:sub_005A30E0_TargetBeltItemToGround@0x005A30E0, [drlg/0009 § 13](../../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n)) [I] What each caller drops is the callers' reading.
 
 ### B. Activation: reference counts per near-list distance
 
@@ -239,21 +240,22 @@ all of them. The order inside each walk (the add walk recurses before its enter 
 the leave callback, then recurses, and skips null entries), the leave callbacks and `Recompute` are the instruction-level
 reading of [drlg/0009 § 2](../../findings/drlg/0009-room-lifecycle.md#2-activation). (run:2026-10-17-lifecycle,
 fn:sub_0061B6F0_DrlgRefMove@0x0061B6F0, fn:sub_0061B390_DrlgRefAddNear@0x0061B390, fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0)
-- [I] A reference counts paths, not rooms: a room reached through several near lists at the same distance holds one
+- [C] A reference counts paths, not rooms: a room reached through several near lists at the same distance holds one
 reference per path, so distance-3 counts in the tens are normal (the worked example's room had refs (0, 0, 4, 39) at
-its enter-1 call). (fn:sub_0061B390_DrlgRefAddNear@0x0061B390, run:2026-10-17-lifecycle)
-- [I] On the server a client therefore activates every room of its room's near list (which holds the room itself,
-drlg/0005) and prepares the files of the
-rooms at distance 2 and 3. With several clients the counts add up, so the activation set is the union of theirs; no
+its enter-1 call). Over every logged move 253 936 of 253 936 (room, distance) deltas equal the walks counted per path; counted per room, 71 894 differ and the log differs from all of them. (fn:sub_0061B390_DrlgRefAddNear@0x0061B390, run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m))
+- [C] On the server a client therefore activates every room of its room's near list (which holds the room itself,
+drlg/0005): after each move every room of the new room's near list is active with status ≤ 1, 9 944 of 9 944 (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)). [I] It prepares the files of the
+rooms at distance 2 and 3 (`+0x28`, not checked). With several clients the counts add up, so the activation set is the union of theirs; no
 multiplayer game was logged (plan 0044). (fn:sub_0061B490_DrlgRefAdd@0x0061B490, struct:DrlgRoomLife+0x0C)
 - [I] `RoomActivateA` adds to the build of `DRLG_RoomActivate` ([room-tiles](room-tiles.md)) only the neighbour step
 when `+0x2C` = 0, the re-seed and type init, and two act counters (`+0x98` byte, `+0x08`); enter 1 also resets the
-act's background countdown. `DUNGEON_RoomCreate` prepends the active room to the act list (`act +0x10`), sets the act's
-new-rooms flag `+0x54` = 1, and gives the room flags `+0x34` = 4 on a client act, else the DRLG room's `+0x60` bit 0.
-(fn:sub_0061B190_RoomActivateA@0x0061B190, fn:DRLG_RoomActivate@0x006422A0, fn:DUNGEON_RoomCreate@0x00619890)
-- [I] `RoomActivateB` is the on-demand variant (warp destination, waypoint room, level point, preset level build): it
-also builds the DT1 list and loads the DS1 when missing, does nothing for a built room, and returns the active room. A
-room activated this way gets **no reference**: its status stays 4 and only the idle timer of § E releases it.
+act's background countdown. (fn:sub_0061B190_RoomActivateA@0x0061B190, fn:DRLG_RoomActivate@0x006422A0) [C] `DUNGEON_RoomCreate` prepends the active room to the act list (`act +0x10`), sets the act's
+new-rooms flag `+0x54` = 1, and gives the room flags `+0x34` = 4 on a client act: the act lists modelled by the prepend equal all 23 later walks, a walk follows exactly the acts flagged (30), and the 85 rooms of client acts carry 4. (fn:DUNGEON_RoomCreate@0x00619890, run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3, [drlg/0009 § 14](../../findings/drlg/0009-room-lifecycle.md#14-plan-0066-batch-s7b-the-frame-windows-room-and-timer-lines-2026-11-16-lanen66o)) [I] On a server act the flags are the DRLG room's `+0x60` bit 0 (the logged 0 or 1, 84, not compared with the bit).
+- [C] `RoomActivateB` is the on-demand variant (warp destination, waypoint room, level point, preset level build, a unit
+spawn at coordinates): it builds a room only when it is not active (a `DRLG_RoomActivate` follows exactly when `+0x30` = 0,
+7 690 calls, 244 on an unbuilt room). A room activated this way gets **no reference**: one it built at status 4 that no
+later move references is active at status 4 at the next release pass (158 of 158). (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)) [I] It also builds the
+DT1 list and loads the DS1 when missing and returns the active room, and only the idle timer of § E releases such a room.
 (fn:sub_0061B730_RoomActivateB@0x0061B730)
 - [C] A room that `RoomActivateB` activates during the population pass, after the act's walk has passed it (callers
 `0x0066ADB1` and `0x0066B3C5`), is released before any walk reaches it if no new room arrives meanwhile (3 rooms). Its
@@ -281,8 +283,9 @@ C1. after the reference move, ClientRoomChange compares the near sets:   [C] (fn
 - [I] In general `+0x78` is the number of clients whose current room's near list holds the room; the list `+0x48` is
   kept sorted by pointer. (fn:sub_0061A660_RoomClientAdd@0x0061A660, fn:sub_0061A700_RoomClientRemove@0x0061A700,
   fn:DUNGEON_GetNearRooms@0x00619790, struct:DungeonRoomLife+0x78)
-- [I] A room just activated by a client already has `+0x78` ≥ 1 at its first walk, because the same `ClientRoomChange`
-  fills the list. (fn:sub_00537B50_ClientRoomChange@0x00537B50, struct:DungeonRoomLife+0x78)
+- [C] A room just activated by a client already has `+0x78` ≥ 1 at its first walk, because the same `ClientRoomChange`
+  fills the list: 3 111 of 3 111 rooms activated by a client's move; after `RoomActivateB` 118 of 153 have 0.
+  (fn:sub_00537B50_ClientRoomChange@0x00537B50, struct:DungeonRoomLife+0x78, run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m))
 
 ### D. The new-rooms walk: populate once, restore once per activation
 
@@ -305,10 +308,11 @@ D1. NewRoomsUpdate(game):                                         [C] (fn:sub_00
   `+0x60` bit 0, which becomes its flags bit 0, is 1 exactly when the room was walked or restored before its release
   (1 414 re-activations). So a re-activated room is **never populated again**: its units come back only from the
   records. (run:2026-10-17-lifecycle, fn:sub_0052D160_NewRoomsUpdate@0x0052D160, fn:sub_00642390_LevelRoomStateRestore@0x00642390)
-- [I] No code clears bit 1 (every caller of `RoomRestoredSet` passes 1), and it lives in the active room, which a release
-  frees: the restore runs once per activation. (fn:sub_0061A4D0_RoomRestoredGet@0x0061A4D0,
+- [C] Every caller of `RoomRestoredSet` passes 1 (three calls, the third's `EBX` set to 1 at 0x0052D19B, [drlg/0009 § 12](../../findings/drlg/0009-room-lifecycle.md#12-plan-0066-batch-s7a-part-1-caller-and-pin-scans-with-a-second-tool-2026-11-16-lanen66n)). [I] No other
+  code clears bit 1, and it lives in the active room, which a release frees: the restore runs once per activation. (fn:sub_0061A4D0_RoomRestoredGet@0x0061A4D0,
   fn:sub_0061A510_RoomRestoredSet@0x0061A510, 0x0052D20C, 0x0052D12C, 0x0052D14A)
-- [I] On a first activation the restore finds no record and draws nothing ([objects § B](../objects/README.md#b-the-window-in-the-room-driver-and-the-revisit) B2);
+- [C] On a first activation the restore finds no record and draws nothing (no record and both seeds unchanged in 1 459
+  first activations, run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)) ([objects § B](../objects/README.md#b-the-window-in-the-room-driver-and-the-revisit) B2);
   the presets, objects and population are [drlg/preset § 6](preset.md#6-handover-to-the-server-spawners-boundary),
   [objects](../objects/README.md) and [monsters/spawn § A](../monsters/spawn.md#a-when-the-pass-runs-and-the-room-seed-before-it).
   (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40)
@@ -358,7 +362,7 @@ E2. RoomReleaseAllowed(act, room) → bool:                         [C] (fn:sub_
         if any DRLG room of the level has status < 2: return false   ; [I] for level 120, not reached (0x0061BA30)
       return true
 
-E3. ActiveRoomFree(act, room):                                    [I] (fn:sub_0061A910_ActiveRoomFree@0x0061A910, fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:DUNGEON_RoomFree@0x0061A840)
+E3. ActiveRoomFree(act, room):                                    [C] the unlink and R[+0x30] ← 0: 3 212 freed rooms absent from the next pass's list, `+0x30` = 0 until re-activation (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)); [I] the near-list removal, the unit bits and the order (fn:sub_0061A910_ActiveRoomFree@0x0061A910, fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:DUNGEON_RoomFree@0x0061A840)
       unlink room from the act list
       for each neighbour of room's near list but room itself: remove room (swap with the last entry)
       RoomReleaseWrap(R ← room.drlg, EDX ← act[+0x50], room.flags):
@@ -386,7 +390,7 @@ DRLG room and its second argument to `DrlgRoomPinFlag`, its one caller). `Portal
 both portal ends (0x0056D29E, 0x0056D2AC), and two sites that free an object unit clear it (0x005354C5, 0x00584C12).
 In the run the pin was an input: six set calls came from portal and object code, and no clear call was seen.
 (fn:sub_0061AED0_RoomPinSet@0x0061AED0, fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0, fn:sub_0056D130_PortalObjectCreate@0x0056D130)
-- [I] **The 31 pin sites.** `RoomPinSet` has 31 direct call sites in 24 functions: 18 set the pin and 13 clear it. The
+- [C] **The 31 pin sites.** `RoomPinSet` has 31 direct call sites in 24 functions ([drlg/0009 § 12](../../findings/drlg/0009-room-lifecycle.md#12-plan-0066-batch-s7a-part-1-caller-and-pin-scans-with-a-second-tool-2026-11-16-lanen66n)): 18 set the pin and 13 clear it. The
 setters are `PortalObjectCreate` (both ends), the quest functions `A1Q4_GibbetOperate`, `A1Q4_StoneOperate`,
 `A1Q5_DeathSpawn`, `A2Q6_StaffPlaced`, `A5Q2_MonsterDeath`, `A5Q2_CageFreed`, `A5Q3_FrozenAnyaOperate`,
 `A5Q5_StatuesArm`, one branch of `A5Q5_KeepDoorOperate` and `A5Q6_BaalDeath`, `SealObjectCreate`, a function called
@@ -416,8 +420,8 @@ fn:sub_00642010_LevelUnload@0x00642010)
   (2 440 releases); every client release has `EDX` 0 and leaves it clear (8 277). This follows from the wrapper, which
   passes the logical not of its own `EDX` (the DUNGEON act's `+0x50`, 0 on the server): `0x200000` reads "released by
   the server". (run:2026-10-17-lifecycle, 0x0066B4DE–0x0066B4E0, 0x0061A9D0, 0x0066F232, fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0)
-- [I] No reader of `0x200000` was found: the only `+0x28` access with that immediate is the write at 0x0066F232.
-  (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, 0x0066F232)
+- [C] No reader of `0x200000` was found: the only `+0x28` access with that immediate is the write at 0x0066F232, and no
+  register test of the bit is on a `+0x28` load. (fn:sub_0066F1A0_RoomTilesRelease@0x0066F1A0, 0x0066F232, [drlg/0009 § 13](../../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n))
 
 ### F. The save rule
 
@@ -464,7 +468,7 @@ F1. InactiveUnitSaveTest(game, u):                                [C] (fn:sub_00
       else:    (if save: record) and free u
       record: InactiveRecordSave(u) → monster record, item record, or unit record    ; § G
 
-F2. InactiveMonsterSaveTest(game, u) → (save, kept), in this order:   [I] (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0, fn:sub_00642820_LevelSaveMonsters@0x00642820)
+F2. InactiveMonsterSaveTest(game, u) → (save, kept), in this order:   [C] where the order separates: 3 of 3 monsters whose mode-12 draw cleared `save` and whose `restore` is 2 were saved (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)); [I] the rest, tests 3, 4, 6, 7 not reached (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0, fn:sub_00642820_LevelSaveMonsters@0x00642820)
       lvl ← the level of u's current room
       save: bool ← Levels[lvl].SaveMonsters ≠ 0 or u[+0xC4] & 0x2000000      ; [C] when either is set (run:2026-10-17-lifecycle); [I] when both are clear, never met (0x005431F9–0x0054322A)
       kept: bool ← false
@@ -506,8 +510,9 @@ always saved and kept (unit `+0xC8 |= 0x100`); no kept unit was met. (fn:sub_005
 - [C] **No logged dead champion was saved.** `MonMarkSpecial` sets monster flag `0x08`; all 15 champions in 30 save
 tests carried flags `0x0D` or `0x2D`, and the 6 dead ones were freed by test 5. (run:2026-10-17-lifecycle,
 fn:sub_005A0320_MonMarkSpecial@0x005A0320, 0x005432EF)
-- [I] So a dead champion is not saved on stock data: every server write of the champion bit `0x04` to monster data
-`+0x16` comes after `MonMarkSpecial` on the same unit, and no server instruction clears `0x08`. The four writes are
+- [C] The `or` writes of the champion bit `0x04` to monster data `+0x16` are three, and no `and` or `btr` clears `0x08` there
+(one in a CRT frame) ([drlg/0009 § 13](../../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n)). [I] So a dead champion is not saved on stock data: each such write comes after `MonMarkSpecial` on the same unit, and no
+whole-field write clears `0x08`. The three writes are
 `SpecialModsRoll` (0x005A083E), reached from `SpecialMonSpawn` only when `SpecialMonPlace` gave a unit and from
 `MonMakeSpecial` after its own `MonMarkSpecial` (0x005A496E); `SpecialMonRestore` (0x005A44A3), after `SpecialMonPlace`
 returned a unit; and `ChampionMemberMark` (0x005A4905), after `MonMarkSpecial` (0x005A48F4). `SpecialMonPlace` marks
@@ -516,19 +521,22 @@ every unit it creates (0x005A0B61), and `MonMarkSpecial` ORs `0x08` into any mon
 fn:sub_005A0320_MonMarkSpecial@0x005A0320, fn:sub_005A0760_SpecialModsRoll@0x005A0760,
 fn:sub_005A09E0_SpecialMonPlace@0x005A09E0, fn:sub_005A4440_SpecialMonRestore@0x005A4440,
 fn:sub_005A48C0_ChampionMemberMark@0x005A48C0, fn:sub_005A4940_MonMakeSpecial@0x005A4940)
-- [I] A player's own room is always in its near set, so a released room holds no live player; units that the walk
-does not save and does not keep are freed with the room, and are gone for good. (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0)
+- [C] A player's own room is always in its near set, so a released room holds no live player (0 of 12 476 save tests a
+player's, no freed room the client's current room, every new client room in its own near list, 1 144; run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)); units that the walk
+does not save and does not keep are freed with the room, and are gone for good (1 291 such monsters never met again). (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0)
 
 ### G. The records
 
 All records of a released room hang off one 0x18-byte **room record**, found or inserted by the room's x and y in the
-act's list. Each save **prepends** to its list; since the unit walk is newest first, every list ends up oldest first.
+act's list. Each save **prepends** to its list; since the unit walk is newest first, every list ends up in the walk's
+reverse, called "oldest first" below: the list's order, not the units' age (unit ids rise along 372 of 563 logged
+multi-record restores, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)).
 
 | Record | Size | Fields (offset: meaning) | Tag |
 |---|---|---|---|
-| room record | 0x18 | `+0x00` x, `+0x04` y (the key); `+0x08` item list; `+0x0C` monster list; `+0x10` unit list; `+0x14` next (x descending) | [I] (fn:sub_00541D20_InactiveRoomRecordFind@0x00541D20, struct:InactiveRoomRec+0x00) |
+| room record | 0x18 | `+0x00` x, `+0x04` y (the key); `+0x08` item list; `+0x0C` monster list; `+0x10` unit list; `+0x14` next (x descending) | [C] (two inserters, each walk stopping at the first lower x; the three heads' writers and `InactiveRecordTake`; fn:sub_00541D20_InactiveRoomRecordFind@0x00541D20, struct:InactiveRoomRec+0x00, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)) |
 | unit record | 0x34 | objects § B4's record (x, y, type, class, mode, frame, `+0xC4`, `+0xC8`, `+0x20` unit id or shrine timer, `+0x24` sparkle or timer, `+0x28` interact, `+0x2C` unit `+0xB8`); also type 5 and a kept player corpse | [C] (3 037 records, run:2026-10-17-lifecycle, fn:sub_00542E10_InactiveRecordSave@0x00542E10, struct:InactiveUnitRec+0x20) |
-| item record | 0x0F + n | `+0x00` next; `+0x04` expiry; `+0x08` `0x00629F20(item)`; `+0x0C` n; `+0x0E` the bytes of `ITEMS_Serialize(item, buf, 0x400, 1, 1, 0)`, socketed children included | [I] (fn:sub_00541B10_InactiveItemSave@0x00541B10, fn:ITEMS_Serialize@0x006313E0, struct:InactiveItemRec+0x04) |
+| item record | 0x0F + n | `+0x00` next; `+0x04` expiry; `+0x08` `0x00629F20(item)`; `+0x0C` n; `+0x0E` the bytes of `ITEMS_Serialize(item, buf, 0x400, 1, 1, 0)`, socketed children included; no restore reads `+0x08` | [C] (both restores' and the expiry walk's reads, fn:sub_00541B10_InactiveItemSave@0x00541B10, fn:ITEMS_Serialize@0x006313E0, struct:InactiveItemRec+0x04, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)) |
 
 **Monster record** (0x5C, `InactiveMonsterSave`):
 
@@ -565,15 +573,15 @@ packet-beta
 | `+0x00`, `+0x04` | x, y of the unit | [C] (run:2026-10-17-lifecycle) |
 | `+0x08`, `+0x0C` | class, unit id (the id is reused at the restore) | [C] (run:2026-10-17-lifecycle) |
 | `+0x10`, `+0x14` | unit `+0xC4` as read at 0x00542498 (below), unit `+0xC8` | [C] (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle) |
-| `+0x18` | record flags, below | [C] for `0x1`, `0x2`, `0x4`, `0x20`, `0x80`/`0x100`/`0x200`, `0x400`, `0x800` (run:2026-10-17-lifecycle); [I] for `0x40` (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
-| `+0x1C` | group leader id (AI control `+0x2C` when the AI link type `+0x30` is 1), else −1 | [I] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
-| `+0x20`, `+0x24`, `+0x28` | AI control `+0x34`; the preset path moved out of AI control `+0x38`; the AI record's first dword | [I] (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0, 0x00542098) |
-| `+0x2C` | monster data `+0x58` | [I] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
-| `+0x30`, `+0x32`, `+0x3C` | name seed (`u16`); nine mod bytes; superunique id (`u16`); `+0x3B` and `+0x3E`–`+0x3F` are padding | [C] for the mods (run:2026-10-17-lifecycle), [I] for the others (fn:sub_005421A0_InactiveMonsterSave@0x005421A0) |
+| `+0x18` | record flags, below | [C] for `0x1`, `0x2`, `0x4`, `0x20`, `0x80`/`0x100`/`0x200`, `0x400`, `0x800` (run:2026-10-17-lifecycle); for `0x40`, set from 0x00573540(unit, 2) and passed to `MonRegionUnitLeave` (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)) |
+| `+0x1C` | group leader id (AI control `+0x2C` when the AI link type `+0x30` is 1), else −1; read into `MonSetOwnerRestore` | [C] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, 0x0058F440, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)) |
+| `+0x20`, `+0x24`, `+0x28` | AI control `+0x34`, saved in the `+0x1C` branch (only when the link type `+0x30` is 1; else `+0x20` stays 0), after which the save clears AI control `+0x2C` to −1 and `+0x34` to 0 (0x0058F4AF–0x0058F4BB); the preset path moved out of AI control `+0x38` (and moved back by the AI restore); the AI record's first dword, passed to `MonAiInit` | [C] (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0, 0x00542098, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)) |
+| `+0x2C` | monster data `+0x58`, passed to `MonRegionUnitLeave` at the restore | [C] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)) |
+| `+0x30`, `+0x32`, `+0x3C` | name seed (`u16`); nine mod bytes; superunique id (`u16`); `+0x3B` and `+0x3E`–`+0x3F` are padding | [C] (run:2026-10-17-lifecycle for the mods; the writes and reads of all three, and no access to the padding, fn:sub_005421A0_InactiveMonsterSave@0x005421A0, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)) |
 | `+0x40`, `+0x44`, `+0x48` | stat 13; `UnitGetMaxHp` (equal to stat 7 on all 3 499 records); stat 6 | [C] (run:2026-10-17-lifecycle) |
-| `+0x4C`, `+0x50` | AI parameters (`InactiveMonAiSave`) | [I] (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0) |
+| `+0x4C`, `+0x50` | AI parameters (`InactiveMonAiSave`), read by the AI restore | [C] (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)) |
 | `+0x54` | game frame at the save | [C] (run:2026-10-17-lifecycle) |
-| `+0x58` | next record of the room's monster list | [I] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, struct:InactiveMonRec+0x00) |
+| `+0x58` | next record of the room's monster list | [C] (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, struct:InactiveMonRec+0x00, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)) |
 
 Record flags `+0x18`: `0x1` placed by `SpecialMonPlace`, `0x2` champion, `0x4` mode 12 or 0 (dying or dead), `0x20`
 minion, `0x40` monster data `+0x5C` bit 1, alignment `0x200` (0), `0x80` (1), `0x100` (2), `0x400` the unit is in a
@@ -591,13 +599,15 @@ target list (`+0xD0` ≠ 11; `+0xD0` < 8 is a fatal error), `0x800` superunique.
   classes 454 `minion1` and 462 `suicideminion1`) hold `+0xC4` bit `0x2000` that the unit's save-test line lacked;
   every other field matches. (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, 0x00542498,
   [drlg/0009 § 11.3 (5)](../../findings/drlg/0009-room-lifecycle.md#113-plan-0038-batch-h7a-run2026-10-17-h7a-lifecycle))
-- [I] The only immediate store of bit `0x2000` into unit `+0xC4` is in 0x0064C040 (0x0064C07E–0x0064C097), which also
+- [C] The only immediate store of bit `0x2000` into unit `+0xC4` is in 0x0064C040 (0x0064C07E–0x0064C097: the six immediate
+  `+0xC4` stores holding the bit are quest-callback pointers, [drlg/0009 § 13](../../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n)), which also
   links the unit into a list of its room; which call reached those 4 units is an open question. The restore does not
   copy the bit back (H3 ORs in only the record's `0x20000` and `0x3000000`), so a reimplementation that takes the
   record's `+0xC4` from the unit at the save test differs from the game only in this bit of the record.
   (0x0064C040, 0x00542498)
-- [I] **What a monster loses**: its states and timers, any mode but "dying or dead" (alive records come back in mode 1),
-  any position but x and y, and its life after 7500 frames (§ H). A hit's stat or state is gone after a release.
+- [C] **What a monster loses**: any mode but "dying or dead" (alive records come back in mode 1, 2 726 of 2 726, 32 of
+  them saved in mode 2, 4 or 5; run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)), any position but x and y, and its life after 7500 frames (§ H). [I] Its states and
+  timers, which the log does not hold: a hit's stat or state is gone after a release.
   (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, struct:InactiveMonRec+0x18)
 
 **Item expiry** (`ItemGroundExpiry`, the record's `+0x04`):
@@ -649,7 +659,7 @@ H1. RoomInactiveUnitsRestore(game, room):                         [C] (fn:sub_00
 ```
 
 ```
-H2. InactiveMonstersRestore(game, room), per monster record, oldest first:   [I] (fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
+H2. InactiveMonstersRestore(game, room), per monster record, oldest first:   [C] the order, the reverse of the room's save order in 829 of 829 restores, 563 with two records or more (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)); [I] the rest but the lines tagged (fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
       if level = 108 and DiabloQuestFlag(game) and not (rec.flags & 4) and rec.class ≠ 243: drop    ; quest 23 +0x13
       else if rec.flagsC8 & 0x100: UnitRelocate(the unit with id rec.id, room)     ; kept, nothing created
       else if rec.flags & 0x400 and rec.flags & (0x80 | 0x100): drop             ; alignment 1 or 2; [C] for 2 (run:2026-10-17-h7a-lifecycle), [I] for 1 (0x00542609)
@@ -672,14 +682,14 @@ H2a. exact path:                                                  [C] (fn:sub_00
       if none: a SpawnPosPick position, then SpawnWithId there    ; [I] not reached (0x005424F0)
       if none: COLL_FindFreeSpiral                                ; [I] not reached (0x005424F0)
 
-H2b. SpecialMonRestore(rec):                                      [I] (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0)
+H2b. SpecialMonRestore(rec):                                      [C] the placement in mode 1: 107 records, 106 at the record's x, y with 3 room draws, 1 elsewhere (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)); [I] the rest (flag 4 never met; the mods, name seed and aura not logged) (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A09E0_SpecialMonPlace@0x005A09E0)
       u ← SpecialMonPlace(room, no box, rec.x, rec.y, rec.id, avoid warps) in mode 1     ; record flag 4 is ignored
       mods ← rec.mods
       SpecialModsApply(u, minions: 0)                             ; [C] the flag-1 handlers (0x005A4558, 0x005A214D, 0x005A21A6, run:2026-10-17-lifecycle)
-                                                                  ; [I] the pushed 0 is the minions argument (0x005A454E, tested at 0x005A2123)
+                                                                  ; [C] the pushed 0 is the minions argument (0x005A454E, read once at 0x005A2123, drlg/0009 § 15)
       name seed ← rec.nameSeed;  the aura when a mod is 30;  the superunique quest hooks
 
-H2c. MinionRestore(rec):                                          [I] (fn:sub_005A46E0_MinionRestore@0x005A46E0)
+H2c. MinionRestore(rec):                                          [C] the placement in mode 1: 323 records, 317 at the record's x, y with 3 room draws, 6 elsewhere with 7 (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)), and the flag-0 handler calls (0x005A4811, 0x005A4830, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)); [I] the fallback's radius (4 or 5 not separated) and the rest (fn:sub_005A46E0_MinionRestore@0x005A46E0)
       u ← SpawnWithId(rec.x, rec.y, rec.class, mode 1, rec.id, radius −1, 0x62)
       if none: radius 4;  if none: a SpawnPosPick position
       mods ← rec.mods;  the flag-0 handlers of mods 1–4 and of each saved mod   ; called by MinionRestore itself (0x005A4811, 0x005A4830)
@@ -732,8 +742,8 @@ model's level of the new `MonsterInit` (1 836 restores; classic Nightmare as `Le
 fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
 - [C] A restored **minion**'s stat 12 is the monsters/stats level plus the handlers of mods 1–4 and its saved
 mods (144): a first instance at the pool level comes back 3 higher (`leveladd`; 2 seen), later restores unchanged (142).
-Stat 12 does not tell which handler flag the minion path applies (the checker gives 0 mismatches with either), so the
-flag-0 reading of H2c stays `[I]`. (run:2026-10-17-lifecycle, fn:sub_005A46E0_MinionRestore@0x005A46E0)
+Stat 12 does not tell which handler flag the minion path applies (the checker gives 0 mismatches with either); the
+flag-0 reading of H2c rests on a second tool's reading of the calls (`[C]`, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)). (run:2026-10-17-lifecycle, fn:sub_005A46E0_MinionRestore@0x005A46E0)
 - [C] A restored **champion**'s stat 12 is the result of the **flag-1** handlers: + 2 (`leveladd` + 3,
 `champion` − 1); with flag 0 the checker gives 15 mismatches, one level high on each champion restore. A restored unique
 comes back at + 3, which does not separate the flag. (run:2026-10-17-lifecycle, fn:sub_005A4440_SpecialMonRestore@0x005A4440)
@@ -742,12 +752,12 @@ comes back at + 3, which does not separate the flag. (run:2026-10-17-lifecycle, 
 0x005A21A6, and its group callback with flag 0. The code reading and the 15 champion restores above agree, and flag 0
 gives 15 mismatches, so the run separates the two readings. (drlg/0009 § 11.1 (c); run:2026-10-17-lifecycle,
 fn:sub_005A2120_SpecialModsApply@0x005A2120, data:g_UModAlwaysMods@0x006E2168)
-- [I] **The 0 that `SpecialMonRestore` pushes is the `minions` argument** of `SpecialModsApply` (pushed at 0x005A454E,
-tested at 0x005A2123), so the special is restored without new minions. drlg/0009 § 6 first read that 0 as the handler
+- [C] **The 0 that `SpecialMonRestore` pushes is the `minions` argument** of `SpecialModsApply` (pushed at 0x005A454E,
+read once at 0x005A2123, where a zero skips the call of `sub_005A0C00_UniqueMinions`, 0x005A2135; [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)). [I] So the special is restored without new minions: that is the skipped callee's role by its name. drlg/0009 § 6 first read that 0 as the handler
 flag. The run does not separate "no minions" from another use of the argument. (fn:sub_005A4440_SpecialMonRestore@0x005A4440,
 fn:sub_005A2120_SpecialModsApply@0x005A2120)
-- [I] **`MinionRestore` calls the handlers itself with flag 0** (mods 1–4 at 0x005A4811, its nine saved mod bytes at
-0x005A4830), after setting `0x10` (0x005A47DF). `rndname` (mod 1) steps the unit seed and writes the name seed only with
+- [C] **`MinionRestore` calls the handlers itself with flag 0** (mods 1–4 at 0x005A4811, its nine saved mod bytes at
+0x005A4830; `SpecialModsApply` pushes 1 in the same slot, 0x005A214D), after setting `0x10` (0x005A47DF) ([drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)). `rndname` (mod 1) steps the unit seed and writes the name seed only with
 flag 1 (0x005A0CE7), so a minion restore takes no unit-seed step where flag 1 would take one; `resist` (8, 27, 28) also
 acts only with flag 1 (0x005A138F). That difference would show outside stat 12 on every minion restore; it was not looked
 for, and the kept lifecycle logs were not searched for a unit seed after the handlers. (fn:sub_005A46E0_MinionRestore@0x005A46E0,
@@ -757,8 +767,9 @@ preset flag `0x2000000` and is saveable again in any level. `MonRegionUnitLeave`
 level, the alignment, the dead flag and flag `0x40`, and lowers the current level's region `+0x2CC` for an alignment-0
 unit without flag `0x40`, and `+0x2C8` too for monster flag `0x01` (2 035). (run:2026-10-17-lifecycle,
 fn:sub_00547ED0_MonRegionUnitLeave@0x00547ED0)
-- [I] The `+0xC8` bit `0x200` is set only when the record's saved `+0xC8` (record `+0x14`) has it, so the restore carries
-that bit over (0x005428F9–0x00542903, drlg/0009 § 6). The group link, the AI restore, the target lists and the mod
+- [C] The save copies unit `+0xC8` to record `+0x14`, and the restore sets the new unit's `+0xC8` bit `0x200` when the record's
+has it, so the restore carries that bit over (0x005424A1–0x005424AF, 0x005428F9–0x00542903, drlg/0009 § 6, [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)). [I] That it is set
+only there: 17 register stores to `[reg+0xC8]` are not resolved. The group link, the AI restore, the target lists and the mod
 re-append are code readings; movement of a restored monster is a boundary oracle (ADR-0014 phase 4), and what the restore keeps of its AI is [monsters/ai E9](../monsters/ai/README.md#e-the-ai-state-on-the-unit).
 (fn:sub_00541E20_InactiveMonAiRestore@0x00541E20, fn:sub_005A4850_ModAppendApply@0x005A4850, fn:sub_005543B0_MonAlignSet@0x005543B0)
 - [I] **A dead special saved without `0x08` or `0x10` would come back alive**: `SpecialMonRestore` places the unit
@@ -842,9 +853,9 @@ H5. the marks of one monster re-created by H2, in order:          [C] (run:2026-
 - [C] On run 1's 28 logs, which log no restore scope, the same prediction entered the grid unchecked (5 284
   re-creations) and every later position test passed; that admits them for the run's result, not as evidence for the
   marks. (run:2026-10-21-chain2)
-- [I] **The call path**, read in the pinned image: a room whose driver flag bit 0 is set gets no `RW` window;
-  `RoomUpdateOne` (0x0052D142) and `NewRoomsUpdate` (0x0052D205) call `RoomInactiveUnitsRestore` directly, whose
-  monsters go through `SpawnWithId` to `MonSpawnTry` with request flags `0x62`, `0x6A` or `0xE2`. Flag `0x20` makes
+- [C] **The call path**, read with two tools: a room whose driver flag bit 0 is set gets no `RW` window;
+  `RoomUpdateOne` (0x0052D142) and `NewRoomsUpdate` (0x0052D205) call `RoomInactiveUnitsRestore` directly, none of the
+  three population calls ([drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)). [I] Its monsters go through `SpawnWithId` to `MonSpawnTry` with request flags `0x62`, `0x6A` or `0xE2`. Flag `0x20` makes
   the create flags 3 (0x005B2E10), and bit 0 runs `SUnitPathCreate`, whose monster branch marks through
   `PATH_DynamicCreate` (0x00649E9A) and `MonSetMode` (0x005A7CB1), both into `COLL_PatternMark`, then `MonSpawnTry`'s
   alignment refresh (0x005B2EAB). A record restored dead has no `MonSetMode` mark (`UnitIsDead` tested at 0x005A7CA7);
@@ -872,14 +883,14 @@ flowchart TD
 ```
 
 ```
-I1. RoomWandererTick(game, room):                                 [C] for the first draw, the roll's draw and its ≥ 3 return, [I] for the rest (fn:sub_0054F060_RoomWandererTick@0x0054F060, 0x0054F089, run:2026-10-17-lifecycle, run:2026-10-21-sweep-monsters-a)
+I1. RoomWandererTick(game, room):                                 [C] for the first draw, the gate's tests, the roll's draw and its ≥ 3 return (the lines tagged), [I] for the spawn (fn:sub_0054F060_RoomWandererTick@0x0054F060, 0x0054F089, run:2026-10-17-lifecycle, run:2026-10-21-sweep-monsters-a, run:2026-11-16-sweep2-s7e)
       Step(room.seed)                                             ; room draw#1, always
-      if room.seed.low & 0x7FFF ≠ 0: return                       ; [C] (run:2026-10-17-lifecycle); the mask's width [I]
-      if room[+0x78] ≠ 0 or Levels[level].MonWndr = 0: return     ; [I] (0x0054F096, 0x0054F0AA)
+      if room.seed.low & 0x7FFF ≠ 0: return                       ; [C] (run:2026-10-17-lifecycle); the mask's width, family `wtick`
+      if room[+0x78] ≠ 0 or Levels[level].MonWndr = 0: return     ; [C] (0x0054F096, 0x0054F0AA; family `wtick`)
       WandererRoll:                                               ; fn:sub_0054EFF0_WandererRoll@0x0054EFF0
         Step(room.seed)                                           ; room draw#2, [C] (run:2026-10-21-sweep-monsters-a)
         if room.seed.low mod 100 ≥ 3: return                      ; unsigned; [C] (run:2026-10-21-sweep-monsters-a, 0x0054F02B)
-        if region[+0x2C4] ≥ 3: return                             ; [I] (0x0054F041)
+        if region[+0x2C4] ≥ 3: return                             ; signed; [C] (0x0054F041; family `wroll`)
       WandererSpawn:                                              ; fn:sub_0054EF50_WandererSpawn@0x0054EF50
         a ← Levels[level].Act;  (start, count) ← the bytes at 0x00731B30 + 2·a     ; act I (0, 1), others (0, 0)
         r ← Range(room.seed, count)                               ; room draw#3 (none when count < 1)
@@ -897,13 +908,14 @@ I1. RoomWandererTick(game, room):                                 [C] for the fi
   82) and, since 82 ≥ 3, drew nothing further, so that tick took two room draws. (run:2026-10-21-sweep-monsters-a,
   fn:sub_0054EFF0_WandererRoll@0x0054EFF0, 0x0054F02B, [monsters/spawn § K](../monsters/spawn.md#k-wanderers-the-tick),
   [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
-- [I] That one pass does not separate the rest: the mask's width (its low word had 16 zero bits, so `0x7FFF` and
-  `0xFFFF` agree), the `+0x78` test (not logged), the `MonWndr` test (the pass came in a `MonWndr` 1 level, and no logged
-  tick passed the mask in a `MonWndr` 0 level), the region `+0x2C4` test and the spawn, since no roll below 3 has been
-  met. Read from the code, the gate passes 1 in 32 768 draws and the roll 3 in 100: about 1.1 million room updates of an
+- [C] That one pass does not separate the rest in the game, and the emulation does for the gate: the mask's width
+  (bit 15 set with bits 0–14 clear passes to the roll, 32 cases; control `mask16`), the `+0x78` and `MonWndr` tests (controls
+  `no78` 52, `nownd` 26) and the region `+0x2C4` test, signed (counts −1 to 4 and others; controls `unsignedcnt` 30, `cnt2` 22,
+  `roll4` 55): families `wtick` and `wroll`, 300 cases each, 0 mismatches, the code's map (run:2026-11-16-sweep2-s7e, [frame/experiments](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e)). [I] The spawn
+  (`WandererSpawn`, the emulation's boundary): no roll below 3 has been met in a game. Read from the code, the gate passes 1 in 32 768 draws and the roll 3 in 100: about 1.1 million room updates of an
   act I `MonWndr` level with `+0x78` = 0 and region `+0x2C4` < 3 per spawn. (0x0054F089, 0x0054F096, 0x0054F0AA,
   0x0054F024–0x0054F041, tbl:Levels.txt:MonWndr)
-- [I] Because of `+0x78`, wanderers can appear only in active rooms that no client is near: rooms kept alive by the idle
+- [C] `+0x78` ≠ 0 stops the tick (family `wtick`, run:2026-11-16-sweep2-s7e, [frame/experiments](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e)). [I] So, `+0x78` counting the clients near, wanderers can appear only in active rooms that no client is near: rooms kept alive by the idle
   timer of § E, or activated by `RoomActivateB` (§ B). (fn:sub_0054F060_RoomWandererTick@0x0054F060, struct:DungeonRoomLife+0x78)
 
 ### J. The preset path and the preset list
@@ -912,12 +924,13 @@ I1. RoomWandererTick(game, room):                                 [C] for the fi
   `PresetUnitSpawn` moves preset `+0x10` into the monster's AI control `+0x38` with `PtrMove` and leaves 0 behind (49
   moves). That is the server-copy half of the detach [drlg/preset § 5](preset.md#5-from-the-instance-to-the-room) note 4 saw.
   (run:2026-10-17-lifecycle, 0x0055596C, fn:sub_00555910_PresetUnitSpawn@0x00555910, fn:sub_00666120_PtrMove@0x00666120)
-- [I] The release moves the path into the monster record (0x00542098) and the restore back into the new monster
-  (0x00541EA2). The client copy's detach was not found. (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0,
+- [C] The release moves the path into the monster record (0x00542098) and the restore back into the new monster
+  (0x00541EA2) ([drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o)). The client copy's detach was not found. (fn:sub_00541FE0_InactiveMonAiSave@0x00541FE0,
   fn:sub_00541E20_InactiveMonAiRestore@0x00541E20)
-- [I] A re-activated room never re-dispatches its preset list: `RoomPresetUnits` runs only while flags bit 0 is clear
-  (§ D), and the added objects and type-5 units come back from the unit records. Whether the list grows on a rebuild is
-  not read. (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
+- [C] A re-activated room never re-dispatches its preset list: `RoomPresetUnits` runs only while flags bit 0 is clear
+  (§ D): 408 of 408 `PresetUnitSpawn` lines in a populate walk, none in the 286 later restore-only walks of rooms that had
+  one (run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle, [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m)); the added objects and type-5 units come back from the unit records (H1). [I] Whether the list grows on
+  a rebuild is not read. (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
 
 ### Draw order across the seeds
 
@@ -1051,9 +1064,9 @@ restore is not specified here.
   not followed).
 - ~~Which call in `SpecialMonRestore` applies the flag-1 handlers~~ answered in § H from drlg/0009 § 11.1 (c): its
   `SpecialModsApply` call.
-- [L] **Which handler flag the minion restore really applies** (§ H): stat 12 does not separate them, so H2c's flag 0
-  stays a code reading. A kept lifecycle log that shows a minion's unit seed after the handlers would check it without a
-  run (the `rndname` step). Owner: reverser.
+- ~~Which handler flag the minion restore really applies~~ answered in § H from drlg/0009 § 15: a second tool reads
+  `MinionRestore`'s own handler calls with flag 0 (H2c). Stat 12 still does not separate the flags in a game, and no kept
+  log was searched for a minion's unit seed after the handlers.
 - [L] **The wanderer spawn** was never reached: one gate pass is logged (§ I), and its roll (82) returned. The gate
   passes 1 in 32 768 draws and the roll 3 in 100. The wanderer's alignment is answered as a code reading in § H from
   drlg/0009 § 11.4 (b): `MonSpawnTry` sets 2, so a saved wanderer is dropped.
