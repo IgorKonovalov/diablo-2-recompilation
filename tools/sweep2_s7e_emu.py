@@ -4,7 +4,7 @@ run with re/ghidra_scripts/EmuBoundary.java and compared with the models below. 
 
     python3 -I tools/sweep2_s7e_emu.py cases [--dir D] [--tag T]    write D/<family>.cases, .mem, .meta
     GHIDRA_PROJ_DIR=... GHIDRA_HEADLESS_MAXMEM=3G tools/ghidra.sh emuboundary D/<f>.cases D/<f>.mem > D/<f>.out
-    python3 -I tools/sweep2_s7e_emu.py check [--dir D]              compare, account for traced accesses, score the controls
+    python3 -I tools/sweep2_s7e_emu.py check [--dir D] [--families F,..]  compare, account for traced accesses, score the controls
     python3 -I tools/sweep2_s7e_emu.py manifest [--dir D] [--write]  sha256 of every kept file (one path base: D)
 
 Run from the worktree root (the field file's path is relative to it). Default D: workspace/logs/n66u/s7e/run. Every case
@@ -102,9 +102,17 @@ def rect_split(q, r):
     return [tuple(p0)] + out
 
 
+NULLCELLS = []   # set when RectTest reaches a map whose cell pointer is 0 (see rect_test)
+
+
 def rect_test(hint, q, mask):
     r = inv.room_at(hint, q[0], q[1])
-    if r is None or r.cells is None:
+    if r is not None and r.cells is None and getattr(r, "nomap", 0) == 2:
+        # COLL_RectTest tests the room's map (0x0064CEDE) but not the map's cell pointer: COLL_RectTestInMap 0x0064CC30
+        # reads from 0 + 2*index (0x0064CCA0). Under the emulator that is undeclared memory read as 0; in the game a fault.
+        # The case is flagged and left out of the claim (ADR-0015 (2), (5)).
+        NULLCELLS.append(1)
+    elif r is None or r.cells is None:
         return inv.BLOCKED
     pieces = rect_split(q, r)
     if not pieces:
@@ -113,7 +121,7 @@ def rect_test(hint, q, mask):
     res = 0
     for y in range(t, b + 1):
         for x in range(l, rt + 1):
-            res |= r.cells.get((x, y), 0) & mask
+            res |= (r.cells or {}).get((x, y), 0) & mask
     for p in pieces[1:]:
         res |= rect_test(r, p, mask)
     return res & 0xFFFF
@@ -270,9 +278,11 @@ def mem_spec(f):
     return E3.mem_spec("drop")
 
 
-def cmd_cases(d, tag, count=None):
+def cmd_cases(d, tag, count=None, only=None):
     os.makedirs(d, exist_ok=True)
     for f in FAMILIES:
+        if only and f not in only:
+            continue
         rnd = random.Random("%s-%s" % (tag, f))
         blocks, metas = [], []
         for i in range(count or COUNTS[f]):
@@ -284,10 +294,13 @@ def cmd_cases(d, tag, count=None):
         json.dump(metas, open(os.path.join(d, f + ".meta"), "w"))
         print("CASES %s %d" % (f, len(metas)))
     for f in FQ_FAMILIES:
+        if only and f not in only:
+            continue
         cases = FQ_GEN[f](random.Random("%s-%s" % (tag, f)), count)
         with open(os.path.join(d, f + ".cases"), "w") as fh:
             for c in cases:
-                fh.write("\n".join(fq.emit_state(c["m"]) + c.get("extra", []) + fq_dumps(c) + fq_call_lines(c)) + "\n")
+                fh.write("\n".join(fq.emit_state(c["m"]) + extra_state(c["m"]) + c.get("extra", []) + fq_dumps(c)
+                                    + fq_call_lines(c)) + "\n")
         open(os.path.join(d, f + ".mem"), "w").write("\n".join(fq_mem_spec(f)) + "\n")
         json.dump(dict(tag=tag, count=count or FQ_COUNTS[f]), open(os.path.join(d, f + ".meta"), "w"))
         print("CASES %s %d" % (f, len(cases)))
@@ -296,6 +309,8 @@ def cmd_cases(d, tag, count=None):
 # ------------------------------------------------------------------ the check
 def predict_ffn(m, FB, ctl=None):
     rooms = E3.model_rooms(m["rooms"])
+    for o, r in zip(rooms, m["rooms"]):
+        o.nomap = r["nomap"]
     org = tuple(m["origin"]) if m["origin"] else None
     r, x, y = find_free_near(rooms[0], m["px"], m["py"], org, FB, m["size"], m["ma"], m["mb"], m["fallback"], m["radius"], m["step"], ctl)
     ra = 0 if r is None else E3.room_addr(rooms.index(r))
@@ -326,22 +341,29 @@ FFN_ACCOUNTED = ((0x0064D41C, 0x0064D450, "COLL_PlusTest's edge switch table (13
 
 def ffn_accounted(k):
     kind, pc, addr, size = k
+    if kind == "R" and pc == 0x0064CCA0 and addr < 0x10000:
+        return True     # the null cell array (rect_test): those cases are flagged and out of the claim
     return kind == "R" and any(lo <= addr < hi for lo, hi, _ in FFN_ACCOUNTED)
 
 
-def cmd_check(d):
+def cmd_check(d, only=None):
     FB = E3.field_bytes()
     bad_total = 0
     for f in FAMILIES:
+        if only and f not in only:
+            continue
         ms = json.load(open(os.path.join(d, f + ".meta")))
         cases, tail = parse_out(os.path.join(d, f + ".out"))
-        n = bad = stops = 0
+        n = bad = stops = nullc = 0
         outs, ctl_sep, ctl_pass = {}, {c: 0 for c in CONTROLS[f]}, {c: 0 for c in CONTROLS[f]}
         per = {}
         for i, (m, r) in enumerate(zip(ms, cases)):
             n += 1
             got = got_ffn(r)
+            del NULLCELLS[:]
             want = predict_ffn(m, FB)
+            if NULLCELLS:
+                nullc += 1
             if got is None:
                 stops += 1
                 bad += 1
@@ -366,6 +388,7 @@ def cmd_check(d):
         if len(cases) != len(ms):
             bad += abs(len(cases) - len(ms))
         print("S7E %s cases=%d outputs=%d mismatches=%d stops=%d" % (f, n, len(cases), bad, stops))
+        print("S7E %s null-cell-array cases=%d (RectTest through a map whose cell pointer is 0: out of the claim)" % (f, nullc))
         for k in sorted(per):
             print("S7E %s count %s: %d" % (f, k, per[k]))
         for k in sorted(outs):
@@ -382,6 +405,8 @@ def cmd_check(d):
             print("UNACCOUNTED %s %08x %08x %d" % k)
         bad_total += bad + len(un)
     for f in FQ_FAMILIES:
+        if only and f not in only:
+            continue
         bad_total += check_fq(f, d)
     print("S7E result=%s" % ("ok" if bad_total == 0 else "BAD"))
     return 0 if bad_total == 0 else 1
@@ -401,8 +426,10 @@ TGAME = fq.GAME + 0x1000      # the game's words from +0x1000 (QUESTS_TimersRun'
 SLR = 0x14500000            # stat lists (0x40 apart) and their state bit arrays (from +0x400, 0x10 apart), one per unit
 DTS = 0x14600000            # the DataTables' state count at +0xC4
 MON_FUNCS_VA = 0x006E2490
+BELOW = fq.CTL - 0x100        # declared and dumped: list 0's head slots at a negative frame index lie below the control
+EXTRA = [(BELOW, 0x100), (0, 4)]   # and the dword at 0, the null tail's (declared 0 each case, so no case reads another's)
 FREEZE_SKIP = (3, 4, 5, 8, 12)
-FQ_CONTROLS = dict(qx=("unsigned", "keepcb"), mevd=("nofreeze", "deadignored", "skipnone"), mevr=("nofreeze", "freeall"))
+FQ_CONTROLS = dict(qx=("unsigned", "keepcb", "nonull"), mevd=("nofreeze", "deadignored", "skipnone"), mevr=("nofreeze", "freeall"))
 FQ_COUNTS = dict(qx=400, mevd=500, mevr=300)
 
 
@@ -431,7 +458,36 @@ class S7Model(fq.Model):
                 return fq.Model.queue_at(self, kind, unit, f2, cb, a, b)
             finally:
                 self.m.w32(fq.GAME + 0xA8, curu)
+        if fq.s32(kind) < 15 and frame & M32 != M32 and fq.s32(frame) <= self.cur() and (self.cur() + 1) & M32 == M32 \
+                and self.neg7 != "nonull":
+            return self.queue_null_tail(kind, unit, cb, a, b)
         return fq.Model.queue_at(self, kind, unit, frame, cb, a, b)
+
+    def queue_null_tail(self, kind, unit, cb, a, b):
+        """The current frame -2 raises a frame to -1, the every-frame sentinel (0x005416ED). 0x00541721 then takes the
+        null tail (0x0054173D: ECX = 0), reads and writes the dword at address 0 (0x00541771, 0x0054177D: in the game
+        an access violation, ADR-0015 (5)), and 0x00541782 sets the type's every-frame head when it is empty."""
+        m = self.m
+        if unit and m.r32(unit) == 1 and kind == 2:
+            self.obs = (fq.HASSTATE, None, [unit, 0x36])
+            return "obs"
+        rec = self.alloc(unit)
+        m.w32(rec + 0x14, a)
+        m.w8(rec, kind)
+        m.w32(rec + 4, M32)
+        m.w32(rec + 0x18, b)
+        m.w32(rec + 0x2C, cb)
+        m.w32(rec + 0x1C, 0)
+        t = m.r32(0)
+        m.w32(rec + 0x20, t)
+        if t:
+            m.w32(t + 0x1C, rec)
+        m.w32(0, rec)
+        hp = self.ef_head(self.ulist(m.r32(rec + 0x10)))
+        if m.r32(hp) == 0:
+            m.w32(hp, rec)
+        self.null_tail = True
+        return rec
 
     def dead(self, u):
         m = self.m
@@ -517,6 +573,9 @@ def put_mon(rnd, c, m, j):
         word = rnd.getrandbits(32) & ~2
         if rnd.random() < 0.6:
             word |= 2
+        m.w32(sl + 0x10, flag)             # the model's memory too: has_state reads these
+        m.w32(sl + 0x58, bits)
+        m.w32(bits, word)
         c["extra"] += ["w %08x %s" % (sl + 0x10, struct.pack("<I", flag).hex()),
                        "w %08x %s" % (sl + 0x58, struct.pack("<I", bits).hex()),
                        "w %08x %s" % (bits, struct.pack("<I", word).hex())]
@@ -529,6 +588,14 @@ def fq_case(m, op, cnt, extra2=(), **kw):
     return c
 
 
+def populate(rnd, m, n, **kw):
+    """fq.populate, stopped when both blocks are exhausted (the model raises before it writes, so the state stands)."""
+    try:
+        fq.populate(rnd, m, n, **kw)
+    except RuntimeError:
+        pass
+
+
 def gen_qx(rnd, count=None):
     cases = []
     for i in range(count or FQ_COUNTS["qx"]):
@@ -539,7 +606,7 @@ def gen_qx(rnd, count=None):
         u = fq.unit_addr(j)
         kind = rnd.choice(list(range(15)) + [15, 0xFFFFFFFF])
         if i % 8 == 7:                     # UnitFreeAllEvents (0x00540EE0) over records in slot and every-frame lists
-            fq.populate(rnd, m, rnd.randrange(2, 10), units=[j, j, j, (j + 1) % fq.NUNIT],
+            populate(rnd, m, rnd.randrange(2, 10), units=[j, j, j, (j + 1) % fq.NUNIT],
                         frames=[fq.s32(cur + 1), fq.s32(cur + 2), fq.s32(cur + 65), fq.s32(cur + 300)])
             chain, x = [], m.r32(u + 0xDC)
             while x:
@@ -564,7 +631,7 @@ def gen_qx(rnd, count=None):
         else:
             frame = (cur + rel) & M32
         populate_frames = [((cur + 1) & M32), frame if frame != M32 else (cur + 1) & M32]
-        fq.populate(rnd, m, rnd.randrange(0, 5), units=[j], frames=[fq.s32(x) for x in populate_frames])
+        populate(rnd, m, rnd.randrange(0, 5), units=[j], frames=[fq.s32(x) for x in populate_frames])
         cb = rnd.choice([0, fq.CB, rnd.getrandbits(32)])
         a, b = rnd.getrandbits(32), rnd.getrandbits(32)
         form = ("direct", "uqe", "cb", "cb")[i % 4]
@@ -598,7 +665,7 @@ def gen_mevr(rnd, count=None):
         c = fq_case(m, None, 200)
         frames = [cur, cur, cur, cur + 64, cur + 1]
         cbs = [fq.CB, 0, 0, 0] if i % 3 else [0]
-        fq.populate(rnd, m, rnd.randrange(1, 9), units=mons, cbs=cbs, frames=frames)
+        populate(rnd, m, rnd.randrange(1, 9), units=mons, cbs=cbs, frames=frames)
         for j in mons:
             put_mon(rnd, c, m, j)
             if i % 4 != 3:                 # mostly frozen and alive, so that most records are dropped
@@ -625,7 +692,8 @@ FQ_GEN = dict(qx=gen_qx, mevd=gen_mevd, mevr=gen_mevr)
 def fq_mem_spec(f):
     out = fq.mem_spec() + ["bytes %08x %s" % (SLR, "00" * 0x800), "bytes %08x %s" % (DTS, "00" * 0x100),
                            "bytes %08x %s" % (TGAME, "00" * 0x100),
-                           "dword 00744304 %08x" % DTS]
+                           "dword 00744304 %08x" % DTS, "bytes %08x %s" % (BELOW, "00" * 0x100),
+                           "bytes 00000000 00000000"]
     if f == "qx":
         out += ["observe %08x" % fq.HASSTATE]
     else:
@@ -633,8 +701,19 @@ def fq_mem_spec(f):
     return out
 
 
+def extra_state(m):
+    """The pre-state's words in the EXTRA regions (a pre-state record queued at a negative frame of list 0 heads a slot
+    below the control), which fq.emit_state leaves out."""
+    out = []
+    for a, n in EXTRA:
+        for i in range(0, n, 4):
+            if m.r32(a + i):
+                out.append("w %08x %s" % (a + i, struct.pack("<I", m.r32(a + i)).hex()))
+    return out
+
+
 def fq_dumps(c):
-    return fq.dumps() + ["d %08x %d" % (TGAME, 0x100)]
+    return fq.dumps() + ["d %08x %d" % (TGAME, 0x100), "d %08x %d" % (BELOW, 0x100), "d 00000000 4"]
 
 
 def fq_call_lines(c):
@@ -700,7 +779,7 @@ def fq_compare(c, out, neg=None):
             return False, "unexpected boundary %08x" % out["obs_pc"]
         if out.get("pop") != pop:
             return False, "pop %s != %s" % (out.get("pop"), pop)
-    for a, n in fq.REGIONS:
+    for a, n in fq.REGIONS + EXTRA:
         if out["dumps"].get(a) != m.region(a, n):
             return False, "region %08x differs" % a
     return True, ""
@@ -729,6 +808,8 @@ def fq_label(c):
             return "%s kind refused" % form
         if frame & M32 == M32:
             return "%s frame -1%s" % (form, " cb dropped" if cb else "")
+        if fq.s32(kind) < 15 and fq.s32(frame) <= cur and cur == -2:
+            return "%s raised to -1 null tail" % form
         side = "cur<0" if cur < 0 else "cur>=0"
         raised = fq.s32(frame) <= cur
         return "%s %s frame%s %s%s" % (form, side, "<0" if fq.s32(frame) < 0 else ">=0", "raised" if raised else "kept",
@@ -758,7 +839,7 @@ def check_fq(f, d):
         mw, ow, _ = fq_apply(c)
         for ct in FQ_CONTROLS[f]:
             mn, on, _ = fq_apply(c, ct)
-            if any(mw.region(a, n) != mn.region(a, n) for a, n in fq.REGIONS) or ow != on:
+            if any(mw.region(a, n) != mn.region(a, n) for a, n in fq.REGIONS + EXTRA) or ow != on:
                 sep[ct] += 1
                 passed[ct] += fq_compare(c, o, ct)[0]
     print("S7E %s cases=%d outputs=%d mismatches=%d traced=%d" % (f, len(cases), len(outs), bad, len(traced)))
@@ -776,12 +857,17 @@ FQ_ACCOUNTED = ((0x006E0B9C, 0x006E0BB8, "g_UnitTypeEventList: image data, no wr
                 (0x006CE268, 0x006CE2E8, "the bit masks of UNIT_TestStateBit: image data"),
                 (0x006E2490, 0x006E24CC, "g_MonEventFuncs: image data"),
                 (0x005A7FE0, 0x005A7FF2, "MonEventDispatch's switch tables, in .text"),
-                (0x00744304, 0x00744308, "g_pDataTables, spec"))
+                (0x00744304, 0x00744308, "g_pDataTables, spec"),
+                (BELOW, fq.CTL, "list 0's head slots at a negative index, spec (declared and dumped)"),
+                (0, 4, "the null tail's dword, spec (declared 0 and dumped; a fault in the game)"))
+NULL_TAIL = ((0x00541771, "R"), (0x0054177D, "W"))   # address 0: the null tail of a frame raised to -1 (a fault in the game)
 
 
 def fq_accounted(line):
     p = line.split()
-    return p[0] == "R" and any(lo <= int(p[2], 16) < hi for lo, hi, _ in FQ_ACCOUNTED)
+    if int(p[2], 16) == 0 and (int(p[1], 16), p[0]) not in NULL_TAIL:
+        return False
+    return any(lo <= int(p[2], 16) < hi for lo, hi, _ in FQ_ACCOUNTED if p[0] == "R" or lo in (BELOW, 0))
 
 
 def cmd_manifest(d, write):
@@ -798,13 +884,15 @@ def main(argv):
     ap.add_argument("--dir", default=DEFAULT_DIR)
     ap.add_argument("--tag", default="n66u")
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--families", default=None, help="comma list: only these families (cases, check)")
     ap.add_argument("--count", type=int, default=None, help="a development run's case count (the kept run uses COUNTS)")
     a = ap.parse_args(argv)
+    only = set(a.families.split(",")) if a.families else None
     if a.cmd == "cases":
-        cmd_cases(a.dir, a.tag, a.count)
+        cmd_cases(a.dir, a.tag, a.count, only)
         return 0
     if a.cmd == "check":
-        return cmd_check(a.dir)
+        return cmd_check(a.dir, only)
     cmd_manifest(a.dir, a.write)
     return 0
 

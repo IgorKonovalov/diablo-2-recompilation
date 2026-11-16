@@ -691,7 +691,7 @@ The travel half of the S3a check over the 54 kept quest logs ([experiments, S3a 
   step 1, fallback 0; its town end size 3, masks 0xBE11, step 5; warps size 2, masks 0x1C09, fallback 0 and 1. The
   model with § B1's walk reproduces all 1 102 logged results (126 moved). Step 5 never moved a search (149, all in
   place: the act change landed on the spot's own cell 87 times) and the walk-free model finds the same cell as the walk
-  in all 62 field ends, so the step-5 ring and the walk stay `[I]` (plan 0066 S3e, proposed).
+  in all 62 field ends, so the step-5 ring and the walk stay `[I]` in those logs; plan 0066 S7e (run:2026-11-16-sweep2-s7e, family `ffn`, 600 emulated cases, 0 mismatches) raised both as the code's map, `step1` and `walkmaskA` each failing the cases they separate.
   (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-10-19-quests3)
 - [C] **Entry points.** 155 `wptr` brackets, each inside a p49 called from 0x0054C67F; 35 `npcmove` from
   `NPC_MenuAction`, each with one `chlevel`, and 5 from the Harrogath portal (0x005B5994); 68 tp brackets from one
