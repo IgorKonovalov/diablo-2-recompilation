@@ -525,8 +525,9 @@ Step notes:
 - E2. This spec stops at the merged name ids. The string each id is shown as is traced in
   [data/strings § D](../data/strings.md#d-key--index--strtable_getbykey), step note *Rare names, a load-time key and a
   client-side index*: the load stores `STRTABLE_GetByKey` of the merged record's `name` at record `+0x0C`, and the
-  client shows `STRTABLE_GetByIndex` of that index. [C] (fn:sub_00633F40_LoadRareAffixes@0x00633F40,
-  fn:STRTABLE_GetByIndex@0x00524A30, run:2026-10-27-sweep-data-load,
+  client shows `STRTABLE_GetByIndex` of that index (every hovered record had a non-zero one; what a 0 index shows is
+  inferred there). [C] (fn:sub_00633F40_LoadRareAffixes@0x00633F40, fn:STRTABLE_GetByIndex@0x00524A30,
+  0x0048C5FD, 0x0048C6E0, run:2026-10-27-sweep-data-load,
   [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
   How the two texts are joined into one name line is the next step note there (*The rare name line is `RareFormat`*);
   the `%n` substitution itself stays among data/strings' Open questions.

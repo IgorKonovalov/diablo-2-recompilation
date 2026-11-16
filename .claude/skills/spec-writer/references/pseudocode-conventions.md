@@ -101,7 +101,7 @@ fenced block, never with a link or an image.
   | `args` | the tool's arguments after the data root, which the builder supplies: a level id, a seed, a row name, flags; never game data. May be empty |
   | `seed` | `illustrative`, or the record that names it |
   | `illustrates` | the spec sections it shows, as relative links with `#anchor`s, separated by spaces or commas; a long list continues on indented lines |
-  | `caption` | one or two sentences restating the sections named in `illustrates`, plus the model label and anything the tool leaves out that a reader could take for shown |
+  | `caption` | a short paragraph restating the sections named in `illustrates`, plus the model label and anything the tool leaves out that a reader could take for shown |
 
   ````markdown
   ```illustration

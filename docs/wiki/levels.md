@@ -234,9 +234,9 @@ caption: Catacombs Level 3 (level 36) built room by room. A level draw picks the
   (§ C, § B); each room's Def is the level type's base plus its exit bits (§ B); each special takes a dead end
   facing the right way or attaches a new room, then the theme pass locks up to max(2, rooms ÷ 5 + 1) rooms as their Theme records (§ D, § H). Every value shown is
   computed by our replay model (tools/maze_replay.py), not observed in the game, and the seed is an illustrative
-  input, not a level seed a game produces. The preset file named in each room's last step is the tool's own pick
-  (room seed lo mod Files), not the level-seed draw and file rotation of the overview's step 9: a known tool bug,
-  filed to the archivist.
+  input, not a level seed a game produces. For a room with no forced file index, the preset file named in its last
+  step is the tool's own pick (room seed lo mod the number of named files), not the level-seed draw and file rotation
+  of the overview's step 9: a known tool bug, filed to the archivist.
 ```
 
 ## Outdoor levels
