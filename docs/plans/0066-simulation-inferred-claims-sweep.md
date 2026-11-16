@@ -3323,3 +3323,63 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     (m27, 95), d144's passive stats; m63 `MISSILE_BuildDamage`; m85's no-reference half (`0x00645390`) by a full
     reference scan with two tools.
 - **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 1, batch S2ae part 7 (reverser-static, `lane/n66sa`): 5 more settled (58 of 89); resume note for part 8
+
+- **Done.** `main` had not moved past `ac87a5f5` (already merged at part 6), so no merge; totals from the 29 files'
+  *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) equal README § 1 (a-logs 623, a-run 334, b 510, c 390,
+  c-emu 441, d 328). New tool `tools/skills_s2ae7_emu.py` (`6a383a11…`; reuses parts 1, 3, 5 and 6's machinery in
+  module state only; parts 5 and 6's `check` still reproduce `run5/`, `run6/` `check.txt`). One kept `tools/ghidra.sh
+  emuboundary` launch on `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after two development launches
+  (`dev15/`, `dev16/`, `workspace/logs/n66sa/s2ae/manifest-dev-p7.sha256`, not cited). Four families (`chg`, `wear`,
+  `h26`, `h27`), 13 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 69 controls, 65 separating, the
+  4 others the strictness of a clamp at its own bound, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s2ae7](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae7);
+  `workspace/logs/n66sa/s2ae/run7/` (`check.txt` `1baf4dc6…`, `reach.txt` `32353c4a…`, `static.txt` `27991a14…`,
+  `manifest.sha256` `60c01ec1…`, 14 lines, passes from there). Claims:
+  [skills/0002 § 23](../findings/skills/0002-missiles.md#23-plan-0066-batch-s2ae-part-7-skills_itemchargesok-skillweaponwear-and-handlers-26-and-27-emulated-2026-11-16-lanen66sa);
+  skills/0001's C7 bullet carries a dated note.
+- **Rows (5).** Raised whole: dispatch 40 (`SKILLS_ItemChargesOk`, its four callees run whole). Raised in part:
+  dispatch 130 (handler 26 to `UnitSetStat`; the write and the packet reduction after it stay c-emu, stat 6
+  present), 131 (handler 27 to `STATE_ApplyTimed`; stats 68/69 and the state → b, H2a: the call reaches 0x0040B4B0 at
+  0x00624CC8), 156 (`SkillWeaponWear` to `PLAYER_UseAmmo`, `UnitSetStat`, `ItemBreak`; the setter's write stays
+  c-emu, the ammunition use and the break → b, H2a), 181 (its one step; draws inside `UseAmmo`/`ItemBreak` → b).
+  None moved, none contradicted.
+- **Refinements** (Phase 3's): C7's refusal, passes, level and walk end; N2's type-45 test, durability gate, signed
+  roll and wrapped-sign break test; handler 26's gates and loss formula; handler 27's caps by unit type. Routed by
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-7-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-7-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** unchanged (no class move): a-logs 623, a-run 334, b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit
+  23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README § 4's S2ae row updated; skills-dispatch rows
+  40, 130, 131, 156, 181 annotated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Dispatch 282 (C7) whole; 796, 797 (K rows
+  26, 27), 981 (N2) and 1061 (P's weapon-wear row) in part.
+- **Judgment calls for the review:** (1) the item records, `ExpMaxLevel`'s pointer and the ItemTypes words are
+  inputs set on purpose (S1e ruling 3), declared as `dword`/`load` lines; (2) `wear`'s domain keeps the item's first
+  type a declared row, since 0x00628700's type indexes the equivalence words unchecked; (3) the setters' writes stay
+  c-emu as part 6's handler 18 (judgment call 4 there); (4) d181 is filed in part, not whole, since the row's
+  "1 draw" also covers what the three callees draw; (5) `wear`'s chance is set at the roll in 12 % of the cases
+  (computed from the case's seed by the case writer) so that both roll strictness controls separate.
+- **Resume note for part 8 (a fresh lane on `lane/n66sa`; `workspace/ghidra-n66sa` stays).** Left: 31 rows (dispatch
+  3, 30, 32–35, 83, 84, 89, 92, 96, 110–112, 127–129, 142–144, 152–154; missiles 26, 27, 63, 71, 72, 74, 85, 95), the
+  5 S2a remainders (dispatch 31, 63, 79, 164, 172), part 1's 4 (dispatch 39, 69, missiles 29, 81), missiles 69's and
+  82's, and the c-emu remainders of parts 6 and 7 (dispatch 124's, 130's and 156's setter writes; 135's and 178's
+  handlers 1–4, 23–25). Start a new tool and a `run8/`; `tools/skills_s2ae7_emu.py` adds item stat lists with base and
+  live arrays (`put_list`), the ItemTypes/items declarations, `UnitIsDead` and `MonsterOwner` reuse. Order, cheapest
+  first:
+  - **No calc, no page:** handler 1 to `MissileCreate` (d110: `0x00552FD0`, `UnitsHostile` 0x00554200, 0x0045C4B0,
+    the missile record 0x0046ACE0, the position getters 0x0045ADF0/0x0045AE20); handler 25 to `StatListSetStat`
+    0x00627150 (d129: 0x006256B0 the list by state, 0x00625D00, 0x005C8780, `MulDiv`); handler 23 (d127: 0x0055B7E0,
+    `UnitAlignGet`, 0x00645B70, 0x004EFC50, `GolemHeal` 0x005C5F10, 0x00621E40); handler 24 (d128).
+  - **A constant calc pool** (`09 <s32> 00` programs; `SKILLS_EvalCalc` 0x00646CA0 and `CALC_Eval` 0x006C0BC0 whole,
+    jump table 0x006C1164 a declared read): handlers 2, 3 to `ApplyDamage` (d111, 112), Firestorm (d172), d69's
+    `< 1` test (0x006478F0, `SKILLS_DelayOk`), d164's callback parameters.
+  - **A declared inventory page** (S5e part 3): `SKILLS_CanUse` and its checks (d3, 32–35, 63's and 31's
+    remainders; `ItemChargesOk` now emulated whole), `GetRangeType` (d30), start 6 (d89), `GetPhysMin` (d92),
+    `KickItemDamage` (d96), `MonOwnerSkillDamage` (d153, 154), m74's roll, `MissileDamageBlock` (m26, 29).
+  - **A declared room:** do 3 and do 5's marks (m71, 72), `ItemTargetRandomPoint`'s later tries (d83), the callbacks'
+    `PathPlan` walk (m82, m81's remainder).
+  - **Stat setters** (stat present): `SummonSetLevel` (d142, 143), `MonAttackStats` (d152), `MissileDamageToStats`
+    (m27, 95), d144's passive stats; m63 `MISSILE_BuildDamage`; m85's no-reference half (`0x00645390`) by a full
+    reference scan with two tools.
+- **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.

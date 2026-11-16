@@ -1406,6 +1406,72 @@ case (ADR-0021): what the callee does is past the claim.
   `n_gt1~`, `n_lt20~`, `ch_gt0~`, `nl_lt_max~`: a value at the bound gives the bound either way).
   (run:2026-11-16-sweep2-s2ae6)
 
+### 23. Plan 0066 batch S2ae part 7: `SKILLS_ItemChargesOk`, `SkillWeaponWear` and handlers 26 and 27 emulated (2026-11-16, `lane/n66sa`)
+
+Four families under `tools/ghidra.sh emuboundary` with `tools/skills_s2ae7_emu.py` (record:
+[run:2026-11-16-sweep2-s2ae7](experiments.md#run2026-11-16-sweep2-s2ae7)): 13 500 cases, 0 mismatches, 0 stops, 0
+unaccounted reads or writes; 69 controls, 65 separating, `passed` 0. Each callee runs whole on the declared image
+unless named as an observed boundary (ADR-0021); bracketed counts are the cases a reversed test changes
+(`check.txt`).
+
+- [C] *d40 (dispatch C7), `SKILLS_ItemChargesOk`, whole.* With `EAX` the unit and `EBX` the skill entry: a null unit
+  or entry returns 0 [`u_nz` 2 412, `ent_nz` 2 438]; no inventory (`unit +0x60`) returns 1 [`inv_nz` 623], and so does
+  an entry whose item guid `+0x34` is −1 [`item_skill` 535]. The layer is `skill · 64 + (level & 0x3F)` with `skill`
+  the record's signed word `+0x00` and `level` from `SKILLS_GetSkillLevel(unit, entry, 0)`: the entry's `+0x28`
+  floored at 0 and capped at `ExpMaxLevel(0)`, no bonus call with the flag 0 [`lvl_gt0` 614, `lvl_lt_max` 754; the
+  mask: `spec_no_mask` 215]. The walk starts at `INV_GetFirstItem` (inventory magic 0x01020304, else none:
+  [`inv_magic` 507]) and follows `INV_GetNextItem` (item data `+0x64`); a node that is not of type 4 is no item and
+  also ends the walk [`node_item` 524]; the end of the list returns 1 [`node_nz` 999]. The first item whose guid
+  `+0x0C` equals the entry's [`guid_eq` 663] decides: `STATS_GetUnitStat(item, 204, layer)` (word layer), and
+  `test eax, 0xFF; setg al` returns 1 exactly when its low byte is non-zero [`low_nz` 1 366; the whole value's sign,
+  `spec_full_value`, 358]. 676 returns of 0, 2 324 of 1. (fn:SKILLS_ItemChargesOk@0x00647840, 0x00647878, 0x0064788B,
+  0x006478C6, 0x006478CB, run:2026-11-16-sweep2-s2ae7)
+- [C] *d156, d181 (dispatch N2, P), `SkillWeaponWear` to its three calls.* `EBX` the item, `ESI` the unit, stack
+  (game, chance, amount), `ret 0xC`. `ITEMS_UnitIsType(item, 45)` first: the item record's type `+0x11E`, then its
+  second type `+0x120` when `> 0` and below the ItemTypes count [`is45` 1 412, `eq1` 1 232, `eq2` 50, `t2_gt0` 71,
+  `t2_lt_n` 260]; not of type 45 returns with no step. A stackable record (`+0x132`) goes the quantity way [`stack`
+  1 693]: stat 70 `> 0` [`q_gt0` 1 057], one step of the unit's seed, `low mod 100` (unsigned) `<` chance (signed)
+  [`ra_lt_ch` 419, `ra_lt_ch~` 48], then `PLAYER_UseAmmo` with `ECX` the game argument and `EDX` the unit from
+  0x005DAAA8 (189 calls). Otherwise `sub_00629930_ItemHasDurability` [`hasdur` 2 303]: type 4, record `+0x113` = 0
+  and `+0x112` > 0, stat 73's base value (the list's `+0x24` array) non-zero and its value non-zero, stat 152 ≤ 0
+  [`d_item` 867, `nodur0` 792, `dur_gt0` 771, `b73_nz` 1 057, `max_nz` 1 605, `indes_le0` 888]; then one step and the
+  same roll [`rd_lt_ch` 759, `rd_lt_ch~` 75]. `d = stat 72 − amount` (32-bit): `js` or zero calls
+  `sub_0055F850_ItemBreak` (`ECX` game, `EDX` unit, stack the item) from 0x005DAB36 (209 calls) [`d_sign` 291, `d_zero`
+  192]; else `UnitSetStat(item, 72, d, 0)` from 0x005DAB05 (137 calls). The test is the sign of the wrapped
+  difference, not `dur − amount ≤ 0` (`spec_math_le0`, 58 cases, all wrapped). One step on each way once its gates
+  pass (also when the roll then fails), none before them, and none between the roll and the three calls. (fn:sub_005DAA40_SkillWeaponWear@0x005DAA40, 0x005DAA70–0x005DAA9D,
+  0x005DAABC–0x005DAAE9, 0x005DAAF6, 0x005DAAF9, run:2026-11-16-sweep2-s2ae7)
+- [C] *d130 (dispatch K 26), handler 26 to `UnitSetStat`.* Returns 0 for a null unit or packet or a unit not of type
+  1 [`u_nz` 523, `pkt_nz` 515, `u_mon` 407], a packet `+0x4C` ≤ 0 [`dmg_gt0` 636, `dmg_gt0~` 87], no
+  `MonsterOwner` [`p_found` 1 083] or a dead one (`sub_005541B0_UnitIsDead`: `+0xC6` bit 0, a player in mode 0 or
+  17, a monster in mode 0 or 12, any other type) [`p_dead` 814, `dead_bit` 440, `dead_pmode` 455, `dead_mmode` 131],
+  the owner's life (stat 6) below 256 [`life_ge256` 595, `life_ge256~` 35], no MonStats row [`ms_rec` 440] or a
+  negative `+0x170` skill [`sk_ge0` 500]. The loss is `MulDiv(+0x4C, p, 100)` with `p` the skill's Skills `+0x158`
+  (0 outside the table) [`sk_rec` 369; a plain 64-bit percentage, `spec_pct`, 31]; `life − loss` below 256 becomes 256
+  [`nv_lt256` 394; no floor, `spec_no_floor`, 116]; `UnitSetStat(owner, 6, x, 0)` from 0x005C6731 (407 calls). No
+  step. (fn:sub_005C6690_StatEv26BloodGolemDamaged@0x005C6690, 0x005C66B2, 0x005C66E3, 0x005C66F7, 0x005C6712,
+  0x005C671B, run:2026-11-16-sweep2-s2ae7)
+- [C] *d131 (dispatch K 27), handler 27 to `STATE_ApplyTimed`.* Returns 0 for a null unit or other unit [`u_nz`
+  1 371, `o_nz` 1 370] or a zero stat 150 (`UnitGetStat`, layer 0) [`v_nz` 1 502]. `v` is capped at 50 for a type-0
+  other unit [`o_player` 1 467] and for a type-1 one with MonsterData `+0x16` & 0x0C [`mt_c` 443], at 90 for any
+  other type-1 unit [`o_mon` 1 495], and any other type returns 0; a negative `v` passes uncapped [`v_ge_cap` 1 183;
+  the caps swapped, `spec_cap_swap`, 720]. `STATE_ApplyTimed` is called with `ECX` the stack block (unit, other, 0, 1,
+  750, 0x43, `−v`, 0x18, 0) from 0x005C6819 (1 294 calls, the block compared byte for byte). No step.
+  (fn:sub_005C6760_StatEv27ClayGolemSlow@0x005C6760, 0x005C6796–0x005C67CA, 0x005C67E9, 0x005C6819,
+  run:2026-11-16-sweep2-s2ae7)
+- *After, `[I]` (ADR-0021).* The ammunition `PLAYER_UseAmmo` uses, `ItemBreak`'s break, the writes `UnitSetStat` makes
+  (stat 72 on the item, stat 6 on the owner), handler 26's packet reduction after its call (0x005C6736–0x005C6749),
+  handler 27's stats 68 and 69 at `−v` (0x005C6835, 0x005C6840) and the overlay calls are past their calls.
+  `STATE_ApplyTimed` reaches the pool (0x0040B4B0 at 0x00624CC8 via 0x00624C80 ← 0x006270B0 ← 0x00627150),
+  `PLAYER_UseAmmo` (0x0040B430 at 0x0063AE2D via 0x0063ADD0 ← 0x0063BDE0) and `ItemBreak` (0x0040B4B0 at 0x00624E73
+  via `UnitSetStat`) too (`run5/sites.txt`), so those remainders go to b (ruling R2); the two setter writes stay
+  c-emu, as handler 18's (a declared stat present keeps the setter off the allocator).
+- [I] *Not covered.* The callers' arguments (Impale's calc2 and calc3, the entry the request checks pass);
+  `ItemChargesOk` chains longer than four items; `UnitGetStat`'s ItemStatCost caps (records declared zero); item
+  classes past the items count and first types past the ItemTypes count (0x00628700's type is used unchecked); the
+  strictness of a clamp at its own bound (`lvl_gt0~`, `lvl_lt_max~`, `nv_lt256~`, `v_ge_cap~`: the bound gives the
+  bound either way). (run:2026-11-16-sweep2-s2ae7)
+
 ## Data touched
 
 `tbl:Missiles.txt:Id`, `pSrvDoFunc`, `pSrvHitFunc`, `pSrvDmgFunc`, `Vel`, `VelLev`, `MaxVel`, `Accel`, `Range`,
