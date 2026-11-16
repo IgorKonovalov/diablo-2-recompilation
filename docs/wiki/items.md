@@ -3,7 +3,7 @@ based_on:
   - docs/specs/items/tc.md 2026-11-10
   - docs/specs/items/quality.md 2026-11-10
   - docs/specs/items/uniques-sets.md 2026-10-30
-  - docs/specs/items/affixes.md 2026-10-27
+  - docs/specs/items/affixes.md 2026-11-16
   - docs/specs/items/properties.md 2026-10-27
 ---
 
@@ -64,6 +64,24 @@ turn, so one extra or missing draw changes every later item of the same drop
 ([quality § Draw order](../specs/items/quality.md#draw-order-on-srcseed)). Creating the item does not touch the
 source seed at all; everything from the unique pick to the automagic affix happens on the new item's own seeds
 ([TC § H](../specs/items/tc.md#h-item-pick-and-hand-off)).
+
+```illustration
+id: items-tc-andariel-hell
+tool: tc_anim.py
+args: andariel 0xc0ffee --difficulty 2 --mf 200
+seed: illustrative
+illustrates: ../specs/items/tc.md#d-the-resolver--tc_resolvedrops ../specs/items/tc.md#e-entry-selection
+  ../specs/items/tc.md#g-recursion-into-a-sub-tc ../specs/items/tc.md#h-item-pick-and-hand-off
+  ../specs/items/quality.md#test-order ../specs/items/quality.md#d-unique-set-rare-and-magic-tests
+caption: Andariel's drop in an expansion Hell game, one player alone, magic find 200, walked pick by pick. Each
+  pick draws on the source seed over the TC's total weight plus NoDrop, and a picked sub-TC is walked to the end
+  before the parent's next pick (TC § D, § E, § G); a monster drop stops at six items (§ H). Each picked item then
+  runs the quality tests in order, unique, set, rare, magic, superior, normal, each test it reaches a draw on the same
+  source seed against its chance, and is built (quality § Test order, § D). Every value shown is computed by our models
+  (tools/tc.py, quality.py, uniques.py, affixes.py), not observed in the game, and the seed is an illustrative
+  input, not a seed a game derives. Not modelled and not shown: the quest drop, gold amounts, base stats, the
+  ethereal and socket rolls, automagic, and the properties' values.
+```
 
 ## Which treasure class
 
@@ -596,9 +614,9 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
   from a Hell Bovine; which game type, if any, excludes ladder uniques.
 - **Affixes** ([affixes open questions](../specs/items/affixes.md#open-questions)): the socket test on affixes, a rare
   with names but no affix, charms reaching the normal builder, the low-quality armour and throw-damage cuts, automagic on unique items
-  (set items skip it, seen once with edited quality odds), a forced affix that fails a test other than the level
-  window (no stock recipe has one), and which text a
-  rare name id is shown as (the [game data](game-data.md) page has the name line).
+  (set items skip it, seen once with edited quality odds), and a forced affix that fails a test other than the level
+  window (no stock recipe has one). Which text a rare name id is shown as is no longer open: the
+  [game data](game-data.md) page has it, with the name line.
 - **Properties** ([properties open questions](../specs/items/properties.md#open-questions)): several property kinds
   never reached (among them the one *Tomb Reaver* carries, which needs a Hellforge drop in Hell), the type-11 setup,
   the second ethereal, and the exact
