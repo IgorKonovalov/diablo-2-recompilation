@@ -396,7 +396,7 @@ eat: WalkStop(s.found, 1); ctl->v14 = 2; ctl->v18 = s.found->guid; ctl->v1C = 0;
 - [I] A state machine in `AiCtl+0x14` (0 idle, 1 looking, 2 walking, 3 eating, 4 after the meal, 5 stepping away)
   with the corpse's guid in `+0x18` and a walk count in `+0x1C` (six walks at most). Nothing in the function sets
   state 1 (its twelve stores to `AiCtl+0x14` write 0, 2, 3, 4 or 5, the zeros through `xor`ed registers;
-  0x005FA710–0x005FAA8A); only the search path, which runs in states 0 and 1 (and any other value), tests it. Up to four
+  0x005FA710–0x005FAA8A); only the search path, which runs in states 0 and 1 (and any other value), tests it. *Corrected 2026-11-16 (`lane/n66x`, plan 0066 S1f part 2):* the stores are **eleven** (0x005FA74B, 0x005FA7AD, 0x005FA7C6, 0x005FA7DD, 0x005FA841, 0x005FA858, 0x005FA887, 0x005FA90D, 0x005FA92B, 0x005FA95A, 0x005FA9AA; objdump and r2), none writing 1; the value set and the search-path test stand. (run:2026-11-16-sweep2-s1f) Up to four
   `Range(100)` draws in one decision (two corpse tests, the command draw, the late corpse test). The `GameFindUnit`
   type in `EDX` is 1 (monster), computed as `state − 1` and `state − 2` (0x005FA767, 0x005FA803). In state 4 a unit
   out of melee plays A2 at the target and goes to state 5; one in melee steps 8 away and stays in 4.
