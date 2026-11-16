@@ -1,6 +1,6 @@
 # ADR-0012 — A human wiki: explanatory pages over the reviewed specs, no claims of their own, not published
 
-> **Status:** accepted (owner request, 2026-10-15); "not published" and the rejected local site amended for local builds by [ADR-0034](0034-local-documentation-site.md) (proposed)
+> **Status:** accepted (owner request, 2026-10-15); "not published" and the rejected local site amended for local builds by [ADR-0034](0034-local-documentation-site.md) (accepted 2026-11-16)
 > **Date:** 2026-10-15
 > **Related plan(s):** 0036-human-wiki-readme
 

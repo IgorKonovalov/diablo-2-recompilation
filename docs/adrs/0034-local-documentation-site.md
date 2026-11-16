@@ -1,6 +1,6 @@
 # ADR-0034 — A local-only documentation site, built by the user from their own game files and our scripts, with animated illustrations (amends 0012, 0030)
 
-> **Status:** proposed (owner decision 2026-11-16: "site can be a full local only publish that user can build out of game files + our scripts")
+> **Status:** accepted (owner, 2026-11-16; decision: "site can be a full local only publish that user can build out of game files + our scripts")
 > **Date:** 2026-11-16
 > **Related plan(s):** none yet; the follow-up work is in the backlog entries listed under *Implementation*
 
