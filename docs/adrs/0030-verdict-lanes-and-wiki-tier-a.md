@@ -1,6 +1,6 @@
 # ADR-0030 — Verdict lanes and wiki lanes take the full review (amends 0023)
 
-> **Status:** accepted (owner, 2026-11-04)
+> **Status:** accepted (owner, 2026-11-04); generator text lanes added by [ADR-0034](0034-local-documentation-site.md) (accepted 2026-11-16)
 > **Date:** 2026-11-04
 > **Related plan(s):** [0057-quirks-catalogue](../plans/done/0057-quirks-catalogue.md)
 
