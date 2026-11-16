@@ -3,6 +3,11 @@
 - **Spec:** [player/party](../../specs/player/party.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 26; the *Count* column sums to 26.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66y`, 2026-11-16, the combat cluster): row 12 re-tagged.** The spec's front matter is now C 47 / I
+  29 / L 3 (it was C 46 / I 30 / L 3 at `main` `858b7eea`; four `[I]` lines of plan 0063 P3 are not in this
+  inventory). Statement `[C]` whole: row 12 (1), with combat/README row 38. Split, corrected: none (0). Kept `[I]`
+  (25): rows 1–11, 13–26: the S7a rows 2, 14, 20 and 22 wait for their own cluster's re-tag (a second *Phase 3* line
+  then), the others are H7a, d-2c and d-none.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

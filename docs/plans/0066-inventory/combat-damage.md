@@ -3,6 +3,12 @@
 - **Spec:** [combat/damage](../../specs/combat/damage.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 35; the *Count* column sums to 35.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66y`, 2026-11-16): re-tagged.** The spec's front matter is now C 56 / I 8 / L 4 (it was C 34 / I
+  35 / L 5 at `main` `858b7eea`). Statement `[C]` whole: rows 1–5, 8–11, 15, 17–29, 32, 34 (25). Split, the `[C]` half
+  and the remainder `[I]` as the *Route* cell names: 6, 12–14, 16, 30, 33 (7). Corrected to the finding: row 7 (step
+  1's condition and stat 120's sign, S5e correction 6) (1). Kept `[I]` (H5a): 31 (1). Whole includes row 17 (S5e's
+  damage 8 emulated the non-zero entry S5b left d-none) and row 19 (Shiver Armor the one event-3 handler, S5b). Split:
+  row 16 (H5b) takes the creation chain `[C]` as overview B4 does, the doubling at the hit `[I]`.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

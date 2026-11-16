@@ -3,6 +3,14 @@
 - **Spec:** [combat/README](../../specs/combat/README.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 43; the *Count* column sums to 43.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66y`, 2026-11-16): re-tagged.** The spec's front matter is now C 75 / I 28 / L 5 (it was C 43 / I
+  43 / L 5 at `main` `858b7eea`). Statement `[C]` whole: rows 1–3, 8, 11–13, 17–19, 23, 26, 34, 37–39 (16). Split, the
+  `[C]` half and the remainder `[I]` as the *Route* cell names: 4, 5, 9, 14, 15, 20–22, 24, 25, 27, 30, 32, 35, 40, 41
+  (16). Corrected to the finding: row 42 (stat 141 non-zero, S5fe correction 1) and row 29 (`UnitMsgA3`'s writes, S5fe
+  correction 3; still `[I]`, H5b) (2). Kept `[I]` (H5a, H5b, d-none): 6, 7, 10, 16, 28, 31, 33, 36, 43 (9). Whole
+  includes rows 12 and 39 (all halves raised by S5a and S5e). Split: rows 20 and 24 keep the halves skills/missiles
+  E1, F1 and damage step 3 keep `[I]`; row 21 marks B4's `SrcMissDmg` test and stat-141 store; row 25's call `[C]`,
+  its field reading `[I]` (S5fe lane check); rows 14 and 35 keep their not-settled remainders.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
@@ -47,7 +55,7 @@
 | 39 | 432 | D. Branches | hireling — for P 50, 35 and 25 against a boss … | `fn:sub_0063EE90_HirelingType@0x0063EE90` | a-logs | as row 12 **S5a 2026-11-15: raised in part.** As row 12. | S5a | 1 |
 | 40 | 433 | D. Branches | player against player — named only; no two-client run yet (ADR-0008) | `fn:COMBAT_DamagePercent@0x0057C060` | a-logs | run:2026-10-20-two-clients logs (multiplayer/0001 § 6): P = 17 and `D` = 100 on every logged field; the text predates the run **S5a 2026-11-15: raised in part.** [C] P = 17 on 226 `RDP` lines of pvp-1, physical and lightning (run:2026-10-20-two-clients, multiplayer/experiments MP23). Stays `[I]`: the other scaled fields, stat events and leech with `D` = 100 → d-2c (a two-client session with those fields). The line's "no two-client run yet" is stale (Phase 3). | S5a | 1 |
 | 41 | 496 | Reimplementation notes | the entries and not for the peek. | `0x005D5368` | c-emu | as row 9 **S5fe 2026-11-16: raised in part.** [C] the peek half (static, two tools, as row 9: the seed leaves `PrgFinisher`'s peek as it entered). Stays `[I]`: entry 38's two or three draws → b (H5b, not added): reached only after `DeliverQueued` when the attacker has a target (a queued entry is freed, 0x0040B480 at 0x0057CA5B) and before `SKILLS_ForUnitsInRange`; [combat/0001 § 22](../../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe). | S5fe | 1 |
-| 42 | 501 | Reimplementation notes | a chance above 0. | `0x0064A864` | c-emu | as row 22 **S5fe 2026-11-16: contradicted in part.** The deadly-strike step needs a **non-zero** stat 141, not one above 0: 565 cases with a negative 141 step the seed (`spec_141_gt0` fails all 565). Raised: the mastery half (the value is a maximum from 0, never below it; 309 third steps); [combat/0001 § 22](../../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe); backlog [`2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections.md). | S5fe | 1 |
+| 42 | 501 | Reimplementation notes | a chance above 0. | `0x0064A864` | c-emu | as row 22 **S5fe 2026-11-16: contradicted in part.** The deadly-strike step needs a **non-zero** stat 141, not one above 0: 565 cases with a negative 141 step the seed (`spec_141_gt0` fails all 565). Raised: the mastery half (the value is a maximum from 0, never below it; 309 third steps); [combat/0001 § 22](../../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe); backlog [`2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections.md). | S5fe | 1 |
 | 43 | 571 | Open questions | rate (0 mismatches over 131 logs); the short tiers stay | – | d-none | meta: a backticked tag in an open question, no claim of its own | – | 1 |
 
 **Totals by class:** a-logs 25, a-run 1, b 8, c 2, c-emu 6, d-none 1 (sum 43). *(S5fe 2026-11-16: 3 c-emu → b, H5b.)*

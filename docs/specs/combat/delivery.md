@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, combat/to-hit, combat/damage, combat/reductions, monsters/stats]
 consumed_by: [combat/overview, items/tc, stats/states, items/economy]
-tags: {C: 81, I: 67, L: 4}
-updated: 2026-11-04
+tags: {C: 114, I: 42, L: 4}
+updated: 2026-11-16
 ---
 
 # Combat: queue, delivery, on-hit effects and the life change
@@ -44,11 +44,11 @@ flowchart TD
 | The queued hit is delivered | fn:COMBAT_DeliverQueued@0x0057D4F0 | [C] (run:2026-10-16-combat) |
 | The packet is applied (melee and missile) | fn:COMBAT_ApplyDamage@0x0057C6C0 | [C] (run:2026-10-16-combat) |
 | Leech | fn:COMBAT_Leech@0x0057C420 | [C] for players, the mercenary and monsters (run:2026-10-16-combat) |
-| Crushing blow, open wounds, freeze (stat events 16, 15, 14) | fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_Freeze@0x005BFC60 | [C] for the first two (run:2026-10-16-combat); [C] for freeze on a melee hit (run:2026-10-20-shortfalls) |
+| Crushing blow, open wounds, freeze (stat events 16, 15, 14) | fn:STATEVENT_CrushingBlow@0x005BFFC0, fn:STATEVENT_OpenWounds@0x005BFE60, fn:STATEVENT_Freeze@0x005BFC60 | [C] for the first two (run:2026-10-16-combat); [C] for freeze on a melee hit (run:2026-10-20-shortfalls); [C] for each one's branches, emulated (run:2026-11-16-sweep2-s5e2) |
 | A monster's life tick (poison, open wounds) | fn:sub_005A6920_MonRegenEvent@0x005A6920 | [C] (run:2026-10-16-combat) |
 | A player's life tick | fn:sub_00580810_RegenEvent@0x00580810 → fn:sub_00580610_LifeRegenTick@0x00580610 ([stats/states § E](../stats/states.md#e-the-regeneration-tick)) | [C] (run:2026-10-17-stats: 54 719 ticks, 1 082 under poison) |
 | A finishing move (do 42, 46, 50, 52) hands its queued hit to the finisher | fn:COMBAT_PrgFinisher@0x005D5220 (A2) | [C] for the six call sites (run:2026-10-21-cat-emu-ass `static.txt`); [C] for the calls of do 42, 46 and 50 as boundaries, do 46's on the path where its hit helper returns for a bad skill id (ADR-0021, run:2026-10-21-cat-emu-ass) |
-| The kill | fn:COMBAT_GetHit@0x0057CEE0 → fn:sub_0057CCB0_UnitKilled@0x0057CCB0 | [I] |
+| The kill | fn:COMBAT_GetHit@0x0057CEE0 → fn:sub_0057CCB0_UnitKilled@0x0057CCB0 | [C] the call on result bit `0x2` (0x0057D001–0x0057D00F, r2 beside Ghidra, run:2026-11-15-sweep2-s5b, [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)) |
 
 ## Inputs
 
@@ -80,7 +80,7 @@ flowchart TD
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | one life | 256 (life below it is set to 0) | 0x0057C852–0x0057C874 | [C] (run:2026-10-16-combat) |
-| crushing blow divisors | player 10, hireling 10, monster 4, boss or superunique 8 | 0x005C0031–0x005C00F6 | [C] for 4 and 8 (run:2026-10-16-combat), 4 on champions (run:2026-10-20-shortfalls) |
+| crushing blow divisors | player 10, hireling 10, monster 4, boss or superunique 8 | 0x005C0031–0x005C00F6 | [C] for 4 and 8 (run:2026-10-16-combat), 4 on champions (run:2026-10-20-shortfalls), 10 for a player and a hireling (run:2026-11-16-sweep2-s5e2) |
 | open wounds band steps | 9, 18, 27, 36, 45 per level; + 40 | fn:sub_005BFDA0_OpenWoundsBand@0x005BFDA0 | [C] (run:2026-10-16-combat) |
 | open wounds length | 200 frames | 0x005BFEEC–0x005BFF9B | [C] (run:2026-10-16-combat) |
 | shatter chance | 20 | 0x0057B0FA–0x0057B124 | [I] |
@@ -100,8 +100,8 @@ A1. ResolveAndQueue(att, def, pkt, srcdam):                          [C] (fn:COM
         if (total & ~0xFF) > (stat(def, 6) & ~0xFF): pkt.result |= 0x2        ; kill pre-test
       QueueHit(att, def, pkt)                                                  ; always; copied onto att's list
 
-A2. DeliverQueued(att, def):                                          [I] (fn:COMBAT_DeliverQueued@0x0057D4F0, all of A2)
-      e ← the queued entry for def;  if none: return
+A2. DeliverQueued(att, def):                                          [C] (fn:COMBAT_DeliverQueued@0x0057D4F0, run:2026-10-16-combat, all of A2 except as tagged)
+      e ← the queued entry for def;  if none: return                  ; [I] the queue lookup and the removal below, not logged (fn:COMBAT_DeliverQueued@0x0057D4F0)
       if def is in melee range and (e.pkt.result & 0x1) and att is alive:
         e.pkt.flags ← 0x20
         ApplyDamage(att, def, e.pkt, doReductions: false)                     ; § B
@@ -118,12 +118,18 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
   run:2026-10-16-combat)
 - A1. The kill pre-test compares whole life points (`& ~0xFF`). [C] (fn:COMBAT_ResolveAndQueue@0x0057DBF0,
   run:2026-10-16-combat)
-- A2. A delivery can happen on a later frame than the hit test when a skill do-function queues it (362 such events
-  in the run, resynchronised); the attacker's AI may draw in between. [I] (fn:COMBAT_DeliverQueued@0x0057D4F0,
-  run:2026-10-16-combat)
+- A2. **The order of a delivery** in the kept logs: the delivery, the leech, the durability, the knockback and the
+  get-hit, in 9 159 melee events (and variants in 519), and the delivery, leech and get-hit then the missile's exit in
+  11 128 missile events. [C] (fn:COMBAT_DeliverQueued@0x0057D4F0, run:2026-10-16-combat, [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
+- A2. A delivery can happen on a later frame than the hit test when a skill do-function queues it: 789 such events in
+  the kept logs, queued by `SkillSt32Hit` (788) and `SkillSt42FireHit` (1), delivered 6 (787) or 9 (2) frames after
+  the hit test and resynchronised; the attacker's AI may draw in between. [C] (fn:COMBAT_DeliverQueued@0x0057D4F0,
+  run:2026-10-16-combat, run:2026-10-20-shortfalls, [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
 - A2. Before delivery, `SKILL_AttackDo` calls the progressive-charge finisher (A3); an attacker under a `meleeonly`
-  state (wolf, bear) skips it. The run met no charged state. [I] (fn:COMBAT_PrgFinisher@0x005D5220,
-  fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0)
+  state (wolf, bear) skips it: `UNIT_HasStateFlag(att, 38)` sends it to `AttackDeliverMeleeOnly` and `ret 8`, and
+  only States 139 `wolf` and 140 `bear` set `meleeonly`. [C] (fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0,
+  0x0056F19A–0x0056F1DA, tbl:States.txt:meleeonly, run:2026-11-15-sweep2-s5b, [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)) The run met no
+  charged state, so the finisher's work under one rests on A3. [I] (fn:COMBAT_PrgFinisher@0x005D5220)
 - A2. **The finisher has six direct calls in five functions**: `SKILL_AttackDo` (`0x0056F1CE`) and five sites in the assassin
   finishing moves' do functions, do 42 Dragon Talon (`0x005D5A8C`), do 46 Dragon Claw (`0x005D6399` and `0x005D63E1`,
   one per parity path), do 50 Dragon Tail (`0x005D71F2`) and do 52 Dragon Flight (`0x005D79DF`); start 25 calls it
@@ -138,9 +144,10 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
   @0x005D63AB, @0x005D63F3; run:2026-10-21-cat-emu-ass `hit_ass`, fn:sub_005D5A30_SkillDo42DragonTalon@0x005D5A30,
   fn:sub_005D6340_SkillDo46DragonClaw@0x005D6340, fn:sub_005D7180_SkillDo50DragonTail@0x005D7180,
   [skills/0014 § 4](../../findings/skills/0014-assassin.md#4-the-hits-and-the-finishing-moves-do-33-34-35-42-46-50-52))
-- A2. Do 52 passes `QueuedHitFind`'s result with no null test, as do 42. The finisher returns at once for a null hit
-  or one whose result lacks bit `0x1`, so a null argument runs nothing. [I] (0x005D79D1–0x005D79DF,
-  0x005D5229–0x005D523B)
+- A2. Do 52 passes `QueuedHitFind`'s result with no null test, as do 42. The finisher returns at once, with no write,
+  for a null hit (149 emulated cases) or one whose result lacks bit `0x1` (298), so a null argument runs nothing; with
+  the bit its first call is `UNIT_GetTargetUnit` (0x005D5244). [C] (0x005D79D1–0x005D79DF, 0x005D5229–0x005D523B, two
+  tools on do 52's call, run:2026-11-16-sweep2-s5fe, [combat/0001 § 22](../../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe))
 - A2. **After the finisher, each finishing move delivers.** Do 46 runs the finisher only on a hit, then one
   `DeliverQueued(caster, target)` on either path (the jump at `0x005D6391` / `0x005D63D9` skips only the finisher), and
   sets or clears bit 6 by the parity bit; do 42, do 50 and do 52 call `DeliverQueued` after the finisher. Do 42 then
@@ -153,13 +160,14 @@ A2. DeliverQueued(att, def):                                          [I] (fn:CO
 
 ```
 A3. PrgFinisher(att, hit):                                            [I] (fn:COMBAT_PrgFinisher@0x005D5220, all of A3 except as tagged)
-      if hit is null or not (hit.result & 0x1) or the target is not in melee range: return
+      if hit is null or not (hit.result & 0x1): return               ; [C] (0x005D5229–0x005D523B, run:2026-11-16-sweep2-s5fe)
+      if the target is not in melee range: return
       for each charged progressive state of att (a list, a skill, lvl ← max(stat 351, current level) > 0, an aurastat1):
         n ← clamp(charges, 1, 3)
-        peek ← Step(copy of att.seed)                                 ; att.seed itself unchanged (0x005D5368–0x005D538C)
+        saved ← att.seed;  peek ← Step(att.seed);  att.seed ← saved   ; the seed leaves as it entered; [C] (0x005D5368–0x005D538C, two tools, run:2026-11-16-sweep2-s5fe)
         if Skills.prgstack: for k in 1 .. n − 1: charge stat ← k; Entry(srvprgfunc k)
         Entry(srvprgfunc n)                                           ; always; an entry number outside 1..0xBE runs nothing
-        UnitMsgA3(skill, lvl, peek, 0, n)                             ; a client message (0xA3), no game state, no draw
+        UnitMsgA3(skill, lvl, peek, 0, n)                             ; allocates and links a client message (0xA3), marks the unit updated; no draw
       free the list
 
 Entry 37 or 143 (ring):                                               [C] up to the first MissileCreate (ADR-0021, run:2026-10-21-cat-emu-ass, fn:sub_005D4E70_SkillPrgDo37Ring@0x005D4E70, fn:sub_005D4F40_SkillPrgDo143Ring@0x005D4F40, fn:sub_005D4150_SkillRing64LocalSeed@0x005D4150, fn:sub_005D4870_SkillRing64LocalSeedB@0x005D4870)
@@ -232,10 +240,12 @@ Entry 40 (one missile at the target point):                           [C] (ADR-0
       MissileCreateAt(att, skill, lvl, m, tx, ty)
 ```
 
-- A3. **The finisher's own step is a peek**: it copies the seed out (`0x005D5374`), calls `RNG_Step` on the copy
-  (`0x005D537B`), keeps the result and copies the seed back (`0x005D538C`). The kept value goes only into the client
-  message `0xA3`. [I] (fn:sub_00650E70_Copy64Out@0x00650E70, fn:sub_00650E60_Copy64In@0x00650E60, fn:RNG_Step@0x0045C370,
-  fn:sub_00571AA0_UnitMsgA3@0x00571AA0, [skills/0001 § 12](../../findings/skills/0001-dispatch.md#12-progressive-charges))
+- A3. **The finisher's own step is a peek**: it saves the seed's two words (`Copy64Out`, `0x005D5374`), calls
+  `RNG_Step` on the attacker's own seed (`ECX` = attacker + 0x20, `0x005D537B`), keeps the result and writes the saved
+  words back (`Copy64In`, `0x005D538C`), so the seed leaves as it entered. The kept value is read once, at 0x005D544E,
+  into the client message `0xA3`. [C] (fn:sub_00650E70_Copy64Out@0x00650E70, fn:sub_00650E60_Copy64In@0x00650E60,
+  fn:RNG_Step@0x0045C370, fn:sub_00571AA0_UnitMsgA3@0x00571AA0, two tools, run:2026-11-16-sweep2-s5fe,
+  [combat/0001 § 22](../../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe), [skills/0001 § 12](../../findings/skills/0001-dispatch.md#12-progressive-charges))
 - A3. **The entries step the attacker's seed at entry.** 37, 39, 41 and 143 step the attacker's seed once inline,
   before the record test, so the step happens even when the entry then creates nothing; up to its boundary (the first
   creation; 38's `DeliverQueued` or `SkillRollPhys`) no entry of 36–41 and 143 draws on the attacker's or the target's
@@ -270,13 +280,17 @@ Entry 40 (one missile at the target point):                           [C] (ADR-0
 - A3. **Entry 36 is also an item effect.** `ItemEffect` 36 on rows 44 Frost Nova and 48 Nova makes an item cast of
   those skills with the effect flag run entry 36: a nova of the row's `srvmissilea` (119 `frostnova`, 90 `nova`)
   centred on the cast's target unit, and nothing without one. The flag is 1 only from a skill-on-attack, -kill or -hit
-  stat without `ItemTgtDo` (E5); any other item cast of those rows runs their `srvdofunc`. [I] (tbl:Skills.txt:ItemEffect,
+  stat without `ItemTgtDo` (E5); any other item cast of those rows runs their `srvdofunc`. [C] Over Skills.txt
+  `ItemEffect` is other than blank or 1 only on 44, 48 (36) and 53 (151), and the effect word is 1 only at 0x005C054E.
+  (tbl:Skills.txt:ItemEffect, run:2026-11-15-sweep2-s5b, [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b),
   [skills/0014 § 1](../../findings/skills/0014-assassin.md#1-the-table-slots-the-shared-shape-the-stock-rows-and-the-callers),
   [skills/0015 § 6](../../findings/skills/0015-item.md#6-the-stat-event-handlers-20-21-30))
 - A3. **Stock use**: Fists of Fire 143/38/39 and Blades of Ice −/38/39 and Claws of Thunder −/36/37 with `prgstack`
   (an entry number 0 runs nothing), Royal Strike 40/143/41 without (only the current count's entry runs). A Fists of
   Fire finisher at three charges therefore steps the attacker's seed once (143), delivers and draws two or three
-  times (38), and steps it once more (39). [I] (0x005D53E0–0x005D5490, tbl:Skills.txt:prgstack,
+  times (38), and steps it once more (39). [C] for the stock rows: `srvprgfunc1`–`3` are set on these four rows only
+  (tbl:Skills.txt:prgstack, full table, run:2026-11-15-sweep2-s5b). [I] for the draws past each entry's first
+  boundary (0x005D53E0–0x005D5490,
   [skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail))
 
 ### B. Delivery (`COMBAT_ApplyDamage`)
@@ -286,7 +300,7 @@ sequenceDiagram
   participant A as attacker seed
   participant D as defender seed
   Note over A,D: COMBAT_ApplyDamage, in order
-  A->>A: event handlers newest first: open wounds Range(100), crushing blow Range(100), freeze Range(100), each if chance > 0
+  A->>A: event handlers newest first: open wounds Range(100), crushing blow Range(100) if chance > 0, freeze Range(100) if stat 134 > 0
   A->>A: leech overlay Range(2) if life and mana gains both run
   A->>A: stun Range(100) if the defender is special (flag 0x08) and stun length > 0
   D->>D: cold shatter Range(100) if cold length > 0 and coldeffect ≠ 0
@@ -294,12 +308,12 @@ sequenceDiagram
 
 ```
 B1. ApplyDamage(att, def, pkt, doReductions: bool):                  [C] (fn:COMBAT_ApplyDamage@0x0057C6C0, run:2026-10-16-combat)
-      if not hostile(att, def) and not (pkt.flags & 0x1000): pkt.result &= ~0x3; return      ; [I] (0x0057C6D5–0x0057C78E, B1–B2)
+      if (not hostile(att, def) and not (pkt.flags & 0x1000)) or def has no room: pkt.result &= ~0x3; return   ; the prologue to `def is dead`: run:2026-11-16-sweep2-s5e3 (0x0057C6D5–0x0057C78E)
       if def is in town and not (att is a monster with the town-capable MonStats bit): pkt.result &= ~0x2; return
       if def is a monster and not MonStats.killable: return
       if def is dead: return
 B2.   if doReductions: ApplyReductions(att, def, pkt)                  ; missiles
-B3.   if (pkt.result & 0x1) and not (pkt.result & 0x20):               ; [I] for the event order (0x0057C7A5–0x0057C7F3)
+B3.   if (pkt.result & 0x1) and not (pkt.result & 0x20):               ; [I] for the order of 5 and 1 and for event 6 (0x0057C7A5–0x0057C7F3)
         if not doReductions:
           DispatchEvent(5 domeleedamage, unit: att, other: def, pkt)   ; § E
           DispatchEvent(1 damagedinmelee, unit: def, other: att, pkt)
@@ -313,8 +327,8 @@ B4.   pkt.phys ← min(pkt.phys, stat(def, 6))
       if pkt.total > 0:                                                ; [C] for the test (0x0057C855–0x0057C857, run:2026-10-20-shortfalls), see note
         hp: i32 ← stat(def, 6) − pkt.total
         stat(def, 6) ← (hp < 256) ? 0 : hp
-      stat(def, 8)  ← stat(def, 8)  − pkt.manaSteal,  0 when below 256  ; [I] (0x0057C879–0x0057C889)
-      stat(def, 10) ← stat(def, 10) − pkt.stamSteal,  0 when below 256
+      stat(def, 8)  ← stat(def, 8)  − pkt.manaSteal,  0 when below 256  ; (0x0057C879–0x0057C889, run:2026-10-16-combat: 462 deliveries)
+      stat(def, 10) ← stat(def, 10) − pkt.stamSteal,  0 when below 256  ; [I] no stamina steal logged (0x0057C879–0x0057C889)
       ApplyStun; ApplyCold; ApplyFreeze; ApplyPoison; ApplyBurn         ; § D
 B5.   if stat(def, 6) ≤ 0: pkt.result |= 0x2
       else: pkt.result &= ~0x2;  if def is a monster and pkt.total ≠ 0 and stat(def, 74) ≠ 0: reschedule its life tick
@@ -324,9 +338,21 @@ B5.   if stat(def, 6) ≤ 0: pkt.result |= 0x2
 
 Step notes:
 
-- B3. The handlers of one event run **newest first** (`UNIT_AddEvent` pushes at the head). In the run the open-wounds
-  handler of the logged characters ran before the crushing-blow handler; a reimplementation keeps the unit's own
-  registration order. [I] (fn:UNIT_AddEvent@0x005C0AD0, fn:UNIT_DispatchEvent@0x005C0C30)
+- B1. **The prologue**, emulated: the hostility test (the same unit or both null: not hostile; two players: the
+  attacker's relation entry for the defender; otherwise hostile unless both align alike) and a defender with no room
+  both clear `0x3` and return; a town level (1, 40, 75, 103, 109) clears `0x2` and returns unless the attacker is a
+  monster with MonStats `+0x0D` bit `0x04`; a monster without `+0x0D` bit `0x80` (`killable`) and a dead defender
+  return unchanged (216 cases past it, each test separated). [C] (fn:COMBAT_ApplyDamage@0x0057C6C0,
+  0x0057C6D5–0x0057C78E, run:2026-11-16-sweep2-s5e3, [combat/0001 § 21](../../findings/combat/0001-formulas.md#21-plan-0066-batch-s5e-part-3-the-defence-roll-with-a-shield-unit_getdefense-and-the-delivery-prologue-run2026-11-16-sweep2-s5e3)) The owner redirect through `GameFindUnit` and
+  a missile attacker's `+0xC8` bit 10 were not run. [I] (fn:COMBAT_ApplyDamage@0x0057C6C0)
+- B3. The event numbers: 5 the attacker's and 1 the defender's on a melee hit, 2 the defender's on a missile hit, in
+  the kept logs' handler lines. [C] (run:2026-10-16-combat, [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)) No delivery held both 5 and 1,
+  and none had event 6: the pseudocode's marked line.
+- B3. The handlers of one event run **newest first**: `UNIT_AddEvent` links the new record at the head (`unit+0x90`)
+  and `UNIT_DispatchEvent` walks from the head by `+0x1C`. In the run the open-wounds handler of the logged characters
+  ran before the crushing-blow handler; a reimplementation keeps the unit's own registration order. [C]
+  (fn:UNIT_AddEvent@0x005C0AD0, fn:UNIT_DispatchEvent@0x005C0C30, 0x005C0B1E–0x005C0B40, r2 beside Ghidra,
+  run:2026-11-15-sweep2-s5b, [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b))
 - B3. The stat events see the defender's life **before** this hit's damage: crushing blow takes its share of the
   current life, then the packet's total is subtracted from what is left. [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0,
   run:2026-10-16-combat)
@@ -342,20 +368,28 @@ Step notes:
   113 with a total of 0 on the player and 32 at 0 on a monster left the defender's life unchanged. [C]
   (0x0057C855–0x0057C857, fn:COMBAT_ApplyDamage@0x0057C6C0, run:2026-10-20-shortfalls)
 - B4. For a player attacker the defender's mana and stamina losses read the steal fields after `Leech` scaled them
-  (`<< 6` and the divisor), so a monster defender with mana loses `manaSteal·64/divisor` in 1/256 units. [I]
-  (0x0057C879–0x0057C889)
+  (`<< 6` and the divisor), so a monster defender with mana loses `manaSteal·64/divisor` in 1/256 units: 236 monster
+  defenders' mana at the end of the delivery is the entry mana less the scaled field. [C] (0x0057C879–0x0057C889,
+  run:2026-10-16-combat, [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
 - B4. **A `manahit` boss takes `256·v` mana** where the same value `v` through an `El` column takes `v`. The mod writes
   stats 62 and 63 × 256 ([monsters/stats § G](../monsters/stats.md#g-the-mod-handlers-stat-effects)) and
   `MonAttackStats`' type 7 writes the plain value; the build's roll shifts by 8 either way
   ([combat/damage § C](damage.md#c-one-element-combat_rollelemstat-combat_rollrange)), scaled by `srcdam ÷ 128`; `Leech`
   shifts the field up by 6 and, for a monster attacker, back (§ C); the subtraction above is in 1/256 units, with 0
   below 256, so the loss stops at the mana held. `v << 22` passes through `Leech`: 511 still fits in i32, 512 reaches 2³¹
-  and wraps, and whether a wrapped value reaches a use is not read. The factor is composed from the stated halves and the
-  code, and was not run. [I] (fn:sub_005A1F90_UModManaHit@0x005A1F90, fn:sub_005A4F50_MonAttackStats@0x005A4F50,
+  and wraps, and whether a wrapped value reaches a use is not read. [C] for the mod's `256·v`: in 226 of 226 logged
+  hits on the player by monsters with stat 62 ≥ 256 the mana lost is the packet's field, 0 below 256, where `v` would
+  have left mana in 138. (fn:sub_005A1F90_UModManaHit@0x005A1F90, fn:COMBAT_ApplyDamage@0x0057C6C0,
+  run:2026-10-16-combat, run:2026-10-20-shortfalls, [combat/experiments § S5a part 2](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)) [I] for the `El` type-7 half (no logged `El` 7)
+  and the `v << 22` wrap (`v` ≤ 91 in the logs) (fn:sub_005A4F50_MonAttackStats@0x005A4F50,
   fn:COMBAT_RollElemStat@0x0057A8E0, fn:COMBAT_Leech@0x0057C420, 0x0057C879–0x0057C889,
   [quirks/0001 § 1](../../findings/quirks/0001-community-bugs.md#1-the-mana-drains-factor-row-13))
 - B5. A dead monster goes to `COMBAT_GetHit` and `sub_0057CCB0_UnitKilled`, the hand-off to the death and drop path
-  ([items/tc](../items/tc.md)). [I] (fn:COMBAT_GetHit@0x0057CEE0, fn:sub_0057CCB0_UnitKilled@0x0057CCB0)
+  ([items/tc](../items/tc.md)): `COMBAT_GetHit` calls `UnitKilled` when the result has `0x2`, and `MONSTER_DropItems`'
+  two callers are `MonDeathDrop`, called only from `MonDeathEvent`, and `MonDropNoNoDrop`. [C]
+  (fn:COMBAT_GetHit@0x0057CEE0, fn:sub_0057CCB0_UnitKilled@0x0057CCB0, 0x0057D001–0x0057D00F,
+  fn:MONSTER_DropItems@0x005A6600, run:2026-11-15-sweep2-s5b, [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)) The step from `UnitKilled`
+  to `MonDeathEvent` is an event through the table at 0x006E2260, whose dispatcher is not read. [I]
 
 ### C. Leech (`COMBAT_Leech`)
 
@@ -389,8 +423,9 @@ C1. Leech(att, def, pkt):                                            [C] (fn:COM
   (fn:COMBAT_Leech@0x0057C420, tbl:DifficultyLevels.txt:LifeStealDivisor, run:2026-10-16-combat)
 - C1. Mana is computed and added before life; the `Range(2)` draw happens only when both gains ran, after the life
   gain. [C] (0x0057C560–0x0057C568, run:2026-10-16-combat)
-- C1. A hireling attacker uses the player formula without the divisors. [I] (fn:sub_0063EE90_HirelingType@0x0063EE90,
-  fn:COMBAT_Leech@0x0057C420)
+- C1. A hireling attacker uses the player formula without the divisors: 519 Hell mercenary leeches, where the
+  divisors are 3. [C] (fn:sub_0063EE90_HirelingType@0x0063EE90, fn:COMBAT_Leech@0x0057C420, run:2026-10-16-combat,
+  [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
 - C1. The monster branch (taken when `0x00645270` reports an owner type) reproduced with 0 mismatches in 80 events
   (Nightmare 7, Hell 73): the fields shifted back `>> 6`, the gain capped by the defender's damage, mana and stamina. [C]
   (0x0057C47D–0x0057C4CE, run:2026-10-16-combat)
@@ -455,44 +490,48 @@ D4. ApplyPoison(att, def, dmg = pkt.poison, len = pkt.poisonLen):    [I] (fn:COM
 ### E. The stat events: crushing blow, open wounds, freeze
 
 Stats 134, 135 and 136 register `itemeventfunc` 14, 15 and 16 on events 5 (`domeleedamage`) and 6
-(`domissiledamage`); each handler gets the attacker, the defender, the packet and `stat id << 16 | layer`. [I]
-(data:g_StatEventFuncs@0x007325B0, fn:sub_0056E740_AddStatEvent@0x0056E740, tbl:ItemStatCost.txt:itemeventfunc1)
+(`domissiledamage`); each handler gets the attacker, the defender, the packet and `stat id << 16 | layer`. [C]
+Over ItemStatCost, and the registrar's and `UNIT_AddEvent`'s stores read with a second tool.
+(data:g_StatEventFuncs@0x007325B0, fn:sub_0056E740_AddStatEvent@0x0056E740, fn:sub_0055B800_MonStatCallback@0x0055B800,
+tbl:ItemStatCost.txt:itemeventfunc1, run:2026-11-15-sweep2-s5b, [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b))
 
 ```
-E1. CrushingBlow(att, def, pkt, event):                              [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat, all of E1 except as tagged)
+E1. CrushingBlow(att, def, pkt, event):                              [C] (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat, run:2026-11-16-sweep2-s5e2, all of E1)
       c: i32 ← stat(att, 136)
       if c ≤ 0: return                                               ; no draw
       r ← Range(att.seed, 100)                                       ; draw (attacker), inlined
       if r ≥ c: return
-      if def is a player or a hireling: k: i32 ← 10                  ; [I] (0x005C0031–0x005C00F6)
-      else:
-        k ← (MonStats[def.class].boss or def has type flag 0x02) ? 8 : 4         ; [C] for 8 (fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat) and for 4 on champions (run:2026-10-20-shortfalls)
+      if def is a player or a hireling: k: i32 ← 10                  ; (0x005C0031–0x005C00F6)
+      else if def is a monster:
+        k ← (MonStats[def.class].boss or def has type flag 0x02) ? 8 : 4         ; 8: fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat; 4 on champions: run:2026-10-20-shortfalls
         n: i32 ← max(stat(def, 100), 1)
         k ← k + MulDiv(k, PlayerHpPct(n), 100)                       ; + 50 % per player beyond the first
-      if event = 6: k ← k × 2                                        ; missile, [I] (0x005C0031–0x005C00F6)
+      else: k ← 4                                                    ; a unit of type 2 or more: no player-count term
+      if event = 6: k ← k × 2                                        ; missile
       cb: i32 ← stat(def, 6) ÷ k
-      if stat(def, 36) > 0: cb ← cb − MulDiv(cb, min(stat(def, 36), 100), 100)    ; the cap at 100 [I] (0x005C00C5–0x005C00E0)
+      if stat(def, 36) > 0: cb ← cb − MulDiv(cb, min(stat(def, 36), 100), 100)    ; at 100: 0 while cb ≤ 0x100000, above it cb mod 100 (MulDiv divides first)
       stat(def, 6) ← max(stat(def, 6) − cb, 0);  if 0: pkt.result |= 0x2
       if cb > 0: overlay 147
 
-E2. OpenWounds(att, def, pkt, event):                                [C] (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat, all of E2 except as tagged)
+E2. OpenWounds(att, def, pkt, event):                                [C] (fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-16-combat, run:2026-11-16-sweep2-s5e2, all of E2)
       c: i32 ← stat(att, 135)
       if c ≤ 0: return                                               ; no draw
       r ← Range(att.seed, 100)                                       ; draw (attacker), inlined
       if r ≥ c: return
       L: i32 ← max(stat(att, 12), 1)
       dmg: i32 ← Band(L) + 40
-      if def is a player: dmg ← dmg ÷ 4;  if event = 6: dmg ← dmg ÷ 2              ; [I] (0x005BFEEC–0x005BFF9B)
-      else if def has type flags 0x0C (champion or unique): dmg ← dmg ÷ 2     ; [C] for the special bit 0x08 (run:2026-10-16-combat, 383), [I] for the champion bit 0x04 alone
+      if def is a player: dmg ← dmg ÷ 4;  if event = 6: dmg ← dmg ÷ 2              ; (0x005BFEEC–0x005BFF9B, run:2026-11-16-sweep2-s5e2)
+      else if def has type flags 0x0C (champion or unique): dmg ← dmg ÷ 2     ; the special bit 0x08: run:2026-10-16-combat, 383; 0x04 alone: run:2026-11-16-sweep2-s5e2
       state 62 (openwounds) for 200 frames with stat 74 ← −dmg       ; STATE_ApplyTimed; a new wound restarts it
 
     Band(L): L < 2 → 0;  L ≤ 15 → (L − 1)·9;  L ≤ 30 → 126 + (L − 15)·18;  L ≤ 45 → 396 + (L − 30)·27;
              L ≤ 60 → 801 + (L − 45)·36;  else 1341 + (L − 60)·45
 
-E3. Freeze(att, def, pkt, event):                                    [C] on a melee hit (fn:STATEVENT_Freeze@0x005BFC60, run:2026-10-20-shortfalls, all of E3 but the missile terms); [I] for the missile terms
-      x: i32 ← max(stat(att, 134) − 1, 0)
-      c: i32 ← ((x − 1)·4 − dlvl + 10 + alvl [− 6 for a missile])·5 [÷ 3 for a missile];  c ← clamp(c, 0, 100)
-      r ← Range(att.seed, 100)                                       ; draw (attacker)
+E3. Freeze(att, def, pkt, event):                                    [C] (fn:STATEVENT_Freeze@0x005BFC60, 0x005BFCB5–0x005BFD4E, run:2026-11-16-sweep2-s5e2, all of E3)
+      s: i32 ← stat(att, 134);  if s ≤ 0: return                    ; no draw
+      x: i32 ← max(s − 1, 0)
+      c: i32 ← (x·4 − dlvl + 10 + alvl [− 6 for a missile])·5 [÷ 3 for a missile, signed];  c ← clamp(c, 0, 100)
+      r ← Range(att.seed, 100)                                       ; draw (attacker), also when c = 0
       if r < c: len ← clamp((c − r)·2 + 25, 25, 250);  ApplyDamage(att, def, fresh packet with freezeLen = len, doReductions: true)
 ```
 
@@ -510,13 +549,21 @@ E3. Freeze(att, def, pkt, event):                                    [C] on a me
   reads neither flag, so the community's 1/8 does not apply to champions either. Re-labelled, run:2026-10-16-combat
   holds 72 such events among the 163 it counted as uniques (`0x08`). [C] (fn:sub_005A0320_MonMarkSpecial@0x005A0320,
   fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-20-shortfalls, run:2026-10-16-combat)
-- E1. There is **no difficulty and no classic branch** in crushing blow. [I] (fn:STATEVENT_CrushingBlow@0x005BFFC0)
+- E1. There is **no difficulty and no classic branch** in crushing blow: 3 102 calls in Normal, 1 502 and 160 classic
+  in Nightmare, 549 and 126 classic in Hell, every life result by a model with neither term. [C]
+  (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat, [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
+- E1. **The hireling and the other kinds**, emulated: `k` is 10 for a player and for a hireling defender (221 and 114
+  cases at the life write), 4 with no player-count term for a defender of type 2 or more, and doubles for event 6.
+  [C] (0x005C0031–0x005C00F6, run:2026-11-16-sweep2-s5e2, [combat/0001 § 20](../../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2))
 - E1. **Stat 36 cuts the blow.** The cut `cb − MulDiv(cb, min(stat 36, 100), 100)` is logged at stat 36 from 15 to 90 on a
   monster defender. [C] for those values (fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat)
-  **At 100 or more it cancels the blow, read from the code.** No kept combat log has a crushing blow at stat 36 of 100 or
-  more ([plan 0057](../../plans/done/0057-quirks-catalogue.md#implementation-log), the `lane/s68` review's survey), so the cap, `cb` = 0
-  there, the cut's having no branch on the defender's kind and a player at that resistance, with the player's divisor 10,
-  are the code reading. [I] (0x005C0031–0x005C00F6, [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 15)
+  **At 100 or more it cancels the blow only up to 0x100000** (4 096 life points). No kept combat log has a crushing
+  blow at stat 36 of 100 or more ([plan 0057](../../plans/done/0057-quirks-catalogue.md#implementation-log), the
+  `lane/s68` review's survey); emulated, the cut has no branch on the defender's kind (94 player cases, the divisor
+  10) and leaves `cb − MulDiv(cb, 100, 100)`, which is 0 while `cb` ≤ 0x100000; above it `MulDiv` divides first,
+  `(cb ÷ 100) × 100`, so the blow keeps `cb mod 100`, below one life point (59 cases). [C] (0x005C0031–0x005C00F6,
+  0x005C00C5–0x005C00E0, fn:sub_00483360_MulDiv@0x00483360, run:2026-11-16-sweep2-s5e2, [combat/0001 § 20](../../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2),
+  [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) row 15)
 - E1. `k = 8` for MonStats `boss` (act bosses) and superuniques reproduced with 0 mismatches on an act boss (34
   events, Andariel, Normal, `/players` 8) and on superuniques (55), with the same draw, player-count scaling and
   physical-resistance step as `k = 4`. [C] (fn:MONSTATS_IsBoss@0x0063E9F0, run:2026-10-16-combat)
@@ -528,12 +575,16 @@ E3. Freeze(att, def, pkt, event):                                    [C] on a me
   halved, Andariel's 63 included (her unit carries `0x08`: stat 74 = −1 275 = −(2 551 ÷ 2) at attacker level 86), and
   all 1 497 on monsters without `0x0C` took the full `Band(L) + 40`. [C] (0x005BFEEC–0x005BFF9B, run:2026-10-16-combat)
   The test never reads MonStats `boss`, so an act boss without `0x08` takes the full amount and a monster with the
-  champion flag `0x04` alone is halved; neither was met (Andariel carries `0x08`, so the run cannot tell the two
-  readings apart on her). Since a champion also carries `0x08` (E1), no stock spawn separates a `0x04`-only
-  defender. [I] (0x005BFEEC–0x005BFF9B, fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-20-shortfalls)
+  champion flag `0x04` alone is halved; neither was met in a run (Andariel carries `0x08`, and since a champion also
+  carries `0x08` (E1), no stock spawn separates a `0x04`-only defender). Emulated, `MonTypeFlag(def, 0x0C)` halves
+  a defender with `0x04` alone (55 cases) and a MonStats `boss` defender without `0x0C` takes the full amount (42).
+  [C] (0x005BFEEC–0x005BFF9B, fn:STATEVENT_OpenWounds@0x005BFE60, run:2026-10-20-shortfalls,
+  run:2026-11-16-sweep2-s5e2, [combat/0001 § 20](../../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2))
 - E3. **Freeze on a melee hit reproduced**: 81 rolls of stat 134 (*Frostwind*, stat 134 = 4) on the attacker's seed,
-  each with its chance, draw and length (26 to 249 frames) as E3 gives them, up to the nested delivery. The missile
-  terms (`− 6`, `÷ 3`) were not met. [C] (fn:STATEVENT_Freeze@0x005BFC60, run:2026-10-20-shortfalls)
+  each with its draw and a length from 26 to 249 frames, up to the nested delivery; that check did not compare the
+  chance. [C] (fn:STATEVENT_Freeze@0x005BFC60, run:2026-10-20-shortfalls) E3's chance is the emulated map, with `x·4`
+  where the earlier text had `(x − 1)·4` (85 separating cases), and the missile terms (`− 6`, `÷ 3`), not met in a
+  run, emulated in 199 event-6 cases. [C] (0x005BFCB5–0x005BFD4E, run:2026-11-16-sweep2-s5e2, [combat/0001 § 20](../../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2))
 
 **E4. The life tick.** Poison and open wounds bleed through the unit's regeneration event, once per frame.
 
@@ -559,7 +610,9 @@ E4. MonLifeTick(game, unit):                                          [C] (fn:su
 - E4. **A player's tick never takes life below 256** (one point): a result below 256 is raised to 256, so poison and
   open wounds cannot kill a player. No poisoned tick reached the floor (0 in 1 431 poisoned ticks of
   run:2026-10-21-shortfalls2, final for plan 0047: [stats/states E2](../stats/states.md#e-the-regeneration-tick)) and
-  open wounds never hit the player. [I] (fn:sub_00580610_LifeRegenTick@0x00580610, 0x0058065B–0x0058066E)
+  open wounds never hit the player; emulated with stat 74 driving life below 256, the tick raises it to 256 before
+  the write (796 floors). [C] (fn:sub_00580610_LifeRegenTick@0x00580610, 0x0058065B–0x0058066E,
+  run:2026-11-16-sweep2-s5e2, [combat/0001 § 20](../../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2))
 
 **E5. The other stat-event handlers.** `UNIT_DispatchEvent` runs a unit's handler records for the event, newest
 first; a handler draws on the seed of **its own unit**, the unit that owns the event (the attacker for the `do…`
@@ -579,12 +632,20 @@ that draw:
 | 30 | skill on death or level-up | stats 197, 199 | `killed`, `levelup` | the dying or levelling unit | one inline step, `low mod 100 < stat` casts |
 | 31 | reanimate | stat 155 | `kill` | attacker | one `RangeB` |
 
-- E5. As above. [I] (data:g_StatEventFuncs@0x007325B0, fn:UNIT_DispatchEvent@0x005C0C30, 0x005BF9CF, 0x005C04D4,
-  0x005C0603, 0x005C06BB, fn:STATEVENT_Reanimate@0x005C09E0, [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
+- E5. As above. [C] for the seed and the count of 7, 8 and 20 on the attacker, 9 on a monster attacker and 21 on the
+  player defender: one step of their unit's seed per call in the skills runs (data:g_StatEventFuncs@0x007325B0,
+  fn:UNIT_DispatchEvent@0x005C0C30, run:2026-10-25-skills, run:2026-10-27-skills, [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)).
+  [I] for 3, 30 and 31, which never fired (0x005BF9CF, 0x005C04D4, 0x005C0603, 0x005C06BB,
+  fn:STATEVENT_Reanimate@0x005C09E0, [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
 - E5. **The other registered handlers draw nothing**: 2, 4, 5, 6, 10, 13, 17, 18, 19 and 22–29; 11 and 12 are named
   by no stock row. Among them the `kill` handler 28 (`0x005C01D0`, stat 86, heal after kill) adds `stat · 256` to the
-  attacker's life, capped at its maximum, with no draw. [I] (fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0,
-  tbl:ItemStatCost.txt:itemeventfunc1, [skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
+  attacker's life, capped at its maximum, with no draw. [C] 5, 6, 13, 17, 19, 22, 28 and 29 stepped no seed in the
+  skills runs; with a second tool, handler 28's body and its 541-function closure, and 15 of the 17 listed handlers up
+  to `COMBAT_ApplyDamage` and `COMBAT_GetHit`, hold no draw. (fn:sub_005C01D0_StatEv28HealAfterKill@0x005C01D0,
+  tbl:ItemStatCost.txt:itemeventfunc1, run:2026-10-25-skills, run:2026-10-27-skills, run:2026-11-15-sweep2-s5b,
+  [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)) [I] for the closures' 3 to 6 unresolved game-code indirect calls each, and for 19 (slow) and
+  27 (clay golem), whose closures reach draws through `STATE_ApplyTimed`'s queue path
+  ([skills/0003 § 3](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers))
 - E5. **The item-skill handlers' draws, up to their casts.** Each reads its chance as `UnitGetStat(unit, stat,
   layer)` of the record's `stat << 16 | layer`, the skill as `layer >> [DataTables+0xC6C]` and the level as `layer &
   [DataTables+0xC70]`. All three return 0 with no draw for no unit or a chance ≤ 0. Handler 20 also returns 0 with no
@@ -621,9 +682,11 @@ that draw:
   run:2026-10-21-cat-emu-item `cast_item`, [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers))
 - E5. **So an item cast with `ItemTarget` blank, 1, 3 or 4 draws nothing of its own**: it adds only the handler's
   chance draw above and the cast skill's own start, do function and missiles. Helper 3's corpse pick draws nothing
-  either: the static closures of helpers 3 and 4 and of `0x0056E390` hold no LCG step and no RNG call (their indirect
-  calls not followed). [I] (fn:sub_0056E390_CorpsePickNear@0x0056E390, `cg.txt` of run:2026-10-21-cat-emu-item,
-  [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers))
+  either: with pushed callbacks as edges (the corpse pick's `0x0056E370` resolved), the closures of helper 3 (541
+  functions), helper 4 (504) and `0x0056E390` (533) hold no LCG step and no RNG call, by a second tool. [C]
+  (fn:sub_0056E390_CorpsePickNear@0x0056E390, run:2026-11-15-sweep2-s5b, [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)) Their unresolved
+  game-code indirect calls (`RoomUnitSearchInit`'s and `A1PathSearch`'s callback calls) are not followed. [I]
+  (`cg.txt` of run:2026-10-21-cat-emu-item, [skills/0015 § 5](../../findings/skills/0015-item.md#5-itemskill_cast-its-itemtarget-helpers-and-its-callers))
 - E5. **`ItemTarget` 2 draws on the cast's caster.** `ITEMSKILL_Cast` gives the helper `0x005FD850` **its own
   caster** (`EDX = ESI` at `0x005FDB9B`, the call at `0x005FDB9F`). The helper takes the caster's room; with none it
   returns 0 with no draw and the cast is refused. Else, on its first try, it steps **the caster's seed** twice inline
@@ -650,8 +713,10 @@ that draw:
   `ITEMSKILL_Cast`; `SKILLS_SrvDo`'s seven other direct calls pass 0 as its fifth word, and no dword of the image holds
   the address of `SKILLS_SrvDo`, `ITEMSKILL_Cast` or its two callers. So `ItemEffect` 36 (Frost Nova, Nova, A3) and 151
   (Chain Lightning) replace the do function only for skill-on-attack, -kill or -hit stats; any other item cast of
-  those rows runs their `srvdofunc`. [I] (0x005C054E, 0x005C0626, 0x005C0718, 0x0056FD29–0x0056FD34,
-  fn:SKILLS_SrvDo@0x0056F7F0, tbl:Skills.txt:ItemEffect, [skills/0015 § 6](../../findings/skills/0015-item.md#6-the-stat-event-handlers-20-21-30))
+  those rows runs their `srvdofunc`. [C] (0x005C054E, 0x005C0626, 0x005C0718, 0x0056FD29–0x0056FD34,
+  fn:SKILLS_SrvDo@0x0056F7F0, fn:ITEMSKILL_Cast@0x005FDA80, tbl:Skills.txt:ItemEffect, a raw scan and r2,
+  run:2026-11-15-sweep2-s5b, [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b),
+  [skills/0015 § 6](../../findings/skills/0015-item.md#6-the-stat-event-handlers-20-21-30))
 - E5. **Do 151, the item Chain Lightning**, takes `srvmissilea` (`+0x48`, signed) and returns 0 with nothing written
   outside `[0, Missiles count)`; else it sets bit 6 of the caster's `+0xC4`, evaluates `calc1`, and calls
   `SkillMissileCreate(ECX game, EDX srvmissilea; caster, id, lvl, dx, dy, 0, 0, 0)` with `(dx, dy)` the target's
@@ -671,8 +736,12 @@ Durability loss (`COMBAT_DurabilityLoss`: the attacker's weapon one draw, the de
 `RangeB(7)`, a weighted `RangeB` and one draw, on the owners' seeds through `ITEMS_DurabilityLossRoll`), the
 knockback (`0x005D10C0`), the get-hit decision (`sub_0057CB00_GetHitRoll`, up to two `RangePow2` on the defender)
 and the monster's on-hit skill (`0x005A4390`) were boundary oracles in the run: their entry seeds were asserted and
-their exit seeds taken. [I] (fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:ITEMS_DurabilityLossRoll@0x00559E30,
-fn:sub_0057CB00_GetHitRoll@0x0057CB00, run:2026-10-16-combat) Hit recovery, the get-hit decision and knockback timing
+their exit seeds taken. [C] A draw model checked against those seeds since: the durability steps, one for a player
+attacker, three for a player defender, none for a monster or hireling (9 680 pairs but one), and a player defender's
+get-hit draws are `GetHitRoll`'s (25 669 of 25 669). (fn:COMBAT_DurabilityLoss@0x0057D3D0,
+fn:ITEMS_DurabilityLossRoll@0x00559E30, fn:sub_0057CB00_GetHitRoll@0x0057CB00, run:2026-10-16-combat,
+[combat/experiments § S5a part 2](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)) [I] The roll values, the knockback, the monster's on-hit skill and a monster or
+hireling defender's get-hit stay boundary oracles. Hit recovery, the get-hit decision and knockback timing
 are specified in [anim/timing § M](../anim/timing.md#m-hit-recovery-the-block-the-get-hit-roll-the-mode-tests-stun-and-the-hit-class)
 and [anim/movement § E](../anim/movement.md#e-knockback) (ADR-0014 phase (4), plan 0050).
 The durability loss itself is specified in [items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish).
@@ -723,10 +792,11 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - **Life below 256 is 0.** A hit that leaves less than one life point kills. [C] (0x0057C852–0x0057C874,
   run:2026-10-16-combat)
 - **Absorb heals from both percent and flat absorb**, and only a positive amount. [C] for the percent
-  (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat); [I] for the flat (fn:COMBAT_Absorb@0x0057BF10)
-- **The finisher's `RNG_Step` is a peek, not a draw.** It steps a copy of the attacker's seed and restores the seed,
-  so advancing the seed there shifts every later attacker draw (A3). [I] (fn:COMBAT_PrgFinisher@0x005D5220,
-  0x005D5368–0x005D538C)
+  (fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat) and for the flat (794 heals on the player, flat fire 372,
+  lightning 51, cold 1; run:2026-10-16-combat, run:2026-10-21-shortfalls2, [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
+- **The finisher's `RNG_Step` is a peek, not a draw.** It saves the attacker's seed words, steps the seed and writes
+  the words back, so advancing the seed there shifts every later attacker draw (A3). [C] (fn:COMBAT_PrgFinisher@0x005D5220,
+  0x005D5368–0x005D538C, two tools, run:2026-11-16-sweep2-s5fe, [combat/0001 § 22](../../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe))
 - **Its entries draw, even when they create nothing.** Entries 37, 39, 41 and 143 step the attacker's seed once at
   entry, before their record test (A3). [C] (ADR-0021, run:2026-10-21-cat-emu-ass, 0x005D4E80, 0x005D4F50) Entry 38
   draws two or three times on it after delivering the queued hit. [I] (0x0056E1C4)
@@ -739,21 +809,33 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   tables until the index wraps (A3). A reimplementation that guards these changes behaviour only for data that makes
   them happen. [I] (0x005D4657–0x005D467D, 0x005D4D77–0x005D4DAA)
 - **A handler draws on its own unit's seed**: shiver armour (3) and skill on get-hit (21) on the defender's, skill on
-  death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit, and reanimate on the attacker's (E5). [I]
+  death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit, and reanimate on the attacker's (E5).
+  [C] for 7, 8, 9, 20 and 21 (run:2026-10-25-skills, run:2026-10-27-skills); [I] for 3, 30 and 31, never fired
   (data:g_StatEventFuncs@0x007325B0, 0x005BF9CF, 0x005C0603)
 - **A zero-cost skill is not refused for its cost.** `SKILLS_PayCost` returns 0 for a row with `mana` and `lvlmana`
   both 0 (the scrolls and books, Unsummon), and none of its three calls (`0x0056F7AA` in `SKILLS_SrvStart`,
   `0x0056FA7A` in `SKILLS_SrvDo`, `0x005D6B48`) tests the return. A reimplementation that refuses on 0 refuses those
-  skills. [C] for the 0 (ADR-0021, run:2026-10-21-cat-emu-item `cost_item`, fn:SKILLS_PayCost@0x0056BFE0); [I] for
-  the untested return (0x0056F7AF, 0x0056FA7F, 0x005D6B4D, [skills/0015 § 7](../../findings/skills/0015-item.md#7-charges-skills_paycost))
+  skills. [C] for the 0 (ADR-0021, run:2026-10-21-cat-emu-item `cost_item`, fn:SKILLS_PayCost@0x0056BFE0) and for the
+  untested return: after each call every path writes `EAX` whole, or calls a function that writes it, before any read
+  (0x0056F7AF, 0x0056FA7F, 0x005D6B4D, r2 and objdump, run:2026-11-15-sweep2-s5b, [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b),
+  [skills/0015 § 7](../../findings/skills/0015-item.md#7-charges-skills_paycost))
 - **The item effect is not every item cast's.** An item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` (36,
   151) only from a skill-on-attack, -kill or -hit stat without `ItemTgtDo`; from get-hit, death, level-up or the
-  item-use entries it runs the row's `srvdofunc` (E5). [I] (0x005C054E, 0x0056FD29–0x0056FD34)
-- **Burning never applies from a plain attack**: the builder leaves `burn = 2` with `burnLen = 0`. [I]
-  (0x0057BC2F–0x0057BC8A)
+  item-use entries it runs the row's `srvdofunc` (E5). [C] (0x005C054E, 0x0056FD29–0x0056FD34,
+  run:2026-11-15-sweep2-s5b)
+- **Burning never applies from a plain attack**: the builder leaves `burn = 2` with `burnLen = 0`: `burnLen` was 0
+  at the builder's return in all 10 951 logged builds. [C] (0x0057BC2F–0x0057BC8A, run:2026-10-16-combat,
+  [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
 
 ## Evidence
 
+- Plan 0066 Phase 1, the raises this spec carries since its Phase 3 re-tag:
+  [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)
+  and [part 2](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)
+  (new checks over the kept combat and skills logs), [combat/0001 §§ 18–22](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)
+  (second-tool reads, run:2026-11-15-sweep2-s5b; emulations, run:2026-11-16-sweep2-s5e, run:2026-11-16-sweep2-s5e2,
+  run:2026-11-16-sweep2-s5e3, run:2026-11-16-sweep2-s5fe), with the per-statement routes in
+  [plan 0066's inventory](../../plans/0066-inventory/README.md).
 - [combat/0001](../../findings/combat/0001-formulas.md) §§ 6 (resolve, queue, deliver), 8 (delivery), 9 (leech, stun,
   cold, freeze, poison, burn), 10 (stat events), 14 (the finisher and its dated 2026-10-20 correction, the ticks), 15 (the confirmed raises and the
   below-the-floor bullet), 13 (*Leads used*: crushing blow, open wounds, absorb, leech).
@@ -794,11 +876,10 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - ~~Branches reproduced under the plan's floor of about 30: crushing blow on champions (0 labelled); a total of 0 or
   less leaving life unchanged (B4, 25).~~ Reproduced by run:2026-10-20-shortfalls: crushing blow on champions 52 (E1),
   a total ≤ 0 leaving life unchanged 633 times (488 + 113 + 32, B4).
-- [L] Not reached: open wounds on a monster with the champion flag `0x04` alone (no stock spawn carries it, E2) and
-  on a player (only another player's item wounds a player: plan 0044's case, not run); freeze from a missile and the
-  freezing inside the nested delivery (D3). ~~The player's life tick~~: reproduced by run:2026-10-17-stats under
-  poison (E4); its 256 floor was not reached (0 over run:2026-10-20-shortfalls and run:2026-10-21-shortfalls2; final
-  for plan 0047, out of it).
+- [L] Not reached in a run: the freezing inside the nested delivery (D3); open wounds on a monster with the champion
+  flag `0x04` alone (no stock spawn carries it, E2) and on a player (only another player's item wounds a player: plan
+  0044's case, not run), freeze from a missile (E3) and the player's 256 floor (E4), these four emulated by plan 0066
+  S5e. ~~The player's life tick~~: reproduced by run:2026-10-17-stats under poison (E4).
 - [L] The leech after a defender's handler (C1): one event separates it from a leech on the entry life (30 asked).
 - ~~The state end: when a timed state's stat list is freed at its end frame.~~ At `frame + duration` by unit event 12,
   one event per apply or refresh: [stats/states § C](../stats/states.md#c-expiry-and-removal) (plan 0041).
@@ -807,8 +888,8 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
 - ~~The progressive server functions the finisher calls (`srvprgfunc` entries 36–41, 143) and `0x00571AA0`, which
   receives the peeked value, are not read.~~ Read from the code: § A3; `0x00571AA0` is a client message
   ([skills/0003 § 1](../../findings/skills/0003-handlers.md#1-progressive-entries-srvprgfunc-and-the-finishers-tail)).
-- [L] A run that reaches the finisher itself, its entries past their first creation (A3) and the handlers of E5 past
-  their casts: run:2026-10-16-combat met no charged state and took these handlers as boundary oracles (plan 0045
+- [L] A run that reaches the finisher itself past its entry tests and peek (those settled by plan 0066 S5fe), its
+  entries past their first creation (A3) and the handlers of E5 past their casts: run:2026-10-16-combat met no charged state and took these handlers as boundary oracles (plan 0045
   Phase 2); run:2026-10-21-cat-emu-ass emulated the entries and the finishing moves only up to their boundaries (A2,
   A3), and run:2026-10-21-cat-emu-item handlers 20, 21 and 30 and the item cast only up to theirs (E5). A family
   running handler 20 through `ItemCastAtUnit` to `COLL_PatternTest`, or a run with an item Teleport, would settle whose

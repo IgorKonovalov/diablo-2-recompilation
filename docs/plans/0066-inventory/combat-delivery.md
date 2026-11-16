@@ -3,6 +3,14 @@
 - **Spec:** [combat/delivery](../../specs/combat/delivery.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 67; the *Count* column sums to 67.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66y`, 2026-11-16): re-tagged.** The spec's front matter is now C 114 / I 42 / L 4 (it was C 81 / I
+  67 / L 4 at `main` `858b7eea`). Statement `[C]` whole: rows 1, 5, 7, 20, 26, 27, 30, 38–45, 47, 48, 54, 59, 60,
+  65–67 (23). Split, the `[C]` half and the remainder `[I]` as the *Route* cell names: 4, 6, 9, 21–24, 28, 29, 49–51,
+  57, 64 (14). Corrected to the finding: rows 14 (the peek steps the seed itself, S5fe correction 2) and 46 (the cap
+  above 0x100000, S5e correction 9) (2). Kept `[I]` (H5a, H5b, d-edit; row 53 not settled): 2, 3, 8, 10–13, 15–19, 25,
+  31–37, 52, 53, 55, 56, 58, 61–63 (28). Whole includes rows 39 (type 2 or more `k` = 4) and 44 (S5e correction 10,
+  E3's `x·4`; the E3 bullet drops the chance, the lane-check ruling). Split: row 6 (H5b) takes the `meleeonly` skip
+  `[C]` (README 8); row 22 (refinement 13) keeps the owner redirect `[I]`.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
