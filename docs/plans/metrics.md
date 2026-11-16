@@ -814,6 +814,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | lane/n66ne | 0066 S1ne p1 | reverser | 285 559 | 88 | 18 | ghidra-n66ne | Tier B accept (bdafe217) | 0 |
 | 2026-11-16 | lane/n66ne | 0066 S1ne p2 | reverser | 313 561 | 98 | 20 | ghidra-n66ne | Tier B accept (bdafe217) | 0 |
 | 2026-11-16 | lane/n66ne | 0066 S1ne p3 | reverser | 241 920 | 87 | 15 | ghidra-n66ne | Tier B accept (bdafe217) | 0 |
+| 2026-11-16 | lane/n66ne | 0066 S1ne review | architect | 56 703 | 14 | 1 | — | Tier B (Sonnet) accept | 0 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
