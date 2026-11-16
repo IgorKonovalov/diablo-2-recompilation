@@ -2766,7 +2766,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   entry.
 - **Also:** research-map rows of quests/progression and quests/travel rewritten whole; quests/README's evidence
   paragraph names plan 0066's raises. wiki/quests is left with W4 and one wrong row (the events table's level change);
-  a refresh entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-quests-refresh-after-plan-0066-quests-re.md)).
+  a refresh entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-quests-refresh-after-plan-0066-quests-re.md)).
 - **Judgment calls for the review:** (1) travel B1's header (row 20) raised whole: S3a's remainder was routed to S7e,
   which landed (`ffn`, sizes 0–4, steps 1–5, through both wrappers and directly); the header cites both. (2) Pseudocode
   headers that cover more than the logs hold (travel A2, D2, E1, E2, G1, G3; progression A1) stay `[I]` with a `[C]` note
