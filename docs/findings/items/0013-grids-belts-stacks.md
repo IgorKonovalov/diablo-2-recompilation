@@ -170,9 +170,9 @@ score: n = 0
 
 - [C] (ADR-0015) `ItemsCanStack`: `stackok`'s 660 cases hold each test broken alone, with both returns met. Quality 3 and 10 stack, 0, 4 and 9 do not; stat 194 of `0x100` on both passes (the low byte). (fn:sub_0062C850_ItemsCanStack@0x0062C850, 0x0062A2F0, run:2026-11-04-inventory-emu)
 - [C] (ADR-0021) `StackMerge`, 500 cases to the first `UnitSetStat(target, stat, value, 0)`: 246 above the maximum, 87 exactly at it (the sum, not the over-branch), 167 below; 40 cases lower stat 72. After, `[I]`. (fn:sub_0055E590_StackMerge@0x0055E590, run:2026-11-04-inventory-emu)
-- [I] **After the first set:** above the maximum the source keeps `source + target − maximum` and stays on the cursor, the target gets flag 8, and a tome adds `maximum − target` to the skill's quantity (`0x0055C070`). Otherwise stat 70 is the sum, a tome adds the source's quantity, the cursor is cleared and the source freed. (0x0055E623, 0x0055E66A, 0x0055C070)
+- [I] **After the first set:** above the maximum the source keeps `source + target − maximum` and stays on the cursor, the target gets flag 8, and a tome adds `maximum − target` to the skill's quantity (`0x0055C070`). Otherwise stat 70 is the sum, a tome adds the source's quantity, the cursor is cleared and the source freed. (0x0055E623, 0x0055E66A, 0x0055C070) *2026-11-16, § 15: moved to the harness (H4d): every branch's stat message can allocate (0x0053B2DD).*
 - [I] **Bound.** A negative source, target or maximum ends at the fatal path. The sum is `int32`: two stacks at the 511 ceiling give 1 022, which fits, and `2³¹ − 1` is the largest sum that does. Past it the add wraps negative, the `jle` at `0x0055E617` takes the not-above branch, and its `≥ 0` test ends at the fatal path too, so no wrapped value is stored. (0x0055E5C2, 0x0055E5F2, 0x0055E606, 0x0055E617, fn:sub_0055E590_StackMerge@0x0055E590)
-- [I] `StackRequest`: a missing unit or a target on page 2 sets the refuse flag, and the handler returns 3, as it does for equal guids. An unstackable pair returns 0 with the flag clear, so the handler returns 0 with nothing done. (fn:sub_0055E7C0_StackRequest@0x0055E7C0, 0x0054B33E, 0x0054B356)
+- [I] `StackRequest`: a missing unit or a target on page 2 sets the refuse flag, and the handler returns 3, as it does for equal guids. An unstackable pair returns 0 with the flag clear, so the handler returns 0 with nothing done. (fn:sub_0055E7C0_StackRequest@0x0055E7C0, 0x0054B33E, 0x0054B356) *2026-11-16, § 15: `[C]` to `StackMerge`; a found unit not of type 4 also returns 0 with the flag clear (refinement); the class compare at 0x0055E8A3 is unreachable unequal.*
 
 ## 8. Pickup
 
@@ -458,6 +458,72 @@ reached (the allocator entries are guards; none is hit).
 - **Moved, not run:** `CursorDrop` with a full surround and its null-room test (inventory rows 63, 81's remainder)
   lie after `GroundDropCell`'s field-state allocation from the shared pool (0x00555DEA → 0x0064DEE8), so ruling R2
   sends them to the harness (H4d). `[I]` here. (0x00563C96, 0x00563C9B)
+
+## 15. Plan 0066 batch S4e part 5b: the Blood Golem's heal, the doubling draw, kind 3's return and `StackRequest` (run:2026-11-16-sweep2-s4e-emu)
+
+Four families, 8 600 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 16 controls, each separating,
+`passed` 0 (`tools/items_s4e6_emu.py`, `workspace/logs/n66z/s4e/run6/check.txt`; record in
+[experiments](experiments.md#part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-2026-11-16)).
+`golem`, `double` and `potret` are built on `tools/use_emu.py`'s world (its regions zero-filled before every case),
+`stackreq` on `tools/items_s4e3_emu.py`'s units with `tools/item_emu2.py`'s tables, all unchanged. Every case runs from
+the function's entry to its return or a declared callee's entry (ADR-0021; `lane/n66z`). No import and no allocator is
+reached (the allocator entries are guards; none is hit). These are items/use rows (§§ F, H of
+[items/use](../../specs/items/use.md)) beside the inventory row 58; items/0012 §§ 5, 6 carry dated notes.
+
+- [C] (ADR-0021) **`v = 0` sets the golem to full in `GolemHealShare`, not in `GolemHeal`**, family `golem` (1 200).
+  `GolemHealShare` (0x005C6870; ECX the game, EDX the user, `v` on the stack) with a user, a pet of type 3 whose unit is
+  of type 1 and class `0x122`, and `v = 0` calls `UnitSetStat(golem, 6, UnitGetMaxHp(golem), 0)` from its own branch
+  (0x005C68AC → 0x005C68F0, return 0x005C6901; 190 of 190; control `v0_as_heal`, `v = 0` passed to `GolemHeal`,
+  separates 190). For `v ≠ 0` the share `trunc(i32(p · v) / 100)` goes to `GolemHeal` (EAX the share, EBX the golem),
+  which returns 0 with no call for a share ≤ 0 (`GolemHealShare` then returns `v`; 158 positive and 53 negative `v`
+  return `v`, these counts holding also the cases with a null user or a MonStats row of −1, and 8 with `v = 0` and a null user), else
+  calls `UnitSetStat(golem, 6, e, 0)` (return 0x005C5F47) with `e = i32(life + share)` lowered to the maximum when
+  `e > max` as signed (193 positive `v`; with a negative percent a negative `v` heals too, 6). `GolemHeal` called
+  directly: 92 with `v = 0` and 137 with `v < 0` return 0, 137 with `v > 0` reach the set (control `heal0_full` 156).
+  No pet, a pet of another class or a pet unit not of type 1 return `v` (86, 71, 69). Controls `nocap` 142,
+  `cap_unsigned` 147: the compare is signed, so a sum that wraps past `2³¹ − 1` is stored as the negative value, not
+  capped. After the set, `[I]`: `GolemHealShare` returns `esi` (0 on the `v = 0` branch, 0x005C6901) or `v` less the
+  heal's return (0x005C68E6), and `GolemHeal` returns the share it applied (0x005C5F48). **Refinement** of items/use H5
+  (the anchor: the `v = 0` rule is 0x005C68AC's branch; `GolemHeal`'s own `v ≤ 0` returns 0, 0x005C5F13).
+  (fn:sub_005C6870_GolemHealShare@0x005C6870, fn:sub_005C5F10_GolemHeal@0x005C5F10, 0x005C5F30, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **The doubling draw's rule at each `(r1, r2)`**, family `double` (3 000; kind 3, one slot of stat 6 or
+  8, `len` 0, the seed built so the two draws give a chosen `r1 < n` and `r2 < 100`, at and around `r2 = r1 >> 1`; 146
+  distinct `n`): the amount at `UnitAddStat` is doubled exactly when `r2 < r1 >> 1` — players 852 doubled at `r2 < r1 >> 1`,
+  780 not at `r2 = r1 >> 1`, 563 not above; non-players (type 1) 170, 139, 106. 379 cases have `r1 >> 1 ≥ 100`, where
+  every `r2` doubles, which is the formula's `min(100, r >> 1)`. Controls `le` 919, `half` (`r2 < r1`) 777, `swap` (the
+  100-draw first) 975, `nodraw_nonplayer` 170. A user whose stat (vitality for life, energy for mana) is 0 or negative
+  makes no draw and keeps its seed: 293 non-players at 0, 97 cases at −1 or −100 (players and non-players). So the
+  chance for `n ≥ 1` is the share of `(r1, r2)` pairs with `r2 < r1 >> 1`, `Σ min(100, r >> 1) ÷ (100 n)` over `r < n`
+  (2.00 % at 10, 5.76 % at 25, 12.00 % at 50, 24.50 % at 100, 37.00 % at 150, 40.75 % at 165, 49.50 % at 200, 79.80 % at
+  500; `check.txt`). **Refinement:** each pair is as likely as `low mod n` and `low mod 100` of the generator make it,
+  so the formula is the uniform-pair count, not a property of the LCG run here. (fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0,
+  0x005BE514–0x005BE53B, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **Kind 3 returns 0 for every amount at or below 0**, family `potret` (2 400; zero and negative calcs,
+  and positive ones the class scale, the doubling or the shift takes to ≤ 0 as `i32`). 1 200 cases outside a bad state
+  or a missing record reach the return with 0: 972 where every calc is ≤ 0 and 228 where a positive calc became ≤ 0.
+  274 return 1 with no callee reached: a refill whose slot 0 is ≤ 0 and whose later slot is positive with `len + rem ≤ 0`
+  (control `applied_only`, such a slot not counting, separates 274). A bad state returns 0 (199), a missing record 0
+  (204). The rest end at the first callee as `use_emu`'s families did (`UnitAddStat` 209, `STATLIST_Alloc` 48,
+  `UnitQueueEvent` 39, `STATLIST_SetStat` 214, `GolemHeal` 13). Control `unsigned_amount` (a negative amount taken as
+  positive) 1 021. Stays `[I]`: the 1 after a slot reached `UnitAddStat` or `STATLIST_SetStat` (0x005BE6D4 writes it
+  after the call returns; the callees' closures were not run). (0x005BE6D4, 0x005BE73D, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **`StackRequest` (0x0055E7C0) to `StackMerge`**, family `stackreq` (2 000; ECX the game, EDX the player;
+  guid 1, guid 2, `&out`). `out ← 0`, `InvClearUseMarks(player)`; equal guids set `out` to 1 and return 0 (110); a
+  guid with no unit sets 1 and returns 0 (91 the first, 91 the second); **a unit found that is not of type 4 returns 0
+  with `out` clear** (205, `nonitem_flag` separates 205); the second item on page 2 sets 1 and returns 0 (212); the first
+  item's page is not tested (`page_first` 320) and other pages of the second pass (`page_any` 806); `ItemsCanStack`
+  false returns 0 with `out` clear (875; `nostack_flag` 875); else `StackMerge(game, first)` with ESI the second, EBX the
+  player (416, return 0x0055E8B1). `same_ok` 110, `miss_noflag` 182. After, `[I]`: flag `0x100` on the second, its
+  update queued, the player marked, return 1 (0x0055E8B1..0x0055E8D2). The class compare at 0x0055E8A3, which returns 1
+  with nothing merged, follows `ItemsCanStack`'s own compare of the same two `+4` words (0x0062C873, `je` 0x0062C875), so
+  no case reaches its unequal branch: `[I]`, a reading. **Refinement** of items/inventory G4 (the non-item). 
+  (fn:sub_0055E7C0_StackRequest@0x0055E7C0, 0x0055E819, 0x0055E88E, run:2026-11-16-sweep2-s4e-emu)
+- **Moved, not run:** `StackMerge` after its first `UnitSetStat` (inventory row 57). Every branch sends a stat message
+  before its later writes: `PlayerGetClient` (0x0055E63E) and 0x0053D130 (0x0055E647; also 0x0055E68E, 0x0055E71E,
+  0x0055E75B), which queues the packet through `ClientQueuePacket` 0x0053B280 (0x0053D200); with no room in the client's
+  current buffer (`+ len > 0x200`, 0x0053B2A4) and none on its free list (`+0x1C0`), that allocates (0x0040B430 at
+  0x0053B2DD). Ruling R2 sends the claim to the harness (H4d). `[I]` here. (0x0055E647, 0x0053B2DD)
 
 ## Data touched
 

@@ -4186,3 +4186,40 @@ request handlers, inventory families) will add their own sections under this hea
   quality-9 item; `ItemToBelt`'s steps before `BeltPutItem`); `InvItemRemove` and what follows in `InvGridPut`;
   `QUESTS_RaiseItemDropped` itself; `GroundDropCell` and `CursorDrop` (the search's pool allocation, ruling R2: inventory
   63 and 81's remainder go to H4d).
+
+### Part 5b: the Blood Golem's heal, the doubling draw, kind 3's return and StackRequest (2026-11-16)
+
+- **Question:** do `GolemHealShare` and `GolemHeal` with `v = 0` and `v ≠ 0`, `ItemUsePotion`'s doubling draw at chosen
+  `(r1, r2)`, kind 3's return for amounts at and below 0, and `StackRequest` map their inputs as
+  [items/use](../../specs/items/use.md) F1c, F1h, H5 and [items/inventory](../../specs/items/inventory.md) G4 state, up
+  to the callee each ends at? Claims in
+  [items/0013 § 15](0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0012 §§ 5, 6 and items/0013 § 7.
+- **Setup:** `main` `30e8a46c` (already merged at the part's start; nothing newer). One kept launch per family on
+  `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, about 36 s for the four), after three development passes, each with
+  its `check-dev.txt` and `manifest-dev.sha256` passing from its directory, not cited: `dev6a/` (60 cases per family, an
+  earlier revision that read `StackMerge`'s arguments one word off and had no wrapping golem sums; its check under the
+  final tool fails, as kept), `dev6b/` (300 per family, the generators of the final revision before one fix), `dev6c/`
+  (the full counts, the same revision: one `potret` case had a calc of `0x8000000D` written as a positive Python int, so
+  the model scaled a value the game reads as negative; the generator now passes every calc through `s32`). New tool
+  `tools/items_s4e6_emu.py` (`d75c9ae3…`; draws from `random.Random("n66z-s4e6-<family>")`, the `double` seeds built
+  backwards through `tools/rng.py`'s step), building on `tools/use_emu.py`'s world (golem, double, potret; its regions
+  zero-filled before every case) and on `tools/items_s4e3_emu.py`'s units with `tools/item_emu2.py`'s tables
+  (stackreq), all unchanged; parts 1–5a's tools and `run/` to `run5/` untouched. Guards: the error routine 0x00408090
+  and its callees 0x00408A60, 0x00681E09, and the allocator entries 0x0040B430, 0x0040B480, 0x0040B4B0; none is hit.
+  Observed: `UnitSetStat` 0x00627260 (`golem`, return addresses 0x005C6901 and 0x005C5F47 compared), `UnitAddStat`,
+  `STATLIST_Alloc`, `UnitQueueEvent`, `STATLIST_SetStat`, `GolemHeal` (`double`, `potret`; sites and seed compared by
+  `use_emu.cmp_stat`), `StackMerge` 0x0055E590 (`stackreq`, return 0x0055E8B1). No import is reached.
+- **Families:** `golem` 1 200, `double` 3 000, `potret` 2 400, `stackreq` 2 000.
+- **Result:** `workspace/logs/n66z/s4e/run6/check.txt` (`108ce34a…`, 116 lines), `static.txt` (`6499c56a…`, 30 lines,
+  29 objdump pins, each as cited), `manifest.sha256` (`576815a0…`, 22 lines, passes from that directory); `cases`
+  regenerates every `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces `check.txt` from the committed
+  revision. 8 600 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; outcomes per family in `check.txt`
+  (each count in items/0013 § 15 is copied from it). **16 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): `use_emu`'s and `item_emu2`'s tables as their runs declare them, `items_s4e3_emu`'s hash
+  heads; the image reads are the switch tables, bit masks and counts listed in the tool's `ACCOUNTED` (as `use_emu`'s
+  and `item_emu2`'s runs list them); every other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; `UnitSetStat`, `UnitAddStat`,
+  `STATLIST_SetStat` and what follows them (kind 3's 1 after an applied slot; the golem functions' returns after the
+  set); `StackMerge` (its first set is items/0013 § 7's; after it, the stat messages' packet queue can allocate, so
+  inventory 57 goes to H4d); the uniformity of `low mod n` behind the chance formula.

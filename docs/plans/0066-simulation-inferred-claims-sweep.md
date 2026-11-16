@@ -3157,3 +3157,54 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   0x0055D710); the remainders of 17 (callers of type 2 with class `0x152`/`0x153`), 39 (after `BeltFreeSlot`), 42 (after
   `InvTakeItem`), 87 (quality writers), and the S4c/S4d static (c) and c-emu remainders in part 1's note. New tool
   and `run6/`; do not overwrite `run5/`. Tier B review once S4e is whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 5b (reverser-static, `lane/n66z`): the golem's heal, the doubling draw, kind 3's return, StackRequest; 5 rows settled in whole or in part; resume note
+
+- **Done.** `main` `30e8a46c` was already merged (nothing newer; README § 1 recomputed from the 29 files' rows and
+  *Totals by class*). New tool `tools/items_s4e6_emu.py` (`d75c9ae3…`; parts 1–5a's tools and `run/` to `run5/`
+  untouched; it builds on `tools/use_emu.py`'s, `tools/items_s4e3_emu.py`'s and `tools/item_emu2.py`'s worlds,
+  unchanged), four families on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 36 s for
+  the four) after three development passes (`dev6a/`, `dev6b/`, `dev6c/`, each with `check-dev.txt` and
+  `manifest-dev.sha256`, not cited; `dev6c/` is a full-count run whose one `potret` mismatch was the generator's, a calc
+  above `2³¹ − 1` modelled as positive): `golem` (`GolemHealShare` with `v = 0` weighted, `GolemHeal` direct),
+  `double` (kind 3's draws at chosen `(r1, r2)`, seeds built backwards), `potret` (kind 3's return for amounts at and
+  below 0), `stackreq` (`StackRequest` to `StackMerge`). 8 600 cases, 0 mismatches, 0 stops, 0 undeclared reads, no
+  traced write; 16 controls, each separating, `passed` 0. No import, no allocator reached. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5b](../findings/items/experiments.md#part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-2026-11-16),
+  `workspace/logs/n66z/s4e/run6/` (`check.txt` `108ce34a…`, `static.txt` `6499c56a…`, `manifest.sha256` `576815a0…`,
+  22 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
+  committed revision). Claims in
+  [items/0013 § 15](../findings/items/0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0012 §§ 5, 6 and items/0013 § 7.
+- **Rows settled.** items/use: 38 and 52 raised with refinements (the chance is the uniform-pair count; the `v = 0`
+  rule's anchor is `GolemHealShare`'s 0x005C68AC, `GolemHeal` returning 0 at `v ≤ 0`); 34 raised in part (every amount
+  ≤ 0 returns 0; a refill slot with `len + rem ≤ 0` returns 1; the 1 after `UnitAddStat` or `STATLIST_SetStat` stays
+  c-emu, S4e continuation). items/inventory: 58 raised with refinement (a found non-item returns 0 with the flag
+  clear). **Class move:** inventory 57 c-emu → b (H4d): each branch after the first `UnitSetStat` sends a stat message
+  whose `ClientQueuePacket` allocates when the client's buffer has no room (0x0040B430 at 0x0053B2DD; ruling R2).
+  Refinements routed by [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5b-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' rows and *Totals by class*; `main` `30e8a46c`): a-logs 623, a-run 334,
+  b 511, c 390, c-emu 440, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 453, Phase 2 845. README
+  §§ 1, 3, 4 (S4e and H4d rows) updated.
+- **Judgment calls:** (1) row 57 moved whole although the allocation is conditional (a client buffer with room
+  appends without it): the merge's later writes all follow a message send whose queue state is the live client's, which
+  a declared image would have to invent; (2) row 52's v = 0 rule stopped at the `UnitSetStat` call (ADR-0021), the
+  return after it left `[I]`; (3) row 38 raised on the per-pair rule, the formula filed as the uniform-pair count
+  (refinement), not as a property of the LCG; (4) `StackRequest`'s class compare after `ItemsCanStack` kept `[I]` as a
+  reading (no case can reach its unequal branch).
+- **Resume (part 5c, a fresh lane on `lane/n66z`):** items/use 21 (`Pkt61MercItem` to `MercGiveCursorItem` or
+  0x0054D130: declare the skill list for `UNIT_GetUsedSkill` 0x00620250, `UnitIsDead` 0x005541B0, the pet list for
+  `PETS_GetUnitOfType` 0x00574EC0, 0x0065A590, `ItemBaseIsQuest` 0x00628CD0), 22 (`ItemUse` C2: the real test and use
+  entries with worlds making them return 0 or not, `InvClearUseMark` 0x005BE1C0 as the boundary; the message 0x7C goes
+  through `SendUnitPacket6` 0x0053B3D0 → `ClientQueuePacket` 0x0053B280 (0x0053B3EE), so the message half is a b
+  candidate as row 57), 54 (the `useable` gate through the 0x20/0x26 handlers' families of part 3), 34's remainder (the
+  1 after `UnitAddStat`/`STATLIST_SetStat`: check their closures; a player's list reaches 0x00624DD0, which calls
+  0x0040B4B0 at 0x00624E73); items/inventory 20 and 45/99's remainder (`InvGridPut` past `InvItemRemove` 0x0063AAF0:
+  `InvAppendItem` 0x0063AF20, `InvPageAppend` 0x0063AF70, `InvGridFill` 0x0063A910, 0x00620470, 0x006204C0,
+  0x00629ED0, `ItemSetPage` 0x00628280, the location byte 0x0063B1BF..0x0063B1EF; `InvPlaceSocketed` 0x0063B210),
+  25–27 (`InvPlaceItem` past the put to `ItemSkillQtyAdd` 0x0055C270 and the charm call; `ItemSkillQtyAdjust`
+  0x0055C110 with a Books row and stat 70), 67 (`ItemAutoEquipSlot` 0x0055D710); the remainders of 17 (callers of
+  type 2 with class `0x152`/`0x153`), 39 (after `BeltFreeSlot`), 42 (after `InvTakeItem`), 87 (quality writers); and
+  the S4c/S4d static (c) and c-emu remainders in part 1's note. New tool and `run7/`; do not overwrite `run6/`. Tier B
+  review once S4e is whole.

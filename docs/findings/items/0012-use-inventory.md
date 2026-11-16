@@ -230,7 +230,8 @@ for (k = 0; k < 3; k++) {
 - [I] **The draw's chance** for `n`: `Σ min(100, r >> 1) / (100 n)` over `r < n`, from `tools/item_inventory.py`
   `double_chance`: 2.0 % at 10, 5.76 % at 25, 12.0 % at 50, 24.5 % at 100, 49.5 % at 200, 79.8 % at 500. The stats read are
   `STATS_GetUnitStat(user, 3 or 1, 0)`; on a non-player user they are whatever its list holds, usually none, so no draw.
-  (0x005BE514–0x005BE53B)
+  (0x005BE514–0x005BE53B) *2026-11-16 (plan 0066 S4e part 5b, items/0013 § 15): the rule `r2 < r1 >> 1` at each pair `[C]` (ADR-0021) over 146
+  `n`, players and non-players, and no draw at a stat ≤ 0; the formula is the uniform-pair count (refinement).*
 - [I] **Stock totals** (`python3 -I tools/item_inventory.py stock`): `hp1` 30 → 7 680 stored units for a Sorceress, 11 520 for
   an Amazon, 15 360 for a Barbarian, i.e. 30, 45 or 60 life. The stored rate truncates: `hp3` (100, `len` 171) gives
   25 600 / 171 = 149 per frame, 25 479 over the 171 frames, 99 life and a remainder. Stock `ValShift` of stats 26 and 74 is
@@ -277,7 +278,7 @@ first is carried and spread over the longer window. (0x005BE678–0x005BE6CF) *N
 - [C] (ADR-0021) **Blood Golem.** For a positive life amount on a player: pet type 3, class `0x122`; the row's MonStats
   `+0x170` names a Skills row, whose `+0x15C` is a percent. `share = v · p / 100` truncated goes to `GolemHeal`, up to the
   golem's maximum, and the player keeps `v − returned` (after, `[I]`). No such pet or another class returns `v`.
-  (family `golem` 300, and 27 + 11 cases of `stat3`, `stat5`, run:2026-11-03-use-emu, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0) [I] `v = 0` sets the golem to full; no use entry sends it. *Corrected 2026-11-04 (`lane/s60` review): kind 5 calls the share before its cap with no `v > 0` test (`0x005BEC10`), so only a maximum of 0 would send it, no stock case. Kinds 3 and 5 return 1 when a slot applied, else 0 (`0x005BE73D`, `0x005BED90`), which decides C2's clear and the caller's removal.*
+  (family `golem` 300, and 27 + 11 cases of `stat3`, `stat5`, run:2026-11-03-use-emu, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0) [I] `v = 0` sets the golem to full; no use entry sends it. *Corrected 2026-11-04 (`lane/s60` review): kind 5 calls the share before its cap with no `v > 0` test (`0x005BEC10`), so only a maximum of 0 would send it, no stock case. Kinds 3 and 5 return 1 when a slot applied, else 0 (`0x005BE73D`, `0x005BED90`), which decides C2's clear and the caller's removal.* *2026-11-16 (plan 0066 S4e part 5b, items/0013 § 15): `[C]` (ADR-0021) to the set, from `GolemHealShare`'s own branch (0x005C68AC → 0x005C68F0); `GolemHeal` itself returns 0 at `v ≤ 0` (refinement of the anchor).*
 
 ## 7. What the columns gate
 
