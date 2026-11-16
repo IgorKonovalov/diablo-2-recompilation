@@ -1558,3 +1558,44 @@ logs: 7 143 (`ai.py check`). Wall of the 17 cases: 4 271 s (the marks' walls; th
 - **Not covered by this run:** Act IV, Act V and Nightmare (Phase 3b), the entries listed as not reached, R32's home and script
   words, the Phase 1c words of R56, R71, R85, R128 and `objects.py`'s lines (R56 stays all-forked), R68 (Act IV: the nested-call
   test covers the logged calls inside `AiVileMotherSpawn`, no Act IV log yet).
+
+## run:2026-11-16-ai-tour-3
+
+- **Question:** (plan 0069 Phase 3b, `lane/n69f`) Do the Act IV, Act V and Nightmare cases of plan 0069's tour (17 cases:
+  `t-a4-town`, `t-a4-steppes`, `t-a4-cotd`, `t-a4-river`, `t-a4-chaos`, `t-a5-town`, `t-a5-foothills`, `t-a5-highlands`,
+  `t-a5-plateau`, `t-a5-crystal`, `t-a5-glacial`, `t-a5-tundra`, `t-a5-halls`, `t-a5-wsk1`, `t-a5-wsk`, `nm-a5-crystal`,
+  `nm-a5-wsk`) check with 0 mismatches against the models of Phases 1b and 1c, and which statements of the H1a to H1d, H1g and H1h
+  batches do they reach (the raise itself is Phase 4's)? The aims named by the lane: R68, R118, R119, R128.
+- **Setup:** as `run:2026-11-16-ai-tour-2`: `tools/gdb/ai.py` rev 7 (unchanged), slot 2, `--fresh` (one game process per case),
+  every launch inside `systemd-run --user --scope -p MemoryMax=4G`, runner `tools/ai_sessions.py`, characters built by
+  `ai_sessions.py build --saves workspace/logs/n69f/saves`, seeds the case table's (Act IV 7055, Act V 6908, Nightmare 6927), checker
+  `tools/ai_model_check.py` revision 6 and `tools/ai.py`. Batches by seed: Act IV under run id `2026-11-16-ai-tour-3` (7055), Act V under
+  `2026-11-16-ai-tour-3b` (6908), Nightmare under `2026-11-16-ai-tour-3c` (6927), so that launch numbers are not reused. R56, R85,
+  R32's home and script words stay unlogged (no logger change).
+- **Predictions** (committed before the first kept log; predicted pools: `workspace/logs/n69a/pools.txt`):
+  1. Every kept log's first logger line is `AI logger armed rev 7 bmax 48`; `ai.py check` gives 0 mismatches over the 17 logs.
+  2. `ai_model_check.py check --logs` over the 17 logs together with the 29 of Phases 2 and 3a gives 0 mismatches for every entry
+     except the control `R79x` (2, as required; a stop is allowed); `regress` over the 38 kept rev 4 and rev 6 logs stays
+     byte-identical.
+  3. Decisions by case (each at least 1, from the predicted pools; the town cases need the NPC near the player):
+     - `t-a4-town` (stay in town): R32 and R54. `t-a4-steppes` (104: fingermage1, regurgitator1, doomknight1): R72; R55 only if the
+       hunt for 256 (Izual) reaches him.
+     - `t-a4-cotd` (106: bighead5, vilemother2, regurgitator2): R4, R68 (with the calls logged inside `AiVileMotherSpawn` between its
+       AIB and AIR lines) and R71; R70 and R73 only if their units are met.
+     - `t-a4-river` (107: blunderbore4, vilemother3, doomknight2): R39, R68, R73; R70, R71 conditional; R33, R98, R100 only if the
+       hunt for 409 (Hephasto) reaches him.
+     - `t-a4-chaos` (108: fingermage3, doomknight3, megademon3): R74 and R70.
+     - `t-a5-town`: R32; S5, S6 not predicted. `t-a5-foothills` (110: overseer1, imp1): R120, R122; R116, R123, R126, R129 conditional.
+     - `t-a5-highlands` (111: siegebeast2, imp1): R115, R122. `t-a5-plateau` (112: minion2, overseer2): R116, R120.
+     - `t-a5-crystal` (113: succubus3, frozenhorror1, bloodlord1): R124 and **R118**; R80 only if the loot walk springs a trap.
+     - `t-a5-glacial` (115: reanimatedhorde2, frozenhorror2, deathmauler3): R114, R124. `t-a5-tundra` (117: siegebeast2, imp4): R115, R122.
+     - `t-a5-halls` (123: reanimatedhorde4, deathmauler2, putriddefiler1): R137, R114; **R128** only if the hunt for 526 (Nihlathak)
+       reaches him (the warp 77 to 124 is not taken in 3a's experience; a timed out hunt is reported as such).
+     - `t-a5-wsk1` (128: reanimatedhorde5, succubuswitch2, putriddefiler3): **R119**, R137; R136, S15 not predicted.
+     - `t-a5-wsk` (129: minion7, suicideminion6; 130: imp5, bloodlord5, putriddefiler4): R116, R117, R137, if the warp 82 to 130 is taken.
+     - `nm-a5-crystal` (Nightmare 113: frozenhorror1, bloodlord3, clawviper6): R142. `nm-a5-wsk` (129: suicideminion6, clawviper10,
+       willowisp6; 130: overseer4, fetishblow8, dkmag2): R142, R25; R74 only if the warp is taken.
+  4. Word lines as in `run:2026-11-15-ai-tour-1` prediction 4: each R10, R54, R32, R78, R79 decision carries its word line and is
+     fork-free where the fork was only that word.
+  5. Separation lines and decision counts per entry are reported as the checker prints them; a row with 1 outcome is reported as
+     confirming it. Sharing: fresh per case, as in Phases 2 and 3a.
