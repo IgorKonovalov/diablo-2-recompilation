@@ -1034,6 +1034,22 @@ class Revision6(unittest.TestCase):
         d["ail"] = [{"k": 1, "pend": 0}]
         self.assertEqual(self.chk("R54", d).status, "stop")
 
+    def test_nested_calls_inside_a_pending_boundary_are_not_offered(self):
+        """Plan 0069 Phase 3a: the rev 7 logger logs the calls made inside AiVileMotherSpawn (0x005F9E30) between its AIB and AIR
+        lines. `top_level` drops a call that lies between another call's AIB and AIR, so a model that calls the boundary once
+        (R68 step 3) sees no extra call: the logged nested calls are consumed by the span, not by the model."""
+        d = path("R54", [("Idle", G, U, [20], 0, 0)])
+        d["r7"] = {"AiNearestPlayer": (0, 0, None)}
+        outer = d["aib"][0]
+        air = d["air"].pop(outer["n"])
+        nested = dict(outer, n=outer["n"] + 1, fn=0x00621E40, ra=0x005F9F00)
+        nair = dict(air, n=outer["n"] + 2, b=nested["n"], fn=nested["fn"], ra=nested["ra"])
+        d["aib"].append(nested)
+        d["air"][outer["n"]] = dict(air, n=outer["n"] + 3)
+        d["air"][nested["n"]] = nair
+        self.assertEqual(len(M.R.top_level(d)), 1)
+        self.assertEqual(self.chk("R54", d).status, "ok")
+
     def test_r54_p_word(self):
         d = path("R54", [("Idle", G, U, [20], 0, 0)])
         d["r7"] = {"AiNearestPlayer": (0, 0, None)}               # p = 0: step 2 is skipped, the class tests fork to Idle(20)
