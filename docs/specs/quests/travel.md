@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 80, I: 88, L: 5}
+tags: {C: 79, I: 88, L: 5}
 updated: 2026-11-10
 ---
 
@@ -242,13 +242,6 @@ Step notes:
   fn:sub_00555DA0_GroundDropCell@0x00555DA0, 0x0064DEE8, 0x0064E1EC, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan,
   [items/0014 § 1](../../findings/items/0014-ground-items.md#1-the-search),
   [ADR-0029](../../adrs/0029-import-slots-and-import-boundaries-in-emulation.md))
-- B1. [C] (ADR-0015, ADR-0029 (a)) **The same search at sizes 0 to 4 and steps 1 to 5**, through both wrappers
-  (`0x0064E7E0` as `PlayerChangeAct` calls it, step 5; `0x0064E810` as `PortalObjectCreate` calls it, radius 50, step 1,
-  size 3 with `maskA` 0x3E01 and the walk's `maskB` 0x0C01) and directly with an origin: family `ffn`, 600 cases, 0
-  mismatches; the ring step (`step1` fails 268), the walk and its mask (`nowalk` 94, `walkmaskA` 37) and the footprints
-  (`sizeone` 326) each separate. Not covered: a map with no cell array, which `COLL_RectTest` reads through a null
-  pointer (0x0064CCA0; 4 cases left out), and the callers after the return. (fn:COLL_FindFreeNear@0x0064DEA0,
-  run:2026-11-16-sweep2-s7e)
 - B1. [C] (ADR-0015, ADR-0029 (a)) **The lookup's base room moves.** Each lookup starts from the last non-null room a
   lookup returned, not from `room`, and the first lookup's result is kept even when null, so a cell is reachable only
   through that room's near list. The return's lookup uses the moved base too: with no free cell and `fallback` 1 the
