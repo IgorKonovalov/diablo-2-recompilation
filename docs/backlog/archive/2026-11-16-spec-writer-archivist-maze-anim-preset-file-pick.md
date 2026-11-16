@@ -2,11 +2,11 @@
 from: spec-writer
 to: archivist
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../specs/drlg/README.md#algorithm
-  - ../wiki/levels.md#maze-levels
-resolution: ""
+  - ../../specs/drlg/README.md#algorithm
+  - ../../wiki/levels.md#maze-levels
+resolution: "tools/maze_render.py convert() implements drlg/README step 9 (newest first; 9a Range(L.seed, Files) iff Files >= 1; 9b forced index, else the per-build rotation for MAZE_DEF_BASE < Def < base + 16; step 5a drop rolls and 5b room-create level draws between rooms), Files as the operand; maze_render gen and maze_anim use it. maze_anim's conversion steps run in conversion order, name the rule (forced index, rotation, level-seed draw), show the draws and count them (final frame: generator + conversion). Checked against the logged builds: 846 of 846 PRC lines (91 MZ1 builds in gen-12345-bloodmoor, gen-1-catacombs-owner and the six sweep-mazes logs, 454 rotations) match in Def, index, file and the level seed after 9b; generator outputs unchanged over 12 maze levels x 4 seeds. The wiki/levels caption sentence is the spec-writer's to drop."
 ---
 
 Not blocking; it makes the first `illustration` block on wiki/levels (`drlg-maze-level36`) show a step the spec

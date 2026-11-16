@@ -803,6 +803,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/n66si` review | 0066 P3 stats/items | architect-review | 190 054 | 80 | 8 | — | gave accept with fixes (Tier A) | 3; spec promotion, outside the Tier B audit count |
 | 2026-11-16 | `lane/ill1` | ADR-0034 | spec-writer | 122 919 | 51 | 7 | — | accept with fixes | 6: overclaim 3, misread 1, other 2 |
 | 2026-11-16 | `lane/ill1` review | ADR-0034 | architect-review | 119 906 | 33 | 4 | — | gave accept with fixes (Tier A, wiki + generator captions) | 6 |
+| 2026-11-16 | `lane/anim1d` | ADR-0034 | archivist | 138 209 | 55 | 7 | — | accept with fixes | 3: miscount 1, misread 2 (one of the misreads in the orchestrator's caption sentence) |
+| 2026-11-16 | `lane/anim1d` review | ADR-0034 | architect-review | 95 799 | 35 | 4 | — | gave accept with fixes (Tier A) | 3; re-ran 846/846 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

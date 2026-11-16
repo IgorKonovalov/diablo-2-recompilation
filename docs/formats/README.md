@@ -54,7 +54,9 @@ A sheet is a sanity check, not evidence (ADR-0005). It simplifies the game's loo
 `tools/gdb/drlg-gen.gdb` log recorded (the MZ1 room rectangles, with the preset files its PRC lines name).
 `python3 -I tools/maze_render.py gen <root> <out> <level> <seed> …` generates them offline with the
 `tools/maze_replay.py` reading model ([drlg/0006](../findings/drlg/0006-maze.md)) and writes `gen.json` beside
-the images. Each level gives `-iso.png` (a tile composite) and `-map.png` (top-down: floor, wall, room borders).
+the images; each room's preset file is picked as [drlg/README](../specs/drlg/README.md) steps 9a/9b specify
+(`convert`: the room list newest first, the instance's level-seed draw, a forced index or the per-build rotation, and
+step 5's level draws between rooms). Each level gives `-iso.png` (a tile composite) and `-map.png` (top-down: floor, wall, room borders).
 The `gen` seeds are illustrative inputs, not the level seeds a game seed produces. Like the item sheets, a
 render is a sanity check, not evidence (ADR-0005); `<out>` belongs under `workspace/render/`.
 
