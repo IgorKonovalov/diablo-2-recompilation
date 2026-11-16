@@ -193,8 +193,9 @@ def convert(root, level_type, seed, rooms, units=None):
     12 x 12, else the 8 x 8 split of the preset's size).
 
     seed: (lo, hi) level seed after the maze generator. rooms: [(x, y, w, h, def, forced index)] in conversion order.
-    units: a tools/drlg.py PresetUnitData, made on first need. Returns ([{d, name, idx, file, draws, seed9, calc}],
-    seed, units); seed9 is the level seed after 9b, calc are the step's calculation lines."""
+    units: a tools/drlg.py PresetUnitData, made on first need. Returns ([{d, name, idx, file, draws, rooms, seed9,
+    calc}], seed, units); draws counts the level draws, rooms the rooms step 5b creates (each also steps its own new
+    seed once, rng/seeds step 5), seed9 is the level seed after 9b, calc are the step's calculation lines."""
     from rng import step
     prest, base = _prest(root), ds1.MAZE_DEF_BASE.get(level_type)
     rot, out = {}, []
@@ -256,7 +257,8 @@ def convert(root, level_type, seed, rooms, units=None):
         calc.append("5b PresetRoomsCreate: %s; one level draw per room (DRLG_RoomCreate)." % (
             "one room (the maze room is %d x %d, at most 12 x 12)" % (w, h) if w <= 12 and h <= 12 else
             "%d rooms (%d x %d split 8 x 8)" % (nr, pw, ph)))
-        out.append(dict(d=d, name=rec.get("Name"), idx=idx, file=f, draws=n0 + nd + nr, seed9=s9, calc=calc))
+        out.append(dict(d=d, name=rec.get("Name"), idx=idx, file=f, draws=n0 + nd + nr, rooms=nr, seed9=s9,
+                        calc=calc))
     return out, seed, units
 
 

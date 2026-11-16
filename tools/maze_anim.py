@@ -263,9 +263,10 @@ def trace(root, level, seed):
     for R in final:
         k, q = q_of[R]
         how = ("forced index %d" % R.idx if R.idx != -1 else "rotation" if any(
-            "counter advances" in c for c in q["calc"]) else "level-seed draw") + ", File%d" % (q["idx"] + 1)
+            "counter advances" in c for c in q["calc"]) else "Files 0, no draw" if "no draw" in q["calc"][0]
+            else "level-seed draw") + ", File%d" % (q["idx"] + 1)
         rooms.append(dict(rect=[R.x, R.y, R.w, R.h], d=R.d, name=q["name"], how=how, file=q["file"], order=k,
-                          draws=q["draws"], calc=q["calc"]))
+                          draws=q["draws"], nrooms=q["rooms"], calc=q["calc"]))
     return steps, rooms, count[0]
 
 
@@ -484,7 +485,7 @@ def build(root, level, seed, scale):
     conv_total, done = 0, set()
     for i in sorted(range(n), key=lambda j: rooms[j]["order"]):     # README step 9: conversion order, newest first
         q = rooms[i]
-        conv_total += q["draws"]
+        conv_total += q["draws"] + q["nrooms"]       # level draws + each new room's first own-seed step, as counted above
         done.add(i)
         txt = "Room %d (converted %d of %d, newest first): Def %d (%s), preset file %s (%s)." % (
             i + 1, q["order"] + 1, n, q["d"], q["name"], (q["file"] or "none").replace("\\", "/").split("/")[-1],
@@ -492,7 +493,8 @@ def build(root, level, seed, scale):
         frames.append(frame(len(frames), dict(text=txt, rng=total + conv_total, rooms=range(n), links=[]), set(done), i,
                             total_steps))
         caps.append(dict(text=txt, calc=[
-            "Level draws in this step: %d (all on the level seed); %d so far." % (q["draws"], total + conv_total),
+            "RNG draws in this step: %d (%d level draws, and %d first steps of new rooms' own seeds, one per room "
+            "DRLG_RoomCreate makes); %d so far." % (q["draws"] + q["nrooms"], q["draws"], q["nrooms"], total + conv_total),
             "Conversion (spec drlg/README.md step 9): after the generator, each maze room in the level's room list, "
             "newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
             "Def %d is the room's LvlPrest row (%s); its File1..6 columns list the preset maps (DS1) it may use."
