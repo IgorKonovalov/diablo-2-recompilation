@@ -2,14 +2,16 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: [../plans/0066-simulation-inferred-claims-sweep.md, ../findings/stats/0001-aggregate.md]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/stats/0001-aggregate.md
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): stats/aggregate F2 (corrected floor), C5 and the getters/op 3, 10, 12 lines [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 1 (`lane/n66z`, run:2026-11-16-sweep2-s4e-emu,
-[stats/0001 § 11](../findings/stats/0001-aggregate.md#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu))
-corrects and refines [stats/aggregate](../specs/stats/aggregate.md). Not blocking; for Phase 3's stats cluster (lines
+[stats/0001 § 11](../../findings/stats/0001-aggregate.md#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu))
+corrects and refines [stats/aggregate](../../specs/stats/aggregate.md). Not blocking; for Phase 3's stats cluster (lines
 at `b5999f5e`, match by text).
 
 1. **F2 (line 338), contradicted in part.** The readers test `v < MinAccr` (signed, `MinAccr` unshifted) and then

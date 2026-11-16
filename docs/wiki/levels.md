@@ -221,6 +221,26 @@ draw, and on some level types a file **rotation** does: the first use of a recor
 file. A maze room of up to 12 × 12 becomes a single room; a larger one is cut into 8 × 8 rooms. The maze rooms are
 then freed, so a maze level's real rooms are all preset rooms.
 
+```illustration
+id: drlg-maze-level36
+tool: maze_anim.py
+args: 36 0xc0ffee
+seed: illustrative
+illustrates: ../specs/drlg/maze.md#e-start-shapes ../specs/drlg/maze.md#c-random-growth
+  ../specs/drlg/maze.md#b-primitives ../specs/drlg/maze.md#d-special-rooms ../specs/drlg/maze.md#h-themes
+  ../specs/drlg/README.md#algorithm
+caption: Catacombs Level 3 (level 36) built room by room. A level draw picks the start shape's two arms on the
+  locked first room (maze § E3); growth then picks a parent room with a level draw and a side with a draw on that
+  parent's own seed, and each new room may link to the rooms it shares an edge with by a Merge roll on their seeds
+  (§ C, § B); each room's Def is the level type's base plus its exit bits (§ B); each special takes a dead end
+  facing the right way or attaches a new room, then the theme pass locks up to max(2, rooms ÷ 5 + 1) rooms as their Theme records (§ D, § H). Every value shown is
+  computed by our replay model (tools/maze_replay.py), not observed in the game, and the seed is an illustrative
+  input, not a level seed a game produces. The last steps convert the rooms newest first and name each room's preset
+  file as the overview's step 9 picks it: each instance first draws an index over `Files` on the level seed (9a);
+  a forced index replaces it if the room has one, else, for a Def strictly between the level type's rotation base
+  and base + 16, the level type's per-build file rotation does (9b) (drlg overview, steps 9a and 9b).
+```
+
 ## Outdoor levels
 
 The outdoor levels are those listed per act in [outdoor § A](../specs/drlg/outdoor.md#a-the-window): Act I's

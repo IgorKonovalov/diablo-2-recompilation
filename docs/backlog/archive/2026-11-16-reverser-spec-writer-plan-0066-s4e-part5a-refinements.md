@@ -2,15 +2,18 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/items/0013-grids-belts-stacks.md", "../findings/items/0014-ground-items.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/items/0013-grids-belts-stacks.md
+  - ../../findings/items/0014-ground-items.md
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–7 in items/inventory and items/use [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 5a (`lane/n66z`, run:2026-11-16-sweep2-s4e-emu part 5a) ran the placement search on full
 pages and in sequence, `InvGridFree`, `BeltHoldsSameGroup`, `ItemAutoBeltTest`, `BeltPutItem`, `ItemGroundExpiry`
 with quality 9 and `ItemPlaceOnGround` with its flag under emulation. Claims in
-[items/0013 § 14](../findings/items/0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu);
+[items/0013 § 14](../../findings/items/0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu);
 rows in the 0066 inventory (items/inventory 22, 23, 47, 48, 55, 63, 81, 84, 87, 98). For Phase 3, not blocking.
 Re-tags and refinements to carry into items/inventory (no contradiction):
 

@@ -3,6 +3,10 @@
 - **Spec:** [stats/README](../../specs/stats/README.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 3; the *Count* column sums to 3.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66si`, 2026-11-16, the stats/items cluster): re-tagged.** The spec's front matter is now C 17 / I 3 / L 3 (it was
+  C 16 / I 3 / L 3 at `main` `845aa88f`). Statement `[C]` whole: rows none (0). Split, the `[C]` half and the
+  remainder `[I]` as the *Route* cell names: 1 (1). Corrected to the finding: none (0). Kept `[I]`
+  (H4e): 2, 3 (2). Row 1 (the equip entry row) is split as stats/aggregate row 2: the attach and detach links and the pickup's unlink with no detach (correction 3) `[C]`, the bodies `[I]`.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

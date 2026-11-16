@@ -2,14 +2,17 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/items/0013-grids-belts-stacks.md", "../findings/items/0012-use-inventory.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/items/0013-grids-belts-stacks.md
+  - ../../findings/items/0012-use-inventory.md
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–4 in items/use and items/inventory; item 5 needs no text [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 5c (`lane/n66z`, run:2026-11-16-sweep2-s4e-emu part 5c) ran `Pkt61MercItem`, `ItemUse` with its
 stock test and use entries, and `ItemSkillQtyAdjust` under emulation. Claims in
-[items/0013 § 16](../findings/items/0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu);
+[items/0013 § 16](../../findings/items/0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu);
 rows in the 0066 inventory (items/use 21, 22, 34, 54; items/inventory 20, 25–27, 39, 42, 45, 99). For Phase 3, not
 blocking. Re-tags and refinements to carry into items/use and items/inventory (no contradiction):
 

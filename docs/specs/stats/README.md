@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc, combat/overview]
 consumed_by: [combat/overview, player/creation, monsters/stats, data/calc, objects]
-tags: {C: 16, I: 3, L: 3}
-updated: 2026-10-21
+tags: {C: 17, I: 3, L: 3}
+updated: 2026-11-16
 ---
 
 # Stats and states: how a unit's stats add up, and how timed states live and die
@@ -51,7 +51,7 @@ in 1/256 points. A stat key is `stat << 16 | param`. Time is in game frames, the
 | A list is linked under a unit, or unlinked | fn:STATLIST_LinkToUnit@0x00626E10, fn:STATLIST_Unlink@0x006269F0 | [C] (run:2026-10-17-stats: 26 087 links and unlinks) |
 | A list entry is added or set (any writer) | fn:STATLIST_AddStat@0x00627030, fn:STATLIST_SetStatEx@0x006270B0 → fn:STATLIST_Propagate@0x00626920 | [C] (run:2026-10-17-stats: 101 995 own writes) |
 | A full stat is read | fn:sub_00624F60_StatListGetValue@0x00624F60 | [C] (run:2026-10-17-stats: 891 844 reads) |
-| An item is equipped, unequipped, or the requirements are refreshed | fn:ITEMS_AttachToOwner@0x0055C2C0, fn:ITEMS_DetachFromOwner@0x0055C730, fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0 | [C] for the refresh (run:2026-10-17-stats: 972 refreshes); [I] for the attach and detach bodies |
+| An item is equipped, unequipped, or the requirements are refreshed | fn:ITEMS_AttachToOwner@0x0055C2C0, fn:ITEMS_DetachFromOwner@0x0055C730, fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0; the body-to-cursor pickup unlinks through fn:sub_0063AAF0_InvItemRemove@0x0063AAF0 instead | [C] for the refresh (run:2026-10-17-stats: 972 refreshes); [C] for the entry: 5 973 item links through the attach, 5 695 unlinks through the detach, and the pickup's 260 unlinks with no detach (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)); [I] for the attach and detach bodies ([aggregate § H](aggregate.md#h-items-equip-requirements-the-refresh-broken-per-level-values)) |
 | A timed state is put on a unit | fn:STATE_ApplyTimed@0x0056E970 | [C] (run:2026-10-17-stats: 3 643 applies) |
 | A timed list's end frame is reached | fn:EVENT_TimedListExpire@0x00580800 | [C] (run:2026-10-17-stats: 2 749 runs) |
 | A player's regeneration tick, every frame | fn:sub_00580810_RegenEvent@0x00580810 | [C] (run:2026-10-17-stats: 54 719 ticks) |
