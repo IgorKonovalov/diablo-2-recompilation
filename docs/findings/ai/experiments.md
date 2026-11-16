@@ -1936,7 +1936,7 @@ Plan 0066 Phase 1, batch S1m (`lane/n66m1`, reverser-static). No game, no Ghidra
     python3 -I tools/ai_s1m.py tables; python3 -I tools/ai_s1m.py gaps ../skills/review-p52d
     python3 -I tools/ai_s1m.py totals; } > $O/check-s1m.txt
   ```
-  Output `workspace/logs/n66m1/s1m/check-s1m.txt` (`525425f4…086d`, 74 check lines, `S1m total bad=0` in each section),
+  Output `workspace/logs/n66m1/s1m/check-s1m.txt` (`8de1e5b7…7fa8`, 74 check lines, `S1m total bad=0` in each section; its `totals` line is the inventory's after the move of machinery 110, the first run's copy with 623 and 23 is `dev/check-s1m-before-totals.txt`),
   `manifest-s1m.sha256` (passes from `workspace/logs/n66m1/s1m`, with the run's copy of the tool `ai_s1m.py.rev`);
   development passes in `dev/` (`manifest-dev.sha256`, passes from `dev/`). Conventions: a helper's words are `CONV`'s of
   `tools/ai_model_check.py` (ECX, EDX, then the stack); a draw is the stepped seed's low word mod 100.
@@ -2009,4 +2009,4 @@ Plan 0066 Phase 1, batch S1m (`lane/n66m1`, reverser-static). No game, no Ghidra
   (78) and 10 (38), against `auratargetstate` Taunt 27, Howl and Terror 56, Dim Vision 23; states 10 (594) and 11 (36)
   also occur in the Countess launches with no curse cast.
 - **Conclusion:** per inventory row in plan 0066's `monsters-ai-machinery.md` and `monsters-ai-README.md` (S1m notes):
-  raised 10, raised in part 27, not settled 2, moved 1. No symbol raised (no logged return names a role).
+  raised 10, raised in part 24, not raised 3 (README 7, 32, 36: the [I] bullet above), not settled 2, moved 1. No symbol raised (no logged return names a role).

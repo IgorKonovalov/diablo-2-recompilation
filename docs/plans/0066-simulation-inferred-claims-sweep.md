@@ -4028,9 +4028,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `workspace/logs/n66m1/s1m`; development in `dev/`. Every row's *Route* cell carries its dated note; README § 4's S1m
   row updated. One shared pass with S1a's tool was not needed: `ai_resume_flip.py`'s kept census for row 20 is cited, and
   the new observable is the next AID's control word.
-- **Result (40 rows).** Raised 10: machinery 2, 7, 21, 49, 59, 69, 114; README 9, 45, 51. Raised in part 27, the
-  remainder named in each Route cell: machinery 3, 4, 23, 25, 26, 34, 47, 55, 58, 63, 67, 71, 84, 107, 113; README 7, 10,
-  11, 13, 14, 18, 19, 22, 27, 32, 36, 47. Not settled 2: machinery 53 (no state-2 decision; route c-emu), 68 (no row-20
+- **Result (40 rows).** Raised 10: machinery 2, 7, 21, 49, 59, 69, 114; README 9, 45, 51. Raised in part 24, the
+  remainder named in each Route cell: machinery 3, 4, 23, 25, 26, 34, 47, 55, 58, 63, 67, 71, 84, 107, 113; README 10,
+  11, 13, 14, 18, 19, 22, 27, 47. Not raised 3 (README 7, 32, 36: shown, they stay `[I]`; changed at the Tier B check). Not settled 2: machinery 53 (no state-2 decision; route c-emu), 68 (no row-20
   head record of another kind; route the plan 0069 tour logs or b). Moved 1: machinery 110 a-logs → d-edit (`aip3` is
   100 in all 18 stock Mummy cells, so the failed draw needs edited data). S1m holds 39 statements now.
 - **Surprises.** (1) Row 20 meets H1: 0x005F283F, the site no call can see, is told apart by the next AID's `+0x14` (59
@@ -4052,4 +4052,31 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   raised in part only for `<` against `≤` (no equal pair counted), every arm of row 2 taken; (6) README 32 on the first
   logged decision, which is not the allocation.
 - **Next:** Tier B review requested
-  ([`2026-11-16-reverser-architect-review-plan-0066-s1m`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s1m.md)).
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1m`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1m.md)).
+
+### 2026-11-16 - Tier B check of S1m (architect, `lane/n66m1`): accept with fixes (3)
+
+- **Re-run.** `sha256sum -c manifest-s1m.sha256` passes; the four sections re-run from the manifest's inputs and the
+  committed tool (`ai_s1m.py.rev` = `tools/ai_s1m.py`) reproduce the 74 check lines byte for byte and `S1m total bad=0` in each
+  section. The `totals` line differed: the kept file said a-logs 623 and d-edit 23 (taken before the move of machinery 110),
+  where the log entry and README § 1 say 622 and 24.
+- **Fixes (3).** (1) miscount: the kept `check-s1m.txt` re-kept with the post-move totals line (`8de1e5b7…7fa8`), the first copy
+  kept as `dev/check-s1m-before-totals.txt`, both manifests and the record's hash updated. (2) overclaim: README rows 7, 32
+  and 36 filed "raised in part" while the record's own bullet holds them `[I]` (shown, not separating: unattributed seed
+  moves, first-decision words that miss in 559 units, no cast line); now "not raised, stay `[I]`"; the batch result reads
+  raised 10, in part 24, not raised 3, not settled 2, moved 1. (3) stale cross-reference: ai/0018's "row 20 stays `[I]`"
+  (the next decision's word was the thing it said no one could see) gets a dated update pointing at the S1m record.
+- **Rulings on the six judgment calls.** (1) README 10, 11 and 14 raised in part on S7a, S7b, S7f and frame/0004's kept
+  checks: allowed. Each of those lanes passed its own Tier B check, the Route cell names the check and the remainder, and
+  a new pass of the same corpus would reproduce the same counts; verified the cited facts in frame/0007 (`fr = pre + 1`,
+  0 inversions) and frame/0004 (4 637 and 4 566 pairs). (2) machinery 69 raised as rewritten: allowed, row 20 is told apart
+  by the next AID's `+0x14` (59 cleared, 11 kept, split by the draw's value), and the correction goes to the spec-writer. (3)
+  `Idle`/`Delay` raised in part with the 68 early events reported and unattributed: allowed, they are in the Route cell
+  and in corrections item 5. (4) machinery 55 in part, not contradicted: allowed, the 75 moves are counted, the reading
+  of A1/A2 starts is not made here, and corrections item 2 holds it `[I]`. (5) machinery 58 and 63 in part for `<` against
+  `≤` only: allowed, no equal pair was counted. (6) README 32: overruled, see fix 2; the observation is at the first
+  logged decision, not the allocation, so it cannot be `[C]` on the allocation.
+- **Checked.** Row 110's move to d-edit holds (`aip3` 100 in all 18 stock Mummy cells); totals recomputed (2 626, the
+  inventory sums); the corrections entry routes items 1 to 5 to the spec-writer; passes 7 and 8 over `0x005F283F`,
+  `CurseSetAiState`, `MonAiIdle`'s `T + n` and the state words found no other stale statement (ai/0001 and ai/0013 already
+  list other setters of states 10 and 11). Symbols: none raised.
