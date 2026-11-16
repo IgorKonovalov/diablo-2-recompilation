@@ -1,6 +1,6 @@
 ---
 based_on:
-    - docs/specs/path/README.md 2026-11-16
+  - docs/specs/path/README.md 2026-11-16
   - docs/specs/path/search.md 2026-11-16
   - docs/specs/drlg/collision.md 2026-11-16
 ---

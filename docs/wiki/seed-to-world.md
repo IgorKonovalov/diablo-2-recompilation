@@ -151,7 +151,7 @@ At the start of the next frame ([the server frame](server-frame.md#rooms-in-the-
    - the **presets window**: the room's hand-placed units in order. Hand-placed monsters go through the same
      creation as random ones (step E); superuniques and the special map presets go through their own path
      ([monsters](monsters.md)). 311 hand-placed monsters of the ordinary class kind were predicted in the recordings of the plan's first phase;
-      - the **restore**, which finds nothing to restore on a first visit and draws nothing (1 459 first activations, both seeds unchanged);
+   - the **restore**, which finds nothing to restore on a first visit and draws nothing (1 459 first activations, both seeds unchanged);
    - the **object population** on the object-region seed: the gate, the eight group slots and each object's creation
      rolls ([objects](objects.md)). The window draws on the room seed, the game seed and the object-region seed;
      in the run it created 13 056 objects (2 888 by the population, 10 168 hand-placed) with every seed predicted;

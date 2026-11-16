@@ -205,7 +205,7 @@ The attacker's damage is built in a fixed order, every random part on the **atta
 
 | # | Step | Draw | Status |
 |---|---|---|---|
-| 1 | against a monster: bonuses against demons, undead or a monster type, and the attacker's defence stat **added** to the monster's defence for good, never below 0 | none | confirmed under emulation for an unarmed attacker; the blunt weapon's bonus against undead read from the code |
+| 1 | against a monster: bonuses against demons, undead or a monster type, and the attacker's "damage to the target's defence" stat (stat 120, not its own defence) **added** to the monster's defence for good, never below 0 | none | confirmed under emulation for an unarmed attacker; the blunt weapon's bonus against undead read from the code |
 | 2 | physical damage roll | one, if the range is not empty | confirmed |
 | 3 | weapon mastery critical strike, then the critical strike stat, then deadly strike: the first success doubles physical damage | one per chance above 0, stopping at the first success | confirmed: deadly strike (250 doublings), the mastery crit before it (144 builds), the critical strike stat before it (under emulation); the mastery crit's place before the critical strike stat read from the code |
 | 4 | fire, lightning, cold, magic, **in that order** | one each, if the range is not empty | confirmed |
