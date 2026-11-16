@@ -1120,7 +1120,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   120 (missile hits), 122 (no `PlayerModeAllowed` draw), 133 (no frozen dispatch).
 - **Contradicted in part: timing row 75** (§ I2, line 550): a code-2 event of a no-skill A1 or A2 strikes no hit (2 248
   of 2 248 dispatches), code 1 in 18 160 of 18 637; the test that drops code 2 is not read (→ c, S6c). Backlog
-  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md),
+  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md),
   with three Phase 3 notes (row 38's `RescheduleSkip` `+0x44 = (T − p) << 8`, row 117's "none of its refusals is
   reached" against all4's 781 refusals, row 42's 9 restarts by this rule against the spec's 15).
 - **Symbols:** `sub_00553C70_RescheduleSkip`, `sub_00553DC0_RescheduleAt` (their logged lists against E3: 819, 74) and
@@ -1175,7 +1175,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   README 1, 3, 10, 12. Not raised: movement 15 (no `Velocity`-0 classic S1–S4 call logged → c-emu, S6e) and 36 (the
   logger's `ss` lacks Slows Target's state 24 → a-run, deferred). No contradiction.
 - **Backlog:** two items added to
-  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md):
+  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md):
   (5) a lead on monsters/stats § G's `fanatic` (stat 67 175, not 195, at `Velocity` 4, 2 units), (6) movement D2's open
   question answered (the 6 offset-1 turns are later phase-11 sets).
 - **Symbols:** none raised. The run compares stat values and rate-call outputs, not a function's logged return
@@ -1590,7 +1590,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   frame function gets no code, `MonModeFrameEvent` passes only ECX and EDX, 0x005A7BD2–0x005A7BD6, so the drop is
   below `MON_MeleeHit` or in its gates, unread), 85 (the stat accessor), 103 (`+0xC4` bit 6's writers); movement 21, 26,
   35; README 12.
-- **Backlog:** [`2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections.md)
+- **Backlog:** [`2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections.md)
   (the contradiction and five refinements: S4/DD frame slot and S3's `ret` end, `MonSetMode`'s `MonModeVelocity` and
   second `UNIT_SetUsedSkill`, the ten chart rows with no case, `MonStatsSpeeds` writing `i` back, `HandsRefresh`'s draws
   under the mode end).
@@ -1644,7 +1644,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements, the spec's text is Phase 3's):** (1) `ANIMDATA_Find`'s length fatal is inside the record
   loop: a long name in an empty block returns none; (2) monster SQ (14) is skill-dependent in both monster tables,
   which J3 does not list; (3) `AnimRateIsMove` and `AnimRateIsAttack` are fatal for unit types other than 0 and 1. Routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md); anim/0001 § 2's "fails
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md); anim/0001 § 2's "fails
   fatally on a name … longer than 8" carries the dated refinement (rule 20; the spec's copy, timing line 157, is item 1).
 - **Symbols:** none raised (an ADR-0015/0021 emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `7a3ef52e`: a-logs 628, a-run 340, b 446,
@@ -1700,7 +1700,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   read, which no emulation runs either.
 - **Corrections (refinements; the spec's text is Phase 3's):** (4) B3 omits the gfxtype 2 exception (class 6 in mode
   4 → 12), which anim/0001 states; (5) movement B6: −4096 wraps from 32 769. Routed by annotating
-  [the part 1 backlog entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+  [the part 1 backlog entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `19edd04f`: a-logs 625, a-run 340, b 466,
   c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 492, Phase 2 806 (inventory
@@ -1963,7 +1963,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements and readings; the spec's text is Phase 3's):** (6) K3: `X_m = 15` needs no IAS;
   (7) F1, `[I]`: a wrap on a record with frames ≤ the start frame never ends; (8) C2's missile divide truncates
   toward zero; C3's no-path call passes the unit's own type, class and mode. Routed by annotating
-  [the part 1 backlog entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+  [the part 1 backlog entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `1f507662`: a-logs 623, a-run 341, b 469,
   c 390, c-emu 475, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 488, Phase 2 810 (inventory
@@ -2035,7 +2035,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements; the spec's text is Phase 3's):** the primary-hand rule and the unwritten index (B1), the
   MonStats read with no null test (G1, `[I]`), the three lookups of `UNIT_SeqInit` (G2), flag `0x8` at every
   unblocked end (B4), `PathStop`'s step pair (B5). Routed by
-  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections.md).
+  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* on `main` `0c3cd6c9`: a-logs 623, a-run 341, b 467, c 390,
   c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808 (inventory README § 1
@@ -2052,6 +2052,171 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (as S6e part 3's timing 86); (4) timing 49's schedule half and 62's refused path left for a later static batch
   rather than routed to b: neither hit an allocator or an import whose result a claim uses; (5) the seven unseparated
   controls taken as inherent (the `wc` tests reached through `seq`/`sinit`, separated in `wc`; Skills row 0's bit).
+
+### 2026-11-16 — Phase 1, batch S5e part 1 (reverser-static, `lane/n66t`): 23 of 52 settled; resume note for part 2
+
+- **Done.** Branch from `main` `01db64a5` (no newer `main` to merge). New tool `tools/combat_s5e_emu.py`
+  (`a783622e…`), one kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66t` (`-Xmx3G`, `MemoryMax=4G`;
+  `import-symbols` run first), after one development launch (`--limit 40`, `workspace/logs/n66t/s5e/dev1/`,
+  `manifest-dev.sha256`, not cited). Nine families, 17 300 cases, 0 mismatches, 0 stops, 0 unaccounted reads or
+  writes (the 9 traced read sites all in `g_BitMask32`); 127 controls, 118 separating with `passed` 0, the 9 others
+  strictness switches at an equal-output boundary, named in the record; two of the controls are the spec's own
+  readings (`spec_sanct_any_r`, `spec_monster_only`). No allocator or import reached; observed boundaries (ADR-0021)
+  at `STATE_ApplyTimed`, the weapon-block check 0x0064F380 and `UnitSetOverlayStat`, each with its call site checked.
+  Record: [run:2026-11-16-sweep2-s5e](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e);
+  `workspace/logs/n66t/s5e/run/` (`check.txt` `100ff7eb…`, `manifest.sha256` `44d94245…`, 8 lines, passes from
+  there; `cases` regenerates the case file byte for byte). Claims:
+  [combat/0001 § 19](../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e).
+- **Rows settled (23 statements).** Raised 19: reductions 2, 3, 4, 8, 9, 12, 13, 14, 15, 19, 21, 22, 23; to-hit 6,
+  9, 12, 25 (with a refinement), 27; damage 20. Raised in part 2: to-hit 11 (the bit names of MonsterData `+0x16` stay
+  that field's tag, no batch), 24 (`0x00621190`'s map; the moving set {2, 3, 6} of `UnitIsMoving` → part 2).
+  Contradicted in part 2: reductions 16 and 18 (the sanctuary test is inside `r ≥ 1`; a resistance ≤ 0 is returned
+  unchanged; 11 separating cases). **Remainders raised:** to-hit 10's (the class 704–709 exclusion; row 10 now
+  whole), README 12's P = 25 (the crushing-blow divisor stays for part 2).
+- **Corrections (the spec's text is Phase 3's):** the contradiction above; C3's moving modes 2/15 apply to every
+  non-player type; A2's null difficulty record gives 100; A7's stat-116 block runs only for a positive stat; A6's
+  state record words. Routed by [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* on `main` `01db64a5`, unchanged (no row moved class): a-logs 623,
+  a-run 341, b 467, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808.
+  README § 4's S5e row records the part.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Reductions 66, 69 (its `[I]` half), 70,
+  128, 145, 158, 168, 221, 229, 264, 278, 325, 330 whole; 233 and 253 with correction 1. To-hit 110, 157, 161 (now
+  whole), 181, 337 whole; 312 with correction 2; halves 170 (the map; the bit names `[I]`) and 304 (`0x00621190`).
+  Damage 175. Combat README 205's P = 25 half.
+- **Review:** Tier B, [request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md). Judgment
+  calls: (1) reductions 16 and 18 filed contradicted in part, not raised with a correction: B2's pseudocode gives 0
+  where the code keeps a negative resistance, a different output; (2) to-hit 25 raised with a refinement (types 2 to 5
+  in modes 2/15 also evade), since the spec's monster half is right and the extra types are a wider map, whether any
+  stock path sends such a defender being unread; (3) reductions 19 raised on a row-independent map, the cold row's
+  stat ids resting on S5b's `[C]` table read; (4) to-hit 11 kept in part for the flag-bit names, as S6e kept column
+  names (ADR-0015 (3)); (5) the 9 unseparated strictness controls taken as inherent (both sides of the boundary give
+  the same output).
+- **Resume note for S5e part 2 (a fresh lane on `lane/n66t`; `workspace/ghidra-n66t` stays, symbols imported).**
+  Left, 29 statements: to-hit 14, 15, 20, 22; damage 3, 4, 5, 7, 8, 10, 11, 12 (2), 18, 22, 23, 24, 25, 26; delivery
+  22, 39–44, 46–48; and the remainders to-hit 24 (`UnitIsMoving`'s set) and 31 (three defence draws), damage 6, 9,
+  13, 14, 15, 34, README 12 (the crushing-blow divisor 10 against a hireling) and 35 (`Align` = 1, not in the rows).
+  A new tool file (as S6e parts 2 and 3) importing `combat_s5e_emu.py`'s unit, stat-list and MonStats builders
+  unchanged; new run directory `workspace/logs/n66t/s5e/run2/`, one launch. Decompiles of the batch's functions and
+  callees are in `workspace/logs/n66t/dev/decomp{2,3,4}.c`. Check each route for an allocator or an import whose
+  result a claim uses first (then the row goes to b, naming the call). Families, cheapest first:
+  `STATEVENT_CrushingBlow` 0x005BFFC0 / `OpenWounds` 0x005BFE60 / `Freeze` 0x005BFC60 (their state and life setters
+  as observed boundaries where they allocate; `IsBoss`, the HP percent run whole), `sub_00580610_LifeRegenTick`,
+  `COMBAT_RollElemStat` 0x0057A8E0 with `COMBAT_RollRange` and its caller's scale, `COMBAT_RollPhysical` with no
+  weapon (`sub_00535BC0_UnitGetWeapon` → 0), `COMBAT_DefenceRoll` 0x0057DFB0 with `UnitIsMoving` and
+  `sub_00622720_UnitBlockChance` (a monster with MonStats `+0x0F` bit 4 needs no inventory; a player's shield needs
+  `InvItemQuery` → `sub_0063ADD0_InvPageGet` on a scratch page as S6f's `wc` image, `sub_0062A4E0_ItemNotDisabled`,
+  `ITEMS_UnitIsType`), `UNIT_GetDefense` 0x006223F0 (state 101's branch reaches `UNIT_FindStatListByState`,
+  `SKILLS_GetRecord`, `InvItemQuery` and `SKILLS_EvalCalc`: run whole on a calc pool as plan 0046's families or end
+  at an observed boundary), the `COMBAT_ApplyDamage` prologue 0x0057C6C0–0x0057C78E, and `COMBAT_BuildDamage`'s
+  steps 1, 5, 7 and 9 (`UndeadDmgBonus` needs `UnitGetWeapon`; run the builder whole only if its prg hooks and
+  callees hold no allocator, else stop at boundaries and scope each step to what it reaches).
+
+### 2026-11-16 — Phase 1, batch S5e part 2 (reverser-static, `lane/n66t`): 24 of the 29 settled, 7 of 10 remainders; 8 named not settled
+
+- **Done.** Merged `main` `21905e83` first (merge commit `2fd25e2d`, no conflict). New tool
+  `tools/combat_s5e2_emu.py` (`156dae37…`; imports part 1's builders, `tools/combat_s5e_emu.py` and its kept run
+  unchanged), one kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66t` (`-Xmx3G`, `MemoryMax=4G`),
+  after one development launch (`--limit 60`, `workspace/logs/n66t/s5e/dev2/`, `manifest-dev.sha256`, not cited).
+  Five families (`cb`, `ow`, `frz`, `regen`, `bd`), 11 200 cases, 0 mismatches, 0 stops, 0 unaccounted reads or
+  writes (the traced reads all in `g_BitMask32`, the PlayerHpPct table 0x006E1590 and the conversion switch table
+  0x0057BD94); 227 controls, 174 separating with `passed` 0, the 53 others strictness switches at an equal or
+  unreachable boundary, named in the record; nine spec-reading controls. Route check first (R2/ADR-0029): no
+  allocator and no import on any path the cases take (the tick's `STATLIST_FreeIfPlain` lies after the unlink
+  boundary; `COMBAT_BuildDamage` runs with no inventory, so the weapon relinks find no item); observed boundaries
+  `UnitSetStat`, `STATE_ApplyTimed`, `COMBAT_ApplyDamage`, `UNIT_UnlinkStatList`, `UNIT_DispatchEvent`,
+  `UnitSetOverlayStat`, each with its return address checked. Record:
+  [run:2026-11-16-sweep2-s5e2](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e2);
+  `workspace/logs/n66t/s5e/run2/` (`check.txt` `03b6603a…`, `manifest.sha256` `a5a0335d…`, 9 lines, passes from
+  there; `cases` regenerates the case file byte for byte). Claims:
+  [combat/0001 § 20](../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2).
+- **Statements settled (24 of 29).** Raised 19: delivery 39, 40, 41, 42, 43, 47, 48; damage 3, 4, 5, 8, 10, 11,
+  18, 22, 23, 24, 25, 26. Raised with a correction 1: delivery 44 (E3's `(x − 1)·4` is `x·4`). Contradicted in part 2 (delivery 46 by the architect's lane-check ruling, first filed raised with a correction: the stat-36 cap
+  cancels a blow only up to `cb` = 0x100000, above it `cb mod 100` stays, and the row's "`cb` = 0 there" is that statement; damage 7 below). Raised in part 2: damage 12's two
+  statements (the no-weapon composition; the blunt `+ 50` stays `[I]`). Contradicted in part (counted above): damage 7 (step 1's
+  condition is a type-0 attacker or `UnitAlignGet` = 2, stat 120 is added; the blunt half stays `[I]`).
+- **Remainders (7 of 10).** Raised: damage 9 (the stat-66 term at `stunLen` = 0), 15 and 34 (flag `0x1` skips
+  steps 2–3), README 12 (the divisor 10 against a hireling; row 12 now whole). Raised in part: damage 6 (steps 7 and
+  9 whole, step 1's no-weapon half), 13 and 14 (stat 337 before 141; the mastery crit's place needs a weapon).
+- **Not settled in budget (stay S5e, c-emu):** to-hit 14, 15 (`UNIT_GetDefense`: state 101's branch reaches
+  `SKILLS_EvalCalc` on a calc pool), to-hit 20, 22 and the remainders 24 (`UnitIsMoving`'s set) and 31 (three
+  defence draws) (`COMBAT_DefenceRoll`: a player's block chance needs a shield through `InvItemQuery`, S6f's `wc`
+  inventory image), delivery 22 (`COMBAT_ApplyDamage`'s prologue reads the defender's room and its town test,
+  0x00620BB0 / 0x0061AB00, undeclared), README 35 (`sub_005A4F50_MonAttackStats`'s `Align` = 1, not in the rows).
+  None crosses an allocator or an import as far as read; each is a family to build, not a b row.
+- **Corrections (Phase 3's):** damage A step 1 (condition, stat 120's sign, positive-only 121/122), step 5 (the
+  player's flag tests), step 6 (the poison roll always runs and replaces the field), delivery E1 (the cap's
+  remainder above 0x100000; type 2+ defenders `k` = 4), E3 (`x·4`). Appended to the
+  [corrections entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md) as items 6–10; the
+  finding's own older bullets (combat/0001 § A steps 1, 5, 6 and the Freeze bullet) carry a pointer to § 20.
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* after merging `main` `21905e83`, unchanged (no row moved class):
+  a-logs 623, a-run 341, b 467, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1
+  1 490, Phase 2 808. README § 4's S5e row records the part.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Delivery 467, 472, 474 (with correction
+  9), 485, 486, 492 (with correction 10), 519 (correction 9), 533, 562; damage 78, 79, 80, 107, 124, 126, 168, 186,
+  226, 234, 238, 243 whole; 89 (correction 6) and 136 in part; the remainders of 87, 120, 145, 146, 147, 334; README
+  205 now whole.
+- **Review:** Tier B; the part 1 [request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md)
+  is extended to S5e whole. Judgment calls: (1) damage 7 filed contradicted in part, not raised with a correction:
+  the condition and stat 120's sign give other outputs (596 and 474 separating cases); (2) delivery 44 raised
+  with a correction: the row's own claim (the missile terms) holds, the slip is in a neighbouring term of the same line
+  (delivery 46 was filed the same way and moved to contradicted in part at the lane check: its row states "`cb` = 0 there", which fails above 0x100000); (3) delivery 48 raised for the floor, the bullet's run sentences being log
+  reports, not code claims; (4) the `bd` family runs the whole builder with an unarmed attacker rather than bounded
+  pieces, so every step-row is scoped to the no-weapon path, and the weapon halves stay `[I]`; (5) the 53
+  unseparated strictness controls taken as inherent (equal output at the boundary, or a value a multiple of 256
+  cannot take).
+
+### 2026-11-16 — Phase 1, batch S5e part 3 (reverser-static, `lane/n66t`): S5e done; 7 of the 8 items settled, README 35 named
+
+- **Done.** Merged `main` `2ffce327` first (merge commit `0b01864d`; the plan-log conflict kept both sides). New tools
+  `tools/combat_s5e3_emu.py` (`5f7cb4a6…`; imports parts 1–2's and S6f's tools, all unchanged with their kept runs)
+  and `tools/combat_s5e3_mas.py` (`71109513…`; reruns `tools/sweep2_s5a2.py` unchanged and adds a separation counter).
+  One kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66t` (`-Xmx3G`, `MemoryMax=4G`), after one
+  development launch (`--limit 80`, `workspace/logs/n66t/s5e/dev3/`, `manifest-dev.sha256`, not cited). Three
+  families (`blk`, `def`, `adp`), 12 000 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes (traced reads in
+  `g_BitMask32`, `g_WeaponClassTokens` and `LevelIsTown`'s two switch tables); 107 controls, 96 separating with
+  `passed` 0, the 11 others named in the record; two spec-reading controls (`spec_b_gt0_after` 2, `spec_def_plain`
+  648). Route check first (R2/ADR-0029): no allocator and no import on any path the cases take (the inventory page is
+  declared at the descriptor's size, so `InvPageGet` allocates nothing; `GameFindUnit` and `UNIT_AnimTransform` are
+  not reached); observed boundaries `SKILLS_EvalCalc` and 0x00621D50, return addresses checked. Record:
+  [run:2026-11-16-sweep2-s5e3](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e3);
+  `workspace/logs/n66t/s5e/run3/` (`check.txt` `ddbca2be…`, `mas-recount.txt` `97495c77…`, `manifest.sha256`
+  `03b20edd…`, 16 lines, passes from there; `cases` regenerates the case file byte for byte). Claims:
+  [combat/0001 § 21](../findings/combat/0001-formulas.md#21-plan-0066-batch-s5e-part-3-the-defence-roll-with-a-shield-unit_getdefense-and-the-delivery-prologue-run2026-11-16-sweep2-s5e3).
+- **Statements settled (5 of 5).** Raised: to-hit 22; to-hit 20 with a correction (the `b ≥ 1` test precedes the
+  divide; refinement: the moving test reads `0x00621190`, the exception `+0x10`); delivery 22 with a refinement (a
+  defender with no room also loses `0x3`). Raised in part: to-hit 15 (stats 171, 16, 182 and the Holy Shield gate up
+  to `EvalCalc`; the calc value stays `[I]`). Contradicted in part: to-hit 14 (for `d` ≤ 0 the percent term is
+  subtracted, 648 separating cases; the Holy Shield half as row 15).
+- **Remainders (2 of 3).** Raised: to-hit 24 (`UnitIsMoving`'s player set 2, 3, 6; row 24 now whole), to-hit 31 (three
+  defender draws: block, weapon block, dodge or avoid, 5 cases; row 31 now whole for player defenders). **Not
+  settled:** README 35's `Align` = 1 exception: the recount shows the two logged calls (classes 257, 405) have stats
+  19, 21, 22 all 0, so they do not separate; the emulated route needs `sub_006538A0_MonLvlStats` with a MonLvl image
+  and `STATLIST_Clear`/`STATLIST_SetStat`, whose allocator use is unread. It stays `[I]` in the row, no part 4.
+- **Corrections (Phase 3's):** to-hit B1 for `d` ≤ 0 and the Holy Shield gate (11), C2's test order and the two mode
+  fields (12), delivery B1's room-less defender (13). Appended to the
+  [corrections entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** after merging `main` `2ffce327`, from inventory README § 1, unchanged (no row moved class): a-logs 623,
+  a-run 334, b 474, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808.
+  README § 4's S5e row records the part. **S5e over parts 1–3** (52 statements, 12 remainders), counted from the
+  three log entries: statements raised 42 (19 + 20 + 3; four of them with a correction or refinement: to-hit 25,
+  delivery 44, to-hit 20, delivery 22), raised in part 5 (to-hit 11, 24; damage 12's two; to-hit 15),
+  contradicted in part 5 (reductions 16, 18; damage 7; delivery 46; to-hit 14; the lane filed delivery 46 raised with a correction and the lane check moved it); remainders raised 8 (to-hit 10; README 12's two
+  halves; damage 9, 15, 34; to-hit 24, 31), in part 3 (damage 6, 13, 14), not settled 1 (README 35).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** To-hit 257 (with correction 12), 283, 304
+  (now whole), 354 (now whole); 192 and 202 with correction 11 (the calc value `[I]`); delivery 297 with correction 13.
+- **Review:** Tier B; the S5e [request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md) is
+  extended to S5e whole (parts 1–3). Judgment calls: (1) to-hit 14 filed contradicted in part, not raised with a
+  correction: B1's formula gives another output for every `d` ≤ 0 with `p` ≠ 0 (648 cases); (2) to-hit 20 raised with
+  a correction: the row's claim (the mode-2 exception) holds, the slip is the next line's test order (2 separating
+  cases, few because only chances 1 and 2 separate); (3) the item records carry types 45 and 51 together, a synthetic
+  input (ADR-0015 (4)) that lets one hand pass both the shield and the weapon-class tests; which stock items do is a
+  data question, not claimed; (4) to-hit 31 raised on 5 three-draw cases, each fixing the seed after three steps, so a
+  different draw count cannot match by chance; (5) README 35 named not settled rather than routed to b: no allocator
+  or import is known on its route, the stat-list writers are simply unread; (6) the 11 unseparated controls taken as
+  inherent (equal values at the cap and the running maximum; nine S6f `wc` branches that do not change index 13 here).
 
 ### 2026-11-16 — Phase 1, batch S2c part 1 (reverser-static, `lane/n66q`): 47 of 69 settled; resume note for part 2
 
@@ -2170,6 +2335,102 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s2c`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s2c.md),
   now extended to S2c whole.
 
+### 2026-11-16 — Plan 0069 Phase 4: the tour's batches H1a to H1d, H1g and H1h settled (reverser-static, `lane/n69g`)
+
+- **Done.** The 211 rows of the six batches (the tour's 241 less the 30 Phase 1a moved to H1p) settled over the 38 kept AI logs and the
+  46 tour logs with S1b's block rule and sentence H1's rule. Record: the addendum *plan 0069 Phase 4, the settle* under
+  run:2026-11-16-ai-tour-3 in [findings/ai/experiments.md](../findings/ai/experiments.md); outputs `workspace/logs/n69g/`
+  (`manifest.sha256`). The plan 0069 log holds the method, the reasons by group and the judgment calls.
+- **Result (inventory rows):** raised 22, raised in part 41, kept `[I]` 148 (each with its reason in the row; 55 rows of 21 entries not
+  reached, which wait on the owner). No class or batch move; the six batches' § 4 status is "done"; § 1 counts unchanged.
+- **Ready for Phase 3 (spec-writer), monsters/ai/catalogue at `b5999f5e` line numbers** (unchanged at `21905e83`; each line's run and the
+  paths raised are in [plan 0069's ready list](0069-monster-ai-bestiary-tour.md#2026-11-16--phase-4-the-211-rows-settled-reverser-lanen69g)
+  and its inventory row): to `[C]` whole: 110 (R1), 248 (R7), 294 (R8), 328 (R10), 546 (R142), 574 (R17), 602 (R18), 836 (R25), 882 (R26), 1004 (R38), 1224 (R49), 1565 (R71), 1582 (R72), 3072 (R95), 3193 (R114), 3252 (R116), 3272 (R117), 3428 (R122), 3470 (R124), 3790 (R136), 3814 (R137), 4314 (R54). Split, the raised half `[C]` and the rest `[I]` as each row says: 104 (R1), 234 (R7), 243 (R7), 263 (R8), 288 (R8), 290 (R8), 311 (R10), 323 (R10), 341 (R11), 419 (R14), 526 (R142), 542 (R142), 560 (R17), 586 (R18), 735 (R25), 772 (R25), 780 (R25), 961 (R36), 976 (R36), 991 (R38), 1000 (R38), 1011 (R39), 1022 (R39), 1193 (R49), 1311 (R57), 1326 (R57), 1522 (R71), 1572 (R72), 1589 (R73), 1607 (R73), 3188 (R114), 3231 (R116), 3259 (R117), 3268 (R117), 3393 (R122), 3775 (R136), 3786 (R136), 3797 (R137), 3810 (R137), 4310 (R54), 4688 (Reimplementation). The `l` lines
+  are rewritten as first-boundary lines (R43l's form), the `r` lines under H1 with the new counts; the block lines get a `[C]` bullet per
+  block naming the logged paths, as at S1b. No symbol is raised.
+- **Review (Tier A, the audit sample, 2026-11-16):** accept with fixes, 8 (plan 0069's log). Rows 142, 143, 354, 355, 357, 462, 463
+  moved a-run → b (new batch H1r, deferred); line 243 (row 27) raised in part on "at full life the parameter is 0" only; line 3268
+  (row 345) without "whatever the distance"; line 328 (row 39) in Normal only. The ready list above stands otherwise.
+
+
+### 2026-11-16 — Phase 3, the anim cluster re-tagged (spec-writer, `lane/n66v`): the first Phase 3 cluster
+
+- **Done.** Branch from `main` `2ffce327`. No game, no Ghidra, no slot. Sources: the S6a/S6b, S6c, S6e (parts 1–3) and
+  S6f entries above, their Tier B checks, the inventory files' *Route* cells and the four spec-writer entries. Each
+  raised statement now carries its run or second-source anchor: run:2026-10-30-anim-p3b with the S6a or S6b addendum,
+  the S6c static addendum, run:2026-11-16-sweep2-s6e, -s6e-2, -s6e-3, run:2026-11-16-sweep2-s6f, and
+  run:2026-10-30-frame-emu-2 for the queue and the list runners (rows 3, 51, 53).
+- **Front matter:** anim/timing C 65 / I 135 / L 22 → **C 168 / I 91 / L 22**; anim/movement C 26 / I 46 / L 8 →
+  **C 58 / I 32 / L 8**; anim/README C 14 / I 13 / L 2 → **C 23 / I 9 / L 2**. A split adds a `[C]` beside the `[I]` it
+  keeps, so `C` rises by more than `I` falls.
+- **Rows (191):** `[C]` whole 68 (timing 49, movement 15, README 4); split 75 (52, 18, 5); corrected to the finding 2
+  (timing 67: the GH and BL frame slot is `UNIT_CancelEvents(0, 0)`; timing 75: with no used skill a code-1 event
+  strikes, a code-2 event of A1 or A2 none in 2 248 dispatches, the dropping test `[I]`); kept `[I]` 46 (H6a–H6d,
+  deferred, not raised, S6g's two remainders, d-none). The row lists are in each inventory file's new *Phase 3* line;
+  inventory README § 6 records the tags per spec.
+- **Corrections applied (the four entries, closed):** S6a 1–4 and 6 (MonAttackFrame, `RescheduleSkip`'s `+0x44`,
+  M4's refusals, F1's two restart rules, the run's turn to a walk settled in movement D2 and its open question
+  closed); S6c 1–6 (the mode-record table's slots, `MonSetMode`'s two calls, the class overrides' scope and `+0x1A5`
+  test, `BaseId` written back, `HandsRefresh`'s draws); S6e 1–8 (B2's loop, J3's SQ and other types, B3's class-6
+  exception, K3's `X_m = 15`, F1's endless wrap `[I]`, C2's truncating divide, C3's no-path arguments, movement B6's
+  −4096 wrap); S6f 1–5 (B1's primary hand, G1's readings `[I]`, G2's three lookups, B4's flag `0x8`, B5's step pair).
+  S6a item 5 (monsters/stats § G's `fanatic`, a lead outside anim) is routed to the reverser
+  ([entry](../backlog/archive/2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part.md)).
+- **Also:** quirks Q40, Q117, Q249, Q372, Q373 and Q375 follow their notes to `[C]` (quirks C 388 / I 159); Q371,
+  Q376 and Q377 stay `[I]`, their notes now holding both tags and the entries restating the `[I]` clause. Research-map
+  rows of anim/timing, anim/movement, the overview and quirks updated. wiki/animation and wiki/quirks are left with W4
+  and two understated paragraphs on the run's turn; a refresh entry is filed
+  ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-animation-refresh-after-plan-0066-anim-re.md)).
+- **Judgment calls for the review:** (1) anim/README note 1 (row 12) raised whole on timing J7's `fire` and S6c's
+  callee closure of timing row 94, although row 12's route left its remainder to S6c, which did not take it;
+  (2) movement Outputs (row 38) raised whole: it states the end on arrival only, row 26's remainder being the monster
+  animation; (3) timing rows 69 and 70 counted whole with the S6c corrections written in; (4) timing J5's monster
+  starting stats and the stat-67 mods raised as movement row 11 raises them (review-fixes 8), although timing row 92
+  sent "the mods" to H6a; (5) timing M1's and M4's pseudocode headers stay `[I]` with a `[C]` bullet stating what the
+  logs hold, instead of per-line marks; (6) "server" for the call sites at or above 0x00520000 is written as the
+  address bound, with the client reading of the rest kept `[I]` (A2, C2, J6); (7) timing J1's "not reached on stock
+  data" kept `[I]`, since slows and curses are not scanned (the H6d ruling (b)).
+- **Gate:** fast green (73 warnings, none new in anim but W4 on the two wiki pages); `--full` green (39 surveys).
+- **Review:** Tier A, [request](../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-anim-cluster.md).
+
+### 2026-11-16 — Phase 3 anim cluster review (architect, Tier A, `lane/n66v`): accept with fixes (3)
+
+- **Checked.** The three inventory files' *Phase 3* lines partition their rows exactly (timing 134, movement 44, README
+  13; a script over the lists, no row twice or missing). Sampled against the Route cells and the S6a, S6b, S6c addenda
+  (anim/experiments): timing rows 5, 38, 42, 49, 62, 67, 75, 92, 94, 112, 117, 125, 128; movement 11, 26, 38, 44 and
+  the A1–E1 diff; README all 13. Every new `[C]` in the diff carries a run, a kept-output or a second-tool anchor; the
+  split remainders keep `[I]` where the Route cells put them; twelve `fn:` anchors resolve in `re/symbols.csv`. No
+  `[L]` outside *Open questions*; no Mermaid block changed and none now disagrees with its text. The promotion
+  re-check read the S6a, S6b and S6c raises the spec imports; they say what the sentences say, with the two scopes below.
+- **Fixes (3).** *Overclaim (2):* timing I2 `MonAttackFrame`: "a code-1 event strikes … a code-2 event strikes none" is
+  restated as the logs hold it (followed in its frame by a hit of the attacker, 18 160 of 18 637; by none, 2 248 of
+  2 248), the strike through `MON_MeleeHit` moved to the `[I]`, and the unread cause now says it leaves open whether a
+  code-2 event reaches the to-hit test and its draw (the finding records hits, not strikes or draws). anim/README § A's
+  frame-event row (inventory row 5) was `[C]` for every unit on S6c's walk of `PlrModeSkillFrame` alone: `[C]` for a
+  player, `[I]` for a monster's frame functions, which the second tool did not walk; the README goes to C 23 / I 10 /
+  L 2, row 5 moves from whole to split (README: whole 3, split 6; the cluster: whole 67, split 76), inventory § 6 and
+  the research-map row follow. *Misread (1):* S6a item 5, routed to the reverser as a `fanatic` contradiction, is none:
+  monsters/stats § G defines "champion part" without its velocity and G3 gives `fanatic` the clamp only (both `[C]`),
+  so 175 at `Velocity` 4 agrees; the entry is closed with that resolution. The S6b addendum's "a lead against
+  monsters/stats § G" (anim/experiments) is stale for the same reason; the reverser may strike it at its next anim pass.
+- **Judgment calls.** (1) README row 12 whole: accepted; row 94's S6c closure (the rate reaches no queue, cancel or
+  scheduler) is the static second source the route asked of S6c. (2) Movement Outputs (row 38) whole: accepted, it
+  states the arrival end only. (3) Timing 69 and 70 whole with the S6c corrections: accepted. (4) J5's mods as movement
+  row 11 raises them: accepted (spec-writer review-fixes 8). (5) M1/M4 headers `[I]` with a `[C]` bullet: accepted.
+  (6) The `0x00520000` bound stated as an address fact, the client reading `[I]`: accepted. (7) J1 kept `[I]`: accepted.
+- **Ruling on the cluster pattern (binding for the later clusters).** Accepted, with four rules. (a) Each inventory file
+  gets one *Phase 3* line under its header naming the four buckets in this order (whole, split, corrected, kept), each
+  with its row list and its count; the lists partition the file's rows, and the line states the front matter before
+  (at the branch point, naming any `[I]` of another plan that is not in the inventory) and after. (b) Inventory
+  README § 6 gets one row per spec with the same counts; "after" equals the spec's front matter at the cluster's merge.
+  (c) A row whose route waits on a later batch (S6g here: timing 49's schedule half, 62) stays in *kept*; when that
+  batch lands, the re-tag adds a second dated *Phase 3* line to the file and a new § 6 row, never an edit of the first.
+  (d) Judgment calls go in the lane's plan-log entry, and the review's acceptance or change of each is recorded here, not
+  in the inventory line. Phase 3's *Done when* "the inventory's final totals are recorded" is met by a totals row added
+  to § 6 at the last cluster's review.
+- **Gate:** fast green (73 warnings, the W4s on wiki/animation and wiki/quirks the lane's refresh entry answers);
+  `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
+- **Verdict: accept with fixes (3)**: overclaim 2, misread 1. The review request stays open for the merge.
 ### 2026-11-16 — Phase 1, batch S7e part 1 (reverser-static, `lane/n66u`): 11 of 63 settled (moved); resume note for part 2
 
 - **Done.** Branch from `main` `4508f8a2`. Stopped at the orchestrator's token budget, before any kept emulation run.
@@ -2179,8 +2440,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Rows settled: 11, all moved c-emu → b** (the route crosses a pool allocation or free whose block or effect the
   claim uses; ADR-0021 covers nothing after it and R2 forbids a declared return; each call named in its row):
   frame 12, 15, 30, 49, 58, 72, 74, 114, 122 → H7b; path-README 5, 18 → H7c.
-- **Totals** (taken before merging `main` `2d5dfac5`; recomputed after the merge commit): sim/frame b 22, c-emu 15;
-  path/README b 13, c-emu 14; all b 478, c-emu 466; Phase 1 1 479, Phase 2 819.
+- **Totals** after merging `main` `2d5dfac5` (the 29 files' rows recounted): sim/frame b 22, c-emu 15; path/README b 13,
+  c-emu 14; all a-logs 623, a-run 334, b 485, c 390, c-emu 466, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626;
+  Phase 1 1 479, Phase 2 819.
 - **Resume note for part 2 (52 rows).**
   - `ffn` (travel 19, 60) is ready: 24 development cases matched with `CollMap.h` declared. Run the kept 600 cases
     (`cases --dir workspace/logs/n66u/s7e/run`), check, manifest; then update findings/quests/0002 line 694's
