@@ -340,6 +340,14 @@ if (cs->WalkVelocity) { SetStat(list, 67, (RunVelocity * 100) / WalkVelocity - 1
   355) and the `E9` rows: walk base 256 (and run 128 below 410). (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
   fn:ANIMDATA_Lookup@0x0066A9B0, 0x00650F80–0x00650F9D, 0x00650FBE–0x00650FD4, `p50d-monstatsspeeds.asm`, tbl:MonStats.txt:Velocity,
   tbl:MonStats.txt:BaseId)
+- *2026-11-16, plan 0066 H6d (`lane/n66h6`):* [C] the live words equal the model. The logger reads every MonStats row's
+  `+0x36`/`+0x38` at the game start (MSW; the table at `g_pMonStats`, 0x1A8 bytes a row): 734 rows in each of 11 loads equal
+  `tools/anim.py` `Data.speeds(i)` (8 074 of 8 074); 109 rows per load have no walk record (their lookup returns the
+  fallback, anim/0001 § 2), 62 of them their own class, whose walk word is 256 in 62 of 62 (the control taking an absent
+  record as 0 differs in all 1 199 row-loads). No stock row has a `BaseId` above its own index, so the order case (a base
+  class later in the table) has no stock row and stays `[I]`. The floor 25 reaches the path speed: 105 monster calls with
+  `+0x38` equal to the floored product (control without the floor differs in 105). (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
+  [run:2026-11-16-sweep2-H6d](experiments.md#run2026-11-16-sweep2-h6d))
 - *2026-11-15, plan 0066 S6c (`lane/n66l`):* no stock `BaseId` is out of range (734 rows); r2 reads the guard
   (0x00650F29–0x00650F3C): a `BaseId` below 0 or not below the row count is replaced by `i`, **and `i` is written back
   into the row's `BaseId` field** (`mov word [eax + ecx + 2], di`). `PathSetSpeed`'s 25 call sites, `PathStep`'s 3

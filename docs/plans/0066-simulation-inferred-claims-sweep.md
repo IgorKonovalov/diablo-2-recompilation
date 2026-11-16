@@ -3210,3 +3210,41 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     calls), d182/184 (`EventBlockNew`, `SkillMissileCreate`, 0x00571AA0), d89, d93, d153/154, m71, 72, 74, 85, d79's,
     d84's and d172's remainders.
 - **Review:** none yet; the Tier B request (to be audited at Tier A) comes when S2ae is whole.
+
+### 2026-11-16 — Phase 2, batch H6d (reverser-harness, `lane/n66h6`): done, 19 rows settled or named
+
+- **Done.** Branch from `main` `0df309d6`, `main` `30e8a46c` merged. Logger `tools/gdb/anim.py` rev 7 (`40367f4a…`):
+  SR `x` (exit address), `b`/`l`/`a44`/`rp` (the unit's `+0x44`, `+0x48`, `+0x4C`, `+0x50` before and after), MSW (every
+  MonStats row's `+0x36`/`+0x38` at the game start), ALF (the fallback record at 0x0066AA02 and the absent branch
+  0x0066AAF6), HAF (`HumanAttackFrames`' absent-record return 0x0062A7C5 and result 0x0062A830). New checker
+  `tools/anim_h6d.py` (`9abf9588…`); `tools/anim_sessions.py` only gains `ANIM_LOGDIR`. Slot 1 only, 11 kept sessions
+  (each a fresh process; `sp-bar-dw` rerun because the checker had already seen its first launch, kept as
+  `dev3-sp-bar-dw`), 48 118 SR lines; predictions committed (`e616cb74`) before the first kept log. Record:
+  [run:2026-11-16-sweep2-H6d](../findings/anim/experiments.md#run2026-11-16-sweep2-h6d); `workspace/logs/n66h6/run/`
+  (`check-h6d.txt` `22d6dbdf…`, `check-anim.txt` `8eeade97…`, `manifest.sha256` `2fe0f52c…`, 37 lines, passes from
+  there). `H6D total checks=189882 bad=0`; the existing `tools/anim.py check` (the control) `rate`/`name`/`record`
+  48 118/0. Dated notes in anim/0001 § 2, anim/0002 § 3 and anim/0003 § 1.1.
+- **Rows settled (19).** Raised: timing 9, 82; movement 4, 8, 13. Raised in part: timing 11, 83 (the floor 15 met at X 10 only; the default branch's 175
+  not reached), 44, 87, 90; movement 6, 14. Remainders raised: timing 23, 128 (in part 29 and 88: the monster half of 88 is
+  unmet). The Tier B check split 11, 83 and 88. Not raised (no stock session reaches the case; stay b): timing 80,
+  81, 84, 91, 129; movement 5, 15. Not attempted (provisional, stay H6d): timing 62's refused path, movement 22 (`+0x24`,
+  the `+0x90` drop) and 23 (`PathStepTargetCheck`). None contradicted. **Prediction 4 failed:** the moving floor 25
+  (105 monster calls, least X −15) and the attack floor 15 (111, all at X 10) are reached by `sp-pal-slow`, all equal, every
+  control separating; no player reaches them. Class cells unchanged (b), the outcome is in each Route cell.
+- **Asked of the owner or architect.** (1) The unreached floors and block's 1, the cap and the wrap (timing 80, 81, 84, 129,
+  91, movement 5) need a stock-data scan for d-edit (ruling (b)), or a session with a negative FBR or an absent record
+  name; none was forced here. (2) Movement 15 needs a hunt for a Velocity-0 classic class in S1–S4 (57 stock classes below 410 have Velocity 0, 33 of them an S1 record, the Tier B check's count, not kept; 228 S1–S4 classic
+  calls were met, none of them Velocity-0); a hunt session or owner play. (3) Timing 62, movement 22 and 23 remain H6d-provisional: S6g and a
+  `PathStep` line would take them. No other owner-played case is needed.
+- **Corrections (refinements; the spec's text is Phase 3's):** the floors are reached by monsters; the first call's
+  `+0x48` is the live length of the previous mode (3 040 of 3 074 equal the previous record's, 34 do not); the
+  fallback record is returned in play (FS, BN, MO in mode 14); the left-hand dual term stays `[I]`. Routed by
+  [the backlog entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-h6d-corrections.md).
+- **Symbols:** none raised (live reads; no new address named).
+- **Totals** from the 29 files' *Totals by class* after merging `main` `30e8a46c`: a-logs 623, a-run 334, b 507, c 390,
+  c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 457, Phase 2 841 (the rows keep class b; the
+  inventory README H6d row, § 1's phase line and the moves note updated).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Timing 104, 107 (the 175 and the floor 15), 617
+  and 624, 632, 653 (the floors), and halves: 374, 657, 971; movement 80, 111, 132 (the words), 144.
+- **Notes.** The logger's OA ret hook raised "Cannot convert value to long" 3 times in 2 sessions (not an H6d line). Slot 1's
+  saves restored (empty), no game left running.

@@ -204,6 +204,13 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
   **Refinement:** the name's length is tested inside the record loop (0x0066A941–0x0066A94B), so a name longer than 8
   whose block is empty returns none with no fatal; the fatal needs a record in the block. The container's block
   order and the fallback's values stay the loader's static reading `[I]` (the loader was not run).
+- *2026-11-16, plan 0066 H6d (`lane/n66h6`):* the fallback is read live. [C] 4 834 returns of the fallback record (at
+  0x0066AA02, `ANIMDATA_Lookup`'s absent-name exit) in 11 sessions each hold frames 2 048 (`+0x40C`) and speed 256
+  (`+0x410`) with the name and the 144 event bytes zero, and each name is absent from `animdata.d2`; callers
+  0x00650F4D (`MonStatsSpeeds`' walk, 1 199), 0x00650FB3 (its run, 3 003) and `UNIT_AnimSetRecord`'s 0x00620F40 (632:
+  classes FS 522, BN 104, MO 6, mode 14). The name look-up's absent branch (0x0066AAF6, `HumanAttackFrames`) was not
+  reached. (fn:ANIMDATA_Lookup@0x0066A9B0, fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
+  [run:2026-11-16-sweep2-H6d](experiments.md#run2026-11-16-sweep2-h6d))
 - [I] The record fields read: `+0x08` frames per direction (`+0x48 = +0x08 << 8` at every non-sequence init), `+0x0C`
   the speed that `UNIT_AnimSetRate` scales (anim/0002), `+0x10 + f` the event byte of frame `f`, read only for `f < 0x90`.
   (0x00624470, 0x006244F1, 0x00623E95, 0x00553A40)
