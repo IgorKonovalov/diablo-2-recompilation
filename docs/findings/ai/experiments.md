@@ -1462,20 +1462,20 @@ case), every launch under `MemoryMax=4G`. Two batches: Act II under run id `2026
 | `t-a2-oasis` | 8723 | L4 (1074408) | 43, sweep; warps to 62, 63, 64 not taken (no hop to the warp; no warp 49), hunt 284 timed out | 845 | 522 s |
 | `t-a2-lostcity` | 8723 | L5 (1125227) | 44, sweep, border walk (40 hops) | 344 | 214 s |
 | `t-a2-canyon` | 8723 | L6 (1140642) | 46, sweep, descent 46 to 66 | 601 | 482 s |
-| `t-a2-palace` | 8723 | L7 (1186431) | 52, sweep | 398 | 218 s |
+| `t-a2-palace` | 8723 | L7 (1186431) | 52, sweep | 399 | 218 s |
 | `t-a2-arcane` | 8723 | L8 (1196979) | 74, sweep, hunt 250 timed out (class never seen) | 342 | 267 s |
 | `t-a2-halls` | 8723 | L9 (1206762) | 57, sweep, loot walk (60 hops) | 378 | 223 s |
 | `t-a3-town` | 7842 | L1 (1215456) | Kurast Docks 75, the walk ended at hop 1 (no target, level done) | 28 | 27 s |
 | `t-a3-spider` | 7842 | L2 (1216701) | 76, sweep | 330 | 232 s |
 | `t-a3-marsh` | 7842 | L3 (1232445) | 77, sweep | 565 | 240 s |
-| `t-a3-flayer` | 7842 | L4 (1258234) | 78, sweep | 745 | 246 s |
+| `t-a3-flayer` | 7842 | L4 (1258234) | 78, sweep | 746 | 246 s |
 | `t-a3-lower` | 7842 | L5 (1272609) | 79, sweep, loot walk (60 hops, frontier 10) | 420 | 254 s |
 | `t-a3-bazaar` | 7842 | L6 (1301735) | 80, sweep | 224 | 225 s |
-| `t-a3-upper` | 7842 | L7 (1319724) | 81, sweep | 299 | 233 s |
+| `t-a3-upper` | 7842 | L7 (1319724) | 81, sweep | 300 | 233 s |
 | `t-a3-travincal` | 7842 | L8 (1370720) | 83, sweep, hunt 345 timed out (class never seen) | 424 | 267 s |
 | `t-a3-durance` | 7842 | L9 (1396218) | 101, sweep, the warp to 102 not reached, hunt 242 timed out | 352 | 278 s |
 
-Cases kept: 17 of 17 (Act II 8, Act III 9). One rerun: `t-a2-town`'s first launch (L1) failed at the stage gate (the waypoint click left
+Cases kept: 17 of 17 (Act II 8, Act III 9). Decisions per case are `ai-check.txt`'s `LOG` lines (the runners' stdout counts `t-a2-palace`, `t-a3-flayer` and `t-a3-upper` one lower, 398, 745, 299). One rerun: `t-a2-town`'s first launch (L1) failed at the stage gate (the waypoint click left
 the player in level 103, 115 decisions) and the runner relaunched it fresh; L1 is in the manifest, not checked. Decisions in the 17 kept
 logs: 7 143 (`ai.py check`). Wall of the 17 cases: 4 271 s (the marks' walls; the batches' own totals 2 306 s and 2 003 s). Sharing decision: fresh per case, unchanged.
 
