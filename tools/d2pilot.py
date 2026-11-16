@@ -3252,7 +3252,7 @@ def cmd_join(args, tokens):
                 break
             if step is None or step[0] != "move":
                 if step != said:
-                    print("follow: %s" % (step or "near"))
+                    print("follow: %s" % ((step or "near"),))
                     sys.stdout.flush()
                     said = step
                 time.sleep(0.3)
