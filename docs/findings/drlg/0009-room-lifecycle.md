@@ -1131,7 +1131,7 @@ Output `workspace/logs/n66n/s7a/check-s7a.txt` (`43476f6e…`, `S7a total bad=0`
   is 0x0061A140, whose one direct caller is 0x00553790 in `sub_00553720_PortalPartnerGet`, the "unit spawn at coordinates
   whose room was not active" that also calls `RoomUpdateOne` (0x0055379D). [I] So a unit spawn at coordinates is a fifth
   on-demand activation, beside warp, waypoint, level point and preset build; what reaches 0x00553720 is not read here.
-  Backlog: [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../../backlog/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
+  Backlog: [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../../backlog/archive/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
   (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B7B0_RoomAtCoordsActivate@0x0061B7B0,
   fn:sub_0061A140_ActRoomAtCoordsActivate@0x0061A140, 0x0061B7CA, 0x0061A173, 0x00553790)
 - Not settled in part 1 (part 2 of the batch): lifecycle rows 11, 12, 29, 36, 48.
@@ -1166,7 +1166,7 @@ Output `workspace/logs/n66n/s7a-p2/check-s7a-p2.txt` (`95d0ebe5…`, `S7a total 
   `NPC_MenuAction` three times; `CubeDropEmptied`) holds for eight, and four callers are missing: `QUESTS_GiveItem`
   (0x005467B5), `DropEar` (0x0055A286), `PLAYER_CorpseCreate` (0x0057FA7D) and `TargetBeltItemToGround` (0x005A3213).
   [C] for the list of calls; what each caller drops stays the callers' reading. Backlog
-  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
   (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0)
 
 ### 14. Plan 0066 batch S7b: the frame windows' room and timer lines (2026-11-16, `lane/n66o`)
@@ -1226,7 +1226,7 @@ drlg/lifecycle's; each bullet names the writer sites, then the reader sites.
   Readers: `+0x20` at 0x005425D6 and 0x005427DD; `+0x24` moved back by `InactiveMonAiRestore` (0x00541E91–0x00541EA2)
   when non-zero, then whatever is left freed by 0x00666130 (0x00542959–0x00542963); `+0x28` to `MonAiInit`
   (0x00542862–0x0054286B). [C]; the conditional `+0x20` and the clears are refinements, in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
 - **Row 43, `+0x2C`:** 0x00573520 returns monster data `+0x58` (0x00573533), stored at 0x005423F5; the restore passes it
   to `MonRegionUnitLeave` (0x00542928, 0x00542949–0x00542954). [C]
 - **Row 44, `+0x30`, `+0x32`, `+0x3C`:** the name seed word (0x005422DF), the nine mod bytes (0x00542404–0x0054243B),

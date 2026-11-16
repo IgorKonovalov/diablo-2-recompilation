@@ -619,7 +619,7 @@ Static, no game, no Ghidra. `tools/sweep2_s7a.py` (`246c8301…`, section `p2xre
   (0x0052D3D9); what sets that word, and so whether a stock single-player game takes the branch, is not read. [C] for
   the call chain and the packet; [I] stays for the rest of the claim: 751 indirect call sites of the graph are not
   followed. Backlog
-  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
   (fn:sub_0052D350_AutosaveTick@0x0052D350, fn:sub_0052E320_ClientFlushPackets@0x0052E320, 0x0053B231)
 
 ### 10. Plan 0066 batch S7f: constants, tables and the net queue with a second tool (2026-11-16, `lane/n66o`)
@@ -646,7 +646,7 @@ xref scan of `tools/sweep2_s7a.py`. Output `workspace/logs/n66o/s7f/check-s7f.tx
   (`[reg*4 + 0x6E0B9C]`) in 5 functions: `EventQueueAt` (2), `EventQueueEveryFrame` (1), `EventFree` (2) and two
   unnamed list-address helpers at 0x00540B30 and 0x00540B70 (1 each); no reference to a byte inside the table. [C]
   for the values and the reader list; the spec names two readers, a refinement in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
   (data:g_UnitTypeEventList@0x006E0B9C)
 - **Row 23:** 0x0052D8DF–0x0052D907 holds seven calls and no `j*` or `ret`, and no branch anywhere in `.text` targets
   an address inside the run (both tools agree on every instruction). [C] (0x0052D8DF–0x0052D907)
