@@ -1,6 +1,6 @@
 # 0069 — Monster AI bestiary tour: the catalogue's harness rows of plan 0066
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c done pending merge (`lane/n69c`, 2026-11-15; 31 of 31 entries and the notes row modelled; Tier B check: accept with fixes, 3); Phase 2 done (`lane/n69d`, 2026-11-15; 12 Act I cases kept, 0 mismatches; Tier B check: accept with fixes, 1; merged); Phase 3a done pending review (`lane/n69e`, 2026-11-16; 17 Act II and III cases kept, 0 mismatches)
+> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (a), question 2 (a)); Phase 1a done (`lane/n69a`, Tier B check: accept with fixes, 3; merged); Phase 1b done (`lane/n69b`, 29 of 29 entries modelled; Tier B check: accept, 0 fixes; merged); Phase 1c done pending merge (`lane/n69c`, 2026-11-15; 31 of 31 entries and the notes row modelled; Tier B check: accept with fixes, 3); Phase 2 done (`lane/n69d`, 2026-11-15; 12 Act I cases kept, 0 mismatches; Tier B check: accept with fixes, 1; merged); Phase 3a done (`lane/n69e`, 2026-11-16; 17 Act II and III cases kept, 0 mismatches; Tier B check: accept with fixes, 1; merged); Phase 3b done pending review (`lane/n69f`, 2026-11-16; 17 Act IV, Act V and Nightmare cases kept, 1 contradiction candidate: R118)
 > **Created:** 2026-11-10
 > **Owner skill(s):** reverser (every phase; the re-tag is plan 0066 Phase 3's, spec-writer)
 > **Related ADRs:** 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0021-observed-boundaries-in-emulation, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -1071,3 +1071,35 @@ directory). Predictions committed at `c29d96cc` before the first kept log.
 - **Left for Phase 3b:** Acts IV and V and the Nightmare cases (R68's Act IV logs; R118, R119, R128). The not-reached list above is
   the owner's call: one more Act II/III batch with a changed route for the timed-out hunts, or d-owner.
 - **Review request: Tier B** (backlog entry `2026-11-16-reverser-architect-plan-0069-p3a-tier-b-review-request`).
+
+### 2026-11-16 — Phase 3b: Acts IV and V and the Nightmare cases kept (reverser, `lane/n69f`)
+
+Branched from `main` `0f81e160`; slot 2 only, `--fresh`, launches under `MemoryMax=4G`, saves restored (`saves.py --slot 2 restore n69f`
+done by the runner after each batch), slot 2 holds no process and no aside. Record: `run:2026-11-16-ai-tour-3` and its Results section in
+[experiments.md](../findings/ai/experiments.md); kept outputs `workspace/logs/n69f/manifest.sha256` (84 lines, passes from that directory).
+Predictions committed at `13c02e50` before the first kept log. Three batches by seed: Act IV `2026-11-16-ai-tour-3` (7055, 5 cases), Act V
+`-3b` (6908, 10), Nightmare `-3c` (6927, 2).
+
+- **Done:** 17 of 17 cases kept (`t-a4-town`, `-steppes`, `-cotd`, `-river`, `-chaos`; `t-a5-town`, `-foothills`, `-highlands`, `-plateau`,
+  `-crystal`, `-glacial`, `-tundra`, `-halls`, `-wsk1`, `-wsk`; `nm-a5-crystal`, `nm-a5-wsk`), 0 reruns, 6 752 decisions. No logger or
+  model change (rev 7, checker revision 6); `tools/ai_r118_probe.py` is new and read-only.
+- **Checks** (counts from the kept outputs): `ai.py check` 6 752 decisions, 0 mismatches; `ai_model_check.py check` over the 17 logs: 95
+  entries, 0 mismatches except **R118 (12)**; over the 46 logs the same, plus the controls `R78y` 8 of 27, `R79x` 2 of 10, `R23x` 1 of 613 as
+  required; `regress` byte-identical (32 entries, 38 logs); the resume flip over the rows with decisions here (R4, R54, R68, R70, R118);
+  `ai_tour_words.py`.
+- **The four aims:** R68 reached (104 decisions, 6 outcomes, 0 mismatches; the AiVileMotherSpawn calls are dropped by `top_level` as the 3a
+  test states); R118 reached (44 decisions, **12 mismatches, 16 stops, 8 fork-free ok, 8 forked ok**); **R119 and R128 not reached**:
+  `t-a5-wsk1` found no warp 81 to level 128 from 129, and `t-a5-halls` neither made the descent 77 to 124 nor met class 526 (both
+  named in the Results with the pilot's own line). R56, R85 and R32's unlogged words: unchanged (R32 499 decisions, all forked).
+  Also not reached: R55, R74, R98, R80, S15; the Chaos Sanctuary case stayed in level 107.
+- **R118 contradiction candidate** (`[I]`, unresolved at the time box): in `t-a5-crystal` every one of the 25 near decisions that carry the
+  rev 7 word takes one unit-seed step and none enters the curse arm, where the model's step 1 (flag test, `dist < aip(4)`, `chance(3)`)
+  gives two steps when chance(3) fails. The word reads 0 in all 33 lines. Backlog entry
+  `2026-11-16-reverser-spec-writer+architect-plan-0069-p3b-r118-step-1-draw-contradiction`. R118's rows stay `[I]` for Phase 4 (the far
+  case matches).
+- **Predictions:** 1 held; 2 held except R118; 3 held except the cases named in the Results (R55, R74, R70 at `t-a4-chaos`, R120 and R122 at
+  `t-a5-foothills`, R124 at `t-a5-glacial`, R119, R137 at `t-a5-wsk1`, R137 at `t-a5-wsk`, R74 at `nm-a5-wsk`, R128); 4 and 5 reported as
+  printed. Sharing decision: fresh per case.
+- **Left for later:** the not-reached entries of Phases 3a and 3b are the owner's call (a rerun with changed routes for the warps to levels
+  128 and 130 and Halls of Vaught, or d-owner at Phase 4); the R118 draw question needs a spec decision or a rev 8 word.
+- **Review request: Tier B, and it will get a Tier A audit** (backlog entry `2026-11-16-reverser-architect-plan-0069-p3b-tier-b-review-request`).
