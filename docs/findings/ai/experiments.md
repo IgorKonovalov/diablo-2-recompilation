@@ -1401,3 +1401,43 @@ launch to keep the numbering, is `workspace/logs/n69d/dev/` (`2026-11-15-ai-tour
   per case (harness-play § Fresh process). The 12 cases took 2 738 s of game wall (the marks' walls).
 - **Not covered by this run:** Act II to V cases (the next batches), the Phase 1c words of R56, R71, R85, R128, R32's home and script
   words, `objects.py`'s lines beside the logger.
+
+## run:2026-11-16-ai-tour-2
+
+- **Question:** (plan 0069 Phase 3a, `lane/n69e`) Do the Act II and Act III cases of plan 0069's tour (17 cases: `t-a2-town`,
+  `t-a2-dryhills`, `t-a2-oasis`, `t-a2-lostcity`, `t-a2-canyon`, `t-a2-palace`, `t-a2-arcane`, `t-a2-halls`, `t-a3-town`,
+  `t-a3-spider`, `t-a3-marsh`, `t-a3-flayer`, `t-a3-lower`, `t-a3-bazaar`, `t-a3-upper`, `t-a3-travincal`, `t-a3-durance`) check with
+  0 mismatches against the models of Phases 1b and 1c, and which statements of the H1a to H1d, H1g and H1h batches do they reach
+  (the raise itself is Phase 4's)?
+- **Setup:** as `run:2026-11-15-ai-tour-1`: `tools/gdb/ai.py` rev 7 (unchanged), slot 2, `--fresh` (one game process per case),
+  every launch inside `systemd-run --user --scope -p MemoryMax=4G`, runner `tools/ai_sessions.py`, characters built by
+  `ai_sessions.py build --saves workspace/logs/n69e/saves`, seeds the case table's (Act II 8723, Act III 7842), checker
+  `tools/ai_model_check.py` revision 6 and `tools/ai.py`. Model prerequisite of this lane: `Revision6.test_nested_calls_inside_a_pending_boundary_are_not_offered`
+  (99 tests): `top_level` already drops the calls logged between a pending boundary's AIB and AIR lines, so R68 needs no model
+  change for the calls inside `AiVileMotherSpawn`. No rev 7 word is added for R56, R85 (their tests fork, the fork-free count is
+  lower), R32's home and script words, or `objects.py`'s lines.
+- **Predictions** (committed before the first kept log; predicted pools: `workspace/logs/n69a/pools.txt`):
+  1. Every kept log's first logger line is `AI logger armed rev 7 bmax 48`; `ai.py check` gives 0 mismatches over the 17 logs.
+  2. `ai_model_check.py check --logs` over the 17 Act I, II and III logs together with the 12 Act I logs gives 0 mismatches for every
+     entry except the control `R79x` (2, as required; a stop is allowed); `regress` over the 38 kept rev 4 and rev 6 logs stays
+     byte-identical.
+  3. Decisions by case (each at least 1, from the predicted pools; the rows of a town case need the NPC near the player):
+     - `t-a2-dryhills` (level 42: sandleaper2, pantherwoman2, vulture2): R17, R18, R23; R95 only if the sweep meets a desert turret.
+     - `t-a2-oasis` (43: sandmaggot1, vulture2, crownest3): R15, R23, R43 with `AII`/`AIQ` lines of 0x005F6630; R38, R40, R66 only
+       if Maggot Lair is reached by the warp steps.
+     - `t-a2-lostcity` (44: sandraider2, sandleaper3, slinger6; 45: clawviper2, clawviper3, unraveler2): R8, R17, R95, R16.
+     - `t-a2-canyon` (46: brute4, sandmaggot3, slinger4): R7, R15, R95; R45 and R94 only if the tomb's presets are reached.
+     - `t-a2-palace` (52: sandraider3, baboon1, blunderbore1): R8, R11, R39. `t-a2-arcane`: R93 and R53 only if the sweep and the hunt
+       reach them. `t-a2-halls` (57: unraveler1, slinger2): R95; R77 and R92 only if the loot walk springs a trap.
+     - `t-a3-spider` (76: baboon3, mosquito1, thornhulk1): R24, R27, R11; R56 and R57 only if a tentacle exists there.
+     - `t-a3-marsh` (77: willowisp1, thornhulk2, frogdemon1): R25, R27, R52; R65 and R56 and R57 not predicted.
+     - `t-a3-flayer` (78: fetish4, frogdemon3, fetishshaman3): R52, R65; R23 not predicted.
+     - `t-a3-lower` (79: sandleaper4, vulture3, zealot1): R17, R23, R48; R11 not predicted; R77, R80, R92 only if the loot walk springs
+       a trap. `t-a3-bazaar` (80: thornhulk3, zealot2, cantor1): R27, R48, R49. `t-a3-upper` (81: vulture4, thornhulk3, zealot3): R23, R27, R48.
+     - `t-a3-travincal` (83: vampire2, cantor3): R49; R85 only if the `hunt` reaches the council. `t-a3-durance` (101: mummy5, vampire3,
+       blunderbore3): R39; R50 and R85 only if the `hunt` reaches Mephisto.
+     - The town cases `t-a2-town`, `t-a3-town`: R32 and R41 (a Towner near the player); R42, S5, S6 not predicted.
+  4. Word lines as in `run:2026-11-15-ai-tour-1` prediction 4: each R10, R54, R32, R78, R79 decision carries its word line and is
+     fork-free where the fork was only that word.
+  5. Separation lines and decision counts per entry are reported as the checker prints them; a row with 1 outcome is reported as
+     confirming it. Sharing: fresh per case, as in Phase 2 (the launch cost is unchanged).
