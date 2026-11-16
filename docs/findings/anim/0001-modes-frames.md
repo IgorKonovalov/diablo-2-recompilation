@@ -218,6 +218,17 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
     `1js` for 1hs + 1ht, `1jt` for 1ht + 1ht, `1st` for 1ht + 1hs, `1ss` otherwise; for the Assassin (class 6) with two
     such items `ht2`; else the item's one- or two-handed class (`0x00628500` / `0x00628530`, by `0x0063D340`). (fn:COMPOSIT_WeaponClass@0x0064F060,
     tbl:CharStats.txt:baseWClass, tbl:Weapons.txt:wclass, tbl:Weapons.txt:2handedwclass)
+    *2026-11-16 (plan 0066 S6f, `lane/n66s`):* `[C]` as a map, `COMPOSIT_WeaponClass` run whole on a declared
+    inventory and item image (`wc`, 6 400 cases, [run:2026-11-16-sweep2-s6f](experiments.md#run2026-11-16-sweep2-s6f)): the hands are read through
+    `sub_0063BDE0_InvGetBodyLocItem` (page 0, locations 4 and 5) and `sub_0062A4E0_ItemNotDisabled` (itemdata `+0x18`
+    bits `0x100`, `0x4000`); a right hand that is not an item unit returns 0 with the index unwritten (0x0064F121); the
+    primary is `INV_GetPrimaryWeapon`'s (`+0x1C` = the hand's `+0x0C`, location 5 tested first), and when there is none
+    the right hand is written as primary (`0x0063D1D0`, itemdata `+0x44` 4 or 5; 326 cases) and used; the class index
+    (`0x00629FE0`, compared as a u16, 0x0064F231/0x0064F248) of the primary 2 with the other's 3 gives `1js`, 3 with 3
+    `1jt`, 3 with 2 `1st`, any other pair `1ss` (245, 241, 195, 693 cases); class 6 `ht2` (490); the tail's `0x0063D340`
+    returns 1 for a Barbarian holding an Items `+0x13D` weapon, 2 for a two-handed one (`+0x11C`), and 2 selects
+    `+0xC4` over `+0xC0`. The return is the token and the index `g_WeaponClassTokens`' (`.rdata`). Which Items code has
+    index 2 or 3 is `g_ItemWeaponClassIndex`'s runtime content (§ 4, `[I]`). (0x0064F1E5–0x0064F2D5)
   - monster (type 1): MonStats `Code`, the MonMode token (`KB` → `GH`, `g_MonModeTokenRemap`), and MonStats2
     `BaseW`; in mode 0 or 12 `hth` unless MonStats2 `compositeDeath` (flag 16, `+0x006` bit 0). A missing MonStats2
     record gives `hth`. (tbl:MonStats.txt:Code, tbl:MonStats2.txt:BaseW, tbl:MonStats2.txt:compositeDeath,
@@ -255,6 +266,9 @@ surprises, (a)–(e) of the plan's P1.1 item. The code read here answers them as
   the server reads no `animdata.d2` byte by that frame while a sequence is active (both the schedule and the advance
   take the event from the sequence record when `+0x30` is set), so an out-of-range frame is not read through the
   record on the server. (fn:UNIT_SeqReadFrame@0x00621210, fn:SUNIT_ScheduleModeEvents@0x005539B0, 0x00553A48)
+  *2026-11-16 (plan 0066 S6f, `lane/n66s`):* `[C]` for the advance (`sadv`, 1 500 cases, [run:2026-11-16-sweep2-s6f](experiments.md#run2026-11-16-sweep2-s6f)):
+  with `+0x30` set, `UNIT_AnimAdvance` (0x00623E07–0x00623E52) took every output from the sequence rows while `+0x50`
+  pointed at undeclared memory and no read of it was traced. The schedule's half (0x00553A48 → 0x006634C0) stays `[I]`.
 - [I] **monseq events against the record's.** For the same reason the event that counts in a sequence is the
   `monseq` (or player table) `event`, never the `animdata.d2` byte of the step's frame. (fn:SEQ_ReadFrame@0x00663410)
 - [I] **`eanimdata.d2`.** The only animation-data load is `ANIMDATA_Load`'s `"%s\AnimData.d2"` with `DATA\GLOBAL`
@@ -348,6 +362,12 @@ not run.
   hth, 1ht, 2ht, 1hs, 2hs, bow, xbw, stf, 1js … ht2), fatal when unmapped; a monster gets
   `sub_00659E30_MonSeqRecord(ordinal)`. (fn:sub_00663310_UnitSeqRecord@0x00663310,
   fn:sub_00643D00_SkillSeqIndex@0x00643D00, tbl:Skills.txt:seqnum, tbl:MonStats.txt:Skill1, tbl:MonStats.txt:Sk1mode)
+  *2026-11-16 (plan 0066 S6f, `lane/n66s`):* `[C]` as a map (`seq`, 2 500 cases, [run:2026-11-16-sweep2-s6f](experiments.md#run2026-11-16-sweep2-s6f)), with the column
+  through `COMPOSIT_WeaponClass` run whole on the `wc` image, no bound on the player index (148 cases past the 24
+  entries) and `MonSeqRecord`'s `0 ≤ idx < count`. `[I]` readings the run does not exercise: `SkillSeqIndex` reads the
+  MonStats record of any non-player unit with no null test (0x00643D2A–0x00643D31, a class out of range faults), and
+  when `COMPOSIT_WeaponClass` leaves its index unwritten (a non-item in the right hand) `sub_006632C0_PlrSeqColumn`
+  looks up its own uninitialised local (development run, `seq` case 4015; body locations hold items on stock).
 - [I] `g_PlrSeqTables` (data:g_PlrSeqTables@0x007483B8) has 24 entries (0 null): 207 non-empty `{frames, length, frames}` entries holding 3 450 frame
   records; their event bytes are 0, 1 (432) or 3 (12). The table is indexed by `seqnum` with no bound test; the 25 stock
   rows with a `charclass` and a `seqnum` have at most 23, and the 4 rows above 23 have no `charclass`
@@ -362,6 +382,10 @@ not run.
   `+0x38 = prev`, else the last non-zero event of frames `(prev >> 8) + 1 … +0x38 >> 8` (0 when the position wrapped
   below `prev`); it returns whether `+0x40` changed. (fn:UNIT_SeqInit@0x00621260, fn:UNIT_SeqReadFrame@0x00621210,
   fn:SEQ_ReadFrame@0x00663410)
+  *2026-11-16 (plan 0066 S6f, `lane/n66s`):* `[C]` (`sinit`, 900 cases, [run:2026-11-16-sweep2-s6f](experiments.md#run2026-11-16-sweep2-s6f)), every callee whole.
+  Refinement: the record is looked up three times (`0x006633B0`, `0x006633D0`, `0x006633F0`), the second and third
+  after `+0x30` is written, so a player's column then comes from the mode at `+0x40` (`sub_00621190`), not `+0x10`;
+  in 9 cases the length or count came from another record than the frames.
 - [I] **`Unit+0x38`** is the sequence position of an advancing (monster) sequence. Its other writer,
   `sub_006212C0_UnitSetSeqPos(unit, n)` (`+0x38 = (+0x38 & 0xFF) + 256·n`), has 32 call sites: 19 client, 12 in the
   server skill range, and `PlrModeSkillFrame`, which at every player frame event of a unit with a used skill writes the event's index
@@ -527,6 +551,11 @@ wrap never ends (0x00623ED1–0x00623EE8; the development run's case 1369).
   bit 2 (`durability`; the mask byte `0x006CE270` = 4), `sub_00580310_HandsRefresh` and `0x00580380`; then mode 0 → `PlayerDeathModeEnd(17, 0, 0)`;
   mode 19 → (no cursor item) `PlayerModeAllowed(4, 1, 0)` and `g_PlayerModeStartFuncs[4].xy(4, −1, 0)` (get-hit);
   every other mode → `PlrModeStartNeutral(1, 0, 0)`. (fn:sub_00581020_PlayerModeEnd@0x00581020, 0x005810A2)
+  *2026-11-16 (plan 0066 S6f, `lane/n66s`):* `[C]` up to the first callee (`pme`, 1 600 cases, observed boundaries,
+  [run:2026-11-16-sweep2-s6f](experiments.md#run2026-11-16-sweep2-s6f)): the refresh test (the Skills row is the one the used skill's record `+0` id names, `0 ≤ id <`
+  count) and the calls with their arguments and `EDX` = the unit, at sites 0x0058108C, 0x0058118A, 0x005810B1 and
+  0x00581147; mode 19 with game 0 is fatal (`0x805`), and a cursor item (`INV_GetCursorItem`) ends with no call. What
+  follows each call (the second refresh `0x00580380`, the get-hit start after `PlayerModeAllowed`) stays `[I]`.
 
 #### 9.1 Moving modes
 

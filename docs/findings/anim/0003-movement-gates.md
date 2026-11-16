@@ -400,6 +400,12 @@ PathStop(p);  return 0;                             // UnitMoveStep: 2 - (ret !=
   `0x20000`); at the 10th the walk stops testing and the full step's target is taken unchecked (`jge 0x00650292`),
   with flag `0x8` set when any subtile was counted; a blocked test returns 1, otherwise 0.
   (0x00650177, 0x0065022F–0x0065023D, 0x00650259–0x00650279, 0x00650292–0x006502AA)
+  *2026-11-16 (plan 0066 S6f, `lane/n66s`):* `[C]` as a map for `PathStepCollide` with `0x0064FF90` and the
+  `COLL_*` moves run whole over one declared room (`coll`, 3 000 cases, [run:2026-11-16-sweep2-s6f](experiments.md#run2026-11-16-sweep2-s6f)): the tests' subtiles in order
+  (each test's result taken from the run's own trace at 0x00650215), the stop at the last free centre (422), the
+  `+0x1D8` list, flag `0x8` at every unblocked end with a counted crossing (not only the 10th), and 376 walks that
+  reach the 10th crossing and take the full step's target untested, 69 of them across a blocked cell. `+0x24`, the
+  `+0x90` drop and the re-plan are `PathStep`'s and stay `[I]`.
   (fn:sub_00650660_PathStepMove@0x00650660, fn:sub_00650150_PathStepCollide@0x00650150, fn:sub_00650350_PathReplan@0x00650350)
 - [I] **The end.** `PathStep` returns 1 while points remain; otherwise `sub_006507B0_PathStop` snaps the position to
   the subtile centre, clears flag `0x20`, the point count and index and the step, and `UnitMoveStep` returns 2.
@@ -407,6 +413,9 @@ PathStop(p);  return 0;                             // UnitMoveStep: 2 - (ret !=
   subtiles from the planned end, or ends a path whose target is within its byte `+0x93`. The planning itself
   (`PathPlan`, the target) is phase (5)'s. (fn:sub_006507B0_PathStop@0x006507B0, fn:sub_006503F0_PathStepTargetCheck@0x006503F0,
   fn:sub_00554CA0_UnitMoveStep@0x00554CA0)
+  *2026-11-16 (plan 0066 S6f, `lane/n66s`):* `PathStop` `[C]` (`stop`, 200 cases, [run:2026-11-16-sweep2-s6f](experiments.md#run2026-11-16-sweep2-s6f); flag
+  `0x40000` and `+0x30` clear): the centre snap, flag `0x20`, `+0x24 = +0x28 = 0`, and the step `+0x72`/`+0x76` set
+  from the `.rdata` pair 0x006EB7D4 (both 0). `PathStepTargetCheck` stays `[I]`.
 - [I] **No acceleration for units.** `PathSetAccel` (`+0x88`) has two call sites, `0x0059FDCC` in
   `sub_0059FA30_MissileCreate` and one client; `PathSetMaxSpeed` likewise. A player's or monster's path keeps the
   speed the rate code set. (`p50d-calls.txt` `CALLS sub_00648700_PathSetAccel 2`)
@@ -457,6 +466,10 @@ PathStop(p);  return 0;                             // UnitMoveStep: 2 - (ret !=
   unit's subtile minus the target unit's and `M = max(|dx|, |dy|)`, the point is the unit's subtile plus `(n·dx/M,
   n·dy/M)` (signed division; unchanged when `M` is 0), passed through `0x00679720` (not read) and set as the path's
   one point; no point when it equals the start. (fn:sub_0067A000_PathPlanKnockback@0x0067A000, `p50d-tables.txt` `PLAN 8`)
+  *2026-11-16 (plan 0066 S6f, `lane/n66s`):* `0x00679720` is `sub_00679720_PathLineFree` (path/search A4, `[C]`), and
+  the planner with it is `[C]` by run:2026-11-03-path-emu-3's `knock`; recounted (`knock.txt`, [run:2026-11-16-sweep2-s6f](experiments.md#run2026-11-16-sweep2-s6f)): 300 of 300
+  kept cases equal, the line cut 193 plans (142 to the start, so no point), control `noline` 193, passed 0; `+0x90`
+  values 5 to 77 met (7), not 10.
 - [I] **Speed and length.** The knockback branch of `UNIT_AnimSetRate` sets the path speed to `0x1000` (anim/0002
   § 3.3), one subtile per frame on an axis. A player's knockback ends with the path (§ 2): 3 frames for `n` 3 on an
   axis, 5 on the diagonal (6 and 9 for `n` 6), fewer when the collision walk stops it; then `PlrModeMoveFrame` sets
@@ -688,8 +701,8 @@ return 0;
 - [L] Whether any stock source gives a moving `X` of 854 (a monster with `Velocity` 15) or 2 134 (a player) or more,
   where the step product wraps (§ 2); not surveyed.
 - [L] The readers of `Unit+0xB0` (the stored hit class) on the server.
-- [L] What the 44 unread `FrameCnt1 >> 8` queue sites schedule (other operate kinds, portals, quest objects), and
-  `0x00679720` (the knockback point's adjustment).
+- [L] What the 44 unread `FrameCnt1 >> 8` queue sites schedule (other operate kinds, portals, quest objects).
+  (`0x00679720`, the knockback point's adjustment, is `PathLineFree`: § 4's S6f note, plan 0066 S6f.)
 - [L] Whether a player under stun is refused anything other than through the get-hit it takes; no state-21 test was
   found in `PlrModeLeaveOk` or `PlayerModeAllowed`.
 - ~~Whether an every-frame event queued during a frame's monster or player list run first runs in that frame or the
