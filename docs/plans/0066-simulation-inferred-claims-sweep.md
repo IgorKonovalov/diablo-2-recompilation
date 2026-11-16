@@ -749,10 +749,10 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
 - **Contradictions** (Phase 3; backlog to the spec-writer):
   1. progression C4 (row 49): the first-join restore is per quest. Quest 13 restores b3 as `+0x0B` = 5 and quest 19
      does not restore on b4 (the 4 `MISMATCH` lines); as read, quest 13 maps b2 → (1, 2), b3 → (5, 5), b4 → (6, 5)
-     (0x0059D557–0x0059D5A3) ([backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions.md)).
+     (0x0059D557–0x0059D5A3) ([backlog](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions.md)).
   2. travel Outputs (row 86): an e3 follows every same-act level change (341 of 341) and none of the 87 act changes
      (40 by NPC, 47 by waypoint); progression word 4's "the e3 level-40 branch then finds state 7" is re-read with it
-     ([backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s3a-travel-e3.md)).
+     ([backlog](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s3a-travel-e3.md)).
   3. In part, found in part 2: word 37's entry levels (rows 270, 272): the code tests 113 or 114 for b3
      (0x00589DAB–0x00589DB3) and 121 to 124 for b14 (0x00589EBB–0x00589EC4); the logs met 113 (3) and 123 (2), the
      two levels the spec's lists drop (in the first backlog entry).
@@ -1754,7 +1754,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   warp into 132 before the opening, no gate line).
 - **None contradicted.** Refinements for Phase 3 (Radament's near-credit sites, Andariel's level-37 pass writing a
   credited killer again, two StepBits site owners) in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements.md).
 - **Symbols:** `sub_00544720_GameQuestSet` raised to `C` (518 logged writes, every one on the `QI1` game record, none
   on a player record) in `re/symbols.csv` (evidence moved to quests/0001), quests/0001's Functions table (row added)
   and items/0008's Functions table.
@@ -1807,7 +1807,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **None contradicted. One correction:** row 229's "word 32 has one write" holds for the player record; the game
   record's word 32 also gets b13 from `A3Q7_FirstJoin` (`GameQuestSet(32, 13)`, 0x005BD2EE). Refinements (e3's direct
   raiser in `NpcActTravel`, the operate wrapper 0x00584540, the travel check's same-act test, `A2Q6_WrongTombMsg`) in
-  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
 - **Symbols:** none raised (rule 14 covers logged returns; this part is static).
 - **Totals** at `19edd04f` (`totals-s3c-p1.txt`, the 29 files' *Totals by class*): a-logs 625, a-run 341, b 448, c 390,
   c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; no class moved, so Phase 1 1 509, Phase 2 789, blocked
@@ -1864,7 +1864,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections and refinements:** travel 32's "its later change to mode 2 draws again" was already superseded by
   quests/0002 § 15 (event 1 writes mode 2 directly, no draw). The game record's read side gains
   `QUESTS_SendGameRecord`'s `SaveBytes` (progression 19). Both are in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
 - **Symbols:** none raised (static).
 - **Totals** at `0f81e160` (`totals-s3c-p2.txt`, the 29 files' rows): a-logs 625, a-run 341, b 448, c 390, c-emu 494,
   d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No class moved, so Phase 1 is 1 509, Phase 2 789 and blocked 328
@@ -2075,7 +2075,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   whole), README 12's P = 25 (the crushing-blow divisor stays for part 2).
 - **Corrections (the spec's text is Phase 3's):** the contradiction above; C3's moving modes 2/15 apply to every
   non-player type; A2's null difficulty record gives 100; A7's stat-116 block runs only for a positive stat; A6's
-  state record words. Routed by [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
+  state record words. Routed by [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* on `main` `01db64a5`, unchanged (no row moved class): a-logs 623,
   a-run 341, b 467, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808.
@@ -2147,7 +2147,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (Phase 3's):** damage A step 1 (condition, stat 120's sign, positive-only 121/122), step 5 (the
   player's flag tests), step 6 (the poison roll always runs and replaces the field), delivery E1 (the cap's
   remainder above 0x100000; type 2+ defenders `k` = 4), E3 (`x·4`). Appended to the
-  [corrections entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md) as items 6–10; the
+  [corrections entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md) as items 6–10; the
   finding's own older bullets (combat/0001 § A steps 1, 5, 6 and the Freeze bullet) carry a pointer to § 20.
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after merging `main` `21905e83`, unchanged (no row moved class):
@@ -2196,7 +2196,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and `STATLIST_Clear`/`STATLIST_SetStat`, whose allocator use is unread. It stays `[I]` in the row, no part 4.
 - **Corrections (Phase 3's):** to-hit B1 for `d` ≤ 0 and the Holy Shield gate (11), C2's test order and the two mode
   fields (12), delivery B1's room-less defender (13). Appended to the
-  [corrections entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
+  [corrections entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** after merging `main` `2ffce327`, from inventory README § 1, unchanged (no row moved class): a-logs 623,
   a-run 334, b 474, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808.
@@ -2387,7 +2387,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   boundary), 50 (handlers 19, 27 through `UnitQueueEvent`). Not settled: README 14 (`MissileDamageBlock`'s weapon
   branch and `MISS_GetDamMin`/`Max` with `SKILLS_LevelBands`, declarable, not built in budget).
 - **Corrections (Phase 3's):** backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections.md)
+  [`2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections.md)
   (README 501's "above 0", delivery 237's "on the copy", README 377's `UnitMsgA3` writes).
 - **Symbols:** none raised (an emulation over a declared image and static reads, review-fixes 14).
 - **Totals** after merging `main` `b5a32324`, recomputed from the 29 files' rows: a-logs 623, a-run 334, b 489, c 390,
@@ -2484,6 +2484,160 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Gate:** fast green (73 warnings, the W4s on wiki/animation and wiki/quirks the lane's refresh entry answers);
   `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
 - **Verdict: accept with fixes (3)**: overclaim 2, misread 1. The review request stays open for the merge.
+
+### 2026-11-16 — Phase 1, batches S1f and S1o part 1 (reverser-static, `lane/n66x`): S1f 21 of 24 rows and S1o 12 of 28 settled; resume note
+
+- **Done.** No game, no Ghidra. New tool `tools/ai_s1fo.py` (`22acb79b…`; sections `entry`, `tables`, `init`, `more`,
+  `totals`) on the helpers of `quests_s3c.py`, `skills_s2c.py` and `sweep2_s7a.py`: references three ways (raw bytes,
+  objdump, r2), every claimed instruction decoded by objdump and r2, call arguments by two walkers, image words by Python
+  and r2 `pxwj`, table cells by the `.txt` reader and the `.bin`. Record:
+  [run:2026-11-16-sweep2-s1f](../findings/ai/experiments.md#run2026-11-16-sweep2-s1f); kept output
+  `workspace/logs/n66x/s1fo/check-s1fo-p1.txt` (91 check lines, `S1fo total bad=0`) and `manifest-s1fo-p1.sha256`,
+  passing from `workspace/logs/n66x/s1fo`. Every settled row's *Route* cell carries its dated note; README § 4's S1f and
+  S1o rows updated.
+- **S1f (catalogue), 24 rows, 25 statements.** Raised 12: 1, 2, 16, 73, 87, 274, 275, 282, 372, 440, 443, 473. Raised in
+  part 9 (10 statements), the remainder named in each Route cell and kept `[I]`: 52, 89, 155, 236, 244, 245, 247, 313,
+  514 (count 2; "every indirect source is resolved" and other `AiCtl+0x00` writers stay a reading). Not settled 3: 171,
+  422, 431. S1e remainders: 288 and 356 raised, **518 contradicted in part** (`AiLifePct` has a fourth think caller, row
+  122 at 0x005E31BB, which the spec's own R122b names), 196 and 420 not settled.
+- **S1o (machinery and README), 28 rows.** Raised 9: machinery 1, 57; README 1, 2, 3, 4, 26, 34, 55. Raised in part 2:
+  README 16 (the freeze skip and the unread arguments stay readings), 35 (the register sites and `SpawnOwnedMonster`'s
+  block word stay readings). **Contradicted 1: machinery 82** (T30a "no writer of a kind-14 record with a unit": row 65's
+  `MonHelpBlock` block, 0x005F9C17–0x005F9C33, ai/0005 § 2.18). Not settled 16.
+- **Observed for part 2:** MonStats `Skill8` is also set on 709 `uberbaal`, so catalogue R51a's "only on `diabloclone` and
+  `uberdiablo`" holds for Diablo's block's records only (row 422).
+- **Contradictions** go to Phase 3 through
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md);
+  dated notes in ai/0002 (line 379's list) and ai/0003 (line 557's absence), rule 20.
+- **Symbols:** none raised or added. No logged return is compared (review-fixes 14).
+- **Totals** after merging `main` `858b7eea` (the kept check's `totals` line, from the 29 files' *Totals by class*):
+  a-logs 623, a-run 334, b 489, c 390, c-emu 462, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No row moved class.
+- **Judgment calls for the review:** (1) a row whose claim is a table equality plus a meaning read from the code (155,
+  236, 247) is raised in part: the table half and the decoded tests, the meaning's link (the filter word being the
+  difficulty's `aip2`, `+0xDC`'s bit 4) stays `[I]`; (2) machinery 82 filed contradicted though worded "in the batch":
+  read as a reimplementer would, it says no writer exists, and one does; (3) 518's list read as exhaustive ("rows 4, 8
+  and 15"); (4) README 3's "first from `MonsterInit`" raised on the census (MonsterInit's call with 0), "first" taken as
+  "at creation"; (5) R55 and catalogue 282 raised on the full-table values with `D100` taken as `Range(100)` per the
+  catalogue's notation, which S1e raised.
+- **Resume note (part 2, same branch, a fresh lane).** Add sections to `tools/ai_s1fo.py`, rerun `all` into
+  `check-s1fo-p2.txt` (keep part 1's file). Rows: catalogue 171 (row 71's think: its twelve `[ctl+0x14]` stores and the
+  `state − 1`/`state − 2` sites 0x005FA767, 0x005FA803), 422 and 431 (the Diablo and Baal tables' start words against
+  ai/0012 § 2.3/2.8 as frame stores, as C87 does; weights 0, 11, 16 never stored; Skill8 scoped as observed), S1e 196
+  (`RNG_RandLoHi` 0x004BC500's callers and `MonRegionsBuild`'s −1 store) and 420 (Diablo's 0x005E8E2A and Baal's inline
+  copies against 0x005FC130). Machinery 10 (`TargetListAttach`'s 15 calls, `TargetListAdd`'s list 8/9 pushes), 15
+  (`g_AiSearchKinds` 0x006E3300 and `AiUnitSearch`'s kind immediates), 19 (stat 89 immediates), 20 (`MonSkillTargetOk`
+  13 calls, 10 functions), 40 (`MonAiPathOverride` 103 and `AiPathOverrideSet` 9 with their type arguments), 41, 42, 44
+  (`AiCtlFollowSet`'s four callers), 45, 54, 88 (row 37's `+0x170`), 94 (row 61's `+0x14` writers); README 21
+  (`UnitQueueEvent` 0x005417D0 kind-2 pushes, 30, and the 66 cancels), 23, 33, 38 (Hireling, PetType, Skills `summon`
+  classes' `AI`).
+- **Next:** Tier B review of part 1 requested
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md));
+  part 2 by a fresh lane on `lane/n66x`.
+
+### 2026-11-16 — Phase 3, the combat cluster re-tagged (spec-writer, `lane/n66y`)
+
+- **Done.** Branch from `main` `858b7eea`. No game, no Ghidra, no slot. Sources: the S5a parts 1–2 and S5b
+  (`lane/n66j`), S5e parts 1–3 (`lane/n66t`) and S5fe (`lane/n66w`) entries above, their Tier B checks (the S5e
+  check's additions 14 and 15 to the corrections entry, the S5fe check's README 25 ruling), the six inventory files'
+  *Route* cells and the three spec-writer entries. Each raised statement carries its run or second-source anchor:
+  run:2026-10-16-combat with the [S5a part 1](../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)
+  or [part 2](../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)
+  addendum, run:2026-11-15-sweep2-s5b, run:2026-11-16-sweep2-s5e, -s5e2, -s5e3, run:2026-11-16-sweep2-s5fe, and
+  run:2026-10-25-skills / -10-27-skills for the copies skills/missiles already held.
+- **Front matter:** combat/README C 43 / I 43 / L 5 → **C 75 / I 27 / L 5**; combat/to-hit C 39 / I 33 / L 5 →
+  **C 66 / I 16 / L 4**; combat/damage C 34 / I 35 / L 5 → **C 56 / I 8 / L 4**; combat/reductions C 46 / I 25 / L 5 →
+  **C 58 / I 5 / L 4**; combat/delivery C 81 / I 67 / L 4 → **C 114 / I 42 / L 4**; player/party C 46 / I 30 / L 3 →
+  **C 47 / I 29 / L 3** (row 12 only); the five combat specs together C 243 / I 203 / L 24 → C 369 / I 98 / L 21 (the
+  `[L]`s fall with stale open questions closed). Quirks C 388 / I 159 → **C 401 / I 146**.
+- **Rows (228):** `[C]` whole 99 (README 16, to-hit 16, damage 25, reductions 18, delivery 23, party 1); split 45 (16,
+  8, 7, 0, 14, 0); corrected to the finding 8 (README 29 and 42, to-hit 14, damage 7, reductions 16 and 18, delivery 14
+  and 46); kept `[I]` 76 (9, 8, 1, 5, 28, 25: H5a, H5b, d-none, d-edit, d-2c, the party rows of other batches, and
+  delivery 53 not settled). The lists are each inventory file's new *Phase 3* line; inventory README § 6 has the six
+  rows.
+- **Corrections applied:** S5e 1–15 (sanctuary inside `r ≥ 1`; every non-player type's evade modes and the two
+  weapon-block sites; A2's null record; A7's positive-only stat 116; A6's state record; damage step 1's condition, stat
+  120 added and the positive-only 121/122; step 5's flag tests and the type-2 units; step 6's replace, its `[C]` scoped
+  to the observed zero field and § 20's form; E1's cap above 0x100000 and `k` = 4 for type 2 or more; E3's `x·4` and
+  the draw at `c` = 0, the E3 bullet without the chance; B1's `d ≤ 0` branch and the Holy Shield gate, the line-200
+  bullet kept; C2's test order and its two mode fields; delivery B1's room-less defender; delivery 46 as contradicted
+  in part) and S5fe 1–3 (README note 5's non-zero stat 141; the peek steps the seed itself; `UnitMsgA3`'s writes, still
+  `[I]`). Both entries closed. The S5a entry's spec-writer half done (to-hit C1 and Outputs name `0x4000` with missile
+  damage function 3, skills/missiles § G, as its one known writer, which of the 537 logged ones it set an open
+  question; README § D's stale "no two-client run yet" rewritten); the entry stays open for its reverser half.
+- **Also:** stale open questions closed or rewritten (README's still-owed `MonAttackStats` terms and the shortfalls
+  bullet; to-hit's monster avoidance, `0x00621190` and A7/B1; reductions' cold flat absorb and not-reached list;
+  damage's § D, step 3 and step 1; delivery's not-reached list and the finisher run). Quirks Q56, Q58–Q60, Q135, Q139
+  (rewritten), Q142, Q255, Q258, Q262, Q263, Q266 and Q407 follow their combat notes to `[C]`; Q262 and Q263 now cite
+  the combat notes alone and skills/dispatch n2 and n7 move to the Coverage table's *Weaker duplicate* column until the
+  skills cluster raises them ([entry](../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-skills-dispatch-notes-2-and-7.md));
+  the quirks class table, stale since the anim re-tag (377 / 161 against 383 / 155), now reads 396 / 142. Research-map
+  rows of combat (rewritten whole), player/party and quirks updated. wiki/combat and wiki/characters carry W4; a refresh
+  entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-combat-refresh-after-plan-0066-combat-re.md)).
+- **Judgment calls for the review:** (1) README 20 and 24, filed raised by S5a as re-tags of skills/missiles, are
+  split: skills/missiles E1 and F1 keep the missile's `arPct`, `AlwaysExplode` and the seven pairs' order `[I]`, and
+  "the order differs" rests on damage step 3's mastery place, still `[I]` (review-fixes 1); (2) README 21 and 22 split:
+  B4 marks its `SrcMissDmg` field test (the S5fe lane check's README 25 ruling) and the stat-141 store
+  (skills/missiles C1) `[I]`, and the chain's used-skill mastery path (S5fe's scope) stays `[I]`; (3) README 25 (filed
+  raised) split along the same ruling, the call `[C]`, the field's meaning `[I]`; (4) README 4 counted split: its
+  statement is raised, the packet's field names keep the paragraph's `[I]`; (5) two H5b rows split rather than kept,
+  under review-fixes 8: damage 16 (the creation chain, as README B4 now states it) and delivery 6 (the `meleeonly`
+  skip, README row 8's raise); (6) damage 17 raised whole: S5b left the non-zero entry's formula d-none, S5e's damage 8
+  then emulated it (1 407 calls); (7) rows filed "raised with a correction or refinement" whose own statement held are
+  counted whole with the change written in (to-hit 20 and 25, damage 19, reductions 8, delivery 39, 41, 44), those
+  whose statement the finding contradicted are *corrected* (delivery 14 among them), and README 29, a kept H5b row
+  rewritten by S5fe correction 3, is *corrected* though still `[I]`; (8) delivery 22 split: the prologue `[C]`, the
+  owner redirect and a missile attacker's `+0xC8` bit 10, not run, `[I]` (review-fixes 2); (9) the delivery-order
+  bullet (A2) and the B1 prologue bullet are new `[C]` text stating what the raise holds, beside the pseudocode marks;
+  (10) skills/missiles C2 still says the chain's second and third steps are the reading, while overview B4 now holds
+  them `[C]` (S5fe): the skills cluster's re-tag, under the `lane/s38s` scope ruling.
+- **Gate:** fast green (77 warnings; new: W4 on wiki/combat and wiki/characters, which the refresh entry answers);
+  `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
+- **Review:** Tier A, [request](../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-combat-cluster.md).
+
+### 2026-11-16 — Phase 3 combat cluster review (architect, Tier A, `lane/n66y`): accept with fixes (4)
+
+- **Checked.** `main` (`72f003c8`) merged first (keep-both on this log). The six inventory files' *Phase 3* lines
+  partition their rows exactly (README 43, to-hit 33, damage 34, reductions 25, delivery 67, party 26; a script over the
+  lists, no row twice or missing, each bucket's count equal to its list); § 6's six rows carry the same counts and their
+  "after" equals each front matter. The 8 corrected statements read against combat/0001 §§ 20–22 and the S5e entry's
+  items 1–15: delivery E3 (`x·4`, the draw at `c` = 0, the bullet's chance dropped per item 14 (a)), damage step 6 (the
+  replace; the run's `[C]` scoped to the zero field per 14 (b)), to-hit B1's `d ≤ 0` line (§ 21, the old line-200 bullet
+  kept per 14 (c)), reductions B2's sanctuary inside `r ≥ 1`, delivery E1's 0x100000 cap (94 / 59 cases) and the peek on
+  the seed itself, damage step 1 (`UnitAlignGet`, stat 120 added, 121/122 positive), README note 5's non-zero 141:
+  each says what the finding says. Also sampled: README B4 and its rows 14, 20–25; to-hit A6, A7, C2, C3 (correction 12,
+  refinements 2 and 4); damage rows 6, 7, 12, 16; delivery rows 6, 22 and the A2 and B1 bullets of judgment call 9 (the
+  A2 counts 9 159, 410 + 28 + 81 and 11 128 match `workspace/logs/n66j/check-combat.txt` lines 242–246); party row 12.
+  Thirteen `fn:`/`data:` anchors resolve in `re/symbols.csv`. No `[L]` outside *Open questions*. The one changed Mermaid
+  line (the peek) agrees with its text. The promotion re-check read the §§ 19–22 raises the cluster imports: each names
+  its emulation run or two tools, and the anchors cover what the sentences say, with the scopes below.
+- **Fixes (4).** *Overclaim (2):* README B4's `w ← owner's weapon (a player's, or a monster's when it has one)` sat
+  under the block's new `[C]`; S5fe took the weapon as an input and `MissileDamageBlock`'s weapon branch is not settled
+  (row 14's remainder), so the line carries `[I]` (README C 75 / I 28 / L 5; inventory line, § 6 and the research-map
+  row follow; the five specs now C 369 / I 99 / L 21). README note 5 and Q139 stated the mastery step's "value above 0"
+  unscoped; § 22 holds it with no used skill (0x00645720's throwable path not reached): both now say so.
+  *Stale cross-reference (1):* delivery § B's sequence diagram drew freeze's draw "if chance > 0", which the corrected
+  E3 contradicts (the draw is taken whenever stat 134 > 0, also at `c` = 0); the diagram line now says stat 134.
+  *Miscount (1):* the lane entry's "before" sum of the five specs was I 199; it is I 203 (43 + 33 + 35 + 25 + 67),
+  corrected in place.
+- **Judgment calls.** (1) README 20 and 24 split, the missile's `arPct`, `AlwaysExplode`, pair order and "the order
+  differs" `[I]`: accepted. (2) README 21 and 22 split, B4's field test, the stat-141 store and the used-skill mastery
+  path `[I]`: accepted (with the `w` line added above). (3) README 25 split along the S5fe check's ruling: accepted.
+  (4) README 4 counted split: accepted. (5) Damage 16 and delivery 6 split under review-fixes 8: accepted, each `[C]`
+  half is another row's raise. (6) Damage 17 whole: accepted, S5e's damage 8 is the formula's emulation. (7) Rows raised
+  with a correction counted whole when their statement held, *corrected* when the finding contradicted it, README 29
+  *corrected* while still `[I]`: accepted; the *corrected* bucket records a text change, not a tag. (8) Delivery 22
+  split, owner redirect and `+0xC8` bit 10 `[I]`: accepted. (9) The A2 order bullet and the B1 prologue bullet as new
+  `[C]` text: accepted, both checked against their outputs. (10) skills/missiles C2 against README B4: **leave it for
+  the skills cluster.** skills/missiles rows 28 and 29 are routed to S2ae, not yet run; rule (c) keeps a row waiting on
+  its batch, and an edit of skills/missiles here would put a re-tag outside this cluster's inventory lines. When S2ae
+  runs, its brief takes combat/0001 § 22 (run:2026-11-16-sweep2-s5fe) as the evidence for rows 28 and 29 (the same
+  function and the same steps; no second emulation needed), and the skills cluster raises C2 to match. Until then a wiki
+  page follows README B4, which carries the raise (spec-writer review-fixes 1, the `lane/s38s` scope).
+- **Gate:** fast green (77 warnings, the W4s on wiki/combat, wiki/characters and wiki/quirks that the lane's refresh
+  entry answers); `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
+- **Verdict: accept with fixes (4)**: overclaim 2, stale cross-reference 1, miscount 1. The review request stays open
+  for the merge.
+
 ### 2026-11-16 — Phase 1, batch S7e part 1 (reverser-static, `lane/n66u`): 11 of 63 settled (moved); resume note for part 2
 
 - **Done.** Branch from `main` `4508f8a2`. Stopped at the orchestrator's token budget, before any kept emulation run.
@@ -2632,3 +2786,138 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `tools/item_emu2.py` with model `tools/item_inventory.py`, in a new tool and `run3/`; part 4 the inventory families;
   part 5 the static (c) remainders of S4c/S4d plus economy 46's and 85's caller halves and the c-emu remainders listed
   in part 1. Tier B review once S4e is whole.
+
+### 2026-11-16 — Phase 1, batches S1f and S1o part 2 (reverser-static, `lane/n66x`): the 21 remaining rows; S1f and S1o done
+
+- **Done.** Merged `main` `72f003c8` first (plan-log conflict kept both; README § 1 checked against the 29 files' rows,
+  already equal). No game, no Ghidra. `tools/ai_s1fo.py` (`842c1e79…`) gains sections `p2f` and `p2o`; part 1's sections
+  unchanged and their lines reproduce `check-s1fo-p1.txt`. Kept output `workspace/logs/n66x/s1fo/check-s1fo-p2.txt`
+  (178 check lines, 87 of part 2, `S1fo total bad=0`), `manifest-s1fo-p2.sha256` passing from `workspace/logs/n66x/s1fo`;
+  development in `dev2/` (`manifest-dev2.sha256`). Record: [run:2026-11-16-sweep2-s1f](../findings/ai/experiments.md#run2026-11-16-sweep2-s1f), *Part 2*.
+  Every row's *Route* cell carries its dated note; README § 4's S1f and S1o rows updated.
+- **S1f (5).** Raised 1: S1e remainder 420 (the four inline picks have 0x005FC130's shape, n 17/16, fallback 11/1).
+  Raised in part 2: 196 (the caller set and the region word's three writers; "levels 1 and up" stays), 431 (Baal's start
+  words, w0, `P`'s w7, the level compare; the action map, `v18`, `S(t)`, `Skill5` stay). Raised in part with a correction
+  2: **171** (no store writes 1, but the stores are eleven, not twelve), **422** (Diablo's start words, weights 0/11/16
+  never non-zero, the unsigned score test, the difficulty word; `Skill8` also on 709 `uberbaal`, part 1's item 3).
+- **S1o (16).** Raised 4: machinery 10, 19, 20, 44. Raised in part 7: machinery 15, 40, 41, 45, 88; README 21, 38 (the
+  remainder named in each row). **Contradicted in part 1: machinery 54** (`UModTeleportTry`'s two own `Range(100)` draws
+  on the acting unit's seed). Not settled 4, a reason each: machinery 42, 94; README 23, 33.
+- **Batches whole.** S1f: all 24 rows and the five S1e remainders settled (part 1: 12 raised, 9 raised in part, 288
+  and 356 raised, 518 contradicted in part; part 2 above). S1o: 28 rows, 24 settled (13 raised, 9 raised in part, 2
+  contradicted whole or in part), 4 not settled.
+- **Corrections** to Phase 3 through the part 1 entry
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md)
+  (items 4 and 5 added); dated notes in ai/0005 § 2.8 (the store count) and ai/0001 § 9 (the draws), rule 20.
+- **Symbols:** none raised or added (no logged return compared).
+- **Totals** after merging `main` `72f003c8` (the kept check's `totals` line): a-logs 623, a-run 334, b 507, c 390,
+  c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No row moved class.
+- **Judgment calls for the review:** (1) a count off by one inside an otherwise held statement (171's "twelve") is filed
+  "raised in part with a correction", not contradicted; (2) machinery 54 filed contradicted in part: the seed reference
+  holds, the empty *Draws* cell does not; (3) machinery 19 raised whole at the claim's own scope (immediate ids, the ten
+  getters of `light_radius_scan.py`), the 11 calls where the two argument walkers differ checked on both; (4) machinery 88
+  scoped to the think and two levels of callees, `MonSetMode`'s indirect call and deeper levels named as the remainder;
+  (5) README 38's Bone Prison: its Skills `summon` cell names `bonewall` (row 84) while the claim says row 1 and
+  `boneprison1`–`4` are row 1; left `[I]` (the class mapping in `SkillSummonClass` is unread), not filed as a
+  contradiction; (6) the 196 and 420 remainders, routed to S1f from S1e, are counted as S1f rows here.
+- **Next:** Tier B review of S1f and S1o whole: the part 1 request, extended
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md)).
+- **Tier B check (architect, S1f and S1o whole):** accept with fixes. Rulings: 171 "raised in part with a correction"
+  stands (the no-store-of-1 claim holds, the count is the correction); machinery 54 "contradicted in part" stands (the
+  `SpawnPosPick` call holds, the empty *Draws* cell does not; both draws are gated); **machinery 19 narrowed to raised in
+  part** (the 215 register-id calls of the spec are 205 in the scan, unreconciled, and "no code in the image" is tested for
+  the ten getters' calls only; S1o: raised 3, raised in part 8); README 38's Bone Prison stays `[I]`. Fixes: ai/0001's note
+  on `UModTeleportTry` said "twice" for two gated draws; stale cross-references added (drlg/0009's town-refusal bullet,
+  ai/0002's no-writer sentence, ai/0012's "only `diabloclone` and `uberdiablo`"); backlog item 6 (215 against 205).
+
+### 2026-11-16 — Phase 3, the quests cluster re-tagged (spec-writer, `lane/n66qr`)
+
+- **Done.** Branch from `main` `72f003c8`. No game, no Ghidra, no slot. Sources: the S3a, S3b and S3c entries above
+  with their Tier B checks and the S3b/S3c Tier A audit (rows 19 split, 179 scoped), the travel rows of S7e (19, 60)
+  with its Tier B check (`ffn` on 596 of 600 cases), the inventory files' *Route* cells and the six spec-writer entries.
+  Each raised statement carries its run or second-tool anchor and a link to the finding section that holds it:
+  quests/0001 § 18–§ 21, quests/0002 § 16–§ 18, run:2026-11-16-sweep2-s7e.
+- **Front matter:** quests/progression C 118 / I 322 / L 6 → **C 231 / I 272 / L 6**; quests/travel C 79 / I 88 / L 5 →
+  **C 118 / I 75 / L 5** (2 of the 88 `[I]` are plan 0063's, outside the inventory); quests/README C 11 / I 6 / L 2 →
+  **C 14 / I 5 / L 2**.
+- **Rows (414):** `[C]` whole 65 (progression 50, travel 14, README 1); split 86 (61, 23, 2); rewritten to the finding 2
+  (progression 49: C4's restore per quest, quests 13 and 19 `[C]`, the maps as read `[I]`; travel 86: quest event 3 is
+  dispatched for a level change within one act (341) and for none of the 87 act changes, the guard `[I]`); kept `[I]` 261
+  (H3a–H3f deferred, d-2c, d-none, not raised). The row lists are in each inventory file's *Phase 3* line; inventory
+  README § 6 records the tags per spec.
+- **Corrections applied (five entries closed):** S3a contradictions (C4; row 196's party gate; `ClearSteps` named by the
+  rewards it runs at, words 1, 20, 25, 35, and not 2, 4, 6, 9, 27, 37, which D7 now says too); S3a travel e3 (travel
+  Outputs and the reimplementation note "Move first, write second"; progression's e3 events row; word 4's
+  `TownLevelLeave` row loses "the e3 level-40 branch then finds state 7", that arrival being an act change); S3b
+  refinements (Radament's near-credit sites beside the party triple; Andariel's level pass rewriting a credited killer;
+  the A2Q1 and A4Q3 StepBits sites in their `NpcGate` functions); S3c refinements (game word 32's `GameQuestSet(32, 13)`;
+  e3's direct raiser in `NpcActTravel`; the operate wrapper 0x00584540; the travel check's act and position tests;
+  `A2Q6_WrongTombMsg`); S3c part 2 (A6's read side; travel C3's "draws again" was already gone with plan 0063, its table
+  half now `[C]`). The S7e refinements entry is annotated: item 3 (travel B1's sizes-and-steps bullet) taken, items 1 and
+  2 left for the path/frame cluster. `tools/backlog.py close` rewrote one link in findings/quests/0001 to the archived
+  entry.
+- **Also:** research-map rows of quests/progression and quests/travel rewritten whole; quests/README's evidence
+  paragraph names plan 0066's raises. wiki/quests is left with W4 and one wrong row (the events table's level change);
+  a refresh entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-quests-refresh-after-plan-0066-quests-re.md)).
+- **Judgment calls for the review:** (1) travel B1's header (row 20) raised whole: S3a's remainder was routed to S7e,
+  which landed (`ffn`, sizes 0–4, steps 1–5, through both wrappers and directly); the header cites both. (2) Pseudocode
+  headers that cover more than the logs hold (travel A2, D2, E1, E2, G1, G3; progression A1) stay `[I]` with a `[C]` note
+  beside them, as the anim review accepted for M1/M4. (3) Four rows filed whole are split on a clause no kept output
+  tests: travel 78 ("no portal is exempt", G3's reading), progression 230 (the Dark Wanderer's spawn point), 254 ("No
+  draw"), 302 ("`+0xA4` stays 0"). (4) Two rows kept by their own routes are split because S3c raised their half in
+  another row (review-fixes 8): progression 43 (B4's forced list, row 37's remainder) and 227 (game word 32's b13 write,
+  row 229's correction). (5) The computed-class caveat (the Tier A ruling on row 179) is written inside the `[C]` sentence
+  as its scope, for progression 179 and README row 3, not as a separate `[I]`. (6) Travel row 22: the S7e scope bullet is
+  its `[C]` half, the callers' survey ("only the field end passes an `other`") its `[I]` remainder. (7) The Outputs
+  rewrite says "dispatched" event 3, since Warriv's act change calls quest object 6's event-3 slot directly (S3c), which
+  the S3a check's dispatch site does not see.
+- **Gate:** fast green (76 warnings, the W4s on wiki/quests the refresh entry answers); `--full` green.
+- **Review:** Tier A, [request](../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-quests-cluster.md).
+
+### 2026-11-16 — Phase 3 quests cluster review (architect, Tier A, `lane/n66qr`): accept with fixes (4)
+
+- **Checked.** `main` (`3845398b`, the combat cluster) merged first (`57f7711c`; keep-both on inventory README § 6, combat's
+  rows then quests'; this log, the research map and the quirks index merged clean, no markers). The three inventory
+  files' *Phase 3* lines partition their rows exactly (progression 322: 50 / 61 / 1 / 210; travel 86: 14 / 23 / 1 / 48;
+  README 6: 1 / 2 / 0 / 3; a script over the lists, no row twice or missing); § 6's three rows carry the same counts, and
+  "after" equals each front matter (C 231 / I 272 / L 6, C 118 / I 75 / L 5, C 14 / I 5 / L 2). Travel's "before" I 88
+  over 86 rows is explained in its line (C3's "draws nothing" and the draws table's event-1 row, plan 0063's). The two
+  rewrites read against the findings: progression C4 (row 49) says what quests/0001 § 18's contradiction bullet says,
+  the `[C]` on the four joins (quest 13's b3 → `+0x0B` = 5, quest 19's no restore on b4, run:2026-10-18-quests2, where
+  x-talk2/3 ran), the maps as read `[I]`; travel Outputs' event 3 (row 86) restates quests/0002 § 16's 341 / 87 counts
+  and keeps "dispatched", which scopes out the Warriv direct call quests/0001 § 20 found. Also sampled against the Route
+  cells: progression rows 13 (A1's `[C]` note), 43 (B4, row 37's part-2 raise, the 66 `.bin` records of § 21), 56, 64,
+  120, 126, 196, 227 (row 229's correction), 230, 254, 262, 302, 316, 322, word 4's `TownLevelLeave` row; travel rows 3,
+  20, 22, 60 (the S7e record's `ffn` 596 of 600 and its controls), 78, 83; README rows 1–3 and the evidence paragraph.
+  Each new `[C]` carries its run, kept output or two-tool anchor and the finding section; the split remainders keep `[I]`
+  where the Route cells put them. Six `fn:` anchors resolve in `re/symbols.csv`. No `[L]` outside *Open questions*; no
+  Mermaid line changed (one now disagreed with the text, below). The lane's one edit under `docs/findings/` is the link
+  `tools/backlog.py close` rewrote in quests/0001 (the S3c part 2 refinements entry, now under `archive/`), nothing else.
+  The promotion re-check read the S3a raises the cluster imports (quests/0001 § 18, quests/0002 § 16: C4, seeds per
+  dispatch, the `SetState`/`ClearState` pairs, the e3 counts, B1's 1 102 searches) and the S7e `ffn` record; they say
+  what the sentences say, with the scopes below.
+- **Fixes (4).** *Overclaim (3):* travel's reimplementation note "Move first, write second" justified the order with "a
+  reimplementation that writes first … runs quest code against the wrong state", which no finding reads (the one quest
+  call left, NPC 155's direct event-3 call, runs after the write either way), and stated that call without its test;
+  it now states the order (E1), the missing dispatch (Outputs) and the direct call "after the word's write and only
+  when word 6 bits 13 and 0 are set (E3, read from the code)", and what dispatching e3 for an act change would do. The
+  travel Outputs' `[I]` sentence and progression § B's e3 row restated the same direct call unconditionally; both now
+  carry the word-6 test (quests/0002 § 5's `[I]` reading, travel E3), the row marking it read from the code.
+  *Stale cross-reference (1):* quests/README's data-flow diagram drew `placement --> quest event 3` for every click,
+  join and NPC menu included, which the rewritten Outputs contradicts; the edge is now labelled "level change within
+  one act". No tag moved; the front matter and § 6 stand.
+- **Judgment calls.** (1) Travel B1's header (row 20) whole on S3a's 1 102 searches and S7e's sizes 0–4 and steps 1–5:
+  accepted; the header cites both, and the callers' code after the return is named not covered. (2) Pseudocode headers
+  wider than the logs `[I]` with a `[C]` note: accepted (as M1/M4 at the anim review). (3) Travel 78 and progression
+  230, 254, 302 filed whole but split on an untested clause: accepted; the clauses ("no portal is exempt", the spawn
+  point, "No draw", "`+0xA4` stays 0") are readings no kept output tests. (4) Progression 43 and 227 split for another
+  row's raise: accepted (spec-writer review-fixes 8). (5) The computed-class caveat inside the `[C]` sentence as its
+  scope: accepted; the scans cannot test a computed class, and the sentence says so. (6) Travel 22: the S7e scope bullet
+  `[C]`, the callers' survey `[I]`: accepted. (7) "Dispatched" event 3 in the Outputs: accepted; the knock-on rewrites
+  of "Move first, write second" and of word 4's `[C]` row were read too: word 4's row holds (the arrival is an act
+  change, which dispatches no event 3, consistent with the four joins), the note is fixed above.
+- **Not a fix, noted.** README's bit grammar keeps bit 12 ("seen in the log") `[I]` although A5's packet 0x58 setting
+  bit 12 is `[C]`; S3a's raise did not list bit 12 and its meaning is the client's log, so the row stays as routed.
+- **Gate:** fast green (80 warnings after the merge, none new from the fixes; W4 on wiki/quests, which the lane's refresh
+  entry answers); `--full` green (39 surveys).
+- **Verdict: accept with fixes (4)**: overclaim 3, stale cross-reference 1. The review request stays open for the merge.

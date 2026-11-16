@@ -3,6 +3,11 @@
 - **Spec:** [combat/reductions](../../specs/combat/reductions.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 25; the *Count* column sums to 25.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66y`, 2026-11-16): re-tagged.** The spec's front matter is now C 58 / I 5 / L 4 (it was C 46 / I
+  25 / L 5 at `main` `858b7eea`). Statement `[C]` whole: rows 1–4, 8, 9, 11–15, 19–25 (18). Split, the `[C]` half and
+  the remainder `[I]` as the *Route* cell names: none (0). Corrected to the finding: rows 16 and 18 (sanctuary inside
+  `r ≥ 1`, S5e correction 1) (2). Kept `[I]` (H5b, d-none, d-edit): 5–7, 10, 17 (5). Whole includes row 8 with
+  refinement 3 (a null difficulty record gives 100).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

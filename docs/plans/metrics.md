@@ -771,6 +771,12 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/n66w` check | 0066 P1 S5fe | architect-check | 99 477 | 27 | 2 | — | gave accept with fixes (Tier B) | 2: overclaim 1, stale cross-reference 1 (2nd Tier B after the n69g audit) |
 | 2026-11-16 | `lane/n66u` | 0066 P1 S7e | reverser-static | 584 122 | 252 | 61 | ghidra-n66u | accept with fixes | 9: lane boundary 1 (reverser edited a spec), overclaim 5, stale cross-reference 2, stale totals 1 (two parts: 309 436/136/42 + 274 686/116/19) |
 | 2026-11-16 | `lane/n66u` check | 0066 P1 S7e | architect-check | 101 210 | 33 | 4 | — | gave accept with fixes (Tier B) | 9: lane boundary 1, overclaim 5, stale cross-reference 2, stale totals 1 (3rd Tier B after the n69g audit) |
+| 2026-11-16 | `lane/n66y` | 0066 P3 combat | spec-writer | 505 904 | 171 | 27 | — | accept with fixes | 4: overclaim 2, stale cross-reference 1, miscount 1 |
+| 2026-11-16 | `lane/n66y` review | 0066 P3 combat | architect-review | 203 896 | 81 | 8 | — | gave accept with fixes (Tier A) | 4: overclaim 2, stale cross-reference 1, miscount 1; spec promotion, outside the Tier B audit count |
+| 2026-11-16 | `lane/n66qr` | 0066 P3 quests | spec-writer | 406 891 | 110 | 21 | — | accept with fixes | 4: overclaim 3, stale cross-reference 1 |
+| 2026-11-16 | `lane/n66qr` review | 0066 P3 quests | architect-review | 150 304 | 68 | 6 | — | gave accept with fixes (Tier A) | 4: overclaim 3, stale cross-reference 1; spec promotion, outside the Tier B audit count |
+| 2026-11-16 | `lane/n66x` | 0066 P1 S1f+S1o | reverser-static | 568 407 | 249 | 51 | ghidra-n66x | accept with fixes | 6: overclaim 1, misread 1, stale cross-reference 3, bookkeeping 1 (two parts: 271 193/107/18 + 297 214/142/33) |
+| 2026-11-16 | `lane/n66x` check | 0066 P1 S1f+S1o | architect-check | 135 122 | 44 | 4 | — | gave accept with fixes (Tier B) | 6: overclaim 1, misread 1, stale cross-reference 3, bookkeeping 1 (4th Tier B after the n69g audit; next gets Tier A audit) |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

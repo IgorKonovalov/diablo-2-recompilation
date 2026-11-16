@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 388, I: 159, L: 3}
+tags: {C: 401, I: 146, L: 3}
 updated: 2026-11-16
 ---
 
@@ -62,15 +62,15 @@ flowchart LR
 | Class | Entries | C | I |
 |---|---|---|---|
 | [1. Arithmetic width and sign](#1-arithmetic-width-and-sign) | 26 | 19 | 7 |
-| [2. Rounding and float](#2-rounding-and-float) | 21 | 15 | 6 |
+| [2. Rounding and float](#2-rounding-and-float) | 21 | 16 | 5 |
 | [3. Wrap and overflow](#3-wrap-and-overflow) | 10 | 3 | 7 |
-| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 56 | 23 |
-| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 118 | 26 |
-| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 104 | 31 |
-| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 14 | 14 |
+| [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 61 | 18 |
+| [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 122 | 22 |
+| [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 111 | 24 |
+| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 15 | 13 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 23 | 17 | 6 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 31 | 41 |
-| **Total** | 538 | 377 | 161 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 32 | 40 |
+| **Total** | 538 | 396 | 142 |
 
 ### 1. Arithmetic width and sign
 
@@ -153,11 +153,11 @@ flowchart LR
 | Q53 | The damage maximum is exclusive: `lo + RangeB(hi − lo)` never reaches `hi`. | [C] | fn:COMBAT_RollPhysical@0x0057B420, run:2026-10-16-combat | [combat/damage](../combat/damage.md#reimplementation-notes) n5 |
 | Q54 | Life below 256 is 0: a hit that leaves less than one life point kills. | [C] | 0x0057C852, 0x0057C874, run:2026-10-16-combat | [combat/delivery](../combat/delivery.md#reimplementation-notes) n6 |
 | Q55 | Resistance: penalty before the cap (a player's 115 % fire in Hell is 15 %, not −15 %). | [C] | fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat | [combat/reductions](../combat/reductions.md#reimplementation-notes) n2 |
-| Q56 | The floor comes between the penalty and the cap; it changed no logged value. | [I] | fn:COMBAT_ResistFor@0x0057BE00 | [combat/reductions](../combat/reductions.md#reimplementation-notes) n2 |
+| Q56 | The floor comes between the penalty and the cap; it changed no logged value. | [C] | fn:COMBAT_ResistFor@0x0057BE00 | [combat/reductions](../combat/reductions.md#reimplementation-notes) n2 |
 | Q57 | Monster resistances are never capped: above 100 is immunity. | [C] | run:2026-10-16-combat | [combat/reductions](../combat/reductions.md#reimplementation-notes) n4 |
-| Q58 | Pierce does not lower a monster's immunity. | [I] | fn:COMBAT_ResistFor@0x0057BE00 | [combat/reductions](../combat/reductions.md#reimplementation-notes) n4 |
-| Q59 | The player-row reduction loop stops at the first monster-only row, so for a player or hireling attacker the steal percents are not scaled by P. | [I] | fn:COMBAT_ApplyReductions@0x0057C1E0 | [combat/reductions](../combat/reductions.md#reimplementation-notes) n6 |
-| Q60 | No minimum damage: nothing in the reduction path keeps a hit above 0. | [I] | fn:COMBAT_ApplyReductions@0x0057C1E0 | [combat/reductions](../combat/reductions.md#reimplementation-notes) n7 |
+| Q58 | Pierce does not lower a monster's immunity. | [C] | fn:COMBAT_ResistFor@0x0057BE00 | [combat/reductions](../combat/reductions.md#reimplementation-notes) n4 |
+| Q59 | The player-row reduction loop stops at the first monster-only row, so for a player or hireling attacker the steal percents are not scaled by P. | [C] | fn:COMBAT_ApplyReductions@0x0057C1E0 | [combat/reductions](../combat/reductions.md#reimplementation-notes) n6 |
+| Q60 | No minimum damage: nothing in the reduction path keeps a hit above 0. | [C] | fn:COMBAT_ApplyReductions@0x0057C1E0 | [combat/reductions](../combat/reductions.md#reimplementation-notes) n7 |
 | Q61 | The life tick floors a player at 256 (one point), not 0; a monster's tick can kill. | [I] | fn:sub_00580610_LifeRegenTick@0x00580610 | [stats/states](../stats/states.md#reimplementation-notes) n6 |
 | Q62 | The TCEx loader stops at the first empty name, and the item loop at the first empty `ItemN` (an `Item5` after a blank `Item4` is ignored); `Picks` 0 becomes 1. | [I] | fn:TC_LoadTreasureClassEx@0x006547D0 | [data/excel § G](../data/excel.md#g-treasure-classes); [data/excel](../data/excel.md#reimplementation-notes) n5 |
 | Q63 | Monster references after the duplicate `cr_lancer8` are off by one: a pool cell is a MonStats record position (723 is the second `cr_lancer8`), not a name to look up. | [C] | data:g_pMonStats@0x0096C6A8, run:2026-10-12-mon-pool, tbl:Levels.txt:mon1 | [monsters/pool](../monsters/pool.md#reimplementation-notes) n5; [data/excel § H](../data/excel.md#h-monster-references); [data/excel](../data/excel.md#reimplementation-notes) n7 |
@@ -249,14 +249,14 @@ flowchart LR
 | Q132 | Draws whose results are discarded still happen: the player's build on a miss, the builder's `RangeB(1)` for players and monsters, the leech overlay `Range(2)` (only when both life and mana gains ran), the cold shatter roll on a monster that cannot shatter. | [C] | fn:SKILL_AttackDo@0x0056F070, 0x0057BC2F, 0x0057BC8A, 0x0057C560, 0x0057C568, run:2026-10-16-combat | [combat/README](../combat/README.md#reimplementation-notes) n2; [combat/damage](../combat/damage.md#reimplementation-notes) n1 n2; [combat/delivery](../combat/delivery.md#reimplementation-notes) n4 |
 | Q133 | Draws that do not happen: a chance of 0 (block, dodge, deadly strike, crushing blow, open wounds) and a degenerate damage range `hi ≤ lo` draw nothing, on the paths the run checked; the monster HP roll differs (it draws `RangeB(hi − lo + 1)`). | [C] | fn:COMBAT_RollRange@0x0057A880, run:2026-10-16-combat | [combat/README](../combat/README.md#reimplementation-notes) n3; [combat/damage](../combat/damage.md#reimplementation-notes) n4 |
 | Q134 | Elements are built in the order fire, lightning, cold, magic. | [C] | 0x0057B932, 0x0057BA4C, run:2026-10-16-combat | [combat/damage](../combat/damage.md#reimplementation-notes) n3 |
-| Q135 | `COMBAT_PrgFinisher` peeks: it steps a copy of the attacker's seed and restores it, so advancing the real seed there shifts every later attacker draw. | [I] | fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368, 0x005D538C | [combat/delivery](../combat/delivery.md#reimplementation-notes) n8; [combat/README](../combat/README.md#reimplementation-notes) n4 |
+| Q135 | `COMBAT_PrgFinisher` peeks: it saves the attacker's seed words, steps the seed and writes the words back, so advancing the real seed there shifts every later attacker draw. | [C] | fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5368, 0x005D538C | [combat/delivery](../combat/delivery.md#reimplementation-notes) n8; [combat/README](../combat/README.md#reimplementation-notes) n4 |
 | Q136 | The finisher's entries 37, 39, 41 and 143 step the attacker's seed once at entry, before their record test, even when they create nothing. | [C] | run:2026-10-21-cat-emu-ass, 0x005D4E80, 0x005D4F50 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n9; [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n4; [combat/README](../combat/README.md#reimplementation-notes) n4; [skills/catalogue](../skills/catalogue.md#reimplementation-notes) n1 |
 | Q137 | Entry 38 draws two or three times on the attacker's seed after delivering the queued hit. | [I] | 0x0056E1C4 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n9; [combat/README](../combat/README.md#reimplementation-notes) n4 |
 | Q138 | A weapon-share missile steps its owner's seed at least once for stat 337, whatever its value. | [C] | fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills | [skills/missiles](../skills/missiles.md#reimplementation-notes) n3; [combat/README](../combat/README.md#reimplementation-notes) n5; [skills/README](../skills/README.md#reimplementation-notes) n2 |
-| Q139 | The missile's deadly strike and mastery steps still need a chance above 0. | [I] | fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A864, 0x0064A890 | [combat/README](../combat/README.md#reimplementation-notes) n5 |
+| Q139 | The missile's deadly-strike step needs a non-zero stat 141, a negative one stepping the seed with no chance of success; its mastery step, with no used skill, needs a value above 0. | [C] | fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A864, 0x0064A890 | [combat/README](../combat/README.md#reimplementation-notes) n5 |
 | Q140 | Do not merge the two critical chains: the missile's (stat 337 first, Q138) is not the melee build's. | [I] | fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:COMBAT_BuildDamage@0x0057B7D0 | [skills/README](../skills/README.md#reimplementation-notes) n2 |
 | Q141 | A stat-event handler draws on its own unit's seed: shiver armour (3) and skill on get-hit (21) on the defender's, skill on death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit and reanimate on the attacker's. | [I] | data:g_StatEventFuncs@0x007325B0, 0x005BF9CF, 0x005C0603 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n12 |
-| Q142 | Defence comes before the block: a miss draws no block; a running defender skips the to-hit draw but still draws the block. | [I] | fn:COMBAT_MeleeHitTest@0x0057EC10 | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n6 |
+| Q142 | Defence comes before the block: a miss draws no block; a running defender skips the to-hit draw but still draws the block. | [C] | fn:COMBAT_MeleeHitTest@0x0057EC10 | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n6 |
 | Q143 | Stat 328 (the request counter) rises on every skill request, before the checks, and seeds every pierce count: a refused request still changes later pierce counts. | [I] | 0x00549D50, fn:sub_0059F940_MissilePierceCount@0x0059F940 | [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n1; [skills/README](../skills/README.md#reimplementation-notes) n3 |
 | Q144 | Both ternary branches of a calc formula run: every read, call and `rand` draw of the unused branch still happens. | [C] | fn:sub_00643700_SkillsCalcRand@0x00643700, run:2026-10-17-sweep-emu | [data/calc](../data/calc.md#reimplementation-notes) n1 |
 | Q145 | Re-initialise the level seed in `LevelInit`; continuing from `PresetLevelCreate`'s draw is off by one draw per preset level. | [C] | fn:sub_006424A0_LevelInit@0x006424A0, run:2026-10-12-drlg-gen | [drlg/README](../drlg/README.md#reimplementation-notes) n1 |
@@ -384,18 +384,18 @@ flowchart LR
 | Q252 | Calc `02` (Fire Wall's unclosed `(`) ends the evaluation with the top of the stack, like `00`. | [C] | 0x006C1148, run:2026-10-16-calc | [data/calc § B](../data/calc.md#b-the-encoding); [data/calc](../data/calc.md#reimplementation-notes) n3 |
 | Q253 | A calc compile can fail where a permissive parser succeeds (`min(-1,lvl)`, `- -5`, a lone space …): the game stores −1 and the formula evaluates to 0. | [C] | 0x006C18DE, fn:CALC_PushOperator@0x006C18A0, run:2026-10-17-sweep-emu | [data/calc](../data/calc.md#reimplementation-notes) n6 |
 | Q254 | The monster `Crit` doubles every damage field, physical and elemental. | [C] | fn:sub_005A5560_MonCritDouble@0x005A5560, run:2026-10-16-combat | [combat/damage](../combat/damage.md#reimplementation-notes) n6 |
-| Q255 | A player's critical or deadly strike doubles only physical damage. | [I] | 0x0057B8A9, 0x0057B92F | [combat/damage](../combat/damage.md#reimplementation-notes) n6 |
+| Q255 | A player's critical or deadly strike doubles only physical damage. | [C] | 0x0057B8A9, 0x0057B92F | [combat/damage](../combat/damage.md#reimplementation-notes) n6 |
 | Q256 | Leech uses the reduced, life-capped physical damage; elemental damage never leeches. | [C] | fn:COMBAT_Leech@0x0057C420, run:2026-10-16-combat | [combat/delivery](../combat/delivery.md#reimplementation-notes) n3 |
 | Q257 | Absorb heals from percent absorb, and only a positive amount. | [C] | fn:COMBAT_Absorb@0x0057BF10, run:2026-10-16-combat | [combat/delivery](../combat/delivery.md#reimplementation-notes) n7 |
-| Q258 | Flat absorb heals too. | [I] | fn:COMBAT_Absorb@0x0057BF10 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n7 |
+| Q258 | Flat absorb heals too. | [C] | fn:COMBAT_Absorb@0x0057BF10 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n7 |
 | Q259 | The assassin finishing moves (do 42, 46, 50, 52) call the finisher with their own queued hit and then deliver; the call sites and the calls of do 42, 46 (bad-id path) and 50 are confirmed. | [C] | run:2026-10-21-cat-emu-ass | [combat/delivery](../combat/delivery.md#reimplementation-notes) n10 |
 | Q260 | Do 46 runs the finisher only on a hit but delivers on both paths (its valid-id calls and the deliveries after them). | [I] | 0x005D6386, 0x005D6405 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n10 |
 | Q261 | `SKILLS_PayCost` returns 0 for a row with `mana` and `lvlmana` both 0 (scrolls, books, Unsummon). | [C] | run:2026-10-21-cat-emu-item, fn:SKILLS_PayCost@0x0056BFE0 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n13 |
-| Q262 | None of its three callers tests that return: a failed or zero payment still casts, so a reimplementation that refuses on 0 refuses those skills. | [I] | 0x0056F7AF, 0x0056FA7F, 0x005D6B4D, 0x0056F7AA, 0x0056FA7A | [combat/delivery](../combat/delivery.md#reimplementation-notes) n13; [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n2 |
-| Q263 | An item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` only from a skill-on-attack, -kill or -hit stat without `ItemTgtDo` (the effect flag only handler 20 sets); from other entries it runs the row's `srvdofunc`. | [I] | 0x005C054E, 0x0056FD29, 0x0056FD34 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n14; [skills/dispatch](../skills/dispatch.md#reimplementation-notes) n7 |
+| Q262 | None of its three callers tests that return: a failed or zero payment still casts, so a reimplementation that refuses on 0 refuses those skills. | [C] | 0x0056F7AF, 0x0056FA7F, 0x005D6B4D, 0x0056F7AA, 0x0056FA7A | [combat/delivery](../combat/delivery.md#reimplementation-notes) n13 |
+| Q263 | An item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` only from a skill-on-attack, -kill or -hit stat without `ItemTgtDo` (the effect flag only handler 20 sets); from other entries it runs the row's `srvdofunc`. | [C] | 0x005C054E, 0x0056FD29, 0x0056FD34 | [combat/delivery](../combat/delivery.md#reimplementation-notes) n14 |
 | Q264 | Classic resistance penalties are the constants −20 (Nightmare) and −50 (Hell), not `DifficultyLevels`' `ResistPenalty`. | [C] | fn:COMBAT_ResistFor@0x0057BE00, run:2026-10-16-combat | [combat/reductions](../combat/reductions.md#reimplementation-notes) n3 |
 | Q265 | Cold and freeze lengths use cold resistance; the poison length uses stat 110. | [C] | data:g_DamageResistTable@0x00732980, run:2026-10-16-combat | [combat/reductions](../combat/reductions.md#reimplementation-notes) n5 |
-| Q266 | Neither the chance to hit nor the block chance has a difficulty branch; only the block form differs between classic and expansion. | [I] | fn:COMBAT_ToHitRoll@0x0057D9B0, fn:COMBAT_DefenceRoll@0x0057DFB0 | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n5 |
+| Q266 | Neither the chance to hit nor the block chance has a difficulty branch; only the block form differs between classic and expansion. | [C] | fn:COMBAT_ToHitRoll@0x0057D9B0, fn:COMBAT_DefenceRoll@0x0057DFB0 | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n5 |
 | Q267 | The collision grid depends on activation order: keep, per room, which near rooms were active at its activation, and never re-stamp a grid when a neighbour activates. | [C] | fn:COLL_MapBuild@0x0064C900, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n4 |
 | Q268 | The monster bit does not block a default spawn; only the `0x1000` centre bits do. | [C] | fn:COLL_PatternMark@0x0064EA90, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n6 |
 | Q269 | A wraith's creation pattern 5 lasts only until the refresh: mark it, then run the refresh before the next test. | [C] | fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, run:2026-10-14-collision | [drlg/collision](../drlg/collision.md#reimplementation-notes) n7 |
@@ -587,7 +587,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q404 | No bias correction: the RNG takes `low mod n` directly, with no rejection of the top partial range. | [C] | run:2026-10-11-rng-emu | [rng/README](../rng/README.md#reimplementation-notes) n5 |
 | Q405 | `ToHitFactor` is a class constant added to the base attack rating before the percent; the chance to hit's level term `2·alvl/(alvl + dlvl)` has no class term (contradicts the community description). `BlockFactor` is added to stat 20 in the block chance. | [C] | fn:sub_00622560_PlayerBaseToHit@0x00622560, struct:CharStatsRec+0x3C, fn:sub_00622720_UnitBlockChance@0x00622720, run:2026-10-16-combat, src:arreat-summit-character-basics | [combat/to-hit](../combat/to-hit.md#reimplementation-notes) n1; [player/creation](../player/creation.md#reimplementation-notes) n8; [combat/README](../combat/README.md#reimplementation-notes) n7 |
 | Q406 | Crushing blow is a share of the defender's current life before this hit's damage, 1/4 on uniques and champions, not the community's 1/8 (52 crushing blows on champions took 1/4). | [C] | fn:STATEVENT_CrushingBlow@0x005BFFC0, run:2026-10-16-combat, run:2026-10-20-shortfalls | [combat/delivery](../combat/delivery.md#reimplementation-notes) n1; [combat/README](../combat/README.md#reimplementation-notes) n7 |
-| Q407 | Burning never applies from a plain attack: the builder leaves `burn = 2` with `burnLen = 0`. | [I] | 0x0057BC2F, 0x0057BC8A | [combat/delivery](../combat/delivery.md#reimplementation-notes) n15 |
+| Q407 | Burning never applies from a plain attack: the builder leaves `burn = 2` with `burnLen = 0`. | [C] | 0x0057BC2F, 0x0057BC8A | [combat/delivery](../combat/delivery.md#reimplementation-notes) n15 |
 | Q408 | The fire length is overwritten by the burn length in stat 315. | [I] | 0x0064AE2F | [skills/missiles](../skills/missiles.md#reimplementation-notes) n4 |
 | Q409 | `dm78` lacks the `lvl < 1` guard of the other `dm` codes: at level 0 it gives `min(Par7, Par8)` rather than 0. | [C] | 0x0064651F, run:2026-10-17-sweep-emu | [data/calc](../data/calc.md#reimplementation-notes) n8 |
 | Q410 | The outdoor road search's step cost is always 2; the 3 for a diagonal step is never taken by its 4-neighbour moves. | [C] | fn:sub_00681630_A1PathSearchStep@0x00681630, run:2026-10-15-drlg-outdoor | [drlg/outdoor](../drlg/outdoor.md#reimplementation-notes) n11 |
@@ -725,8 +725,9 @@ One row per spec with a *Reimplementation notes* section: its note count, the no
 and the skipped ones by reason. "Weaker duplicate" is a note that restates, at a weaker tag, a statement another spec
 holds raised; the entry takes the raised statement and the disagreement is routed to the spec-writer's backlog
 ([entry](../../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md); the three overviews it
-named now state the raised clause, so none is left). Skipped: 32 notes, presentation 5, table rule 12, not a trap 12,
-wall-clock 3, weaker duplicate 0.
+named now state the raised clause). Skipped: 34 notes, presentation 5, table rule 12, not a trap 12, wall-clock 3,
+weaker duplicate 2: skills/dispatch n2 and n7, which plan 0066's combat re-tag raised in combat/delivery n13 and n14
+and which wait for the skills cluster's re-tag ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-skills-dispatch-notes-2-and-7.md)).
 
 | Spec | Notes | Taken | Presentation | Table rule | Not a trap | Wall-clock | Weaker duplicate |
 |---|---|---|---|---|---|---|---|
@@ -783,12 +784,12 @@ wall-clock 3, weaker duplicate 0.
 | [save/d2s](../save/d2s.md#reimplementation-notes) | 14 | 14 | — | — | — | — | — |
 | [sim/frame](../sim/frame.md#reimplementation-notes) | 10 | 9 | — | — | n3 | — | — |
 | [skills/catalogue](../skills/catalogue.md#reimplementation-notes) | 8 | 7 | — | — | n5 | — | — |
-| [skills/dispatch](../skills/dispatch.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
+| [skills/dispatch](../skills/dispatch.md#reimplementation-notes) | 10 | 8 | — | — | — | — | n2, n7 |
 | [skills/missiles](../skills/missiles.md#reimplementation-notes) | 10 | 10 | — | — | — | — | — |
 | [skills/README](../skills/README.md#reimplementation-notes) | 3 | 3 | — | — | — | — | — |
 | [stats/aggregate](../stats/aggregate.md#reimplementation-notes) | 6 | 6 | — | — | — | — | — |
 | [stats/states](../stats/states.md#reimplementation-notes) | 7 | 7 | — | — | — | — | — |
-| **Total** | 522 | 490 | — | — | — | — | — |
+| **Total** | 522 | 488 | — | — | — | — | — |
 
 Step notes taken beyond the *Reimplementation notes*: player/creation § G (the /256 factors, the `0x7FFFFF` clamp,
 the ratio shift's overflow branch) and § J (the party share's f32 quotient, its wraps, edge and cap, the distance's origin and the n = 1 credit), monsters/stats § A (`MulDiv`), stats/states

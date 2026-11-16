@@ -23,7 +23,7 @@ raised 36, raised in part 7, 8 open for part 2 (progression 19, 179, 302; travel
 contradicted; row 229 carries a game-record correction (word 32 b13 from `A3Q7_FirstJoin`). Tool
 `tools/quests_s3c.py`; kept output `workspace/logs/n66p/s3c/check-s3c-p1.txt` (`manifest-s3c-p1.sha256`, passing from
 that directory; development outputs in `dev/`). Records: quests/0001 § 20, quests/0002 § 17; refinements in
-[`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](../2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
+[`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
 Judgment calls in the plan log entry of the same date. Review S3b and S3c part 1 together.
 
 2026-11-16, extended to S3c part 2 (`lane/n66p`), so the request covers S3b and S3c whole. Part 2 settled the 8 open
@@ -34,5 +34,5 @@ carries quests/0002 § 15's earlier correction ("draws again"). The new sections
 reader against `tools/ds1.py` and `tools/excel_bin.py`) and `part2`. Kept output
 `workspace/logs/n66p/s3c/check-s3c-p2.txt` (`manifest-s3c-p2.sha256`, passing from that directory; development outputs
 in `dev2/`). Records: quests/0001 § 21, quests/0002 § 18. Refinements are in
-[`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
+[`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
 The judgment calls are in the plan log entry of the same date.
