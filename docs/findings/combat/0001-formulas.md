@@ -1137,6 +1137,80 @@ and Fog; from 0x00681C00: the C runtime) and game code.
   callback for the corpse pick is the `0x0056E370` edge, and `A1PathSearch`'s three), and 205 library ones each.
   (fn:sub_0056E390_CorpsePickNear@0x0056E390, run:2026-11-15-sweep2-s5b `delivery51_helpers`)
 
+### 19. Plan 0066 batch S5e part 1: emulated reduction and to-hit leaves (run:2026-11-16-sweep2-s5e)
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 1 (`lane/n66t`,
+2026-11-16). Each claim below is the emulated map of the named function on declared inputs (ADR-0015), compared with
+`tools/combat_s5e_emu.py`'s model over the kept run ([run:2026-11-16-sweep2-s5e](experiments.md#run2026-11-16-sweep2-s5e),
+`check.txt`, 0 mismatches in 17 300 cases); the family and the separating control counts are in brackets. A claim
+that ends at an observed boundary (ADR-0021) covers the call's arguments and nothing after it. What each offset read
+means (a context field, a MonsterData flag bit, a MonStats byte) keeps its own tag. The inventory row each settles
+is named first.
+
+- [C] *Reductions 2, 14, 15, 22, 23.* `COMBAT_ResistFor` (EBX row, EDI context): `r` is the defender's `row+0x4`
+  stat (0 when it is −1); the attacker's `row+0xC` stat is subtracted when that id is not −1, when `r < 100` or the
+  context's `+0x14` is 0, and when the stat is not 0; for `+0x14` = 0 and a resistance id other than 36 and 37 the
+  game's `+0x70` = 0 subtracts 20 or 50 for the byte `+0x6D` = 1 or 2, otherwise the difficulty record's `+0x0` is
+  added (all signed 32-bit); `r < 1` returns `r`, or −100 when `r < −99`; `r ≥ 1` with `+0x14` = 0 is capped at
+  `min(stat(def, row+0x8) + 75, 95)`, or 50 for id 36 and 75 otherwise when `row+0x8` is −1; with `+0x14` ≠ 0 no cap.
+  [`resist`; `r_ltm99` 1 816, `r_lt100` 656, `pierce_defmon0` 141, `cap_gt94` 220, `max_none` 192] (fn:COMBAT_ResistFor@0x0057BE00,
+  run:2026-11-16-sweep2-s5e)
+- [C] *Reductions 16, 18, contradicted in part.* The sanctuary test (`row+0x4` = 36, `UNIT_HasState(att, 47)`,
+  `MONSTATS_IsUndead(def)` → 0) sits inside the `r ≥ 1` branch, after the cap: a physical resistance of 0 or below
+  is returned unchanged against an undead defender with the attacker in state 47. The spec's B2 places the test
+  after the floor for every `r` [`spec_sanct_any_r` 11 separating, `passed` 0; `sanct_state` 41, `sanct_undead` 34].
+  So "sanctuary zeroes physical resistance" holds for a positive resistance only. (0x0057BEDE–0x0057BF02,
+  fn:COMBAT_ResistFor@0x0057BE00, run:2026-11-16-sweep2-s5e) Backlog: the S5e corrections entry.
+- [C] *Reductions 19, 21.* `COMBAT_Absorb` (EAX `d`, ECX context, EBX row): nothing when `row+0x10` is −1; else
+  `p = stat(def, row+0x10)`, set to 40 when `p ≥ 40`; for `p > 0`, `a = MulDiv(d, p, 100)` is added to the packet's
+  `+0x48` and taken from `d`; then `f = stat(def, row+0x14) << 8` (32-bit), and for `f > 0`, `a = d` when `d ≤ f`,
+  else `f`, added to `+0x48` and taken from `d`; returns `d`. The map does not depend on the row: the cold row runs it
+  with its own ids (§ 18, reductions 1). [`absorb`; `f_gt0` 1 163, `d_le_f` 524, `p_ge40` 974] (fn:COMBAT_Absorb@0x0057BF10,
+  run:2026-11-16-sweep2-s5e)
+- [C] *Reductions 3, 4, 8, 9; README 12's P = 25.* `COMBAT_DamagePercent` (EAX context: `+0x4` difficulty record,
+  `+0x8` attacker, `+0xC` defender) returns exactly A2's values: 100 for a missing unit or the same unit; a player
+  defender gives 17 unless the attacker is a non-player, not a hireling (`sub_0063EE90_HirelingType` = 0) and has
+  `+0xC4` bit 31 clear; two hirelings give 25; a hireling against a MonStats `+0x0C` bit `0x40` defender gives the
+  record's `+0x38`, or 100 when the record pointer is 0 (a case A2 does not state); a MonStats `+0x0C` bit `0x80`
+  attacker against a `+0xC4` bit 31 defender gives 200 for a hireling defender and 400 otherwise. [`pct`; 400 in
+  111 cases, 25 in 40, 17 in 416; `def_flag` 260, `def_hire3` 127, `att_noflag` 336, `drec_set` 35]
+  (fn:COMBAT_DamagePercent@0x0057C060, 0x0057C0B6, 0x0057C0D4, 0x0057C129–0x0057C132, run:2026-11-16-sweep2-s5e)
+- [C] *Reductions 12, 13.* `COMBAT_LengthImmunities` (ESI context): A3 as written, with each test on the packet field
+  being `> 0` (`+0x30` or `+0x34`; `+0x2C` before state 133; `+0x18` before state 131), the halving a signed
+  truncating `÷ 2` of both fields. [`len`; `s118` 600, `s153` 1 070, `st133` 745, `st131` 739]
+  (fn:COMBAT_LengthImmunities@0x0057C140, run:2026-11-16-sweep2-s5e)
+- [C] *To-hit 6, 11, 12, in part.* `COMBAT_ToHitTargetMods` (EBX attacker, EDI defender, `&AR`, `&DEF`, `ret 8`): A7
+  as written, as a map of the defender's type, `sub_005A0180_MonTypeFlag` masks (`0x0A` for the stat-115 zeroing,
+  `0x02` for the halving), `MONSTATS_IsBoss`, `HirelingType`, `IsDemon`, `IsUndead`; the stat-116 block runs only for
+  `stat > 0`, so the clamp's lower half acts on a halved 1; a defender of type 2 to 5 is neither zeroed nor halved.
+  [`thm`; `s115` 157, `d1_not_0a` 194, `d2_02` 143, `d2_player` 466, `p_ge100` 1 294, `demon` 1 401, `undead` 1 396]
+  [I] which monsters carry MonsterData `+0x16` bits `0x2` and `0x8` (the "superunique" and "unique" names).
+  (fn:COMBAT_ToHitTargetMods@0x0057D8A0, 0x0057D8BA, 0x0057D914, run:2026-11-16-sweep2-s5e)
+- [C] *To-hit 9, and 10's remainder.* `sub_0057D810_PreventHealHook` (EDI attacker, ESI defender) reaches
+  `STATE_ApplyTimed` only for a type-0 attacker, a type-1 defender, attacker stat 117 ≠ 0 and a defender class
+  outside 0x2C0–0x2C5 (704–709, signed), with ECX pointing at nine words (attacker, defender, 0, 1, 120 000, 31, 0,
+  52, 0). The call ends the case (ADR-0021). [`phh`; `att_player` 255, `cls_lt2c0` 217, `cls_gt2c5` 113, strictness
+  34 and 28] (0x0057D869–0x0057D891, fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-11-16-sweep2-s5e)
+- [C] *To-hit 24, in part.* `0x00621190` (one stack argument, `ret 4`) returns 0 for no unit, the unit's `+0x40`
+  for a type 0 or 1 unit whose `+0x30` is not 0, and `+0x10` otherwise. [`mode`; `f30` 158, `t0` 247, `t1` 250]
+  [I] which of these values `sub_00622D00_UnitIsMoving` counts as moving (2, 3, 6): S5e part 2's `DefenceRoll`
+  family. (fn:sub_00622D00_UnitIsMoving@0x00622D00, run:2026-11-16-sweep2-s5e)
+- [C] *To-hit 25, 27, with a refinement.* `COMBAT_AvoidRoll` (ESI defender, EDI attacker, `isMissile`, `ret 4`): a
+  type-0 defender in mode 2 or 3, and a defender of **any other type** (not only a monster) in mode 2 or 15, takes the
+  evade path only (stat 340, an inlined draw on `def+0x20`, 8 when `r < e`, else 0); otherwise
+  `sub_0057DCA0_WeaponBlockChance` > 0 reaches 0x0064F380 from the type's own site (0x0057DDAB for type 0, 0x0057DEEA
+  for the others), and then dodge (stat 338, `RNG_Range`, 4) or, for `isMissile` ≠ 0, avoid (stat 339, 2). No draw
+  without a positive chance. [`avoid`; `o_m15` 885, `o_m2` 886, `p_m2` 431, `spec_monster_only` 264, `e_gt0` 945,
+  `r_lt_e` 390] The weapon-block check and its draw are after the boundary, not covered here.
+  (fn:COMBAT_AvoidRoll@0x0057DD60, 0x0057DD74–0x0057DD8B, run:2026-11-16-sweep2-s5e)
+- [C] *Damage 20.* `sub_005A5560_MonCritDouble` (ECX attacker, EDX defender, packet): for a type-1 attacker whose
+  MonStats `+0xA6` byte is not 0, one inlined draw on `att+0x20`; when `(low mod 100)` is below that byte, the six
+  fields `+0x08`, `+0x10`, `+0x1C`, `+0x20`, `+0x24`, `+0x28` double (32-bit), and with a defender
+  `sub_00554650_PacketHitClassSet` sets `+0x60` bit `0x10` when `+0x60 & 0xF0` is 0; when it is not 0,
+  `UnitSetOverlayStat(def, 54, 0)` is called (the case ends there). [`crit`; `class_taken` 416, `r_lt_cb` 735,
+  `def_set` 509; 245 cases at the overlay call] (fn:sub_005A5560_MonCritDouble@0x005A5560, 0x005A562A–0x005A563C,
+  run:2026-11-16-sweep2-s5e)
+
 ## Boundary recommendation for Phase 2
 
 - **Event entry points** (breakpoints): `SKILL_AttackDo` entry and return (player attack event), `MON_MeleeHit` entry

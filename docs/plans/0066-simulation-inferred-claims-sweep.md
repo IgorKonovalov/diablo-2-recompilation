@@ -2052,3 +2052,62 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (as S6e part 3's timing 86); (4) timing 49's schedule half and 62's refused path left for a later static batch
   rather than routed to b: neither hit an allocator or an import whose result a claim uses; (5) the seven unseparated
   controls taken as inherent (the `wc` tests reached through `seq`/`sinit`, separated in `wc`; Skills row 0's bit).
+
+### 2026-11-16 — Phase 1, batch S5e part 1 (reverser-static, `lane/n66t`): 23 of 52 settled; resume note for part 2
+
+- **Done.** Branch from `main` `01db64a5` (no newer `main` to merge). New tool `tools/combat_s5e_emu.py`
+  (`a783622e…`), one kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66t` (`-Xmx3G`, `MemoryMax=4G`;
+  `import-symbols` run first), after one development launch (`--limit 40`, `workspace/logs/n66t/s5e/dev1/`,
+  `manifest-dev.sha256`, not cited). Nine families, 17 300 cases, 0 mismatches, 0 stops, 0 unaccounted reads or
+  writes (the 9 traced read sites all in `g_BitMask32`); 127 controls, 118 separating with `passed` 0, the 9 others
+  strictness switches at an equal-output boundary, named in the record; two of the controls are the spec's own
+  readings (`spec_sanct_any_r`, `spec_monster_only`). No allocator or import reached; observed boundaries (ADR-0021)
+  at `STATE_ApplyTimed`, the weapon-block check 0x0064F380 and `UnitSetOverlayStat`, each with its call site checked.
+  Record: [run:2026-11-16-sweep2-s5e](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e);
+  `workspace/logs/n66t/s5e/run/` (`check.txt` `100ff7eb…`, `manifest.sha256` `44d94245…`, 8 lines, passes from
+  there; `cases` regenerates the case file byte for byte). Claims:
+  [combat/0001 § 19](../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e).
+- **Rows settled (23 statements).** Raised 19: reductions 2, 3, 4, 8, 9, 12, 13, 14, 15, 19, 21, 22, 23; to-hit 6,
+  9, 12, 25 (with a refinement), 27; damage 20. Raised in part 2: to-hit 11 (the bit names of MonsterData `+0x16` stay
+  that field's tag, no batch), 24 (`0x00621190`'s map; the moving set {2, 3, 6} of `UnitIsMoving` → part 2).
+  Contradicted in part 2: reductions 16 and 18 (the sanctuary test is inside `r ≥ 1`; a resistance ≤ 0 is returned
+  unchanged; 11 separating cases). **Remainders raised:** to-hit 10's (the class 704–709 exclusion; row 10 now
+  whole), README 12's P = 25 (the crushing-blow divisor stays for part 2).
+- **Corrections (the spec's text is Phase 3's):** the contradiction above; C3's moving modes 2/15 apply to every
+  non-player type; A2's null difficulty record gives 100; A7's stat-116 block runs only for a positive stat; A6's
+  state record words. Routed by [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* on `main` `01db64a5`, unchanged (no row moved class): a-logs 623,
+  a-run 341, b 467, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808.
+  README § 4's S5e row records the part.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Reductions 66, 69 (its `[I]` half), 70,
+  128, 145, 158, 168, 221, 229, 264, 278, 325, 330 whole; 233 and 253 with correction 1. To-hit 110, 157, 161 (now
+  whole), 181, 337 whole; 312 with correction 2; halves 170 (the map; the bit names `[I]`) and 304 (`0x00621190`).
+  Damage 175. Combat README 205's P = 25 half.
+- **Review:** Tier B, [request](../backlog/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md). Judgment
+  calls: (1) reductions 16 and 18 filed contradicted in part, not raised with a correction: B2's pseudocode gives 0
+  where the code keeps a negative resistance, a different output; (2) to-hit 25 raised with a refinement (types 2 to 5
+  in modes 2/15 also evade), since the spec's monster half is right and the extra types are a wider map, whether any
+  stock path sends such a defender being unread; (3) reductions 19 raised on a row-independent map, the cold row's
+  stat ids resting on S5b's `[C]` table read; (4) to-hit 11 kept in part for the flag-bit names, as S6e kept column
+  names (ADR-0015 (3)); (5) the 9 unseparated strictness controls taken as inherent (both sides of the boundary give
+  the same output).
+- **Resume note for S5e part 2 (a fresh lane on `lane/n66t`; `workspace/ghidra-n66t` stays, symbols imported).**
+  Left, 29 statements: to-hit 14, 15, 20, 22; damage 3, 4, 5, 7, 8, 10, 11, 12 (2), 18, 22, 23, 24, 25, 26; delivery
+  22, 39–44, 46–48; and the remainders to-hit 24 (`UnitIsMoving`'s set) and 31 (three defence draws), damage 6, 9,
+  13, 14, 15, 34, README 12 (the crushing-blow divisor 10 against a hireling) and 35 (`Align` = 1, not in the rows).
+  A new tool file (as S6e parts 2 and 3) importing `combat_s5e_emu.py`'s unit, stat-list and MonStats builders
+  unchanged; new run directory `workspace/logs/n66t/s5e/run2/`, one launch. Decompiles of the batch's functions and
+  callees are in `workspace/logs/n66t/dev/decomp{2,3,4}.c`. Check each route for an allocator or an import whose
+  result a claim uses first (then the row goes to b, naming the call). Families, cheapest first:
+  `STATEVENT_CrushingBlow` 0x005BFFC0 / `OpenWounds` 0x005BFE60 / `Freeze` 0x005BFC60 (their state and life setters
+  as observed boundaries where they allocate; `IsBoss`, the HP percent run whole), `sub_00580610_LifeRegenTick`,
+  `COMBAT_RollElemStat` 0x0057A8E0 with `COMBAT_RollRange` and its caller's scale, `COMBAT_RollPhysical` with no
+  weapon (`sub_00535BC0_UnitGetWeapon` → 0), `COMBAT_DefenceRoll` 0x0057DFB0 with `UnitIsMoving` and
+  `sub_00622720_UnitBlockChance` (a monster with MonStats `+0x0F` bit 4 needs no inventory; a player's shield needs
+  `InvItemQuery` → `sub_0063ADD0_InvPageGet` on a scratch page as S6f's `wc` image, `sub_0062A4E0_ItemNotDisabled`,
+  `ITEMS_UnitIsType`), `UNIT_GetDefense` 0x006223F0 (state 101's branch reaches `UNIT_FindStatListByState`,
+  `SKILLS_GetRecord`, `InvItemQuery` and `SKILLS_EvalCalc`: run whole on a calc pool as plan 0046's families or end
+  at an observed boundary), the `COMBAT_ApplyDamage` prologue 0x0057C6C0–0x0057C78E, and `COMBAT_BuildDamage`'s
+  steps 1, 5, 7 and 9 (`UndeadDmgBonus` needs `UnitGetWeapon`; run the builder whole only if its prg hooks and
+  callees hold no allocator, else stop at boundaries and scope each step to what it reaches).
