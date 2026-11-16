@@ -4139,6 +4139,46 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     note).
 - **Review:** none yet; the Tier B request comes when S2be is whole.
 
+### 2026-11-16 — Phase 1, batch S2be part 3 (reverser-static, `lane/n66sb`, closing): 2 more settled (do 140's worked example, do 137 past `STATE_Set`); 22 not settled; batch closed
+
+- **Done.** Merged `main` `f8ba39a0` first (conflicts on the plan log and the inventory README's totals, both sides
+  kept; S1m's a-logs → d-edit move carried into the S2be-era totals). New tool `tools/skills_s2be3_emu.py`
+  (`d14b1781…`) on plan 0046's batch 8c machinery (`tools/skills_catalogue_emu.py`, unchanged, in its module state
+  only). Two kept `tools/ghidra.sh emuboundary` launches on `workspace/ghidra-n66sb` (`-Xmx3G`, `MemoryMax=4G`), one
+  per family (`tent140` 1 200, `d137` 1 500): 2 700 cases, 0 mismatches, 0 stops, 0 undeclared reads; 5 controls,
+  each failing; the site control fails every boundary case. Two earlier `d137` launches were overwritten (not cited).
+  Record: [run:2026-11-16-sweep2-s2be3](../findings/skills/experiments.md#run2026-11-16-sweep2-s2be3);
+  `workspace/logs/n66sb/s2be/run3/` (`check.txt` `dde8acec…`, `worked.txt` `2ed96de9…`, `manifest.sha256`
+  `3f8db4aa…`, 13 lines, passes from there). Claims:
+  [skills/0003 § 20](../findings/skills/0003-handlers.md#20-plan-0066-batch-s2be-part-3-closing-the-worked-example-of-do-140-and-do-137-past-state_set-2026-11-16-lanen66sb).
+- **Rows (24).** Raised: catalogue 104 (the worked example as two recorded cases: W1 `SpawnAtPos(…; 100, 199, 0, 1,
+  −1, 0)` with the seed three steps on and `n − i` = 4, W2 return 1 with the seed nine steps on; the spec's table
+  values exactly). Raised in part: catalogue 96 (do 137 past `STATE_Set` with `STATE_Set` and `UnitMarkUpdated` whole
+  to 0x00570590 with `(caster, aurastate, id, lvl)`; the remainder, do 128/133/134's `after:` parts and what
+  0x00570590 does, → b with H2c's recipe, not counted there). Not settled, stay `[I]` (22; the closing part's budget):
+  README 3, 11, 13; catalogue 9, 16, 20, 26, 28–30, 33, 35, 37, 42, 49, 56, 60, 70, 78, 81, 89, 105, each with its
+  route in the inventory's Route cell. None moved, none contradicted.
+- **Batch S2be closed:** 73 rows (74 statements): 45 moved to b (H2c, part 1), raised 2 (catalogue 104, 107), raised
+  in part 4 (catalogue 8, 43, 73, 96), not settled 22.
+- **Refinements** (Phase 3's, in skills/0003 § 20): Q4's `after:` for do 137 now states `STATE_Set`'s writes (the
+  state bit, the changed bit, `+0xC8 |= 8` under the States flag), `UnitMarkUpdated`'s room link, and 0x00570590's
+  arguments; the *Worked example*'s `[I]` "not a recorded case" can become `[C]` with the run id. The spec-writer
+  picks them up with the batch's Tier B review.
+- **Symbols:** none (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) after the merge, with no
+  class move in this part: a-logs 622, a-run 334, b 562, c 389, c-emu 390, d-2c 59, d-owner 68, d-edit 24, d-none 178 =
+  2 626; Phase 1 1 401, Phase 2 896, blocked 329. Inventory README § 4's S2be row closed.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text:** the *Worked example* (whole); Q4's
+  `after:` line, do 137's part.
+- **Judgment calls for the review:** (1) the worked example's caster has MonStats base 0, so 0x0063EFA0's default arm
+  runs, as the spec states and run:2026-10-21-cat-emu-8c found for every case; the Baal arm stays `[I]`. (2) row 96's
+  `[C]` covers do 137's own calls only; `STATE_Set`'s clear path is not run (do 137 calls it with 1). (3) 22 rows close
+  as not settled with routes, as the brief for the closing part asks; none is moved to b, since each route needs no
+  game run. (4) H2c (45 statements, proposed by part 1) is put to the reviewer with this batch.
+- **Review:** Tier B requested
+  ([request](../backlog/2026-11-16-reverser-architect-review-plan-0066-s2be.md)); it is the fifth check since the
+  last audit, so a Tier A audit follows.
+
 ### 2026-11-16 — Phase 1, batch S1m (reverser-static, `lane/n66m1`): done, 40 of 40 rows settled or routed
 
 - **Done.** Branch from `main` `845aa88f`. No game, no Ghidra, no slot. New tool `tools/ai_s1m.py` (sections `logs`,

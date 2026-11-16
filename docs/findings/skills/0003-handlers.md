@@ -1103,6 +1103,51 @@ two-tool read. Record: run:2026-11-16-sweep2-s2be2. Outputs `workspace/logs/n66s
 - **Left for part 3** (24 rows): README 3, 11, 13; catalogue 9, 16, 20, 26, 28–30, 33, 35, 37, 42, 49, 56, 60, 70,
   78, 81, 89, 96, 104, 105; routes in plan 0066's log.
 
+### 20. Plan 0066 batch S2be part 3 (closing): the worked example of do 140 and do 137 past `STATE_Set` (2026-11-16, `lane/n66sb`)
+
+Two families under Ghidra's p-code emulator with a `tools/` model (`tools/skills_s2be3_emu.py`, ADR-0015, ADR-0021),
+on plan 0046's batch 8c machinery (`tools/skills_catalogue_emu.py`, unchanged, used in its module state only): 2 700
+cases, 0 mismatches, 0 stops, 0 undeclared reads; 5 controls, each failing; every boundary case fails with its return
+address changed. Record: run:2026-11-16-sweep2-s2be3. Outputs `workspace/logs/n66sb/s2be/run3/`.
+
+- [C] **The catalogue's worked example is a recorded case (catalogue 104, raised).** do 140 (0x005D2C20) on a caster
+  with seed `(low 1, high 666)`, difficulty 2 (the game's byte `+0x6D`), class 0 whose MonStats base is 0 (so
+  `0x0063EFA0` takes its default arm), no path target and position `(100, 200)`. Case W1, one room holding
+  `(100, 199)`: `SpawnAtPos` (0x005B2F20) is called from 0x005D2E07 with `ECX` the game, `EDX` the room and
+  `(100, 199, 0, 1, −1, 0)`; the caster's seed is `(0x280687C4, 0x13ADFE65)`, three steps on; the remaining count at
+  `EBP − 0x14` is 4. Case W2, one room far off with no near rooms: do 140 returns 1 (`ret 8`) with the seed
+  `(0xE778FC3B, 0x49422C1A)`, nine steps on (`1 + 2n`, `n` = 4). Both match the spec's table, computed with
+  `tools/rng.py` (`worked.txt`), and the model of run:2026-10-21-cat-emu-8c, unchanged, over 1 198 more do 140 cases
+  with random seeds, difficulty, targets and rooms (433 spawns, 767 returns). Controls: `n_mod4` (913 failures),
+  `xy_swap140` (433). (`check.txt`, `worked.txt`, fn:sub_005D2C20_SkillDo140BaalTentacle@0x005D2C20)
+- [C] **do 137 past `STATE_Set` (catalogue 96, raised in part).** With `STATE_Set` (0x00639DB0) and
+  `sub_0064C040_UnitMarkUpdated` run whole instead of observed, do 137 (0x005D26F0), for a target that passes
+  0x00645590:
+  1. `STATE_Set(target, 104, 1)`: 104 is below the States count, so 0x00625A70 runs. On a target whose `+0x5C` list has
+     `+0x10` bit 31, it sets bit 104 of the words at the list's `+0x58`. If the bit was clear, it also sets the same bit
+     in the second half, at word `(count + 31) / 32 + 104 / 32` (word 9 for 190 states), and when States record 104's
+     byte `+0x12` has bit 0 (0x00452040: DataTables `+0xBC`, stride 0x3C), ORs 8 into the target's `+0xC8`. If the bit
+     was already set, nothing else changes.
+  2. `UnitMarkUpdated(target)` (from `STATE_Set`): the target's room (a monster: its path's `+0x1C`; none without a
+     path) is refused when absent or when its `+0x34` has bit 2 (0x0061AB60), and the target when its `+0xC4` has bit
+     0x2000. Otherwise the target's `+0xC4 |= 0x2000`, the room's `+0x2C` points at a dword set to 1
+     (0x00619F90), and the target is pushed on the list at the room's `+0x1C` (old head into the target's `+0xE0`).
+  3. do 137's own `UnitMarkUpdated(target)` (0x005D2778) then changes nothing: the bit is set or the room refuses.
+  4. `0x00570590` is called from 0x005D2793 with `ECX` the game, `EDX` the caster and `(caster, aurastate, id, lvl)`
+     (`aurastate` the Skills `+0x80` word, sign-extended).
+  1 500 cases, 221 at the call (104 with the bit new, 86 with it set, 31 with no list; 89 linked, 147 already marked,
+  33 refused by the room flag, 70 with no room). Controls: `old_inv` (157), `chg_nsw` (100, the changed word one
+  further), `f34_any` (23). (`check.txt`, fn:sub_005D26F0_SkillDo137FenrisRage@0x005D26F0, 0x00639DB0, 0x00625A70,
+  0x0064C040)
+- [I] The remainder of catalogue 96: do 128's overlay, do 133's end callback (the spawn from a dead unit), do 134's
+  elemental roll and area hit, and what 0x00570590 does. It stays with the row, routed to b with H2c's recipe and not
+  counted there (as catalogue 43's remainder).
+- **Not settled, stay `[I]`** (22 rows; the budget of the closing part): README 3, 11, 13; catalogue 9, 16, 20, 26,
+  28–30, 33, 35, 37, 42, 49, 56, 60, 70, 78, 81, 89, 105. Each row's Route cell in plan 0066's inventory names its
+  route (part 2's resume note): the small entries (16, 30, 28), the constant calc pool (49, 105, 60), the stat
+  setters whole (20, 26, 33, 29), a declared inventory page (37, 42, 56, 89, 9, 70, README 11), and the routes to
+  read first (35, 78, 81, 105's do 81, README 3 and 13).
+
 ## Kept outputs
 
 `workspace/logs/skills/` (manifest `p45h-manifest.sha256`, one path base; `sha256sum -c` from that directory):
@@ -1141,6 +1186,10 @@ under `dev-p46h-manifest.sha256`.
 `static.txt` `dc526bbe…`, `s2ae.out` `2ceb453c…`, `tool.sha256` `63154aa7…` (`tools/skills_s2be2_emu.py` `e5bb4844…`); the
 development launch under `workspace/logs/n66sb/s2be/manifest-dev-p2.sha256` (7 lines, passes from
 `workspace/logs/n66sb/s2be/`).
+
+`workspace/logs/n66sb/s2be/run3/` (plan 0066 S2be part 3, manifest `manifest.sha256` `3f8db4aa…`, 13 lines,
+`sha256sum -c` from that directory): `check.txt` `dde8acec…`, `worked.txt` `2ed96de9…`, the two families' `.cases`,
+`.mem`, `.json`, `.out` and `.err`, `tool.sha256` (`tools/skills_s2be3_emu.py` `d14b1781…`).
 
 ## Data touched
 
