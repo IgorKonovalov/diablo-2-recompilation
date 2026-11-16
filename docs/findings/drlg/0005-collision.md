@@ -349,7 +349,7 @@ RectTest(h, R, mask):     r = RoomAtSubtile(h, R.left, R.top); none -> 0x27
 
 - [C] `COLL_RectSplit`: piece 0 is R clipped to r's right and bottom edges. When `R.right ≥ x0 + w`, piece 1 is
   `{x0 + w, R.top, R.right, R.bottom}` (full height). When `R.bottom ≥ y0 + h`, the next piece is `{R.left, y0 + h, clipped right, R.bottom}`.
-  An inverted rectangle gives 0 pieces and the test returns `0x27`. (run:2026-10-14-collision, fn:COLL_RectSplit@0x0064CDF0, fn:COLL_RectTest@0x0064CEB0)
+  An inverted rectangle gives 0 pieces and the test returns `0x27`. Plan 0066 S7e: `COLL_RectTest` tests the room's map (0x0064CEDE) but not the map's cell pointer; `COLL_RectTestInMap` (0x0064CC30) reads from `0 + 2·index` (0x0064CCA0), so the `0x27` above holds for a missing room or map only, and a map with a null cell pointer is read through the null pointer `[I]` as to the game's fault ([run:2026-11-16-sweep2-s7e](../frame/experiments.md#run2026-11-16-sweep2-s7e)). (run:2026-10-14-collision, fn:COLL_RectSplit@0x0064CDF0, fn:COLL_RectTest@0x0064CEB0)
 - [I] All values are u16. A non-zero result rejects the cell in `MonSpawnTry` (monsters/0002 § 6). Sizes 2 and 3 are the pool's footprints
   (MonStats2 `SizeX` 2: 238 pool classes, 3: 123). Size 0 (`baaltaunt`) tests one cell and marks nothing (§ 5).
   (fn:sub_005B2A00_MonSpawnTry@0x005B2A00, tbl:MonStats2.txt:SizeX)
