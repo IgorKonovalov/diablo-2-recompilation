@@ -143,10 +143,10 @@ def inline(s, ctx, stash=None):
     s = ALLOWED_TAG.sub(lambda m: put("<" + re.sub(r"[\s/]+$", "", m.group(1)) + ">"), s)
     s = re.sub(r"<!--.*?-->", "", s, flags=re.S)
     s = html.escape(s, quote=False)
-    s = re.sub(r"(\*\*|__)(?=\S)(.+?)(?<=\S)\1", r"<strong>\2</strong>", s)
-    s = re.sub(r"(?<![\w*])\*(?!\s|\*)(.+?)(?<!\s)\*(?![\w*])", r"<em>\1</em>", s)
-    s = re.sub(r"(?<![\w])_(?!\s|_)(.+?)(?<!\s)_(?![\w])", r"<em>\1</em>", s)
-    s = re.sub(r"(?<!~)~~(?=\S)(.+?)(?<=\S)~~(?!~)", r"<del>\1</del>", s)
+    s = re.sub(r"(\*\*|__)(?=\S)(.+?)(?<=\S)\1", r"<strong>\2</strong>", s, flags=re.S)    # emphasis may wrap a line
+    s = re.sub(r"(?<![\w*])\*(?!\s|\*)(.+?)(?<!\s)\*(?![\w*])", r"<em>\1</em>", s, flags=re.S)
+    s = re.sub(r"(?<![\w])_(?!\s|_)(.+?)(?<!\s)_(?![\w])", r"<em>\1</em>", s, flags=re.S)
+    s = re.sub(r"(?<!~)~~(?=\S)(.+?)(?<=\S)~~(?!~)", r"<del>\1</del>", s, flags=re.S)
     for _ in range(6):
         if "\x00" not in s:
             break
