@@ -4016,3 +4016,63 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Not settled rows (26):** every Route cell names a page, a calc pool, a room or a run; none lies wholly past an
   allocating call (rows 84, 127 and m63 corrected above).
 - **Gate:** fast green (68 warnings, none from the fixes). The review request stays open for the merge.
+
+### 2026-11-16 — Phase 1, batch S2be part 1 (reverser-static, `lane/n66sb`): the routes read; 45 rows moved to b (H2c proposed), 1 raised in part; resume note for part 2
+
+- **Done.** Branch from `main` `845aa88f` (no newer `main`). New tool `tools/skills_s2be_routes.py` (`49838ae1…`;
+  read-only, objdump only; `tools/sweep2_s7e_routes.py`'s walker plus a room-walker marker and an intra-procedural
+  flow check): `sites` (84 roots, each direct call site with its callee's first pool path and room walkers) and `rows`
+  (61 entries: per row the gate call the claim lies after, or whose own work the claim is, and whether any path from
+  the entry reaches the claim around the gates). No Ghidra launch, no emulation. Outputs
+  `workspace/logs/n66sb/s2be/run/` (`sites.txt` `8e0f7b91…`, `rows.txt` `dd1e9ea8…`, `tool.sha256` `b0b4e63f…`,
+  `manifest.sha256` `cefa49ea…`, 3 lines, passes from there). Claims:
+  [skills/0003 § 18](../findings/skills/0003-handlers.md#18-plan-0066-batch-s2be-part-1-the-catalogues-after-parts-routed-re-seed-callbacks-from-the-kept-runs-2026-11-16-lanen66sb).
+- **Rows (46 of 74 statements).** Moved c-emu → b, 45 (ruling R2; reasons and call sites in the rows): catalogue 13,
+  15, 17–19, 21–24, 27, 31, 32, 34, 38–41, 45–47, 50, 51, 55, 61–66, 68, 69, 71, 72, 76, 77, 79, 83–86, 88, 94, 95, 97,
+  106. Each claim lies after, or is the work of, `MissileCreate` or a wrapper, a spawn, `PathPlan` or the re-target
+  0x005A99E0, a delivery or the queue, `STATE_ApplyTimed`/`STATLIST_Alloc`/`STATLIST_FreeIfPlain`/`UnitSetOwner`,
+  a unit search or cell test (rooms), `GroundDropCell`, `InvClearUseMarks` or `UnitQueueEvent`. 44 of the 46 flow
+  checks find no path around the gate; rows 18 and 27 land on code shared with a path the plan 0046 runs covered
+  (the gone-chest join, the early-exit epilogue) and are routed on the claim's own path. Raised in part, 1 (2
+  statements): catalogue 8 (B1) from the kept S2ae runs (`zz`, `rfa`, `rro`; S2ae part 1's practice, no new run):
+  each callback re-seeds its `ECX` unit by `RNG_SeedInit` before any boundary; remainder (that `MissileCreate` calls
+  them for prg 37, 143 and do 102) → b (H2a), as missiles 75.
+- **New harness batch proposed: H2c** (45 statements, the moved rows; inventory README § 4). H2a already holds 40,
+  and 85 would pass the 60-statement cap of a harness batch; sessions are the architect's to estimate.
+- **Symbols:** none (a route read; every callee named is already in `re/symbols.csv`).
+- **Totals** from the 29 files' *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) on `main` `845aa88f`: a-logs
+  623, a-run 334, b 562, c 389, c-emu 390, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 402, Phase 2
+  896. Inventory README § 1, § 3, § 4 (S2be 29 statements; H2c) and skills-catalogue's *Totals by class* updated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text:** catalogue B1's three callbacks, in part
+  (the re-seed `[C]`; the call from `MissileCreate` stays `[I]`).
+- **Judgment calls for the review:** (1) the routing is `[I]` (one tool), as the S2ae audit ruled for part 6's triage;
+  it moves rows and raises none; (2) whole-row moves where the claim's first instruction can be reached only through
+  the gate, or is inside the gate's callee; (3) H2c proposed instead of growing H2a past the cap; (4) catalogue 8
+  raised from runs made for missiles 75–77 (the same functions and steps).
+- **Resume note for part 2 (a fresh lane on `lane/n66sb`; make `workspace/ghidra-n66sb` from the shared copy, run
+  `import-symbols` first).** Left: 28 rows (29 statements). Each has a part before its first allocating call (the
+  call sites in `sites.txt`) and most an R2 remainder to route to H2c:
+  - **Small, no page:** 16 (mdo 13 to `SpawnOwnedMonster` 0x005AEED5), 43 (callback 0x005DB150 to `STATE_ApplyTimed`
+    0x005DB1A6; "each unit" → b), 73 (prg 36 to `SkillNovaAtUnit` 0x005D4E53), 104 (do 140 on `(1, 666)`, Hell, to
+    `SpawnAtPos` 0x005D2E07; cat-emu-8c's machinery), 30 (mhit 7's refused-ally path, `SkillAllyTest` whole as S2ae
+    part 5's `tc`), 96 (do 137 after `STATE_Set`: `UnitMarkUpdated` 0x005D2777 whole to 0x00570590 at 0x005D2793;
+    do 128, 133, 134 → b), 107 (do 13's single `ret` 0x005DBE45 after `xor eax, eax` 0x005DBE3F: the early paths
+    emulated or a second tool; the paths through the queue → b).
+  - **With `STATE_Set` and `EvalCalc` (a constant calc):** 49 and 105's do 55 (to `SKILLS_ForUnitsInRange`
+    0x005C5089; the area hit → b), 60 (do 69 to `NpcDropCreate` 0x005D8274, the pick 0x005D8100; do 72 0x005D8780 has
+    no pool site).
+  - **With the stat setters whole (the stat or list present):** 20 (callbacks 0x005AD8F0/0x005AD910 → 0x005D0C40;
+    their call from mdo 19's `UnitsInRangeCall` → b), 26 and 33 (`UnitSetOverlayStat`; read whether 0x00621E8C's
+    `STATLIST_Alloc` is skipped for a present list), 29 (stat 134 at 0x005AA304; the disc 0x005A9530 on → b).
+  - **With a declared inventory page (`InvPageGet` 0x0063ADD0 is the only pool):** 37 (do 21's `SkillRollPhys` to
+    `COMBAT_ApplyDamage` 0x005C9A60), 42 (st 6/10's `COMBAT_MeleeHitTest` and `SKILLS_RollElemDamage` to
+    `ResolveAndQueue` 0x005DAA20), 56 (do 150's `or ax, 1` at 0x005CEBB0 after `COMBAT_MeleeHitTest`), 89 (do 107's
+    three `RangeB` 0x005CDAFF–0x005CDB34 before `UnitSetStat` 0x005CDB8A; do 103, 108, 109 → b), 9 (per anchor: st 35
+    0x005CFD20, do 79 0x005D02B0, do 69/72 as 60, do 107 as 89, do 33 → b after `COMBAT_ApplyDamage`, do 146 → b),
+    70 (do 42's `Range` 0x005D5B85 on the no-target path past 0x005D5A7B; do 33, the finisher and deliveries → b),
+    README 11 (as dispatch 32, `SKILLS_CanUse`).
+  - **Routes to read first:** 35 (mhit 52's first `MissileCreate` up to its allocation for the class word, as S2ae part
+    4's `mcr`; the loop → b), 78 and 81 (`ITEMSKILL_Cast`: helper 2's tries need a declared room as dispatch 83; helper
+    3's `ItemTargetCorpse` reaches the pool at 0x0065A943; `SKILLS_SrvDo` → b), 105's do 81 (its per-unit callback
+    0x0056C110 reaches the pool), README 3 and 13 (as dispatch 135's remainder).
+- **Review:** none yet; the Tier B request comes when S2be is whole.

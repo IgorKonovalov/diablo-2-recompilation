@@ -1010,6 +1010,48 @@ logs one representative per family with no tier-A member and does not restate th
   logger does not record the do function that ran); Act 2 monsters of the 8a rows are absent; chained pairs are counted
   over the run, not per family. (run:2026-10-30-skills-catalogue)
 
+### 18. Plan 0066 batch S2be part 1: the catalogue's `after:` parts routed, re-seed callbacks from the kept runs (2026-11-16, `lane/n66sb`)
+
+Batch S2be holds the catalogue's (skills/0004–0018) `after:` lines: code past a plan 0046 observed boundary. Ruling R2
+of plan 0066's Phase 0 review admits such a row as an emulation only when the callee runs whole on a declared read set;
+a callee that allocates, spawns or walks rooms sends the row to the harness. This part reads the route of every row
+(`tools/skills_s2be_routes.py`, sha256 `49838ae1…`, read-only, objdump only): `sites` lists each of 84 roots' direct
+call sites with the callee's first pool path (allocator 0x0040B430/0x0040B4B0, free 0x0040B480, `EventBlockNew`
+0x00540BB0) and its room walkers (`SKILLS_ForUnitsInRange`, `DUNGEON_GetNearRooms`, `RoomAtSubtile`,
+`DUNGEON_GetCollMap`); `rows` names, per row, the gate call the claim lies after (or whose own work the claim is),
+and checks on the intra-procedural flow graph that no path from the entry reaches the claim's first instruction
+without crossing a gate. Outputs: `workspace/logs/n66sb/s2be/run/` (`sites.txt` `8e0f7b91…`, `rows.txt` `dd1e9ea8…`,
+`tool.sha256` `b0b4e63f…`, `manifest.sha256` `cefa49ea…`, 3 lines, passes from there).
+
+- [I] **45 rows lie past, or inside, an allocating, spawning or room-walking callee** (catalogue rows 13, 15, 17–19,
+  21–24, 27, 31, 32, 34, 38–41, 45–47, 50, 51, 55, 61–66, 68, 69, 71, 72, 76, 77, 79, 83–86, 88, 94, 95, 97, 106;
+  `rows.txt`, 61 `ROW` entries, the gates and claims in the inventory rows). The gates are `MissileCreate` and its
+  wrappers (→ `SUnitCreate`, pool 0x0040B430 at 0x005553BE), the spawns (`SpawnOwnedMonster`, `SpawnAtPos`,
+  `SpawnNearUnitNoBox`, 0x0058E920; `EventBlockNew` at 0x00540C56), `PathPlan` and the re-target 0x005A99E0 (the
+  rooms through `RoomAtSubtile`), `COMBAT_DeliverQueued` and `COMBAT_ResolveAndQueue` (0x0057CABE), `STATE_ApplyTimed`
+  and `STATLIST_Alloc` (0x0062520B), `STATLIST_FreeIfPlain` (free at 0x00626C20), `UnitSetOwner` (0x00624CC8),
+  `GroundDropCell` (0x0066A4C3), the unit searches (`SKILLS_ForUnitsInRange` 0x0056B7E0, `NearestUnitInRange`,
+  0x0065A950, `UnitListAround`), the cell tests (`COLL_CellTestAt`, 0x0056E450, `COLL_PatternTestBool`), the item-use
+  marks (`InvClearUseMarks` → `ClientQueuePacket`, 0x0053B2DD) and `UnitQueueEvent` (do 146, as dispatch 182 and 184).
+  Of the 61 entries, 15 have the claim inside the gate's callee; for 44 of the other 46 `CLAIM` checks no path
+  reaches the claim around its gates. The 2 others land on shared code: row 18's gone-chest path joins the `+0x2C`
+  store at 0x005AF3EB without the drop (the claim is the found-chest store, after it), and row 27's return at
+  0x005A9BE1 is shared with the early exits the plan 0046 run covered (the claim is the return after `AreaHitAt`). The reading is one tool's (objdump, the walker over the same
+  objdump), so the routing is `[I]`; it moves rows, it raises none. (`rows.txt`, `sites.txt`)
+- [C] **Catalogue 8 (B1), raised in part from the kept S2ae runs, no new run:** each of the three re-seed callbacks
+  re-seeds the unit in `ECX` at `+0x20` by `RNG_SeedInit` before any boundary: `0x005D4680` whole (`zz`, 0x005D4680's
+  `RNG_SeedInit(argument)` then its inline steps), `0x005D40F0` (`rfa`, the argument alone) and `0x005CD110` (`rro`,
+  path word `+0x10` plus the argument, then one step) to their `PathPlan` boundaries (skills/0002 § 20, § 21).
+  (fn:sub_005D4680_MissCbReseedZigzag@0x005D4680, fn:sub_005D40F0_MissCbReseedFromArg@0x005D40F0,
+  fn:sub_005CD110_MissCbReseedRoll@0x005CD110, run:2026-11-16-sweep2-s2ae4, run:2026-11-16-sweep2-s2ae5)
+- [I] The remainder of catalogue 8, that the callbacks run inside `MissileCreate` for prg 37, prg 143 and do 102 with
+  the parameter block's `+0x54`, lies after `SUnitCreate`'s allocation (0x0059FC75 → 0x0040B430 at 0x005553BE), as
+  missiles 75's remainder: H2a. (0x0059FC75)
+- **Left for part 2** (28 rows, the resume note in plan 0066's log): README 3, 11, 13 (as dispatch 135 and 32,
+  not settled in S2ae); catalogue 9, 16, 20, 26, 28–30, 33, 35, 37, 42, 43, 49, 56, 60, 70, 73, 78, 81, 89, 96, 104,
+  105, 107. Each has a part before its first allocating call that an emulation can reach (`sites.txt` names the
+  calls), and most an R2 remainder.
+
 ## Kept outputs
 
 `workspace/logs/skills/` (manifest `p45h-manifest.sha256`, one path base; `sha256sum -c` from that directory):
@@ -1038,6 +1080,10 @@ over the five targets; the 18 + 18 + 3 + 2 + 1 sites as above).
 `workspace/logs/skills/` (plan 0046 Phase 2, manifest `2026-10-30-skills-catalogue-manifest.sha256` `dc673ebd…`, 81 files, `sha256sum -c` from
 that directory): the 12 logs, `…-check.txt` `2bd2b4fb…`, `…-families.txt` `97ad3388…`, `…-tally.txt` `6c22dc3a…`, `…-gaps.txt` `b30c38dd…`; the development logs
 under `dev-p46h-manifest.sha256`.
+
+`workspace/logs/n66sb/s2be/run/` (plan 0066 S2be part 1, manifest `manifest.sha256` `cefa49ea…`, 3 lines, `sha256sum
+-c` from that directory): `sites.txt` `8e0f7b91…` (`python3 -I tools/skills_s2be_routes.py sites`), `rows.txt`
+`dd1e9ea8…` (`… rows --depth 6`), `tool.sha256` `b0b4e63f…` (`tools/skills_s2be_routes.py` `49838ae1…`).
 
 ## Data touched
 
