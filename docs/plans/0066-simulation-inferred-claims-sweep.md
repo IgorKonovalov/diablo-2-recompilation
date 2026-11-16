@@ -2540,3 +2540,51 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **For the owner:** none. The 27 not-settled statements could be a later static batch (no pool entry in 23 of them);
   whether that is worth a batch is the architect's call.
 - **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s7e`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7e.md), covering S7e whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 1 (reverser-static, `lane/n66z`): the stats family, 6 of 91 settled; resume note
+
+- **Split, planned up front.** S4e (91 rows, plus the S4c/S4d remainders routed "→ S4e") runs as: part 1 the stats
+  family (aggregate 1, 14, 15, 18, 20, 21; done here); part 2 the price core (`tools/economy.py` as model; economy 4–5,
+  7–8, 11–20, 22–23, 25–36, 43, 46–48, 56, 69, 79, 85); part 3 the item request handlers and `UnitInteract` (use 6,
+  18–22, 34, 38, 52, 54; inventory 1, 9, 10, 28–34, 36–43, 45, 46, 64, 99); part 4 the inventory families (`put`,
+  `place`, `merge`, `search`, `drop`, `ground`, `expiry`, belts: the other inventory rows); part 5 the static (c)
+  remainders of S4c/S4d (inventory 18; aggregate 2, 10, 13, 17, 23, 29, 31, 36, 37, 40, 41; states 14, 46) and the
+  c-emu remainders (inventory 29, 31, 61; aggregate 11).
+- **Done.** Branch from `main` `858b7eea`; work committed at `bb2b0172`, then `main` `72f003c8` merged (no conflict).
+  New tool `tools/stats_s4e_emu.py` (`02c23870…`), one kept `emuboundary` launch per family on
+  `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, 38 s for the four), after one 60-case development pass
+  (`dev/manifest-dev.sha256`, not cited). Four families, 11 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no
+  traced write; 30 controls, each separating, `passed` 0. No observed boundary, no import, no allocator reached (the
+  generator rejects a case whose model would grow or shrink the cache). Record:
+  [run:2026-11-16-sweep2-s4e-emu](../findings/items/experiments.md#run2026-11-16-sweep2-s4e-emu) (part 1),
+  `workspace/logs/n66z/s4e/run/` (`check.txt` `e138a326…`, `static.txt` `8149f77b…`, `r2.txt` `f083ed6b…`,
+  `manifest.sha256` `c0773683…`, 24 lines, passes from there; `cases` regenerates every case and memory file byte for
+  byte, and `check` reproduces `check.txt` from the committed revision). Claims in stats/0001 § 11, dated notes in
+  §§ 1, 3, 5.
+- **Rows settled (stats/aggregate).** Raised: 1, 14, 21. Raised in part: 15 (op 3 as code, ops 10 and 12, no stock row
+  with op 3, 10 or 12; the 36 op-6/7 rows on *of Dawn* / *of Sunlight* only → c, part 5), 18 (no new run: the formula
+  and `ActTimeOfDay`'s map are run:2026-10-27-p51s-emu's; the phase as a time of day → c, part 5). **Contradicted in
+  part: 20** (F2): the readers test `v < MinAccr` unshifted and only then return `MinAccr << ValShift`, so a value
+  between the two is kept (65 cases; the spec's threshold control fails 79); the rest raised with two refinements
+  (the record argument and the extended bit; an absent entry unfloored). Remainder raised, no new run: 16 (op 7 on the
+  running total, p51s's control). Correction and refinements routed by
+  [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part1-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** after merging `main` `72f003c8`, from the 29 files' *Totals by class*: a-logs 623, a-run 334, b 507, c 390,
+  c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 457, Phase 2 841. No row moved class
+  (remainders in the *Route* cells); README § 4's S4e row records part 1.
+- **Ready for Phase 3 (spec-writer), stats/aggregate lines at `b5999f5e`, match by text.** Whole: 50, 210 (with
+  refinement 2), 363. Split: 298, 310, 338 (with correction 1), 301 (op 7).
+- **Judgment calls:** (1) row 18 and row 16's remainder raised from the kept run:2026-10-27-p51s-emu, recounted from its
+  record, not re-run; (2) the `take` cases keep every row's `+0x52` at 0 (targets and sources evaluate to their own
+  value), so the take test is checked through `StatRecompute` whole with plain evaluations, and the evaluation ops
+  stay with § 10 and the `ops` family; (3) row 20 filed "contradicted in part" rather than "refinement", since the
+  spec's floor value differs from the code's for `maxhp` 1..255; (4) the `take` generator rejects cases that would
+  reach the allocator instead of guarding them, so insert growth and removal shrink are not covered.
+- **Resume (parts 2 to 5, a fresh lane on `lane/n66z`):** 85 rows of S4e and the remainders listed above. Start with
+  part 2: read items/economy §§ B–H and `tools/economy.py`'s price model, declare an item, its stat lists and the five
+  tables (Items/ItemTypes/Books/Misc/NPC rows) as S5e part 3 and S6f did, and run `ITEMS_TradePriceCore` whole (route
+  rows to b only where an allocator or an import whose result a claim uses lies on the route, naming the call). Write
+  a new tool (`tools/items_s4e_emu.py`) and new run directories (`workspace/logs/n66z/s4e/run2/` and on); do not
+  overwrite `run/`. The record continues under the same run heading in items/experiments. Tier B review once S4e is
+  whole.
