@@ -658,7 +658,7 @@ development outputs in `dev/` with `dev/manifest-dev.sha256`.
   calls and the read; the claim that no monster footprint uses `SizeY` is wrong for those two removals. Stock data
   cannot separate it (the columns are equal in every row). [I] stays: `UNIT_CollMarkRect`'s 7 client callers and
   `UNIT_CollUnmarkRect`'s 7 are not followed. Backlog
-  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
   (fn:UNIT_GetSizeY@0x006205A0, fn:UNIT_CollUnmarkRect@0x00623830, fn:sub_005EF620_AiBaalToStairs@0x005EF620)
 
 ### 17. Plan 0066 batch S7f: constants, tables and mask pairs with a second tool (2026-11-16, `lane/n66o`)

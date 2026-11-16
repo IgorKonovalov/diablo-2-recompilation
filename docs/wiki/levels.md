@@ -3,12 +3,12 @@ based_on:
   - docs/specs/drlg/README.md 2026-10-21
   - docs/specs/drlg/room-tiles.md 2026-10-27
   - docs/specs/drlg/preset.md 2026-11-03
-  - docs/specs/drlg/collision.md 2026-11-04
+  - docs/specs/drlg/collision.md 2026-11-16
   - docs/specs/drlg/maze.md 2026-11-03
   - docs/specs/drlg/warps.md 2026-11-10
   - docs/specs/drlg/outdoor.md 2026-11-10
-  - docs/specs/drlg/lifecycle.md 2026-11-04
-  - docs/specs/monsters/spawn.md 2026-11-04
+  - docs/specs/drlg/lifecycle.md 2026-11-16
+  - docs/specs/monsters/spawn.md 2026-11-16
 ---
 
 # How a level is built
@@ -505,17 +505,28 @@ flowchart LR
 the rooms' [near lists](../glossary.md) from a player's room. A count holds one reference per path, so a room reached
 by several routes at the same distance counts each of them. When a room gains its first distance-1 reference it
 becomes active; at distances 2 and 3 the game only prepares its tile list and map file. A run predicted every one of the
-634 982 callbacks these counts triggered, and every activation. Each active room also counts the players whose current room's near
-list holds it; that count drives the release and the wanderers below. With several players the counts simply add up,
-but no multiplayer game was logged, so that part is read from the code only.
+634 982 callbacks these counts triggered, and every activation: after each move every room of the new room's near list was
+active, 9 944 of 9 944. Each active room also counts the players whose current room's near list holds it; that count drives the
+release and the wanderers below. With several players the counts simply add up, but no multiplayer game was logged, so that part is
+read from the code only.
+
+**Rooms needed at once.** A warp's destination, a waypoint's room, a level point, a preset level build and a unit spawned at
+given coordinates activate their room on demand, ten calls in all (checked by a second reading). Seen in a run: such a call builds the
+room only when it is not active (7 690 calls, 244 on an unbuilt room), and a room it activated gets **no reference**: one that no later
+move reached was still active and unreferenced at the next release pass, 158 of 158. Only the idle count below releases such a room (read
+from the code).
 
 **Populate once, restore after** ([lifecycle § D](../specs/drlg/lifecycle.md#d-the-new-rooms-walk-populate-once-restore-once-per-activation)).
-New active rooms are handled at the start of the next game frame. A room active for the first time gets its preset
+New active rooms are handled at the start of the next game frame: seen in the frame windows, a room a player's move activated in one
+frame was populated or restored at the start of the next, 80 of 80. A room active for the first time gets its preset
 units, objects and monster population. A room that comes back after a release is **never populated again**: only its
-saved units are restored, once per activation. A run met 1 137 first activations and 1 361 restores.
+saved units are restored, once per activation. A run met 1 137 first activations and 1 361 restores, and its 408 preset-unit placements all
+fell in a first population, none in the 286 later restore-only walks of those rooms. Three other callers populate a room at once, outside
+this walk: a unit spawned at coordinates in a room not yet active, the far end of a portal at a level point, and a quest spawn in the Act II
+town (checked by a second reading).
 
 **When a room is released** ([lifecycle § E](../specs/drlg/lifecycle.md#e-release)). Every 12th frame a pass looks at
-each active room. If no player is near, the room's idle count goes up by one; if one is, it drops to zero. On the
+each active room (its period seen in the frame windows). If no player is near, the room's idle count goes up by one; if one is, it drops to zero. On the
 11th player-free pass in a row the room is released, unless it is pinned (by a portal, or, read from the code, while some quest events run), the room still holds a distance-0 or
 distance-1 reference, or it is in a town and some room of that level still does (the same rule for level 120 is read
 from the code only). In 2 224 of the run's 2 440 releases that came 120 to 131 frames after the player's room change
@@ -534,27 +545,34 @@ Each unit of the released room is saved, kept or freed:
 | missile | freed |
 
 Every logged champion carries the flag that bars a dead special from the save, so no dead champion was saved in the
-run. The code, read but not run on every path, sets that flag on every champion the server makes and never clears it,
-so a dead champion is not saved with the shipped data. Anything the rule does not save is gone
+run. A second reading finds three writes of the champion mark and no code that clears the special-monster flag; that each write
+follows the special-monster marking on the same unit, so a dead champion is not saved with the shipped data, is read from the code.
+A released room holds no live player: a player's own room is always in its near set (seen in a run, 0 of 12 476 save tests on a
+player). Anything the rule does not save is gone
 for good. Several tests (pets and summons, a few special monster classes, `restore` 0 classes) and the case of a
 level whose flag is clear for a monster that came from neither a preset nor a restore were never met, and stay
 readings of the code.
 
 **What comes back** ([lifecycle § H](../specs/drlg/lifecycle.md#h-the-restore)). Monsters first, then items, then
-objects, each in the order they were first created. A restored monster is a **new unit** with the old id and class.
+objects. Each kind comes back in the reverse of the order the release saved it, seen for monsters in 829 of 829 restores; that is the
+order of the saved list, not the units' age (unit ids rise along only 372 of 563 restores with two monsters or more). A restored monster is a **new unit** with the old id and class.
 A plain one is placed at its saved position with three room-seed draws (seven when it has to search nearby); each gets a new unit seed from one game-seed draw and is
 created in full, then gets its saved experience and maximum hit points back. Its hit points are the saved ones if
-fewer than 7 500 frames passed since the release, and full otherwise. Its level comes from the new creation and its
+fewer than 7 500 frames passed since the release, and full otherwise. It comes back in its neutral mode whatever mode it was saved in
+(2 726 of 2 726 alive monsters, 32 of them saved mid-move). Its level comes from the new creation and its
 re-applied mods: a minion created at the plain pool level comes back 3 levels higher at its first restore, and a
 champion comes back 2 levels above the plain level. For the champion, the code and the run agree: its restore
-re-applies its mods in full, as at its first creation, but makes no new minions (the minion part is read from the
-code). A minion's restore re-applies its mods in the lighter form, which also skips the step a random name takes on
-the monster's own seed; its level does not show which form it gets, so that is read from the code only. States, timers and anything a hit left behind are lost. Each restored item takes two game-seed draws; an item
+re-applies its mods in full, as at its first creation, and passes 0 for the minions argument (checked by a second reading), so it makes
+no new minions (read from the code). A minion's restore re-applies its mods in the lighter form, which also skips the step a random name
+takes on the monster's own seed: a second reading finds the minion restore calling the mod handlers itself in that form, though its level
+does not show the form in a game. States, timers and anything a hit left behind are lost (read from the code; the logs do not hold them). Each restored item takes two game-seed draws; an item
 saved in full keeps its seed, while a simple one (gold, potions, keys) comes back with seed 0. Its expiry becomes the
 later of the saved one and 15 000 frames from now; an item whose expiry has already passed is not re-created (5 seen
 in a run). In a room that stays active, read from the code: a monster's or chest's drop has no expiry until its room
-has been released, so nothing removes it till then, while a player's drop has one at once, and a pass every 1 500 frames
-frees a ground item past it (its test checked under emulation). A run reproduced 2 035 monster, 876 item and 1 799 object restores.
+has been released, so nothing removes it till then. An item the ground-placement function places has an expiry at once (seen in a run,
+80 of 80): a player's drop, an overflow, a gold amount, NPC menus, the cube's, a quest gift, an ear, a player's corpse and a belt item
+sent to the ground, twelve calls in all (checked by a second reading). A pass every 1 500 frames, seen at those frames and no others in the
+frame windows, frees a ground item past it (seen in a run for 4 of 4 swept; its test checked under emulation). A run reproduced 2 035 monster, 876 item and 1 799 object restores.
 
 **A restored monster marks the collision grid** like a monster of the population pass, though outside any window
 ([lifecycle § H5](../specs/drlg/lifecycle.md#h5-the-grid-marks-of-a-re-created-monster),
@@ -564,17 +582,18 @@ class's `deadCol` column is 0, takes the corpse marks (a 3 × 3 corpse rectangle
 `deadCol` 1 the one mark stays. The end-to-end run compared 1 903 re-creations mark by mark, 0 different; the dead
 cases rest on 140 of them. That covers the marks made from the recorded cell and alive-or-dead state, which are
 inputs (they depend on what the monster did before the release), not where or in what state a monster comes back.
-The call path that makes the marks is read from the code; the marks and their order are what the run compared. Leaving the marks out breaks later placement
+The call path that makes the marks is checked by a second reading; the marks and their order are what the run compared. Leaving the marks out breaks later placement
 tests: the first end-to-end run's only two mismatches were that.
 
 **Wanderers** ([lifecycle § I](../specs/drlg/lifecycle.md#i-the-wanderer-tick),
 [spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)). Each time a room is handled at the
 start of a frame it takes one room-seed draw for the wandering monster. In the lifecycle run no draw passed. A later
 run saw one pass, in the Chaos Sanctuary: the second draw followed on the room seed, did not fall below 3 out of 100,
-and nothing spawned. The rest is read from the code only: the draw passes 1 time in 32 768 (the one pass cannot tell
-how many of its bits are tested), the room must have no player near and the level must allow wanderers, a spawn needs the second draw below 3 out of 100 with fewer than 3
-wanderers already in the level's region, and only Act I has a wanderer class. So wanderers can only appear in active
-rooms no player is near.
+and nothing spawned. The gate's tests ran under emulation, the code's map: the draw passes only when its low 15 bits are all 0 (the
+one pass in a game cannot tell how many bits are tested), the room must have no player near, the level must allow wanderers, and the
+second draw is followed by a spawn only below 3 out of 100 with fewer than 3 wanderers already in the level's region, a signed count.
+Only Act I has a wanderer class, one rogue class. Read from the code: the draw so passes 1 time in 32 768, and the spawn itself, which no
+game has met. So wanderers can only appear in active rooms no player is near.
 
 **An example** ([lifecycle § Worked example](../specs/drlg/lifecycle.md#worked-example)). In the run's Cold Plains
 game, one room left the player's range at frame 5331 and was released at frame 5460, 129 frames later. It held four
@@ -704,7 +723,7 @@ section.
   crosses, and the teleport code tests no destination room. A scan of the town layouts in the kept logs found no
   shortest route that crosses a town (each town meets its neighbour at one gate, some camp layouts at one more opening a cell or two wide), and the two monster AIs read that
   choose a teleport point both refuse one in town; neither covers every case, so the question stays open. Also open:
-  which form of the mod handlers a restored minion gets, the wanderer spawn (the roll before it fired once in a later
+    whether the lighter form of a restored minion's mods shows in a game, the wanderer spawn (the roll before it fired once in a later
   run, [spawn § K](../specs/monsters/spawn.md#k-wanderers-the-tick)), a quest item that never expires,
   the dropped-record case for one alignment, which call sets one monster flag before the record is written, several
   save tests and restore paths, and multiplayer games, none of which a run met.

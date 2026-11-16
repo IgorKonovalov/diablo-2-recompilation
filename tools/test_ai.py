@@ -288,17 +288,21 @@ class LoggerSourceTest(unittest.TestCase):
         with open(os.path.join(HERE, "gdb", "ai.py")) as fh:
             cls.src = fh.read()
 
-    def test_rev_is_7_and_the_line_forms_are_named(self):
-        self.assertIn("REV = 7", self.src)
+    def test_rev_is_8_and_the_line_forms_are_named(self):
+        self.assertIn("REV = 8", self.src)
         for tag in ("R7W", "AII", "AIQ"):
             self.assertIn(tag, self.src)
 
     def test_every_word_breakpoint_is_a_return_site_or_documented_address(self):
         import re
         words = re.findall(r'\("([A-Za-z0-9_.]+)", (0x[0-9A-F]{8}), ', self.src)
-        self.assertEqual(len(words), 7)
+        self.assertEqual(len(words), 15)       # rev 7's 7 and rev 8's R118.cmp, R119.cmp, R120 x3, owner.mode, R48 x2
         self.assertEqual(sorted(set(k for k, _ in words)),
-                         ["AiNearestPlayer", "MonPlayerBonus", "MonsterOwnerRef", "R118.flag0x20", "R119.flag0x20", "arrow.region"])
+                         ["AiNearestPlayer", "MonPlayerBonus", "MonsterOwnerRef", "R118.cmp", "R118.flag0x20", "R119.cmp",
+                          "R119.flag0x20", "R120.hasskill1", "R120.hasskill2", "R120.hasskill3", "R48.act", "R48.quest21",
+                          "arrow.region", "owner.mode"])
+        for k, a in words:                     # every rev 8 site is inside the code image's AI thinks
+            self.assertTrue(0x005E0000 <= int(a, 16) < 0x00600000, (k, a))
 
     def test_the_think_window_of_row_1_is_in_the_retsites(self):
         with open(os.path.join(HERE, "gdb", "ai-retsites.txt")) as fh:
