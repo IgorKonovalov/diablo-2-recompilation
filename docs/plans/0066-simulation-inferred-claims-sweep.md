@@ -1520,3 +1520,38 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `g_MissileCollideTypes`, `Jump` in every excel table, `tools/room_extent.py` over every level). Build
   `tools/sweep2_s7f.py` on `tools/sweep2_s7a.py`'s helpers (`calls_of`, `stores`, the objdump listing), one section per family,
   output `workspace/logs/n66o/s7f/check-s7f.txt`; a fresh lane on `lane/n66o`.
+
+### 2026-11-16 — Phase 1, batch S7f (reverser-static, `lane/n66o`): done, 35 of 35 settled
+
+- **Done.** No game, no Ghidra. Merged `main` `90022fb9` first (`761b3140`, clean; plan 0065 files only). New tool
+  `tools/sweep2_s7f.py` (`df779d0e…`; sections `frame`, `path`, `lifecycle`): every site decoded by objdump and by r2 at
+  the same address and compared with the instruction the reading expects (operands normalised; the three import slots
+  named by r2's `ii`), with `tools/sweep2_s7a.py`'s raw-byte xref scan, its push reader for call arguments, full reads of
+  the image tables, a Missiles.txt and an every-`.txt` scan, and a rerun of `tools/room_extent.py`. Run once kept under a
+  4 GB scope: `workspace/logs/n66o/s7f/check-s7f.txt` (`b7d57335…`, 182 lines, `S7f total bad=0`), `totals-s7f.txt`,
+  `room_extent/` (byte-identical to `workspace/logs/a67/`), `manifest-s7f.sha256` (`a13648c3…`) passing from
+  `workspace/logs/n66o/s7f`; four development runs and the reading listings in `dev/` with `manifest-dev.sha256`.
+  Records: [frame/0001 § 10](../findings/frame/0001-tick-and-messages.md#10-plan-0066-batch-s7f-constants-tables-and-the-net-queue-with-a-second-tool-2026-11-16-lanen66o),
+  [path/0001 § 17](../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o),
+  [drlg/0009 § 15](../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o).
+  Every row's *Route* cell carries its dated S7f note; README § 4's S7f row updated.
+- **Raised 27:** frame 8, 9, 10, 11 (with a refinement: 7 reads in 5 functions), 23, 27; path-README 7, 11, 16, 67;
+  path-search 3, 26 (with a refinement: 51 passes for any `h0`), 27, 35; lifecycle 38–46 (42 with a refinement: `+0x20`
+  only with the type-1 link, and the save's two clears), 57, 61, 63, 77.
+- **Raised in part 8**, remainders in the Route cells: frame 29 (which queue the appends receive → c), 44 (kind 14 queued
+  only with a callback → c); path-README 8 (mask readers outside the `PATH_` functions → c), 44 (the unresolved `+0x3C`
+  stores, as row 63 → d-none); path-search 30 (the builders' room rule → c); lifecycle 62 (the callee's "no new minions"
+  → c), 64 (17 register stores to `[reg+0xC8]` → c), 70 (the spawn chain's flags and marks → c).
+- **None contradicted; no row moved class.** Refinements for Phase 3 in backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+- **Symbols:** none added or raised (no logged return compared). The two `g_UnitTypeEventList` helpers 0x00540B30 and
+  0x00540B70 are left unnamed.
+- **Totals** after merging `main` `90022fb9` (`totals-s7f.txt`, the 29 files' *Totals by class*): a-logs 628, a-run 340,
+  b 446, c 390, c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged; Phase 1 1 512, Phase 2 786,
+  blocked 328.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** sim/frame whole: 80, 81, 82, 86, 169, 202;
+  split: 211, 419. path/README whole: 102, 120, 127, 473; split: 111, 391. path/search whole: 130, 652, 714, 769; split:
+  736. drlg/lifecycle whole: 529, 531, 568–572, 574, 576, 679, 736, 749, 915; split: 745, 760, 845.
+- **Review:** Tier B, S7b and S7f together, by the extended request
+  [`2026-11-16-reverser-architect-review-plan-0066-s7b`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s7b.md).
+- **Next:** S7 is done on this lane (S7b, S7f); Phase 1's remaining batches as README § 4 lists them.

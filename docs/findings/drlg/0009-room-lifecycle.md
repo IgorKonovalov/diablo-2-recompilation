@@ -1194,6 +1194,71 @@ Rows are plan 0066's `drlg-lifecycle.md` rows.
   `RoomActivateA`'s neighbour step, re-seed, type init and act counters, are not in these logs. (0x0061991F–0x00619925,
   fn:DUNGEON_RoomCreate@0x00619890, run:2026-11-04-frame2, run:2026-11-04-frame3)
 
+### 15. Plan 0066 batch S7f: the inactive records' writer/reader pairs with a second tool (2026-11-16, `lane/n66o`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7f.py` (`df779d0e…`, section `lifecycle`; every site read by objdump and
+r2, as frame/0001 § 10). Output `workspace/logs/n66o/s7f/check-s7f.txt` (`b7d57335…`, `S7f total bad=0`). Rows are
+drlg/lifecycle's; each bullet names the writer sites, then the reader sites.
+
+- **Row 38, the room record (0x18):** two inserters write it, `InactiveRoomRecordFind` (0x00541D8B–0x00541DAA) and the
+  same code inlined in `InactiveUnitSave` (0x00542EA3–0x00542ECD): x at `+0x00`, y at `+0x04`, the three heads zeroed,
+  `+0x14` the next. Both walks stop at the first record whose x is below the key (`jg`, 0x00541D50, 0x00542E83), so the
+  list is x descending, y only compared for equality. The heads: items `+0x08` (pushed at 0x00541C3C), monsters `+0x0C`
+  (0x005424DE), units `+0x10` (0x0054306F); `InactiveRecordTake` reads all three (0x0054193C, 0x00541944) and unlinks by
+  `+0x14`. [C] (fn:sub_00541D20_InactiveRoomRecordFind@0x00541D20, fn:sub_00542E30_InactiveUnitSave@0x00542E30)
+- **Row 39, the item record (0x0F + n):** built on the stack and copied: `+0x00` 0, `+0x04` from 0x00558A10, `+0x08`
+  `0x00629F20(item)`, `+0x0C` the length `ITEMS_Serialize(item, buf, 0x400, 1, 1, 0)` returns, `+0x0E` its bytes, n + 0xF
+  bytes in all (0x00541B34–0x00541BA6). `InactiveItemRestoreOne` reads `+0x0C` and `+0x0E` (0x0054199B, 0x005419A6) and
+  `+0x04` (0x005419DB); `InactiveItemsRestore` reads `+0x04` and `+0x00` (0x00541AD0, 0x00541AD5). `+0x08` has no reader
+  in either, nor in `ActInactiveItemRecsExpire` (it reads the head and `+0x04`). [C] for the layout and its readers.
+  (fn:sub_00541B10_InactiveItemSave@0x00541B10, fn:sub_00541990_InactiveItemRestoreOne@0x00541990)
+- **Row 40, flag `0x40`:** set when 0x00573540(unit, 2) is non-zero (0x0054235A–0x00542363); the restore passes
+  `flags & 0x40` to `MonRegionUnitLeave` (0x00542934–0x00542954). [C] for the pair; what the callee does with it is its
+  own reading.
+- **Row 41, `+0x1C`:** −1 first (0x0054224B); 0x0058F440 returns AI control `+0x2C` and `+0x30`, or −1 for a non-monster or
+  when `+0x30` is not 1 (0x0058F44E, 0x0058F46C–0x0058F472, 0x0058F47D–0x0058F480); the save keeps the id only when it is not −1 and the type is 1
+  (0x0054246B–0x00542475). The restore passes `+0x1C` to `MonSetOwnerRestore` (0x005427E7–0x005427FB). [C]
+- **Row 42, `+0x20`, `+0x24`, `+0x28`:** `+0x20` is AI control `+0x34`, written in the same branch as `+0x1C` (so only
+  when the link type is 1), and 0x0058F440 then clears AI control `+0x2C` to −1 and `+0x34` to 0 (0x0058F4AF–0x0058F4BB).
+  `+0x24`: `0x00666120` moves the dword at AI control `+0x38` (0x0058F000) into the record and zeroes the source
+  (0x00542093–0x00542098, 0x00666120–0x00666124). `+0x28`: AI control's first dword (0x005422C9–0x005422D7, 0x005B0D60).
+  Readers: `+0x20` at 0x005425D6 and 0x005427DD; `+0x24` moved back by `InactiveMonAiRestore` (0x00541E91–0x00541EA2)
+  when non-zero, then whatever is left freed by 0x00666130 (0x00542959–0x00542963); `+0x28` to `MonAiInit`
+  (0x00542862–0x0054286B). [C]; the conditional `+0x20` and the clears are refinements, in backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+- **Row 43, `+0x2C`:** 0x00573520 returns monster data `+0x58` (0x00573533), stored at 0x005423F5; the restore passes it
+  to `MonRegionUnitLeave` (0x00542928, 0x00542949–0x00542954). [C]
+- **Row 44, `+0x30`, `+0x32`, `+0x3C`:** the name seed word (0x005422DF), the nine mod bytes (0x00542404–0x0054243B),
+  the superunique id word when 0x005A0180(unit, 2) sets `0x800` (0x00542305–0x0054231C). Read at 0x005426AF, 0x00542676,
+  0x00542696, 0x005428A1, 0x0054269A and 0x00541EC3. No instruction of the save, the restore or the AI restore touches
+  `+0x3B`, `+0x3E` or `+0x3F`. [C]
+- **Row 45, `+0x4C`, `+0x50`:** `InactiveMonAiSave` writes them from five sources (0x0054202B–0x00542133); the AI restore
+  reads them (0x00541E7D, 0x00541E83, 0x00541ECA, 0x00541ED0). [C]
+- **Row 46, `+0x58`:** the old monster head (0x005424D8–0x005424DB), then the record becomes the head (0x005424DE); the
+  restore walks by it (0x00542563) and so does 0x00542A8D. [C]
+- **Row 64, bit `0x200`:** the save copies unit `+0xC8` to `+0x14` (0x005424A1–0x005424AF); the restore sets `0x200` in
+  the new unit's `+0xC8` iff the record's has it (0x005428F9–0x00542903). [C] for the pair. No `or` of an immediate
+  holding `0x200` into `[reg+0xC8]` exists in `.text`; 18 register `or`/`mov` stores to `[reg+0xC8]` do, the restore's
+  among them, and the other 17 are not resolved, so "only" stays [I].
+- **Row 77:** the release (0x00542089–0x00542098) and the write back (0x00541E99–0x00541EA2) are the `+0x24` pair of
+  row 42. [C]
+- **Rows 57, 62, the `0` of `SpecialMonRestore`:** pushed as `SpecialModsApply`'s third argument (0x005A454E, after
+  `esi` and `ebx`, call 0x005A4558). `SpecialModsApply` (0x005A2120–0x005A21CA, `ret 0xC`) reads that argument once,
+  at 0x005A2123, and a zero skips its call of `sub_005A0C00_UniqueMinions` (0x005A2135). [C] for the argument and its
+  only test; that the skipped call is what makes minions is the callee's name, so row 62's "restored without new
+  minions" stays [I].
+- **Rows 61, 63, `MinionRestore`'s flag:** after `or word [eax+0x16], 0x10` (0x005A47DF) it fills {1, 2, 3, 4}
+  (0x005A47E4–0x005A47F9) and calls `g_UModHandlers[mod]` for those four (0x005A4806–0x005A481A) and for its nine saved
+  mod bytes (0x005A4825–0x005A4839) with `push 0`, where `SpecialModsApply` pushes 1 in the same slot (0x005A214D). The
+  handlers of mods 1 (`UModRndName`) and 8, 27, 28 (`UModResist`) test that slot first (0x005A0CE7, 0x005A138F) and skip
+  their body on 0: `rndname` before its `0x6AC690C5` step (0x005A0CF0). [C]
+- **Row 70, the drivers' bit 0:** `RoomUpdateOne` tests `[room+0x34] & 1` (0x0052D0FB) and `NewRoomsUpdate` the same
+  with `bl` = 1 (0x0052D19B, 0x0052D1C9; `ebx` not written between). Clear: `RoomPresetUnits`, the restore,
+  `RoomObjectsPopulate`, `RoomPopulate`, then the bit is set. Set: `RoomRestoredGet`, and when it returns 0
+  `RoomInactiveUnitsRestore` directly (0x0052D142, 0x0052D205), none of the three population calls. [C] for the driver;
+  the restore's spawn chain (`SpawnWithId`'s flags, `SUnitPathCreate`'s marks) stays [I].
+  (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
+
 ## Data touched
 
 - tbl:Levels.txt:SaveMonsters (leveldefs `+0x94`), tbl:Levels.txt:MonWndr (`+0x2E`), Levels `+0x03` (act).

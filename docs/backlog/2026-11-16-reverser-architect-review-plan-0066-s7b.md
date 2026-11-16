@@ -33,3 +33,23 @@ Worth checking:
    order being H2's emulation; (i) row 120's "seen by tick N + 1" raised on the placement alone.
 4. Spec corrections and the D6 contradiction in
    [`2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections`](2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections.md).
+
+**2026-11-16, extended to S7f (`lane/n66o`).** Please review batch **S7f** with S7b (sim/frame 8, path 11, path-search 5,
+drlg/lifecycle 16 rows). Static only: no game, no Ghidra; constants, tables and writer/reader pairs read with objdump and r2.
+
+1. `python3 -I tools/sweep2_s7f.py all` under a 4 GB scope gives `workspace/logs/n66o/s7f/check-s7f.txt` (`b7d57335…`, 182
+   lines, `S7f total bad=0`) byte for byte; `manifest-s7f.sha256` passes from `workspace/logs/n66o/s7f`, `dev/manifest-dev.sha256`
+   from `dev/` (four development runs and the reading listings). Every site is decoded by both tools and compared with the
+   expected instruction, operands normalised (`norm`, the import slots by r2's own `ii`).
+2. Outcomes: raised 27, raised in part 8 (frame 29, 44; path-README 8, 44; path-search 30; lifecycle 62, 64, 70), none
+   contradicted, none moved. Records: frame/0001 § 10, path/0001 § 17, drlg/0009 § 15.
+3. Judgment calls: (a) a code reading confirmed by a second tool at every instruction, plus a full xref or table scan,
+   taken as `[C]` for a constant, a table, a branch shape or a writer/reader pair, never for the role a callee's name gives
+   (rows 40, 43, 62 keep the callee's effect [I]); (b) frame 11 and lifecycle 42 filed raised with refinements, not "in
+   part": the rows' statements hold and the code adds readers or a condition; (c) search 30's rerun of
+   `tools/room_extent.py` counted only with `LvlMaze.txt` as the second source of the sizes, the room rule left [I];
+   (d) search 26's bound checked by enumeration (`h0` 0..599, `b1C` 0..255) of the loop as read, not by a run; (e) README 8's
+   "not interchangeable" scoped to the `PATH_` functions (0x00648000–0x0064A000), the room rectangle sharing the offsets
+   elsewhere; (f) lifecycle 61 raised on the same static read as 63, the run's stat-12 neutrality unchanged.
+4. Refinements for the spec-writer in
+   [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
