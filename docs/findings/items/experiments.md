@@ -4153,3 +4153,36 @@ request handlers, inventory families) will add their own sections under this hea
   `InvPlaceSocketed`, `BeltFreeSlot` and `0x63`'s placement, `NoManaMsg`'s return of 2); `TradeBeltLock`'s use by
   `0x1C`, which no case reaches; a page made on first use (the allocator); `InvGridFree`; `InvItemToCursor`'s
   non-type-4 unit in the type-4 list.
+
+### Part 5a: the search on full pages and in sequence, InvGridFree, the belt tests, BeltPutItem, the ground expiry and the quest call (2026-11-16)
+
+- **Question:** do `InvSpotFindBySize` on full, near-full and one-hole pages and in sequence, `InvGridFree`,
+  `BeltHoldsSameGroup`, `ItemAutoBeltTest`, `BeltPutItem`, `ItemGroundExpiry` with quality 9 and `ItemPlaceOnGround`
+  with its flag set map their inputs as [items/inventory](../../specs/items/inventory.md) §§ B2, B5, F3, F4, K1, K2 and
+  the worked example state, up to the callee each ends at? Claims in
+  [items/0013 § 14](0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 6 and items/0014 § 2.
+- **Setup:** `main` `30e8a46c` merged first. One kept launch per family on `workspace/ghidra-n66z` (`-Xmx3G`,
+  `MemoryMax=4G`, about 77 s for the eight), after one development pass (`dev5a/`, 60 cases per family, an earlier tool
+  revision whose `ground` model lacked `+0xC4` bit 0, with its `check-dev.txt` and `manifest-dev.sha256`, 41 lines,
+  passing from its directory; not cited). New tool `tools/items_s4e5_emu.py` (`43fe6fcc…`; draws from
+  `random.Random("n66z-s4e5-<family>")`, `seq` also replays the worked example's two sequences), building its cases
+  on `tools/item_emu2.py`'s world (search, seq, gridfree, holds, autobelt, beltput; its regions zero-filled before
+  every case by the memory spec) and `tools/item_emu3.py`'s (expiry, ground), both unchanged; parts 1–4's tools and
+  `run/` to `run4/` untouched. Guards: the error routine's callees 0x00408A60, 0x00681E09, and the allocator entries
+  0x0040B430, 0x0040B480, 0x0040B4B0; none is hit. Observed: the error routine 0x00408090 (item_emu2's families),
+  `InvItemRemove` 0x0063AAF0 (`beltput`, return address asserted 0x0063B138), `QUESTS_RaiseItemDropped` 0x00543DB0
+  (`ground`, return address 0x00558B2B, ECX and the pushed item asserted). No import is reached.
+- **Families:** `search` 3 000, `seq` 733 (62 sequences), `gridfree` 1 500, `holds` 1 500, `autobelt` 1 200, `beltput`
+  1 500, `expiry` 800, `ground` 400.
+- **Result:** `workspace/logs/n66z/s4e/run5/check.txt` (`6e87e907…`, 137 lines), `static.txt` (`320b0b98…`, 26 lines,
+  25 objdump pins, each as cited), `manifest.sha256` (`fc4c8808…`, 42 lines, passes from that directory); `cases`
+  regenerates every `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces `check.txt` from the committed
+  revision. 10 633 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; outcomes per family in
+  `check.txt` (each count in items/0013 § 14 is copied from it). **22 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): item_emu2's and item_emu3's tables as their runs declare them, and the belt row
+  `0x007447B4` (16 × 1, `.data`), read as the image's value; every other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; the callers (that a stock path makes no
+  quality-9 item; `ItemToBelt`'s steps before `BeltPutItem`); `InvItemRemove` and what follows in `InvGridPut`;
+  `QUESTS_RaiseItemDropped` itself; `GroundDropCell` and `CursorDrop` (the search's pool allocation, ruling R2: inventory
+  63 and 81's remainder go to H4d).

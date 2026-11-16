@@ -95,7 +95,7 @@ No community source was compared; every claim is from the code. **2026-11-04 (`l
 - [I] The page table's index is `page + 2`; index 0 is the body (13 × 1), index 1 the belt (16 × 1), both sizes in the image, not the tables. Each entry is 16 bytes: `+8` width, `+9` height, `+0xC` the cells (u32 unit pointers, `row × width + col`). (data:0x0074479C, data:0x007447B4, fn:sub_0063ADD0_InvPageGet@0x0063ADD0)
 - [I] A page is made on first use from the row given then. A later request with another size returns 0, so nothing is placed. *2026-11-16, § 13: the size refusal `[C]` (ADR-0015, `pageget`); the first use reaches the allocator `0x0040B430` (b, H4d); the index is signed and wraps when shifted by 4.* In a save moved between game types this would be the refusal; no run reaches it. (0x0063AE53, 0x0063AE5A, fn:sub_0063ADD0_InvPageGet@0x0063ADD0)
 - [C] (ADR-0021) `InvGridPut(col, row, index, invrow)` refuses a zero size. Indices 0 and 1 force the size to 1 × 1 and have **no** bound test; index 2 and above refuse `col < 0`, `col + w > gridX`, `row < 0`, `row + h > gridY`, then an occupied cell. The rest ends at `InvItemRemove`, after, `[I]`: the page fill, the page byte, the location byte. (fn:sub_0063AFD0_InvGridPut@0x0063AFD0, run:2026-11-04-inventory-emu)
-- [I] Note `InvGridFree` tests no bound itself; `InvPlaceItem`'s direct branch clamps a negative `x`, `y` to 0 and relies on `InvGridPut`. *2026-11-16, § 13: the clamp and `InvGridPut`'s refusals `[C]` (ADR-0021, `place`); `InvGridFree` not run.* (0x005602BE, fn:sub_00560200_InvPlaceItem@0x00560200)
+- [I] Note `InvGridFree` tests no bound itself; `InvPlaceItem`'s direct branch clamps a negative `x`, `y` to 0 and relies on `InvGridPut`. *2026-11-16, § 13: the clamp and `InvGridPut`'s refusals `[C]` (ADR-0021, `place`); `InvGridFree` not run.* (0x005602BE, fn:sub_00560200_InvPlaceItem@0x00560200) *Update 2026-11-16 (plan 0066 S4e part 5a): `InvGridFree`'s lack of a bound test `[C]` (ADR-0015), family `gridfree`, [§ 14](#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu); the clamp was § 13's.*
 - [I] `InvGridPut`'s location byte (`+0x69`): body `(col > 10) + 3`, belt 2, a page 1. (0x0063B1BF, 0x0063B1D2, 0x0063B1E9, fn:sub_0063AFD0_InvGridPut@0x0063AFD0)
 
 ## 3. The placement search
@@ -124,7 +124,7 @@ score: n = 0
 - [C] (ADR-0015) On an empty page, one cell high for a player lands at `(W − 1, H − 1)`, taller at `(0, 0)`; for any other owner one cell high lands at `(W − 1, 0)`, taller at `(0, 0)`. (fn:sub_0063B5E0_InvSpotOneHigh@0x0063B5E0, fn:sub_0063B810_InvSpotOther@0x0063B810, run:2026-11-04-inventory-emu)
 - [I] The branches for `h == 3` and `w ≤ 2`, for 2 × 2 and for the rest call three bodies equal byte for byte with their call displacements masked (`static.txt`), so the size only tells the height-1 case from the others. The separation of the branches is not a behaviour. (0x0063B790, 0x0063B7D0, 0x0063B810, `static.txt`)
 - [C] (ADR-0015) The early stop at 255 is not separable from no stop: 255 is the highest score and only a strictly higher one replaces, control `no255` fails 0 of 4 000, and a reimplementation may leave it out. (fn:sub_0063B620_InvSpotFind@0x0063B620, run:2026-11-04-inventory-emu)
-- [I] A best of 0 fails only when no spot scores above 0, which needs a free rectangle touching nothing and no slide to one that touches. Sliding a free rectangle toward any occupied cell or edge finds a higher score, so a player's search fails only where no spot fits. The `search` family holds no counter-case, and this is a reading of the loop. (fn:sub_0063B490_InvSpotFindRow@0x0063B490, fn:sub_0063B620_InvSpotFind@0x0063B620, run:2026-11-04-inventory-emu)
+- [I] A best of 0 fails only when no spot scores above 0, which needs a free rectangle touching nothing and no slide to one that touches. Sliding a free rectangle toward any occupied cell or edge finds a higher score, so a player's search fails only where no spot fits. The `search` family holds no counter-case, and this is a reading of the loop. (fn:sub_0063B490_InvSpotFindRow@0x0063B490, fn:sub_0063B620_InvSpotFind@0x0063B620, run:2026-11-04-inventory-emu) *Update 2026-11-16 (plan 0066 S4e part 5a): `[C]` (ADR-0015) on full, near-full and one-hole pages, family `search`, [§ 14](#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu).*
 
 **What the run separates** (`check.txt`; each control fails that many of `search`'s 4 000 cases, of `place`'s 500 where named):
 
@@ -161,7 +161,7 @@ score: n = 0
 - [C] (ADR-0015) `BeltFreeSlot`, each case to its return, boxes reached 0..12 and 15 (`check.txt` outcomes 15, `belt`). The `walk1` control (column walk by 1) fails 192, `nogroup` 126, `noauto` 337, `defaultbelt` 160, `secondset` 237 of 2 000. (fn:sub_0063C600_BeltFreeSlot@0x0063C600, run:2026-11-04-inventory-emu)
 - [C] (ADR-0021) `BeltPlace` ends at `InvGridPut(box, 0, 1, 0)`, or returns 0 where the search does. After, `[I]`. (fn:sub_0063C790_BeltPlace@0x0063C790, run:2026-11-04-inventory-emu)
 - [I] A row with `autobelt` 0 (stock `isc`, `tsc`, `yps`, `vps`, `wms` among them) is in no list, so it joins only a column whose bottom box holds its own class. (0x0063C731, tbl:Misc.txt:autobelt, fn:sub_00628A40_PotionSameGroup@0x00628A40)
-- [I] **`ItemAutoBeltTest` is always 1** on an item: an `autobelt` row returns 1, any other compares `BeltHoldsSameGroup` (0 or 1) with −1. So the pickup's belt branch always calls `BeltPlace`, and the column search in it decides. (0x00628BFD, 0x00563716, `static.txt`)
+- [I] **`ItemAutoBeltTest` is always 1** on an item: an `autobelt` row returns 1, any other compares `BeltHoldsSameGroup` (0 or 1) with −1. So the pickup's belt branch always calls `BeltPlace`, and the column search in it decides. (0x00628BFD, 0x00563716, `static.txt`) *Update 2026-11-16 (plan 0066 S4e part 5a): `[C]` (ADR-0015) for every item the test accepts, families `autobelt` and `holds`; a null item, a non-item or a row past the table ends at the error routine 0x00408090, [§ 14](#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu).*
 - [I] **`0x23` does not test `numboxes`:** `ItemToBelt(guid, box, 0)` → `BeltPutItem` needs 1 × 1, beltable, `box < 16`; `InvGridPut` refuses an occupied box. Whether a box past the belt's count stays is Phase 2's. (0x0063C4C0, fn:sub_0063C4F0_BeltPutItem@0x0063C4F0, fn:sub_0055E9B0_ItemToBelt@0x0055E9B0)
 - [I] `0x24` → the box's column shifts down (`BeltColumnShift`, items/0012 § 3 at `0x0055EDC0`). `0x25` swaps in place with no shift. `0x63` needs page 0 and an empty cursor, and returns 0 with no room. (fn:sub_00562250_BeltToCursor@0x00562250, fn:sub_0055EDC0_BeltColumnShift@0x0055EDC0, fn:sub_0055EB30_BeltSwapCursor@0x0055EB30, fn:sub_0054D520_SrvPacket63Handler@0x0054D520)
 - [I] **A smaller belt:** `BeltOverflow(new belt or null)` walks boxes 0..15; each item at or above the new `numboxes` is removed, set to page 0 and placed by the search, and if that fails dropped by the cell search (`0x00555DA0`, P1.3). Its callers are the body moves' belt-type branches. *Corrected 2026-11-04 (`lane/r60d` review): 4 direct calls: 0x00560E18, 0x00561058, 0x00563EE4, and 0x0057F47A on a corpse's making, with a null belt; 0x00560C45 is its own call of the ground search (`tools/call_arg_sites.py`, items/0017 B8).* *2026-11-15: the corpse call observed, § 11.* (fn:sub_005608C0_BeltOverflow@0x005608C0, 0x00560C45, 0x00563D20, 0x0057F47A)
@@ -395,6 +395,69 @@ observed. No import is reached; the only allocators reached are `InvPageGet`'s, 
 - Not covered here (S4e part 5): the use rows 21, 22, 34, 38, 52, 54; the `put`, `search`, `merge`, `drop`, `ground`,
   `expiry` and belt families (inventory 20, 22, 25–27, 47, 48, 55, 57, 58, 63, 67, 81, 84, 87, 98); what follows
   `InvTakeItem`, `BeltFreeSlot` and `InvItemRemove`; `InvGridFree`.
+
+## 14. Plan 0066 batch S4e part 5a: the search on full pages and in sequence, `InvGridFree`, the belt tests, `BeltPutItem`, the ground expiry's quality 9 and the quest call (run:2026-11-16-sweep2-s4e-emu)
+
+Eight families, 10 633 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 22 controls, each
+separating, `passed` 0 (`tools/items_s4e5_emu.py`, `workspace/logs/n66z/s4e/run5/check.txt`; record in
+[experiments](experiments.md#part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expiry-and-the-quest-call-2026-11-16)).
+The cases are built on `tools/item_emu2.py`'s world (search, seq, gridfree, holds, autobelt, beltput; its regions
+zero-filled before every case) and `tools/item_emu3.py`'s (expiry, ground), unchanged. Every case runs from the
+function's entry to its return or a declared callee's entry (ADR-0021; `lane/n66z`). No import and no allocator is
+reached (the allocator entries are guards; none is hit).
+
+- [C] (ADR-0015) **A player's search fails only where no spot fits**, family `search` (3 000 on full, near-full and
+  one-hole pages, every owner kind). Of the 1 747 player cases, the 779 with a free rectangle of the item's size inside
+  the page (an enumeration that does not use the search's orders) all return 1, 191 of them at a spot scoring below
+  255; the 968 without one all return 0; no other. The control `noedge` (the page's edges uncounted, under which a
+  free spot can score 0 and a best of 0 refuses) separates 91, `firstall` 96. (fn:sub_0063B490_InvSpotFindRow@0x0063B490,
+  fn:sub_0063B850_InvSpotFindBySize@0x0063B850, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) **The search in sequence**, family `seq` (733 cases in 62 sequences; each case's page is the earlier
+  placements, each item its own cell pointer; 60 sequences end at a refusal). The worked example's two sequences on an
+  empty 10 × 4 player page emulate as `(9, 3)`, `(9, 2)`, `(9, 1)`, `(9, 0)`, `(8, 3)` for five 1 × 1 items and `(0, 0)`,
+  `(9, 0)`, `(2, 0)`, `(0, 3)` for 2 × 3, 1 × 4, 2 × 2, 1 × 1. Controls `firstall` 277, `geq` 301, `h1general` 205.
+  (fn:sub_0063B850_InvSpotFindBySize@0x0063B850, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) **`InvGridFree` (0x0063A8A0) tests no bound**, family `gridfree` (1 500; EAX the page, ECX the row,
+  DL the width, then the column and the height on the stack, `ret 8`). It tests cell `row × gridX + column` (the
+  page's byte `+8`, cells at `+0xC`) for every cell of the rectangle, rows and columns compared signed, and returns 0 at
+  the first occupied one, else 1; a zero width or height returns 1. Of the 879 rectangles reaching outside the page,
+  288 return 1. Controls `bounded` 578, `clip` (outside cells free) 435, `colwrap` 183. (0x0063A8AC, 0x0063A8D6,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) **`BeltHoldsSameGroup` (0x0063C560) returns 0 or 1**, family `holds` (1 500; inventory, item): 0 for a
+  bad signature, a non-item, `isc` or `tsc` (the codes `0x20637369`, `0x20637374`), or a belt page made at another size
+  than the image's 16 × 1 row `0x007447B4`; else 1 when one of boxes 0..3 holds an item of the same class or the same
+  potion list (`PotionSameGroup` 0x00628A40), else 0: 351 and 1 149. Controls `allboxes` 192, `nogroup` 262, `tsc_ok` 13.
+  (0x0063C59C, 0x0063C5A3, 0x0063C5DA, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) **`ItemAutoBeltTest` (0x00628BA0) returns 1 for every item it accepts**, family `autobelt` (1 200;
+  inventory, item): a row with `autobelt` (Items `+0x131`) returns 1; any other compares `BeltHoldsSameGroup`'s 0 or 1
+  with −1 and returns 1 (1 173 in all). A null item, a non-item or a row past the table's count ends at the error
+  routine 0x00408090 (27; lines 0x9A6, 0x9A7, 0x9A9). Controls `holds_ret` 315, `auto_only` 359. With the pickup's
+  branch read by objdump (0x00563716 the call, 0x0056371B `test eax, eax`, 0x0056371D `je`, 0x00563728 `BeltPlace`),
+  the branch past a beltable test always calls `BeltPlace`. (0x00628BEA, 0x00628BFD, 0x00628C09, 0x00563716,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **`BeltPutItem` (0x0063C4F0) to `InvItemRemove`**, family `beltput` (1 500; inventory, item, box).
+  It refuses a non-item, a type whose ItemTypes `+0x19` is 0, a size other than 1 × 1, a box above 15 as unsigned
+  (−1 and `0x80000000` among them; 0x0063C4D0 `cmp ecx, 0xf; ja`), and through `InvGridPut(box, 0, 1, 0)` a bad
+  signature, a belt page made at another size than 16 × 1, or an occupied box; otherwise it reaches `InvItemRemove`
+  0x0063AAF0 with ECX the item (351, return 0x0063B138). The worn belt's `numboxes` is not tested (control `numboxes`
+  183); `signed_box` 254, `size_any` 17. `ItemToBelt`'s own steps before it are not on this route.
+  (fn:sub_0063C4F0_BeltPutItem@0x0063C4F0, 0x0063C4C0, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015) **Quality 9 adds 45 000**, family `expiry` (800, quality 9 weighted): 190 of 190 non-quest quality-9
+  cases; a quest base gives 0 first (26). Controls `q9plain` 166, `q9as4` 190. That no stock path makes a quality-9
+  item stays `[I]` (a reading of the item creation's quality writers, not run). (fn:sub_00558A10_ItemGroundExpiry@0x00558A10,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0021) **`ItemPlaceOnGround`'s quest call is last**, family `ground` (400; ECX the game, EDX the flag; item,
+  room, x, y). With a room and a flag of 1, `0x100` or `0xFFFFFFFF`, it reaches `QUESTS_RaiseItemDropped` 0x00543DB0
+  (ECX the game, the item pushed, return 0x00558B2B; 310) with the cell's `0x200`, the path's room and cell, mode 3,
+  `+0xC4` and the expiry already written (controls `raise_first`, `flag_ignored` 310 each); a flag of 0 returns with the
+  same writes (60). After the call only `pop esi`, `pop ebx`, `pop edi` and `ret 0x10` (0x00558B2B..0x00558B31, objdump).
+  A null room returns with nothing written and no call, the flag set or not (35; `null_raises` 30).
+  **Refinement:** `+0xC4` ends `| 0x2001003`: bit 0 is set by `UNIT_SetMode` (0x006246B3, 0x006246E3), called with mode 3
+  at 0x00558AEC, beside the function's own `0x1002` and `0x2000000` (control `nomodebit` 365).
+  (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0, 0x00558B1F, 0x00558B26, run:2026-11-16-sweep2-s4e-emu)
+- **Moved, not run:** `CursorDrop` with a full surround and its null-room test (inventory rows 63, 81's remainder)
+  lie after `GroundDropCell`'s field-state allocation from the shared pool (0x00555DEA → 0x0064DEE8), so ruling R2
+  sends them to the harness (H4d). `[I]` here. (0x00563C96, 0x00563C9B)
 
 ## Data touched
 

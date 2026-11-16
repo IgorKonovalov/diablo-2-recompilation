@@ -3108,3 +3108,52 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `ItemAutoEquipSlot` 67); the part 4 remainders (17's callers, 23's `InvGridFree`, 39 after `BeltFreeSlot`, 42 after
   `InvTakeItem`); then the static (c) and c-emu remainders of S4c/S4d listed in part 1's note. Extend
   `tools/items_s4e4_emu.py`'s world (or a new tool) into `run5/`. Tier B review once S4e is whole.
+
+### 2026-11-16 — Phase 1, batch S4e part 5a (reverser-static, `lane/n66z`): the search, the belt tests, the ground expiry and quest call, 10 inventory rows settled in whole or in part; resume note
+
+- **Done.** Merged `main` `30e8a46c` first (`metrics.md` only, no conflict; README § 1 recomputed from the 29 files'
+  rows and *Totals by class*). New tool `tools/items_s4e5_emu.py` (`43fe6fcc…`; parts 1–4's tools and `run/` to
+  `run4/` untouched; it builds on `tools/item_emu2.py`'s and `tools/item_emu3.py`'s worlds, unchanged), eight families
+  on `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, one kept launch each, about 77 s for the eight) after one
+  development pass (`dev5a/`, 60 cases per family, an earlier revision, `manifest-dev.sha256`, not cited): `search`
+  (`InvSpotFindBySize` on full, near-full and one-hole pages), `seq` (the search in sequence, the worked example's
+  two first), `gridfree` (`InvGridFree`), `holds` (`BeltHoldsSameGroup`), `autobelt` (`ItemAutoBeltTest`), `beltput`
+  (`BeltPutItem` to `InvItemRemove`), `expiry` (quality 9), `ground` (`ItemPlaceOnGround` with its flag, to
+  `QUESTS_RaiseItemDropped`). 10 633 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 22 controls,
+  each separating, `passed` 0. No import, no allocator reached. Record:
+  [run:2026-11-16-sweep2-s4e-emu part 5a](../findings/items/experiments.md#part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expiry-and-the-quest-call-2026-11-16),
+  `workspace/logs/n66z/s4e/run5/` (`check.txt` `6e87e907…`, `static.txt` `320b0b98…`, `manifest.sha256` `fc4c8808…`,
+  42 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
+  committed revision). Claims in
+  [items/0013 § 14](../findings/items/0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 6 and items/0014 § 2.
+- **Rows settled (items/inventory).** Raised: 22, 98, 48, 55; 47 and 84 with refinements (the error routine for a
+  null item, a non-item or a missing row; `+0xC4` bit 0 from `UNIT_SetMode`); 23's remainder (`InvGridFree`). Raised in
+  part: 87 (quality 9's `+45000`; "no stock path makes one" stays c, S4e continuation), 81 (`ItemPlaceOnGround`'s null
+  room; `CursorDrop`'s and `DropCreateItem`'s tests → b, H4d, no class move). **Class move:** 63 c-emu → b (H4d): its
+  claim is the room `GroundDropCell` returns to `CursorDrop`, past the search's pool allocation 0x0064DEE8 (ruling R2).
+  Refinements routed by [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5a-refinements.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** (recomputed from the 29 files' rows and *Totals by class*; `main` `30e8a46c`): a-logs 623, a-run 334,
+  b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. README
+  §§ 1, 3, 4 (S4e and H4d rows) updated.
+- **Judgment calls:** (1) row 22's control is `noedge`, the one reading under which a free spot scores 0 and a best of
+  0 refuses; the claim itself rests on the fit enumeration, which does not use the search's orders; (2) row 55
+  raised from the emulated return plus the objdump pins of the pickup's branch (0x0056371B, 0x0056371D, 0x00563728),
+  not from an emulated pickup; (3) row 63 moved whole (its claim is the search's result), row 81 split (the
+  `ItemPlaceOnGround` half runs without the search); (4) `ground`'s `+0xC4` filed as a refinement of K1, not a
+  contradiction (the spec lists the function's own bits; bit 0 comes from its `UNIT_SetMode` call); (5) row 48 raised
+  on `BeltPutItem` (the inventory route), `ItemToBelt`'s lookup before it named as out of scope.
+- **Resume (part 5b, a fresh lane on `lane/n66z`):** the use rows 21, 22, 34, 38, 52, 54 (part 4's resume note: declare
+  the skill list for `UNIT_GetUsedSkill` 0x00620250, `UnitIsDead` 0x005541B0, the pet list for `PETS_GetUnitOfType`
+  0x00574EC0, 0x0065A590, `ItemBaseIsQuest` 0x00628CD0; `ItemUse` C2 needs a client for `PlayerGetClient` 0x005531C0);
+  inventory 20 and 45/99's remainder (`InvGridPut` past `InvItemRemove` 0x0063AAF0: `InvAppendItem` 0x0063AF20,
+  `InvPageAppend` 0x0063AF70, `InvGridFill` 0x0063A910, 0x00620470, 0x006204C0, 0x00629ED0, `ItemSetPage` 0x00628280,
+  then the location byte at 0x0063B1BF..0x0063B1EF; `InvPlaceSocketed` for 45/99), 25–27 (`InvPlaceItem` past the put
+  to `ItemSkillQtyAdd` 0x0055C270 and the charm call; `ItemSkillQtyAdjust` 0x0055C110 with a Books row and stat 70),
+  57 (`StackMerge` past the first `UnitSetStat`: check whether `UnitSetStat` reaches the pool allocator, as economy 11
+  did, then b), 58 (`StackRequest` 0x0055E7C0 on part 3's world: `GameFindUnit`, `ItemGetPage`, `ItemsCanStack`; to
+  `StackMerge` 0x0055E590; note the class compare at 0x0055E8A3 after `ItemsCanStack`), 67 (`ItemAutoEquipSlot`
+  0x0055D710); the remainders of 17 (callers of type 2 with class `0x152`/`0x153`), 39 (after `BeltFreeSlot`), 42 (after
+  `InvTakeItem`), 87 (quality writers), and the S4c/S4d static (c) and c-emu remainders in part 1's note. New tool
+  and `run6/`; do not overwrite `run5/`. Tier B review once S4e is whole.
