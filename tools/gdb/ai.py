@@ -40,6 +40,15 @@
 #   R7W   rev 7: one word of the plan 0069 list, read-only, while a decision is open: k, key, v, ra (the breakpoint), fr. The keys
 #         and their readers are R7WORDS below (the think-time words of R70, R73 and the return-site words of R10, R32, R48, R54,
 #         R78, R79, R118 and R119 are what tools/ai.py puts in a decision's "r7" map for tools/ai_model_check.py)
+#   R7W rev 8: more words of the same form (keys in R7WORDS): "R118.cmp" and "R119.cmp" [dist, aip(4)] as signed words at the range
+#         compare (0x005E1E45, 0x005E216D), "R120.hasskill1/2/3" (MonHasSkill 0x005DD2D0's EAX at 0x005E281B, 0x005E29B4, 0x005E2A55),
+#         "owner.mode" (R56: the owner's Unit+0x10 at 0x005F8FD3), "R48.act" (DRLG_ActFromLevelId's AL at 0x005F6F21) and "R48.quest21"
+#         (the quest state call's EAX at 0x005F6F40). "R118.ctl" [mask, mode, n] marks the perturbation control: mask bit 0 = the flag word's breakpoint
+#         (0x005E1E34) armed, bit 1 = the compare word's (0x005E1E45). AI_R118_CTL=alt (default) takes the masks 3, 0, 2 in turn
+#         over the R118 decisions of a game, on = 3, cmp = 2, off = 0, so a log holds R118 decisions run with both breakpoints,
+#         with none and with the compare's alone, and the seed steps of the groups can be compared (tools/ai_r118_probe.py).
+#         The compare word is reached only when the flag test fell through (flag 0), so with bit 1 armed its absence
+#         means flag != 0 or no target path; the model reads that.
 #   AII/AIQ rev 7: MonAiInit 0x005B0E00's call of a row's init function (0x005B0F18) for the inits in INIT_FNS (AI_INITS, default
 #         row 43's 0x005F6630 and state 11's 0x005E80E0), and its return (0x005B0F1B): u, id, c, fn, ctl, st (the state argument),
 #         cw (the AiCtl 0x40 bytes hex, before and after), blk (the nine words of the init's block), s, c4, fr. Not tied to a decision.
@@ -54,7 +63,7 @@ import struct
 
 import gdb
 
-REV = 7   # rev 7: the R7W word lines, the AII/AIQ init lines, the think 0x005B0CD0 window (R1) and the calls inside AiVileMotherSpawn 0x005F9E30 (plan 0069 Phase 2; every rev 6 line is kept in form); rev 6: the call GameFindUnit 0x00552F60 at 0x0058F0FF inside a pending MonsterOwner 0x0058F0D0 is logged again (rev 4 and 5 hid it from the Scarab
+REV = 8   # rev 8: w_eax reads EAX itself (rev 7 dereferenced it: the R118 and R119 flag words of rev 7 logs are not the call's result); the words of plan 0069 rev 8 (R118.cmp and R119.cmp, R120.hasskill1..3, owner.mode of R56, R48.act and R48.quest21; the R118 words armed per decision by AI_R118_CTL, with the R118.ctl line); rev 7: the R7W word lines, the AII/AIQ init lines, the think 0x005B0CD0 window (R1) and the calls inside AiVileMotherSpawn 0x005F9E30 (plan 0069 Phase 2; every rev 6 line is kept in form); rev 6: the call GameFindUnit 0x00552F60 at 0x0058F0FF inside a pending MonsterOwner 0x0058F0D0 is logged again (rev 4 and 5 hid it from the Scarab
 #          model, 36 of 101 Scarab decisions mismatched at the first boundary on the development logs of run:2026-11-04-ai-r5); rev 5: no AIB between a decision's MSM0 and MSM1 (those calls are made inside the command, 0x00552F60@0x0058F0FF), and an AIL
 #          marker at the 600-call limit; rev 4: AIR lines (the result of each logged boundary call, from the return-site breakpoints of
 #          tools/gdb/ai-retsites.txt) and 48 boundary calls per decision (rev 3: 8); rev 1: the development logs (dev-*); rev 2: the six PathPlan rets (rev 1 logged the first three); rev 3: the
@@ -184,6 +193,8 @@ def _ai_main():
         return False
 
     bnd_bps = []
+    r118_bps = []     # rev 8: the R118 word breakpoints, armed per decision (R118_CTL), never by arm_bnd
+    R118_CTL = os.environ.get("AI_R118_CTL", "alt")        # alt | on | off
 
     retbp = {}
 
@@ -193,6 +204,9 @@ def _ai_main():
 
     def arm(on):
         arm_bnd(on)
+        if not on:
+            for b in r118_bps:
+                b.enabled = False
         if not on:
             for ra in list(st["retarmed"]):
                 retbp[ra].enabled = False
@@ -204,9 +218,10 @@ def _ai_main():
         return s[-1] if s and s[-1] and s[-1].get("open") else None
 
     class Bp(gdb.Breakpoint):
-        def __init__(self, addr, fn, store=None):
+        def __init__(self, addr, fn, store=None, key=None):
             super().__init__("*0x%08X" % addr, internal=True)
             self.silent = True
+            self.key = key
             self.fn = fn
             if store is not None:
                 store.append(self)
@@ -223,6 +238,7 @@ def _ai_main():
         st["stk"] = []
         st["plr"] = 0
         st["row"], st["tot"], st["n"], st["capped"] = {}, 0, {}, set()   # the caps are per game (a case of a shared process)
+        st["n118"] = 0
         arm(False)
         emit("AGM", {"game": st["game"]})
 
@@ -289,6 +305,15 @@ def _ai_main():
         f["nb"] = 0
         f["out"] = 0
         arm(True)
+        if d["th"] == 0x5E1E00:           # rev 8: the perturbation control of R118's word breakpoints
+            n118 = st.get("n118", 0)
+            st["n118"] = n118 + 1
+            mask = {"on": 3, "cmp": 2, "off": 0}.get(R118_CTL)
+            if mask is None:                  # alt: both words, none, the compare word alone, in turn
+                mask = (3, 0, 2)[n118 % 3]
+            for b in r118_bps:
+                b.enabled = bool(mask & (1 if b.key == "R118.flag0x20" else 2))
+            emit("R7W", {"k": f["k"], "key": "R118.ctl", "v": [mask, R118_CTL, n118], "ra": 0x005B186F, "fr": frame()})
 
     def on_exit():
         s = st["stk"]
@@ -461,8 +486,18 @@ def _ai_main():
             return [p, u32(reg("ebp") + off), u32(p) if p else None]
         return f
 
+    def w_cmp(off):
+        """The two words of a `cmp [ebp+off], eax` before it runs: [dist, aip(4)] as signed 32-bit values."""
+        return lambda: [s32(reg("ebp") + off), sreg("eax")]
+
+    def sreg(n):
+        v = reg(n)
+        return v - (1 << 32) if v & 0x80000000 else v
+
     def w_eax():
-        return s32(reg("eax"))
+        # rev 8: the register itself. Rev 7 read the dword AT the address in EAX here (s32 reads memory), so its R118.flag0x20 and
+        # R119.flag0x20 words were *EAX of a StatListFindFlag result (a pointer or small value, or a MemoryError and no line for 0)
+        return sreg("eax")
 
     def w_region():
         return s32(reg("esi") + 0x2D4)      # AiTrapArrowKind's region word, before its test (0x005FB674)
@@ -473,9 +508,22 @@ def _ai_main():
         ("MonsterOwnerRef", 0x005F6EED, w_pair(-0x1C, -0x18)),   # R48: (guid, type) after MonsterOwnerRef 0x0058F090
         ("AiNearestPlayer", 0x005E73BD, w_nearest(-0x8)),        # R54: (p, f, type of p) after AiNearestPlayer 0x005DDF20
         ("AiNearestPlayer", 0x005E690E, w_nearest(-0x10)),       # R32: the same call inside AiNpcNearPlayer 0x005E68F0
-        ("R118.flag0x20", 0x005E1E34, w_eax),                    # R118: StatListFindFlag(t, 0x20) 0x00625760
         ("R119.flag0x20", 0x005E215C, w_eax),                    # R119: the same call at 0x005E2157
         ("arrow.region", 0x005FB674, w_region),                  # R78, R79: AiTrapArrowKind's +0x2D4 word
+    )
+    # rev 8 words. R118_WORDS are armed per decision (the perturbation control, AI_R118_CTL), the others like R7WORDS.
+    R118_WORDS = (
+        ("R118.flag0x20", 0x005E1E34, w_eax),                    # (also in R7WORDS' list of rev 7; moved here, same key and site)
+        ("R118.cmp", 0x005E1E45, w_cmp(-0xC)),                   # R118 step 1's range test `cmp [ebp-0xC], eax` (dist, aip(4))
+    )
+    R8WORDS = (
+        ("R119.cmp", 0x005E216D, w_cmp(-0x8)),                   # R119: `cmp [ebp-8], eax` (dist, aip(4))
+        ("R120.hasskill1", 0x005E281B, w_eax),                   # R120: MonHasSkill 0x005DD2D0 at 0x005E2816 (Skill1)
+        ("R120.hasskill2", 0x005E29B4, w_eax),                   # R120: the call at 0x005E29AF (Skill2)
+        ("R120.hasskill3", 0x005E2A55, w_eax),                   # R120: the call at 0x005E2A50 (Skill3)
+        ("owner.mode", 0x005F8FD3, w_eax),                       # R56: owner's mode, EAX after `mov eax,[eax+0x10]` (the key tools/ai_model_check.py reads)
+        ("R48.act", 0x005F6F21, lambda: reg("eax") & 0xFF),      # R48: DRLG_ActFromLevelId's result (`cmp al, 2`)
+        ("R48.quest21", 0x005F6F40, w_eax),                      # R48: the quest-state call 0x0065C310 (state 0x15) result
     )
 
     def on_word(key, rd, ra):
@@ -547,8 +595,11 @@ def _ai_main():
     Bp(0x00649970, on_pp0, bnd_bps)
     for a in (0x00649984, 0x006499C2, 0x006499F0, 0x00649C5F, 0x00649C6E, 0x00649C8F):
         Bp(a, on_pp1, bnd_bps)
-    for key, a, rd in R7WORDS:
+    for key, a, rd in R7WORDS + R8WORDS:
         Bp(a, on_word(key, rd, a), bnd_bps)
+    for key, a, rd in R118_WORDS:
+        b = Bp(a, on_word(key, rd, a), r118_bps, key)
+        b.enabled = False
     Bp(0x005B0F18, on_init0)
     Bp(0x005B0F1B, on_init1)
     Bp(0x0056F640, on_sst0)

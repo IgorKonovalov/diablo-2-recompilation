@@ -159,7 +159,9 @@ HAND_OBS = {0x005F02C0: (0x00540E60,), 0x005F1440: (0x005DDF90, 0x005A0180), 0x0
 def parse(path):
     """The AI lines of a log: {"dec": [decision], "ain": [..], "sst": [..], "cap": [..], "lines": n, "inits": [(tag, d)]}.
     Rev 7: a decision's "r7" is {key: word} from its R7W lines (the first of a key; all are in "r7all"), and "inits" holds the
-    AII and AIQ lines of MonAiInit's init calls in file order."""
+    AII and AIQ lines of MonAiInit's init calls in file order. Rev 8 adds keys to "r7" without a parser change: `R118.cmp`, `R119.cmp`
+    ([dist, aip(4)]), `R120.hasskill1..3`, `owner.mode`, `R48.act`, `R48.quest21`, and `R118.ctl` ([armed, mode, n], the perturbation
+    control of the R118 word breakpoints)."""
     dec, byk, ain, sst, sstk, cap = [], {}, [], [], {}, []
     inits = []
     n_lines = 0

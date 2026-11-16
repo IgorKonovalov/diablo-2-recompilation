@@ -1123,6 +1123,26 @@ class Revision6(unittest.TestCase):
         self.assertEqual((o.status, o.forks), ("ok", 0))           # the word replaces the fork
         self.assertEqual(self.chk("R119", d, flip="1.flag0x20").status in ("ok", "mismatch"), True)
 
+    def test_rev8_words_replace_forks(self):
+        """Plan 0069 rev 8: R118.cmp / R119.cmp (the compare's own words), R120.hasskill1 and R48's act word."""
+        d = path("R118", [("Idle", G, U, [7], 0, 1)], melee=1, dist=100, aip={1: 0, 3: 100, 4: 5, 5: 7})
+        d["r7"] = {"R118.flag0x20": 0, "R118.cmp": [100, 5]}
+        self.assertEqual((self.chk("R118", d).status, self.chk("R118", d).forks), ("ok", 0))
+        d["r7"] = {"R118.flag0x20": 0, "R118.cmp": [3, 5]}         # the word says near: the model leaves melee for step 1's draw
+        self.assertNotEqual(self.chk("R118", d).status, "ok")      # near: step 1's draw is taken, the log's call (Idle after the melee draw) differs or the block stops
+        d = path("R118", [("Idle", G, U, [7], 0, 1)], melee=1, dist=100, aip={1: 0, 3: 100, 4: 5, 5: 7})
+        d["r7"] = {"R118.ctl": [2, "alt", 5]}                      # the compare word armed and not logged: flag != 0, no fork
+        o = self.chk("R118", d)
+        self.assertEqual(o.forks, 0)
+        d = path("R119", [("StepAway", G, U, [T, 5, 1], 1, 1)], melee=1, dist=10, aip={3: 100, 4: 5})
+        d["r7"] = {"R119.flag0x20": 0, "R119.cmp": [10, 5]}
+        o = self.chk("R119", d)
+        self.assertEqual((o.status, o.forks), ("ok", 0))
+        d = path("R120", [("Walk", G, U, [T, 0], 1, 0)], melee=0, dist=10)
+        self.assertEqual(self.chk("R120", d).forks >= 0, True)     # builds and runs with and without the words
+        d["r7"] = {"R120.hasskill1": 0, "R120.hasskill2": 0, "R120.hasskill3": 0}
+        self.assertIn(self.chk("R120", d).status, ("ok", "mismatch", "stop"))
+
 
 def report():
     """`python3 -I tools/test_ai_model_check.py report`: per revision 4 entry, over the recorder's 1500 seeded decisions,
