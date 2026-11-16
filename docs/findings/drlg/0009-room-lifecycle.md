@@ -1168,6 +1168,32 @@ Output `workspace/logs/n66n/s7a-p2/check-s7a-p2.txt` (`95d0ebe5…`, `S7a total 
   [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
   (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0)
 
+### 14. Plan 0066 batch S7b: the frame windows' room and timer lines (2026-11-16, `lane/n66o`)
+
+No game, no Ghidra. `tools/sweep2_s7b.py check` over the 13 windows of run:2026-11-04-frame, -frame2 and -frame3
+(`workspace/logs/n66o/s7b/check-s7b.txt`, `914b090d…`, `S7b total bad=0`); the record and the counts are
+[frame/0007 § Plan 0066 batch S7b](../frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o).
+Rows are plan 0066's `drlg-lifecycle.md` rows.
+
+- [C] **`GameTick` once per frame** (row 1): 5 500 `FT0`/`FT1` pairs, consecutive stamps, one game per window.
+  (fn:sub_0052D870_GameTick@0x0052D870, run:2026-11-04-frame2)
+- [C] **§ A's order** (row 5): the walk's `RU0` (rank 3) before every unit event, the `D12` (18), `U11` (19) and `S1500` (20)
+  lines after them and in that order, 0 inversions over 58 678 ranked lines; the 84 `RR` of a walked act inside a tick each
+  after its frame's `D12` line, in a frame ≡ 0 mod 12. (0x0052D8EB, 0x0052D938, fn:sub_0052D240_RoomsDeactivate@0x0052D240,
+  run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **A room activated by the client sync in frame N is walked at N + 1** (row 6): 80 `RC` of a walked act at depth 0
+  after frame N's events, each first walked at N + 1, populated (51 rooms leave the walk with bits 0 and 1) or restored (32).
+  The remainders are taken on the incremented frame (`FT0`'s `pre` + 1: every `TM` line at its due frames only, 5 500
+  frames); their sign is not separated. (0x0052D1A9–0x0052D21D, run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **The sweep's period** (row 8): `S1500` at the two in-window frames ≡ 0 mod 1500 (1500 of the pilot pack window and of
+  town #3) and at no other of the 5 500, absent at the 9 frames ≡ 750 mod 1500. That it frees records is not logged.
+  (0x0052D310–0x0052D322, run:2026-11-04-frame)
+- [C] **`DUNGEON_RoomCreate`'s link and flags** (row 15): the act lists modelled by prepending at each `RC` and unlinking at
+  each `RR` equal all 23 later walks; every walk follows an `RC` of its act since the last walk; the 85 `RC` of acts no walk
+  visits carry `+0x34` = 4, the 84 of walked acts 0 or 1. Whether the 0 or 1 is the DRLG room's `+0x60` bit 0, and
+  `RoomActivateA`'s neighbour step, re-seed, type init and act counters, are not in these logs. (0x0061991F–0x00619925,
+  fn:DUNGEON_RoomCreate@0x00619890, run:2026-11-04-frame2, run:2026-11-04-frame3)
+
 ## Data touched
 
 - tbl:Levels.txt:SaveMonsters (leveldefs `+0x94`), tbl:Levels.txt:MonWndr (`+0x2E`), Levels `+0x03` (act).
