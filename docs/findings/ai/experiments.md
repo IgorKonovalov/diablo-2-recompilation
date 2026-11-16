@@ -1687,7 +1687,7 @@ Sharing decision: fresh per case, unchanged.
   AIB and AIR lines are dropped by `top_level` as the 3a test states, so the model needed no change); **R118 reached, 12 mismatches**
   (below); **R119 and R128 not reached** (0 decisions: no warp 81 to level 128 from 129 was found, and the descent 77 to 124 and the hunt
   for 526 did not reach Halls of Vaught or Nihlathak). Entries aimed at by Phase 3b's cases and not reached (0 decisions in any of the 17
-  logs): R55, R74, R98, R119, R128, R80 and S15. R56, R85 and R32's unlogged
+  logs): R55, R74, R98, R119, R128, R80 and S15. Reasons: R55 (hunt 256 timed out), R74 (levels 108 and 130 not entered), R98 (hunt 409 timed out), R119 and R128 as above; R80 and S15 had no decision in any of the 17 logs (no further reason is recorded). R56, R85 and R32's unlogged
   words are as in `run:2026-11-16-ai-tour-2`: R32 stays all-forked (499 decisions, 0 fork-free); R85 had no decision.
 - **R118: 12 mismatches, named as a contradiction candidate.** All 12 are in `t-a5-crystal` (44 R118 decisions, unit class 471, the only log
   with R118): 5 `4.idle` seeds, 2 `4.walk` calls and 5 `2.setmode4` (3 seeds, 2 calls) where the model's seed (two steps) or its chosen call
@@ -1701,6 +1701,7 @@ Sharing decision: fresh per case, unchanged.
   unresolved at the lane's time box: the 25 behave as if the flag test at 0x005E1E36 had been taken (no step-1 draw, one draw for the
   later test, no curse), while the rev 7 word `R118.flag0x20` (EAX at 0x005E1E34) reads 0 in all 33 lines that carry it, which
   the model reads as "not taken". Either the word does not read what row 118 says, or the flag differs from the word at the test.
+  Other readings the same data allow: the `dist` or `aip(4)` the test at 0x005E1E45 compares differs from the checker's `ctx[5]` and `aip(4)`; or the rev 7 word breakpoint at 0x005E1E34 perturbs the path (the 7 near decisions with no word line behave as the model does). Both exits of the tests at 0x005E1E36 and 0x005E1E48 go to 0x005E1FBE, so no change of the block's structure gives one step.
   Catalogue rows 347 and 348 stay `[I]`; the far case (12 decisions) matches. Filed for the spec and the
   architect: backlog entry `2026-11-16-reverser-spec-writer+architect-plan-0069-p3b-r118-step-1-draw-contradiction`.
 - **Prediction 3 (decisions by case, from `words.txt`).**
