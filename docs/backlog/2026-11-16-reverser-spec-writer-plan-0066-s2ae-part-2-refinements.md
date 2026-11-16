@@ -27,4 +27,4 @@ Not blocking. The mask cells of the type table stay as tagged (S2ae part 3).
 
 *2026-11-16 (reverser, `lane/n66sa`, S2ae part 3):* the mask cells were raised after all (the two `lea`s carry no
 store; [skills/0002 § 19](../findings/skills/0002-missiles.md#19-plan-0066-batch-s2ae-part-3-the-mask-uses-read-calldofunc-hit-27-and-unique-mod-29-emulated-2026-11-16-lanen66sa)); part 3's refinements are in
-[`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements`](2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements.md).
+[`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements`](archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements.md).

@@ -3,6 +3,14 @@
 - **Spec:** [skills/README](../../specs/skills/README.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 25; the *Count* column sums to 25.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66sk`, 2026-11-16, the skills cluster): re-tagged.** The spec's front matter is now C 36 / I 22 / L 1 (it was
+  C 26 / I 25 / L 1 at `main` `b2fcbc3f`). Statement `[C]` whole: rows 1, 17, 24, 25 (4). Split, the `[C]` half and the
+  remainder `[I]` as the *Route* cell names: 12, 15, 22, 23 (4). Corrected to the finding: 16 (1). Kept `[I]` (H2a, H2b,
+  S2be not settled, d-none, d-2c): 2–11, 13, 14, 18–21 (16). Row 16 (§ C's player-against-monster row) is corrected to
+  S2a's and S2c part 2's mode-14 finding: bit 6 is set at the monster starts of modes 4–9 and cleared by mode 14's start
+  (`MonModeStartSeq`, 0x005A7884), `[C]`; ammunition stays `[I]` (H2a). Row 25 (note 3) is raised whole and keeps one new
+  `[I]` sentence pointing at dispatch note 1 (row 189, d-none), so that quirk Q143, which cites both notes, keeps its tag
+  in each.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

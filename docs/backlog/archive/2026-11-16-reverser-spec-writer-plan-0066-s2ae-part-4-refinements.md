@@ -2,16 +2,18 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/skills/0002-missiles.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+resolution: "Done (lane/n66sk, Phase 3 skills cluster part 1): missiles B1's refusal, room, guards and velocity widths, and the zig-zag callback's draws written in; the .data constants 15 and 2 stated as values only. [plan log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-skills-cluster-re-tagged-part-1-spec-writer-lanen66sk-skillsreadme-missiles-and-catalogue-resume-note)"
 ---
 
 Plan 0066 batch S2ae part 4 (`lane/n66sa`, run:2026-11-16-sweep2-s2ae4) raised skills/missiles row 14 (the
 distance refusal), 18 (the `VelLev` term) and 76 (the zig-zag re-seed callback) whole, and rows 16, 17 and 19 (B1 up to
 `SUnitCreate`) in part, with these refinements for Phase 3 to carry when the skills cluster is re-tagged (claims and
 anchors in
-[skills/0002 § 20](../findings/skills/0002-missiles.md#20-plan-0066-batch-s2ae-part-4-the-zig-zag-callback-and-missilecreate-to-its-allocation-emulated-2026-11-16-lanen66sa)):
+[skills/0002 § 20](../../findings/skills/0002-missiles.md#20-plan-0066-batch-s2ae-part-4-the-zig-zag-callback-and-missilecreate-to-its-allocation-emulated-2026-11-16-lanen66sa)):
 
 1. **B1 and the Constants row, the refusal:** `|ex − x|` is `neg` of the signed 32-bit difference, so a difference of
    exactly −2³¹ is not refused. The end point is the (kept) target's sub-tile position, else `(tx, ty)`.

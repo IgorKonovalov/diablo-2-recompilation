@@ -3205,7 +3205,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   remainders raised: missiles 40, 41, 42, 45, 46 (the mask cells; these rows are whole). No class moves.
 - **Refinements** (Phase 3's): mod 29's gates, its seed's high word and the side-missile geometry; `CallDoFunc`'s
   register pass-through and returns. Routed by backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Judgment calls for the review:** (1) the mask cells rest on the image bytes and a def-use of the only two
   pointers into the table that `.text` forms; a pointer reaching the table by other arithmetic is the residual every
@@ -3257,7 +3257,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   route crosses `SUnitCreate`'s pool allocation (0x0040B430 at 0x005553BE, `sites.txt`). No class moves.
 - **Refinements** (Phase 3's): the refusal's −2³¹ difference, `RoomAtSubtile`'s neighbour fallback, the guards' signed
   class and 0/1 owner types, the velocity's byte and dword widths, and the zig-zag's exact draws and points. Routed by
-  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements.md).
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Judgment calls for the review:** (1) `zz`'s domain is unit-to-target differences of at most 250 sub-tiles: past
   258, `PathDirection`'s product wraps and the index leaves `g_PathDirTable`, a read the run would not account; the
@@ -4398,7 +4398,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   Miscount 1: § 20 and the s2be3 record gave "89 linked, 147 already marked" beside per-case counts; they are per
   `UnitMarkUpdated` call (118 cases × 2 = 236), now stated. Omission 1: the order difference on 43 (a disagreement
   with the spec) and the Phase 3 refinements had no backlog entry (ADR-0024); filed
-  ([entry](../backlog/2026-11-16-architect-spec-writer-plan-0066-s2be-skills-catalogue-retag.md)).
+  ([entry](../backlog/archive/2026-11-16-architect-spec-writer-plan-0066-s2be-skills-catalogue-retag.md)).
 - **H2c ruling: accepted as filed**, a harness batch of its own: 45 statements under the 60 cap, one logger family
   (skills.gdb); folding into H2a would make 85. Sessions **~12 (an estimate)**, ~3.8 claims per session, so
   **deferred** under the threshold like H2a and H2b; when the skills harness runs, H2a and H2c share recipes
@@ -4414,3 +4414,66 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
 - **Verdict: accept with fixes (4)**: misread 2, miscount 1, omission 1. Ledger Fixes cell: `audit of lane/n66sb: 4:
   misread 2, miscount 1, omission 1; no reject-grade miss (5th Tier B after the n69h audit; count restarts)`. The
   review request is closed with this entry.
+
+### 2026-11-16 — Phase 3, the skills cluster re-tagged, part 1 (spec-writer, `lane/n66sk`): skills/README, missiles and catalogue; resume note
+
+- **Done.** Branch from `main` `b2fcbc3f`. No game, no Ghidra, no slot, no subagent. Sources: the S2a parts 1–2, S2b
+  (with its Tier B and Tier A fixes), S2c parts 1–2, S2ae parts 1–9 (with the Tier A audit's fixes) and S2be parts 1–3
+  (with the audit) entries, S5fe for the missile critical chain, each inventory row's *Route* cell, and the spec-writer
+  entries. Each raised statement carries its anchor: the kept skills runs with the S2a and S2b addenda
+  (skills/experiments), run:2026-11-03-frame-order with sim/frame D7, skills/0002 §§ 13, 15–25 (S2b, S2c static, the
+  nine S2ae runs), skills/0003 §§ 18–20 (S2be), combat/0001 § 22 (S5fe). Three of the four specs are done; skills/dispatch
+  is the resume note's.
+- **Front matter:** skills/README C 26 / I 25 / L 1 → **C 36 / I 22 / L 1**; skills/missiles C 53 / I 99 / L 8 →
+  **C 125 / I 60 / L 6**; skills/catalogue C 257 / I 109 / L 7 → **C 290 / I 94 / L 7**. Outside the inventory:
+  combat/delivery C 114 → 115 (note 11's zero-count half, beside catalogue note 8); quirks C 411 / I 136 → **C 419 /
+  I 128** (class table 406 / 132 → 414 / 124).
+- **Rows (232: README 25, missiles 99, catalogue 108):** `[C]` whole 59 (4, 40, 15); split 55 (4, 35, 16); corrected to
+  the finding 5 (README 16: § C's mode 14, whose start `MonModeStartSeq` clears bit 6; missiles 2: the at-a-point
+  creators, two monster AIs and no shrine; missiles 23: the six monster `useAmmo` sites in six bodies; catalogue 43:
+  H5's block order, the state word after the stat pair; catalogue 103: R4 with the `srvmissile` rows 339, 340, 342, 345
+  and row 167, now a check); kept `[I]` 113 (16, 22, 75: H2a, H2b, H2c, the S2ae, S2be and S2c rows not settled,
+  d-none, d-2c). The lists are each inventory file's new *Phase 3* line (a script checks each partitions its file);
+  inventory README § 6 has the three rows.
+- **Corrections applied:** the S2b R4 entry (catalogue R4); the S2be catalogue entry, items 1–6 (H5's block, M5's
+  prg 36, B1's three callbacks, do 13's return, the worked example's two branches, Q4's do 137); S2ae parts 3 and 4
+  (the unique-mod-29 hook, `CallDoFunc`, B1's refusal, room, guards and widths, the zig-zag callback); and the missiles
+  and catalogue items of S2ae part 1 (D4's clamp, count, multiplier and step write; do 34's `SubX`), part 2 (D6's
+  last-hit and friend tests, `UnitAlignGet`), part 5 (the two re-seed callbacks), part 8 (`MissileDamageToStats`) and
+  the S2c refinements (the creators, the 9b tails and do entry 37, the circle's truncation, the `SetSeedLow` writers,
+  sandmaggot6/7, Smite's durability path, mdo 31's unmark, B2's six bodies, the frozen-terms note scoped). Four
+  entries are closed (S2b R4, S2be catalogue, S2ae parts 3 and 4); the others keep their dispatch items open.
+- **Also:** quirks Q21, Q41, Q140, Q408, Q444, Q462, Q463 and Q467 follow their sources to `[C]`; Q50 and Q143 stay
+  `[I]`: their notes now hold both tags (catalogue n8 and skills/README n3 each keep one `[I]` sentence pointing at the
+  note that still reads the clause: combat/delivery n11's negative count, dispatch n1's refused request). Missiles'
+  open questions on the `VelLev` term and the critical chain's second and third steps are struck; catalogue's
+  Siege Beast Stomp clause is struck. Research-map rows of skills/missiles, skills/catalogue, the overview and quirks
+  rewritten. wiki/skills carries W4 for the three specs; the refresh entry is filed with dispatch at the end.
+- **Judgment calls for the review (part 1):** (1) the pseudocode headers of missiles B1, B2, D2, D3 and E1 (rows 16,
+  22, 33, 34, 50) keep their `[I]` with a `[C]` bullet stating what the logs or the emulation hold (the anim
+  ruling (5)); the B2 and D2–D3 bullets each restate their remainder in one new `[I]`; (2) the corrected rows whose
+  statement is now `[C]` in whole or part counted corrected (combat, frame, stats/items precedents); (3) missiles 77
+  (callback `0x005CD110`) whole with one new `[I]` for the walk after `PathPlan` (S2ae part 5 refinement 5), as the
+  stats/items ruling (5); (4) README 25 and catalogue 108 whole, each keeping one new `[I]` pointer sentence so that
+  Q143 and Q50 keep their tag in every cited note; (5) combat/delivery n11's zero-count half raised with catalogue
+  n8 (review-fixes 8), its negative-count half `[I]`; (6) catalogue H9's `after:` gives do 13's return `[C]` beside
+  row 47's kept `[I]` (review-fixes 8; row 47 stays kept, H2c); (7) missiles 29, 69, 81 and 82, raised in part before
+  S2ae's closing "not settled", counted split; (8) README 23 and missiles 31/96 raised for the missiles' place in the
+  frame pass on run:2026-11-03-frame-order with sim/frame D7, the objects and fifth list `[I]`; (9) missiles 91's cell
+  marks kept `[I]` as outputs (no line logs them) while D7's writers are `[C]` statically.
+- **Resume note (part 2, a fresh spec-writer on `lane/n66sk`).** Left: **skills/dispatch**, inventory
+  `skills-dispatch.md` (195 rows; front matter at `b2fcbc3f` C 79 / I 205 / L 10, the inventory's `I` 195 at `b5999f5e`;
+  plan 0068 P4 added the difference, name it in the *Phase 3* line). Its rows: whole and split per the S2a part 2
+  ready list (rows 7–11, 61, 90, 116, 173, 175, 176, 191 whole; the 66 split), the S2c ready lists (part 1 dispatch
+  lines 105–111, 355, 361, 435, 441, 562, 1126, 1127 whole; 292, 529, 697, 765, 929, 993 split; part 2 lines 40, 41,
+  170, 428, 617, 832, 1094 whole, 366, 430, 535, 680, 1124 split; lines at `b5999f5e`, match by text), the S2ae rows
+  (each Route cell; the multi-note rows 31, 39, 63, 69, 79, 135, 164, 172, 178 are split, 124, 130, 156 settled whole by
+  part 8, 1, 2, 25, 68, 82, 137 whole by S2c), the contradictions (rows 4, 57, 150, 193: mode 14; row 47: D2's target
+  clear, S2ae part 5 item 1; row 125: slow's stat 67 = −v). Entries to apply and close with it: S2ae corrections
+  (items 2, 3, 5), parts 2 (item 1), 5 (items 1–3, 6), 6, 7, 8 (items 1, 2), 9; the S2c refinements' dispatch items
+  (constants 147's state 114, I4's mastery callers, C's durability path, E1's owner of the clear, E2 and n6 for mode
+  14, I1's 0x005D8B10); the dispatch notes 2 and 7 entry (raise n7 and n2's unused-result half, cite them again from
+  Q262 and Q263, empty the quirks *Weaker duplicate* column). Then: quirks (Q143's dispatch n1, Q359, Q360, Q380,
+  Q434, Q464, Q470, Q497, Q527, each by its note), the dispatch research-map row, § 6's dispatch row, the wiki refresh
+  entry (wiki/skills, W4), the gate `--full`, and the Tier A review request for the whole cluster with both parts'
+  judgment calls.

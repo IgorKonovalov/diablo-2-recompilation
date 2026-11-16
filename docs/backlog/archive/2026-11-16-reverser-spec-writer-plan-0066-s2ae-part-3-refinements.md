@@ -2,16 +2,18 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/skills/0002-missiles.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+resolution: "Done (lane/n66sk, Phase 3 skills cluster part 1): missiles B1's unique-mod-29 hook (gates, seed, side point, first creation; the second [I]), the mask cells and G2's CallDoFunc written in. [plan log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-skills-cluster-re-tagged-part-1-spec-writer-lanen66sk-skillsreadme-missiles-and-catalogue-resume-note)"
 ---
 
 Plan 0066 batch S2ae part 3 (`lane/n66sa`, run:2026-11-16-sweep2-s2ae3) raised skills/missiles G1's hit 27 (row 73),
 the collide-type mask cells of D6 (rows 40–42, 45, 46, now whole with part 2), and in part B1's unique-mod-29 hook
 (row 21) and G2's `CallDoFunc` (row 69), with these refinements for Phase 3 to carry when the skills cluster is
 re-tagged (claims and anchors in
-[skills/0002 § 19](../findings/skills/0002-missiles.md#19-plan-0066-batch-s2ae-part-3-the-mask-uses-read-calldofunc-hit-27-and-unique-mod-29-emulated-2026-11-16-lanen66sa)):
+[skills/0002 § 19](../../findings/skills/0002-missiles.md#19-plan-0066-batch-s2ae-part-3-the-mask-uses-read-calldofunc-hit-27-and-unique-mod-29-emulated-2026-11-16-lanen66sa)):
 
 1. **B1, the hook:** `UModEventRun` (slot 5) needs a non-zero first unique-mod byte and then calls every one of the
    nine, a later 0 not stopping it. Mod 29 acts only when bit 3 of the monster data's byte `+0x16` is set, the missile
