@@ -381,6 +381,7 @@ if (!StepAway(t, 15, 1)) { if (!melee) return Ring(5); return SetModeAtUnit(Rang
   - *Corrected 2026-11-15 (`lane/n66e`, plan 0066 S1e):* [C] the two are one map. 0x005DD280 is `push ecx; call
     0x00621F20; ret`, so `AiLifePct` takes the unit in `ECX` and `UnitLifePct` on the stack; equal on 240 of 240 emulated
     images. Which rows call which stays [I] here. (0x005DD280, run:2026-11-15-sweep2-s1e)
+  *2026-11-16 (plan 0066 S1f part 1, `lane/n66x`):* `AiLifePct` has four direct calls, rows 4 (0x005EFF8A), 8 (0x005F07E9), 15 (0x005F1939) and 122 `Imp` (0x005E31BB); the list above omits row 122. With S1e's correction (one map) the two readers differ only in where the unit is passed. (run:2026-11-16-sweep2-s1f, fn:sub_005DD280_AiLifePct@0x005DD280)
 
 #### 2.11 Row 13 `FallenShaman` (0x005F1440)
 

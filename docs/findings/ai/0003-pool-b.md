@@ -556,6 +556,7 @@ Ovr(13, 50, 0); Walk(t, 7);
   comes back after two events beyond 12. A kind-1 or kind-14 head record whose unit exists makes it walk to that unit;
   any other head record is dropped. No writer of a kind-14 record with a unit was found in this batch (§ Open
   questions). (0x005F53E0–0x005F56BD)
+  *2026-11-16 (plan 0066 S1f part 1, `lane/n66x`):* the writer exists outside this batch: row 65's think builds a kind-14 block with the unit's `[+0xC]` and type 1 and passes it to `MonHelpBlock` (0x005F9C17–0x005F9C33; ai/0005 § 2.18). (run:2026-11-16-sweep2-s1f, fn:sub_0058F730_MonHelpBlock@0x0058F730)
 - [C] The record map up to `GameFindUnit`, `AiParamsPop` or `UnitLifePct` (no draw before them).
   (run:2026-10-30-ai-cat-emu-2, `fetish`)
 

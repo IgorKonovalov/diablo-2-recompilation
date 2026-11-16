@@ -1778,3 +1778,84 @@ Sharing decision: fresh per case, unchanged.
   - **Rows:** 211 settled (the 241 of the tour's scope less Phase 1a's 30 moved to H1p): 22 raised, 41 raised in part, 148 kept
     (`tally.txt`). No contradiction is new; no symbol row is raised (the models feed on the logged returns as oracles and compare the
     calls, not the callees' roles, as at S1b).
+
+## run:2026-11-16-sweep2-s1f
+
+Plan 0066 Phase 1, batch S1f part 1 and batch S1o part 1 (reverser-static, `lane/n66x`). A static second source: no game,
+no Ghidra, no harness slot. Tool `tools/ai_s1fo.py` (`22acb79b…`; sections `entry`, `tables`, `init`, `more`, `totals`),
+built on the helpers of `tools/quests_s3c.py`, `tools/skills_s2c.py` and `tools/sweep2_s7a.py`: every reference scan three
+ways (raw-byte rel32/abs32, objdump's linear listing, r2 re-decoding each site), every claimed instruction decoded by
+objdump and by r2 (both must agree and match), call arguments by two walkers, image words by Python and by r2 `pxwj`, table
+cells by the plain `.txt` reader and by the compiled `.bin`. Kept output `workspace/logs/n66x/s1fo/check-s1fo-p1.txt`
+(`89bffa81…`, 91 check lines, `S1fo total bad=0`), `manifest-s1fo-p1.sha256` (`24ec251c…`) passing from
+`workspace/logs/n66x/s1fo`; development outputs (and the same run taken before merging `main` `858b7eea`, `check-s1fo-p1-premerge.txt`, which differs only in the totals line) in `dev/` with `manifest-dev.sha256`. Run under a 4 GB scope, about 30 s.
+
+- **Case.** The pinned `Game.exe` and the merged excel tables; the check names give the inventory rows (C catalogue, M
+  machinery, R README of `docs/plans/0066-inventory/monsters-ai-*.md`).
+- **Process.** `python3 -I tools/ai_s1fo.py all` once; every count line is the check's own.
+- **Results (each `[C]` by the second tool, at the scope stated):**
+  - *The event and the think call* (C1, R1, R2, R16). `g_MonEventFuncs[2]` = 0x005B1740 by both readers; `MonAiEvent`'s
+    only reference in the image is that slot (abs32 at 0x006E2498; 0 rel32 by all three tools). Nine `.text` loads of the
+    slot, each followed by `call eax` at 0x005A80F5, 0x005A813F, 0x005A818E, 0x005A81ED, 0x005A822E, 0x005A8267,
+    0x005A82AD (`MonModeEndGeneric`, 7), 0x005A83D1 (`MonModeEndToS1`) and 0x005A8481 (`MonModeEndToS1b`); the table
+    base's one other `.text` user is `MonEventDispatch` (0x005A7FC2). The think call: `mov eax,[ebp-0x24]; mov
+    eax,[eax+0x4]; lea edx,[ebp-0x24]; push edx; call eax` (0x005B1861–0x005B186F), after the three pre-steps at 0x005B1806,
+    0x005B1817, 0x005B1828; the second stops the event on a non-zero return (`test eax,eax; jne`, 0x005B181C).
+  - *The two AI tables* (C2, C16, C274, C275, C372, C440, C443, C473, R4, R26, M1, M57). Read twice, equal. The only
+    `.text` operands into 0x0073CA18–0x0073D477 are `MonAiEntryGet`'s three (0x005B1618, 0x005B1635, 0x005B163D), and no
+    aligned data dword points into them. `MonAiEntryGet` has 3 calls in 2 functions: `MonAiTargetByKind` reads the stored
+    state's row at `+0` only (0x005B1655–0x005B1673); `MonAiInit` reads `+8` and `+0xC` of the current state's row and
+    stores `state` and `alt` (0x005B0E77–0x005B0E99), and calls `[row+4]` and stores `state` and `think` (or 0x005B0CD0)
+    from the new state's row (0x005B0EBE–0x005B0F2D). Alias words: state 1 = row 1 (0x005B0CD0), state 4 = row 61 (think
+    and alt), state 5 = row 60, state 7 = row 67, state 15 = row 117; these five are the only state rows whose think is a
+    first-table think; 10 and 17 share 0x005E8020, in no first-table row. The four dwords after state row 17 point to
+    "English", "Spanish", "German", "French"; `MonAiInit` bounds the state with `cmp ebx,0x12; jge` (0x005B0E4D). 147
+    distinct thinks, rows 106 and 143 sharing; 146 rows named by the 734 MonStats records (`.txt` and `.bin` alike), 0
+    `None` and 143 `ShadowMasterNoInit` not. Kinds 0: 26, 1: 104, 2: 16, 4: 1 (15), 5: 1 (52); 19 inits, 11 alts. Row 0's
+    think is `c2 04 00`; row 1's `AiIdle` calls `MonAiIdle(200)` after the room test (0x005B0CD7–0x005B0CE9). Of the 18 tier
+    rows only 29 and 61 have an alt, none an init, kind 0 only 61 and 67. Rows 145, 146, 147 are `c2 04 00`; 145's alt
+    0x005FCF30 is also rows 135 and 140's, 147's 0x005E8480 also row 51's. Row 60 has one record, 270 `rogue2`, and no
+    `*aip` description in `monai.txt`. The kind switch (table 0x005B1720): 1 → `MonAiTargetOrIdle`, stop when the target is
+    0; 2 → `MonAiFindTarget`, go on; 4 → `MonAiTargetOrWait`, stop when 0; 5 → the same, go on; 3 and above 5 → stop;
+    `MonAiFindTarget`'s 11 direct callers include `MonAiTargetByKind` 0x005B16B9, `MonAiTargetOrIdle` 0x005DE8AD and
+    `MonAiTargetOrWait` 0x005DE9E9.
+  - *`MonAiInit`'s callers* (C514, R3, R34, R35). 33 direct calls by all three tools in 28 functions, no jump or dword
+    reference; state argument by both walkers: 21 immediates (0: 11, 5: 2, 6: 2, 10, 11, 13, 15: 1 each, 16: 2) and 12
+    registers, none of the immediates 1–4, 7–9, 12, 14 or 17. The register sites' last writes, decoded twice:
+    `InactiveMonstersRestore` `[ebx+0x28]` (the record word `InactiveMonsterSave` stores from `[eax+0x28]` at 0x005422C9 →
+    0x005422D7), `SpawnOwnedMonster` `[ebx+0xc]`, `CurseSetAiState` `esi` (twice), 0x005E817B `eax` after a call, and the
+    seven alts' `[reg]` loads. `MonsterInit` 0x00574307 passes 0. `SpawnOwnedMonster` has 15 direct calls in 14 functions.
+  - *Row details.* C73: row 23 (`Vulture`, 0x005F3170) is kind 1; `test edi,edi` at 0x005F3184, 0x005F31D3, 0x005F325D,
+    0x005F33C1. C87/C89: from the think's entry 0x005F39B0 to 0x005F3E07 no control transfer; 132 dword frame stores in
+    0x005F39E1–0x005F3E07 (immediates, or a register holding a constant), objdump and r2 equal, 56 in `A`, 56 in `B`, 10 in
+    `A5`, 10 in `B5`, every entry written, none outside; the one `(0, 0)` of `B` is entry 52 (`v14` 12, place 4) and `B5`
+    has none. C155: the filter tests at 0x005F99E8 (`[esi+0x18]` against the 0 left by `test eax,eax; jne` at 0x005F99DC),
+    0x005F9A06/0x005F9A0D (classes 141, 396), 0x005F9A14 (`= 1`), 0x005F9A24 (`< 3`, then `MonTypeFlag`); row 65's eight
+    records' `aip2` Normal/Nightmare/Hell: `fetishshaman1`–`2` 0/1/2, `3` 0/2/2, `4`–`8` 0/2/3, `.txt` and `.bin` equal.
+    C236: `pgsv` rows 122–127, the six `progressive_*`, in both readers. C244: `lea ebx,[ebx+ecx*4+0x3]` (0x005EC19F),
+    case 8's `lea esi,[eax+eax]` (0x005EC31F) and `add esi,esi` (0x005EC328), `cmp esi,[ebp+eax-0x450]` then `jle`
+    (0x005EC4FF, signed); the bounds computed: (−32 768)² = 1 073 741 824, (−32 769)² = 1 073 807 361 ≤ 2³¹ − 1; 4·(2²⁹ − 1)
+    = 2 147 483 644, 4·2²⁹ → −2³¹, 4·(−2²⁹) = −2³¹, 4·(−2²⁹ − 1) → 2 147 483 644; 2·2³⁰ → −2³¹, 2·(2³⁰ − 1) = 2 147 483 646;
+    2³¹ ÷ 10 = 214 748 364. Skills `aitype`: 357 rows, 32 non-zero, values 1–5 and 10–13 (no 8), maximum 13, `.txt` and
+    `.bin` equal. C245: the record index is 20·k (`lea eax,[ecx+ecx*4]`, `add eax,eax` twice) and five dwords are stored
+    at `EBP−0x444 + 20k` (0x005EC50B–0x005EC52F), so (0x444 − 0x84) ÷ 20 = 48 records fit above `EBP−0x84`. C247: the mask
+    table 0x006CE268 reads 1, 2, 4, 8, …; entry 2 is 4. C282/R55: rows 44's two records (211 `duriel`, 708
+    `uberduriel`) have `aip4` and `aip5` 0 (blank) in all three difficulties and `aip2` 33, `aip3` 50, both readers; with
+    `D100()` uniform on 0..99 and `draw < aip`, Smite 33/100, Jab 67/200, A2 0, A1 67/200 in each of the six columns.
+    C313: `CORNER` 0x006E337C = (−5, −5), (5, −5), (5, 5), (−5, 5) by both readers, used at 0x005E0659 and 0x005E0668
+    (`AiHighPriest`). C52: row 15's alt is 0x005F1750 (kind 4); it gets its record by `AiCtlParamGet(14, 0)` and tests
+    `[eax+0x18] = 1` (0x005F1757–0x005F1764).
+  - *S1e remainders.* 288: `0x005F77C0` has one call, 0x005F7BDE in `AiMephisto` (row 50's think), no jump or dword. 356:
+    0x005E26D0 is pushed at 0x005E2918 (`AiOverseer`) and 0x005EE906 in `AiNihlathak` 0x005EE5D0, row 128's think; States
+    row 141 is `bloodlust`. 518: `AiLifePct` (`push ecx; call 0x00621F20; ret`) has 4 calls: rows 4 (0x005EFF8A), 8
+    (0x005F07E9), 15 (0x005F1939) **and 122 `Imp` (0x005E31BB)**; `UnitLifePct` 38, among them row 11's.
+  - *Two findings against the specs.* (1) M82, machinery T30a "no writer of a kind-14 record with a unit was found": row
+    65's think builds a block with `+0x08` 14, `+0x0C` the unit's `[+0xC]` and `+0x10` 1 at `EBP−0x28` and passes it to
+    `MonHelpBlock` (0x005F9C17–0x005F9C33), as ai/0005 § 2.18 already reads. (2) S1e row 518, catalogue line 4689 "rows 4, 8
+    and 15 `AiLifePct`": row 122 is a fourth (0x005E31BB, also in the spec's own R122b). Both go to Phase 3 through the
+    backlog entry of this batch.
+  - *Observed, not settled in part 1.* MonStats `Skill8` is set on 333 `diabloclone`, 705 `uberdiablo` **and 709
+    `uberbaal`** (Chilling Armor, row 145): catalogue R51a's "only on `diabloclone` and `uberdiablo`" holds for the records
+    of Diablo's block (rows 51 and 147) only. Row C422 is part 2's.
+- **Not covered by this run** (part 2): catalogue rows 171, 422, 431 and the S1e remainders 196 and 420; machinery 10, 15,
+  19, 20, 40, 41, 42, 44, 45, 54, 88, 94; README 21, 23, 33, 38.
