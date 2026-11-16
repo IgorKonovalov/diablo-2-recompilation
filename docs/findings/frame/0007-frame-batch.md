@@ -102,3 +102,140 @@ Run `run:2026-11-04-frame3`, manifest `workspace/logs/frame/manifest-2026-11-04-
 - `[L]` why `farm --descend` found no path to the Den's warp on seed 5513 (a pilot route failure on that map; nothing logged). Seed 5515 reached level 8 and swept for 420 s without him: how much of the Den that covers is not read.
 - `[L]` what kills `fallen1` id 20 inside its own attack event at frame 1992 of the standing window, with no player skill event and no missile in the window: not read; no spec claim rests on it.
 - `[L]` the standing window's Fallen did not pull any pair; whether a scene with two attacking packs would, is not run.
+
+## Plan 0066 batch S7b: new checks over the kept windows (2026-11-16, `lane/n66o`)
+
+No game, no Ghidra. `tools/sweep2_s7b.py check` (new; `tools/frame_window.py`'s `parse_log` is the only part of the reader it
+uses, so every count is its own) read the 13 windows of the ten kept logs of run:2026-11-04-frame, -frame2 and -frame3 (the ten
+counted windows of § K1 of the spec, 5505 #1, 5509 #1 and the pilot pack window), one pass per log; output
+`workspace/logs/n66o/s7b/check-s7b.txt` (`914b090d…`, 398 lines, `S7b total bad=0`). Record:
+[experiments § Addendum S7b](experiments.md#addendum-2026-11-16-plan-0066-batch-s7b-new-checks-over-the-kept-frame-window-logs-lanen66o).
+Row ids are plan 0066's inventory rows (`sim-frame.md` fN, `drlg-lifecycle.md` lN). A line's "rank" is its place in B1.
+
+- [C] **One tick per frame, one game** (f4, l1). 5 500 `FT0`/`FT1` pairs in 13 windows, strictly alternating; every `FT0` has
+  `fr = pre + 1` and the previous `FT0`'s `fr` + 1, every `FT1` its `FT0`'s `fr`, one game pointer per window, and each window's
+  `WEND` frame count equals its pairs. Scope: one game per process, so "per live game" is the slot loop's (A2), not tested.
+  (run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3, fn:sub_0052D870_GameTick@0x0052D870)
+- [C] **The drain never runs inside a tick, and a handler reads the stamp of the tick before it** (f1, f2, f22, f28, f120).
+  262 `MSG0` (with 262 `MSG1`; 13 opcodes) and 82 `SYS` (all type 109) lie between ticks, 0 between an `FT0` and its `FT1`;
+  every `MSG0` carries the last `FT1`'s `fr` (262 of 262) and the next `FT0` is that `fr` + 1 (262 of 262). A reading in which
+  the drain runs inside the tick, or reads the frame it acts before, fails all 262. The call chain, by the raw-byte scan
+  decoded by r2 (`tools/sweep2_s7a.py`'s `calls_of`): `SrvPacketDispatch` 1 call (0x0053F459, in `SrvProcessClientMessage`),
+  that one 1 (0x0052D03E, in `SrvDrainMessages`), the drain 4 in 3 functions (0x0044F136 and 0x0044F152 in
+  `ClientMainFrame`, 0x0044CF5A in `OpenServerThread`, 0x0044BD3C in `ClientWaitDrain`), no jump or absolute reference.
+  objdump lists each loop's drain before its `ServerGamesFrame(1)`: 0x0044F136 → 0x0044F13D (mode 0), 0x0044F152 → 0x0044F159
+  (mode 1), 0x0044CF5A → 0x0044CF61 (the open-server thread). (0x0044F136–0x0044F162, 0x0044CF5A–0x0044CF8B,
+  fn:sub_0054D750_SrvPacketDispatch@0x0054D750, fn:sub_0052CFE0_SrvDrainMessages@0x0052CFE0, run:2026-11-04-frame2)
+- [I] **What stays of A1** (f16, f1). The mode-0 and mode-1 paths read by objdump agree with A1: in mode 0
+  `ServerGamesFlush(1, 0)` only when the frame returned non-zero (`je 0x0044F167` at 0x0044F146, the pushes at
+  0x0044F148–0x0044F149), in mode 1 `ServerGamesFlush(0, 0)` always (0x0044F15E–0x0044F162). The open-server thread is **not**
+  "the same three calls": it calls `ServerGamesFlush(0, 0)` only after a tick (0x0044CF6D–0x0044CF77) and then `Sleep(30)`
+  (`push 0x1e`, 0x0044CF89–0x0044CF8B); its 10 ms branch is not read here, and no kept log runs that thread (modes 6 and 8).
+  No window line marks a loop pass, so the windows cannot tell drain-then-tick from tick-then-drain. (0x0044F146–0x0044F162,
+  0x0044CF6D–0x0044CF8B)
+- [I] **One drain order case, not decisive** (f25). 6 between-tick gaps hold both `SYS` and `MSG0`, and in all 6 every `SYS`
+  comes first; but a gap can hold several drains and the queue a message waits in is its arrival, so a queue-1-first drain
+  could give the same lines. Queue 2 is not logged. (fn:sub_0052CFE0_SrvDrainMessages@0x0052CFE0, run:2026-11-04-frame2)
+- [I] **`MSG0` is the player's** (f26): all 262 carry the window's one type-0 unit as `pl` and its guid as `id`; with one
+  client every reading of C2's player test predicts that, and the tick stamp store and the lock are not logged.
+  (fn:sub_0053F3D0_SrvProcessClientMessage@0x0053F3D0, run:2026-11-04-frame2)
+- [C] **The tick's order, ranks 1, 3, 4, 6 to 9, 14 and 17 to 20** (f5, f21, f116, l5). Each depth-0 line of a tick gets
+  its rank (`ACL` 1, `RU0` of the walk 3, `UE0` 4 to 13 by type and list, `SV0` 14, `TM` `T20` 17, `D12` 18, `U11` 19,
+  `S1500` 20): 0 inversions over 58 678 ranked lines. Adjacent pairs of different ranks: 1 → 4 1, 1 → 7 4, 3 → 4 3,
+  3 → 7 27, 4 → 7 635, 6 → 7 86, 7 → 8 2 924, 7 → 9 491, 8 → 9 758, 7 → 14 2, 7, 8 or 9 → 17, 18 or 19 1 087, 17 → 18 91, 17 → 19 18,
+  18 → 19 42, 18 → 20 2. **Rank 6 is placed in one window:** town #2 holds 86 players' every-frame `UE0` (the walk), each
+  before that frame's players' slot walk, which D6's "ranks 5, 6 and 10 to 13 hold no event in any counted window" does not
+  allow (town #2 is counted, § K1). Ranks 2, 15 and 16 have no line, 5 and 10 to 13 no event, and the debug switch is not
+  logged. (0x0052D8DF–0x0052D96C, fn:sub_0052D870_GameTick@0x0052D870, run:2026-11-04-frame, run:2026-11-04-frame2,
+  run:2026-11-04-frame3)
+- [C] **The periodic calls on the incremented frame, in B1's order** (f77, l5, l8). Over the 5 500 frames each of `T20`,
+  `D12`, `U11` and `S1500` is present at every frame ≡ 0 mod its period (276, 460, 502, 2) and absent at every other, the
+  frame being `FT0`'s `fr` (`pre` + 1); 144 frames hold two or more, all in the order `T20`, `D12`, `U11`, `S1500` (sets
+  `T20+D12` 82, `T20+U11` 18, `D12+U11` 35, `T20+D12+U11` 7, `T20+D12+S1500` 2). `S1500` is met at frames 1500 of the pilot
+  pack window and town #3, and is absent at the 9 frames ≡ 750 mod 1500. Every one of the 84 `RR` of a walked act inside a
+  tick comes after that frame's `D12` line in a frame ≡ 0 mod 12 (rank 18, `RoomsDeactivate`); the 128 `RR` of acts never
+  walked are client rooms, 124 between ticks. The signed `%` is not separated (no negative frame). (0x0052D912–0x0052D96C,
+  0x0052D322, fn:sub_0052D240_RoomsDeactivate@0x0052D240, run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **Slot records run on their frame** (f31): 8 818 slot `UE0` with `rf = fr`, 48 159 every-frame `UE0` with `rf = −1`.
+  (0x005414EC–0x00541589, run:2026-11-04-frame2)
+- [C] **Kind 11 re-queues itself at frame + 30** (f14, f48): 186 kind-11 runs, each with exactly one `QE` inside it (kind 11,
+  the player, `asked = fr + 30`) and no `XS`; the 173 intervals between a player's consecutive runs are all 30 frames. The two status sends are not
+  logged, and no window holds a player's placement, so the first run at placement + 250 is not tested.
+  (fn:sub_00580BE0_PlrEvent11Every30@0x00580BE0, 0x00580BF4–0x00580C08, run:2026-11-04-frame2)
+- [C] **E5's every-frame half: queued into a list being walked or already walked, a record first runs next frame** (f41,
+  f42). 3 716 every-frame queue lines (`QF`; no `QE` with frame −1) whose unit ran later in the window: missiles 3 396 (3 392
+  queued in the players' slot walk, rank 7, and 4 in the monsters' every-frame walk, after the missiles' walk at rank 4),
+  monsters 308 (115 in their own every-frame walk, 193 in their slot walk), players 12 (between ticks): each first runs at
+  the next frame, 0 otherwise; "runs in the frame queued" fails all 3 716. 1 monster record did not run in its window.
+  **Not separated here:** 0 records were queued in an earlier walk than their list's and run the same frame (so D3's case
+  has no instance in the windows; E5a's anim log holds it), and no `QE` asked a frame at or below the current one, so the
+  raise to frame + 1 is not tested (the 8 624 slot runs matched to their `QE` all ran in a later frame, 5 488 at the next).
+  No object or item queue line. (fn:sub_005415E0_EventQueueEveryFrame@0x005415E0, fn:sub_005416B0_EventQueueAt@0x005416B0,
+  0x005414EC–0x00541589, run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **The act's room list, the walk and its flag** (f59, f60, f61, f62, f123; l6, l15). Each act's list is modelled from the
+  `RC` lines (prepend) and the `RR` lines (unlink in place), seeded by the act's first walk in the window. **Every one of the
+  23 later walks equals the model** (372 rooms; 70 unlinks applied), and the 7 first walks start with the window's rooms
+  created before them, newest first (6 of them 2 or more). **Walks follow the act flag:** 30 walks, each in a frame whose
+  `FT0` found an `RC` of that act since its last walk, and every such frame walked. **Per room:** 371 rooms with `+0x34`
+  bits 0 and 1 set step their seed exactly once from `RU0` to `RU1` (the wanderer tick); 51 with bit 0 clear leave with bits
+  0 and 1 set (populated); 32 with only bit 0 set leave with both (restored). **Rooms created at rank 14 or later in frame N**
+  (80 `RC` at depth 0 after the frame's events) are first walked at N + 1, 80 of 80.
+  **Rooms created inside their act's walk** (4: pilot pack 1373, pack1 3553, packd #2 2075 and 2284) are not visited by that
+  walk, its end clears the flag (no walk the next frame), and each is first walked at the act's next walk, 41, 47 and 72
+  frames later, after another `RC` of that act (1 has no later walk in its window). **Client rooms:** 85 `RC` in acts no walk
+  visits, all with `+0x34` = 4; the 84 server `RC` have 0 (51) or 1 (33). `DUNGEON_RoomCreate` has one call, 0x00642369 in
+  `DRLG_RoomActivate` (raw-byte scan decoded by r2). Scope: one act per game (every walk at act index 0, every `U11` act 0),
+  so the act order and "a later act in the same pass" are not separated; no `RC` comes from inside an event (the on-demand
+  route), and the cause of the 4 in-walk creations is not logged. (0x0052D1A9–0x0052D21D, 0x00642369,
+  fn:sub_0052D160_NewRoomsUpdate@0x0052D160, fn:DUNGEON_RoomCreate@0x00619890, fn:sub_0061A910_ActiveRoomFree@0x0061A910,
+  fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **`SaveGameClients` only at frame 8192, from `ClientsRoomSync`** (f66): 2 `SV0`, both at `fr` 8192 with the return
+  0x0052D4C2 (the call 0x0052D4BD), each with its `SV1`; no `SV0` at any other of the 5 500 frames. So in single player
+  `AutosaveTick` left the flag 0 at both and saved nothing itself in the windows. The client order needs two clients.
+  (fn:sub_0052D350_AutosaveTick@0x0052D350, 0x0052D4BD, run:2026-11-04-frame2)
+- [C] **`ActClockTick` runs once per frame on the one act** (f52): each window's `WEND` counts as many stops at 0x0052D7D7 as
+  frames (5 500 of 5 500, 13 windows), and 5 non-zero returns (act 0, 1) are each the tick's first ranked line. What a change
+  does (the equipment refresh, packet 0x53) is not logged. (0x0052D7C6–0x0052D85B, run:2026-11-04-frame2)
+- [C] **Ranks 1 and 2 draw nothing, and ranks 14 to 16 nothing in a frame with no activation** (f91): in the 631 frames with
+  `XS` lines, 0 `XS` before the tick's first line of rank 3 or later, and the game seed at every `FT0` equals the next logged
+  game seed (5 500 of 5 500); in the 589 of those frames with no `RC`, `RR` or `SV0`, 0 `XS` between the last event and the
+  first `TM` or `FT1`. Scope: `XS` covers the 852 LCG sites; ranks 15 and 16 are not told apart from rank 14 by a line, and at the 5
+  non-zero `ACL` returns too the game seed at `FT0` equals the next one logged. (0x0052D8DF–0x0052D907,
+  run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **Where the game seed steps** (f92). By site, every `XS` at the unit constructor `UnitSeedInit`+0x41 has the game seed's
+  low word: 184 inside the rank-3 walk, 3 072 in players' events (Nova's missiles), 4 in monsters', 23 in missiles'; the item
+  constructor `ItemSeedInit`+0xF 4 in the walk and 23 in missiles' events. **`RoomPopulate`'s own loop also steps it:**
+  6 929 `XS` at 0x0054ED96 inside the walk, each on the game seed's low word (it loads `[game+0xD0]` at 0x0054ED90), a drawer
+  J2's kind (1) does not name ([chain § D5](../../specs/chain/README.md) does). No creation falls in a drain handler or a quest
+  timer in the windows, and kinds 2 to 4 (level, object region, quest seeds) are not logged. (0x00552E31, 0x00552E9F,
+  0x0054ED90–0x0054ED96, fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **The AI runs inside mode-end events** (f124): of the `XS` at sites of the AI functions (`Ai*`, `MonAi*` of
+  `re/symbols.csv`, nearest preceding symbol), 447 lie in monsters' kind-0 events and 992 in kind-2 events (by function: kind
+  0 `MonAiWanderRing` 256, `AiFallen` 116, `AiFallenShaman` 51, `MonAiWalkToUnitType56` 18, `AiZombie` 5, `MonAiMove` 1);
+  "the AI draws only in its kind-2 record" fails 447. (fn:sub_005B1740_MonAiEvent@0x005B1740, run:2026-11-04-frame2,
+  run:2026-11-04-frame3)
+- [C] **§ K3a, K3e and K5 recounted** (f95, f99, f110). Over the seven counted windows with `XS`: 37 977 `UE0`, 37 489 moved
+  neither seed, 452 their own (435 alone, 17 with the game seed), 53 the game seed (players' slot kind 0 34, missiles 17,
+  monsters' every-frame 2), 488 either; 54 `KD` segments, 37 with 0 and 0 constructor steps and 17 with 1 and 1, 0 with more
+  item than unit steps; game-seed-moving top-level events per window 9, 18, 0, 0, 16, 0, 10. Pairs (consecutive game-moving
+  top-level events of two units in one frame): 2 in the counted windows (frame 1961 of 5503 #1, missile then player; frame
+  2095 of 5507 #1, missile then missile), 4 in all kept windows and 4 in the seven development logs of run:2026-11-04-frame2,
+  8 in all (missile then player 3, missile then missile 4, player then monster 1), every one handed (the second's entry seed
+  equals the first's exit) and in rank order. (run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **§ K3b's places and § K4's sites, counted by place and site alone** (f96, f101–f104, f109). The counted windows' 174 756
+  `XS` lie 152 718 between the ticks (147 314 + K7's 5 404 client steps), 9 995 in a tick with no pair open (K3b's 9 968 + K4c's
+  27 `pass`) and 12 043 inside a pair (K3b's 487 + 11 556 = K4c's `own` 1 808 + `game` 8 768 + `touch` 980). Sites under each
+  trigger: defender `COMBAT_DefenceRoll` 0x0057E024, `COMBAT_DurabilityLoss` 0x0057D491 and 0x0057D49C,
+  `ITEMS_DurabilityLossRoll` 0x00559E9B, 2 each, all in 5511 #1 inside monsters' kind-0 events; owner `MonCritDouble` 0x005A55BA
+  3 with a missile event open (K4's counted 3) and 2 in monsters' own events, `COMBAT_ToHitRoll` 0x0057DB38 19, all in monsters'
+  kind-0 events; kill `TC_ResolveDrops` 0x0055AA09 and the six `ITEMS_DropRollQuality` sites, 124 in events holding a `KD`;
+  room the listed functions only, 1 720 with an `RU0` open; `COMBAT_ApplyCold`, `GetHitRoll`, `HitClassPick`,
+  `COMBAT_ApplyDamage`, `COMBAT_ApplyStun` and `UModPartyDeadDeath` 0 in any place. **A scope correction:** K4's owner counts
+  "4 hits" and "22 times" are over the nine windows with `XS` (5505 #1 and 5509 #1 add 1 and 3); over the seven counted they
+  are 3 and 19 (`touch_all_xs_windows` against `touch`). (0x0057E024, 0x005A55BA, 0x0057DB38, 0x0055AA09, run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [I] **The reader's chained split stays the reader's** (f96, f97, f101, f102, f109): which of those steps were on a chained
+  seed (kill 122 of 124, room 847 of 1 720, K3b's 147 314 / 9 968 / 487, K3c's 225 readings, 70 of the game seed, up to 185
+  values, the 24/4/25/14 of 25 drops, K4c's own/game/touch split and the 8 627 true game steps) needs the chain rule; a kept
+  rerun of `tools/frame_p55c_counts.py` reproduces both review outputs byte for byte
+  (`counts-2026-11-04-frame2-rerule.txt` `8115c54e…`, `counts-2026-11-04-frame3-review.txt` `7a6853c6…`) and their sums give the
+  stated numbers, but a rerun is the same tool, not a second source. (run:2026-11-04-frame2, run:2026-11-04-frame3)

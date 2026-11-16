@@ -47,7 +47,7 @@ against this finding; § 8 lists what each claim was checked against and what st
   fn:PLAYER_ManaRegenTick@0x005806F0, run:2026-10-17-stats)
 - [C] Life `+= stat 74` capped at max (dropping the `healthpot` list at the cap), for a positive stat 74 (potions) and
   a negative one (poison: 1 082 ticks, § 8). (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stats)
-- [I] The floor at 256 life was not reached; open wounds never hit the player. (fn:sub_00580610_LifeRegenTick@0x00580610,
+- [I] The floor at 256 life was not reached (open wounds did hit a player in plan 0065 Phase 2, § 11, still above the floor). (fn:sub_00580610_LifeRegenTick@0x00580610,
   0x0058065B–0x0058066E)
 - [C] **Auras are refreshed timed states.** An aura skill runs from unit event 8 (the selected right skill) or event
   9 (an item's `item_aura`, stat 151) every `p = max(perdelay, 5)` frames on a grid (`((frame − 1 + p) / p)·p + 1`);
@@ -398,7 +398,7 @@ low defence, to be poisoned) walked Act II, III and V areas; the Barbarians and 
   § 6 from the mirrored stats, the unit mode and state 85 (life: +74 1 424, capped 10 657, −74 1 082, no 74 41 556; mana: regenerated 48 433,
   state 85 6 286; stamina: by mode 1, 3, 4, 5, 7, 9 and 19, with and without `staminarecoverybonus`).
   **Poison reached the player** (`StatsPalC` in the Act III and Act II fields, `palc-spider` 683 ticks and `palc-oasis` 399): the 1 082 ticks with a
-  negative stat 74 each wrote `hp + stat 74` as predicted. No poisoned tick reached the floor at 256, and open wounds never hit the player: the floor stays `[I]`. (fn:sub_00580610_LifeRegenTick@0x00580610,
+  negative stat 74 each wrote `hp + stat 74` as predicted. No poisoned tick reached the floor at 256, and open wounds had not hit a player in that run (they did in run:2026-11-15-sweep8-two-clients, § 11): the floor stays `[I]`. (fn:sub_00580610_LifeRegenTick@0x00580610,
   fn:PLAYER_StaminaRegenTick@0x00580500, fn:PLAYER_ManaRegenTick@0x005806F0, run:2026-10-17-stats)
 - [C] **`group`** (§ 2): 450 `STATE_GroupClear` calls on the player: the potions of the run (antidote, thawing,
   stamina: states 178–180) have no `group`, so the call cleared nothing (90 calls). The Necromancer's full Trang-Oul's Avatar (`nec-town1`) ran it through the stat
@@ -484,6 +484,15 @@ The record: [experiments § The stats sessions of run:2026-10-21-shortfalls2](ex
   over the three runs against 50; one explore-and-operate session run, one shrine listed in it; the re-arm and a
   well's cure unreached, `palc-wells2` not run: out of this plan, *review 2026-10-21*).
   (fn:sub_00580610_LifeRegenTick@0x00580610, fn:OBJOP_Shrine@0x00583C70, run:2026-10-21-shortfalls2)
+
+### 11. Plan 0065 Phase 2: open wounds on a player (run:2026-11-15-sweep8-two-clients, `lane/n65i`)
+
+- [C] **Open wounds reach a player.** A hostile MpWoundJoin (Ripsaw, open wounds 80) hit MpPvpHost in `wounds`: 24 open-wounds
+  applications with a player as target (3 new state 62, 21 refresh, 200 frames), each followed by the target's stat-74 tick;
+  `combat.py check` 62 events and `stats.py check`, 1 857 ticks checked, 0 mismatches. This answers the "open wounds never hit the
+  player" of § 2 (it was an unreached case). The floor at 256 life was not reached (the host's life was far above it), so it stays `[I]`.
+  The defender held no shield (28 `DRB` lines with `sh` 0), so the shield-held branch of block chance is not run.
+  (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-11-15-sweep8-two-clients)
 
 ## Data touched
 

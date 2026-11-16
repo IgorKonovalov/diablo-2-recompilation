@@ -2679,6 +2679,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00619F90,func,sub_00619F90_RoomUpdatedList,,I,sim/frame,docs/findings/frame/0001-tick-and-messages.md
 0x0061A010,func,DUNGEON_GetCollMap,,I,drlg/collision,docs/findings/drlg/0005-collision.md
 0x0061A040,func,DUNGEON_SetCollMap,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x0061A140,func,sub_0061A140_ActRoomAtCoordsActivate,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061A180,func,sub_0061A180_ActRoomsHead,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061A1B0,func,sub_0061A1B0_RoomGetLevelId,,I,items/tc,docs/findings/items/0001-tc-resolution.md
 0x0061A1F0,func,sub_0061A1F0_RoomPopLevelId,,I,monsters/spawn,docs/findings/monsters/0002-room-population.md
@@ -2722,6 +2723,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x0061B5B0,func,sub_0061B5B0_DrlgRefRemoveNear,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B6F0,func,sub_0061B6F0_DrlgRefMove,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B730,func,sub_0061B730_RoomActivateB,,I,rng/seeds,docs/findings/rng/0002-seed-tree.md
+0x0061B7B0,func,sub_0061B7B0_RoomAtCoordsActivate,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061B920,func,sub_0061B920_ClientBackgroundBuild,,I,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061BA30,func,sub_0061BA30_DrlgRoomReleaseTest,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
 0x0061BAC0,func,sub_0061BAC0_DrlgRoomPinFlag,,C,drlg/lifecycle,docs/findings/drlg/0009-room-lifecycle.md
@@ -3159,7 +3161,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x00648050,func,sub_00648050_PathTargetExtendPlayer,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x00648120,func,sub_00648120_PathTargetFree,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x006483A0,func,sub_006483A0_PathTargetNotTown,,I,drlg/collision,docs/findings/drlg/0009-room-lifecycle.md
-0x00648480,func,PATH_MonTestMask,,I,drlg/collision,docs/findings/drlg/0005-collision.md
+0x00648480,func,PATH_MonTestMask,,C,drlg/collision,docs/findings/path/0004-per-event-reproduction.md
 0x00648580,func,PATH_PatternFromSize,,C,drlg/collision,docs/findings/drlg/0005-collision.md
 0x006485F0,func,sub_006485F0_PathFaceDir,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x00648690,func,sub_00648690_PathSetSpeed,,I,skills/missiles,docs/findings/skills/0002-missiles.md
@@ -3928,7 +3930,7 @@ address,kind,name,signature,confidence,subsystem,evidence
 0x006EB548,data,g_PathFaceStep,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x006EB648,data,g_PathTypeParam98,,I,path/search,docs/findings/path/0001-pathplan-register.md
 0x006EB690,data,g_PathTypeFlags,,I,path/search,docs/findings/path/0001-pathplan-register.md
-0x006EB6D8,data,g_PathPlanFuncs,,I,anim/movement,docs/findings/anim/0003-movement-gates.md
+0x006EB6D8,data,g_PathPlanFuncs,,C,anim/movement,docs/findings/path/0004-per-event-reproduction.md
 0x006EB748,data,g_WeaponClassTokens,,I,anim/timing,docs/findings/anim/0001-modes-frames.md
 0x006EB7E0,data,g_PathDirTable,,I,skills/missiles,docs/findings/skills/0003-handlers.md
 0x006EDA40,data,g_PopCount6A,,I,stats/aggregate,docs/findings/stats/0001-aggregate.md

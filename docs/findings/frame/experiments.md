@@ -411,3 +411,32 @@ review). A tool fix and its test, then a re-run of the kept emulations it could 
 - **Observed:** logs, controls, marks, pilot text, check outputs, counts and `summary-2026-11-04-frame3.txt` in `workspace/logs/frame/manifest-2026-11-04-frame3.txt` (16 lines, complete, nothing appended after; `sha256sum -c` from `workspace/logs/frame/`). Two counted windows (pack, standing and Nova), 10 259 chained events, 0 mismatches, 0 order inversions, 8 defender-class steps in the standing window, 10 `KD` events with 0 failures, 0 shared-seed pairs. The Den scene did not reach Corpsefire in two tries (5513: the pilot found no path to the warp; 5515: level 8 reached, no Corpsefire in the scan in 420 s; the pilot's `life 0.00` lines in `summary-…` and its text are its orb test after the process ended, not the character, as the review read them).
 - **Review's reading (`lane/p55d`):** `python3 -I tools/frame_p55c_counts.py workspace/logs/frame workspace/install/app/game.exe 2026-11-04-frame3`, tools at the review commit (its `COUNTED` now holds this run's two windows, so the totals the lane's kept `counts-…` left empty are filled, with a section naming the seed each defender step moved), and the same without the third argument for part 1's `KD` under the new rule: `counts-2026-11-04-frame3-review.txt`, `counts-2026-11-04-frame2-rerule.txt`, `manifest-2026-11-04-frame3-review.txt`. The lane's kept `counts-…` otherwise reproduces, except 6 lines it lacks (the two den logs' modded monsters, the four pilot windows' pairs), none a count it was cited for.
 - **Conclusion:** no mismatch, none traced to the logger; no stop. Floors: pack scene's two windows met, windows 10 of 10 (as counted), defender rows met in one scene, pairs 2 at `[I]` (owner's A); short by name: Corpsefire's window. See frame/0007 part 2.
+
+## Addendum 2026-11-16: plan 0066 batch S7b, new checks over the kept frame-window logs (`lane/n66o`)
+
+- **No game, no Ghidra.** A dated addendum to run:2026-11-04-frame, run:2026-11-04-frame2 and run:2026-11-04-frame3 (plan
+  0066 Phase 1, batch S7b, [inventory § 4](../../plans/0066-inventory/README.md#4-batch-list)). Tool `tools/sweep2_s7b.py`
+  (`fd1c56af…`, new): `tools/frame_window.py`'s `parse_log` (`2c1267f5…`, unchanged) splits the ten kept logs into their 13
+  windows, one pass per log; its own checks read the lines (sections in its docstring); section `static` decodes the
+  message path's and `DUNGEON_RoomCreate`'s call sites with `tools/sweep2_s7a.py`'s raw-byte scan and r2, and lists the two
+  host loops' calls with objdump. The seven development logs of run:2026-11-04-frame2 are read for § K5's pairs only.
+  Under `systemd-run --user --scope -p MemoryMax=4G`.
+- **Rerun of the review's reader counts:** `tools/frame_p55c_counts.py` (`3386527a…`, unchanged) for both runs, under the same scope:
+  `s7b/counts-frame2.txt` and `s7b/counts-frame3.txt`, byte-identical to the kept `counts-2026-11-04-frame2-rerule.txt`
+  (`8115c54e…`) and `counts-2026-11-04-frame3-review.txt` (`7a6853c6…`).
+- **Output:** `workspace/logs/n66o/s7b/check-s7b.txt` (`914b090d…`, 398 lines, `S7b total bad=0`);
+  `workspace/logs/n66o/manifest.sha256` (`7bce21ba…`, 4 lines, with `s7b/totals-s7b.txt`, the inventory totals) passes from `workspace/logs/n66o`. Three development outputs
+  (`dev1.txt`; `check-s7b-r1.txt`, before the `RC` bookkeeping keyed reused room addresses by line; `check-s7b-r2.txt`,
+  before the owner sites were counted over all nine windows with `XS`) in `workspace/logs/n66o/dev/` with
+  `manifest-dev.sha256` (`4be4f9cc…`), not cited.
+- **Procedure:**
+  ```
+  K=workspace/logs/n66o
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/sweep2_s7b.py check --out $K/s7b/check-s7b.txt
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame_p55c_counts.py workspace/logs/frame \
+      workspace/install/app/game.exe > $K/s7b/counts-frame2.txt
+  systemd-run --user --scope -q -p MemoryMax=4G python3 -I tools/frame_p55c_counts.py workspace/logs/frame \
+      workspace/install/app/game.exe 2026-11-04-frame3 > $K/s7b/counts-frame3.txt
+  ```
+- **Results:** [frame/0007 § Plan 0066 batch S7b](0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o).
+  `audit: n/a, no check of a new run.` (run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3)

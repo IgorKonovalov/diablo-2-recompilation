@@ -732,6 +732,8 @@ def check_rooms(paths):
                 S["%s lines" % t] += 1
             elif t == "RP":
                 for act in d["acts"]:
+                    if not act:             # an act the game has not loaded: the logger writes null (n65i, run:2026-11-15-sweep8-two-clients)
+                        continue
                     for row in act["rooms"]:
                         r, n78 = row[0], row[3]
                         if n78 != len(inside[r]):

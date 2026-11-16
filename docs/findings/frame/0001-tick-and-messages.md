@@ -526,6 +526,158 @@ sequenceDiagram
   T->>T: clock pass, fps, NewRoomsUpdate, unit events, room sync, reset, removals, timers
 ```
 
+### 8. Plan 0066 batch S7a, part 1: second-tool graphs and scans (2026-11-16, `lane/n66n`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7a.py` (`49f0d2dc…`; sections `graphs`, `xrefs`, `reads`). The graphs are
+the objdump walker of `tools/sweep_s4b.py` with two changes (a `jmp` to another function's entry is a tail-call edge,
+and a call of the CRT exit 0x00681E09 ends its block), the draws being the RNG primitives' calls, objdump's operands
+with `0x6AC690C5` and r2's own byte search for it (852 sites by each tool, the same 852). A count is given twice: with
+the nine RNG functions of the sweep tools and with `RngCallGraph.java`'s seven as leaves (`*_seven`). Function counts
+differ from Ghidra's (the walker draws bodies by recursive descent, not by Ghidra's functions); the claims checked are
+"no drawing function", which both tools give. Output `workspace/logs/n66n/s7a/check-s7a.txt` (`43476f6e…`,
+`S7a total bad=0`), `manifest-s7a.sha256` passing from `workspace/logs/n66n/s7a`.
+
+- [C] **No draw by direct reach, per pass, with the stops § 4 names** (frame § J rows 79, 80, 82, 83, 85, 86, 88, 90): the
+  walker's graphs hold no drawing function: `ActsClockPass` 441 functions (`EquipReqRefresh` met once), `GameFpsStats` 2,
+  `GameRunUnitEvents` 8 with the five dispatches stopped (Ghidra's 8; 10 indirect calls, the runners' callbacks), the
+  queue entries 436 (`UninterruptibleEnd` met once), `ActUnitsFrameReset` 491 (`UnitFree` met once),
+  `ActsRoomRemovalsClear` 426, `RoomsDeactivate` 430 (`InactiveUnitSaveTest`, `ActiveRoomFree` met), `ExpirySweepTick`
+  464 (`UnitFree` met). Each route stop reaches drawing functions on its own (122 to 123 with the seven, Ghidra's 118 to
+  119). (fn:sub_0052D7B0_ActsClockPass@0x0052D7B0, fn:sub_005414D0_GameRunUnitEvents@0x005414D0,
+  fn:sub_0053B000_ActUnitsFrameReset@0x0053B000, fn:sub_0053A820_ActsRoomRemovalsClear@0x0053A820,
+  fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_0052D310_ExpirySweepTick@0x0052D310, 0x0055FDE8, 0x00557FE7)
+- [C] **The queue's one draw route** (row 83): `EventQueueAt` calls `UninterruptibleEnd` only after `unit+0 = 1`, kind 2 and
+  `UNIT_HasState(unit, 0x36)` (0x005416F7–0x00541712). (fn:sub_005416B0_EventQueueAt@0x005416B0)
+- [C] **Rows 81, 82, 84, 87, 89, the "own code" and route cells:** `NewRoomsUpdate`'s own body has no LCG operand and no RNG
+  call; of its direct callees the wanderer tick, the population, the preset units, the objects' population and the
+  restore reach drawing functions. `ClientsRoomSync` with `LevelInit`, `AutosaveTick`, `UninterruptibleEnd`, the frame-8 192
+  save and the room and level entries (`RoomActivateA`, `RoomActivateB`, `DRLG_LevelCreate`) stopped: 883 functions,
+  none; `LevelInit` alone reaches 47, `AutosaveTick` 68. `QUESTS_TimersRun` 424, none (its callbacks are indirect). The
+  level-unload tick 449, none, `DRLG_LevelCreate` met once and reaching 2 alone (the seed init and `PresetLevelCreate`'s
+  `RangeB`). [I] stays: the *Seeds* cells of rows 81, 82, 84, 87 and 89 (which seed each route's draws take); no seed
+  argument was traced here. (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, fn:sub_0052D440_ClientsRoomSync@0x0052D440,
+  fn:QUESTS_TimersRun@0x00543E10, fn:sub_0061AA20_ActLevelsUnloadTickWrap@0x0061AA20)
+- [C] **Kind 11** (frame F4a, row 50): with `PetUnitRelease` and `UninterruptibleEnd` stopped, 478 functions and none; the
+  callback 0x00574410 alone 430, none. The call 0x00575600 pushes 0 (0x005755FB) as `PetRemove`'s second argument, and
+  `PetRemove` calls `PetUnitRelease` only past `cmp [ebp+0xC], eax; je` (0x00575132–0x00575137). `PlrPlaceEventsInit` queues
+  kind 3 at `frame + 1` (0x00534B02) and kind 11 at `frame + 0xFA` (0x00534B1D). (fn:sub_00580BE0_PlrEvent11Every30@0x00580BE0,
+  fn:sub_005750E0_PetRemove@0x005750E0)
+- [C] **The packet handlers** (row 78, in part): `g_SrvPacketTable` holds 8-byte records (`cmp [ebx*8+0x6E0D18], 0`,
+  0x0054D772), 91 of the 103 handler words non-null (index 0 null), 9 of them bodies of at most two instructions;
+  `SrvPacketDispatch` draws nothing of its own; the handlers reach drawing functions (142; 139 with the seven). [I] stays:
+  Ghidra's count of 135, which this walker does not reproduce. (data:g_SrvPacketTable@0x006E0D18)
+- [C] **Callers** (rows 6, 18, 38, 45): `GameTick` has two calls, 0x0052FD19 (`ServerGamesFrame`) and 0x00564603
+  (`GameTickAlt`); `GameTickAlt` one, 0x00564C97, in the stub at 0x00564C70 (int3-padded), and no call, jump or absolute
+  reference targets any byte of 0x00564C70–0x00564C9B. `ServerGamesFrame`'s three calls (0x0044CF61, 0x0044F13D,
+  0x0044F159) each `push 1`. `UnitQueueEveryFrame`'s three calls push kinds 0 (`SUNIT_ModeEveryFrame`), 0
+  (`MissileUnitInit`) and 5 (`ImpAttach`); `EventQueueEveryFrame` is called by it, by `UnitQueueEveryFrameCb` (no reference)
+  and by `EventQueueAt`'s `frame = −1` branch (0x005416C5, 0x005416D7). The 265 `UnitQueueEvent` sites push the
+  constant kinds 0: 18, 1: 60, 2: 30, 3: 18, 4: 1, 5: 5, 6: 6, 7: 45, 8: 7, 9: 7, 10: 3, 11: 3, 12: 42, 13: 20;
+  `UnitQueueEventCb`'s one site 14; 269 in all, none a register. (fn:sub_005645E0_GameTickAlt@0x005645E0,
+  fn:sub_0052FC20_ServerGamesFrame@0x0052FC20, fn:sub_005417D0_UnitQueueEvent@0x005417D0)
+  [I] stays for row 18: what `cap` = 1 does after a stall (the `timeGetTime` result, H7b by ruling R3).
+- [C] **No excel accessor** (row 7): the bodies of `GameTick`, the six queue entries, `GameRunUnitEvents`, its five runners,
+  `EventFree` and `UnitEventChainSet` call none of the 44 `*_GetRecord`, `DATATBLS_*` and `EXCEL_*` functions of
+  `re/symbols.csv` and name no address of the data-tables block (0x0096BC30–0x0096D000) or `g_pDataTables`.
+  (fn:sub_0052D870_GameTick@0x0052D870)
+- [C] **The lag scale** (row 20, in part): `g_ServerLagFixed` has one reference, the `cmp` at 0x0052FCAE, and holds 1 in the
+  image; its `jne` goes to the store of 0x400 at 0x0052FD0D before each `GameTick` call; `GameCreateA`'s store (0x00530BD8)
+  precedes the first. [I] stays: "its one reader": besides 0x0052EE9E a second read of the offset, 0x00450C6F, copies it
+  between two objects of unread type in `ClientMainFrame` (the same copy as `+0x1DC8`'s below). (data:g_ServerLagFixed@0x0073100C)
+- [C] **The debug switch** (row 24): `HostAbendMsg` has no call, jump or absolute reference; `+0x1DC8` is named by four
+  instructions: the read in `GameTick` (0x0052D875), the write in `HostAbendMsg` (0x0052F6B7) and the copy at
+  0x00450C93/0x00450C99. (fn:sub_0052F630_HostAbendMsg@0x0052F630)
+- [C] **The clock tables** (row 53, in part): 28 operand references, the same 28 raw hits, none a store and no store through
+  the 21 pointers they form (each followed to its register's next write); rows are 12 bytes (`lea esi, [ecx+ecx*2]`
+  then `*4`, 0x0061BCF8), three tables 0x48 apart, the word after the third a pointer. The largest `start` is 350, so
+  `k × 360` fits to `k` = 5 965 232 and `350 × k` to 6 135 667 (`(2^31 − 1) div 360`, `div 350`). [I] stays: the colour
+  word's role as the act's light (client presentation). (0x0061BF1F, 0x0061BF66, fn:sub_0061BEE0_ClockStep@0x0061BEE0)
+- [C] **The act's `+0x4C`** (row 63, in part): `DUNGEON_RoomCreate` reads it from the act in `ECX` (`[ebp−4]`, 0x00619910,
+  0x0061994B) and calls it when non-zero (0x00619954); `DUNGEON_ActCreate` allocates the act at 0x60 bytes, zeroes it
+  (0x006194C4) and stores no `+0x4C`; the client's two callback pointers 0x00459150 and 0x004591A0 are each named once, by
+  the client's `DUNGEON_ActCreate` call. [I] stays: a later writer; 106 register stores to `[reg+0x4C]` of unresolved
+  base were not traced. (fn:DUNGEON_RoomCreate@0x00619890, fn:DUNGEON_ActCreate@0x006194A0)
+- [C] **`g_HitClassCounter`** (rows 93, 125, in part for 93): named by two instructions, both in `HitClassPick`: the byte
+  read 0x0057CE30 and the byte store 0x0057CE4F of `dl + 1` (0x0057CE4C); it lies past `.data`'s raw bytes, so it is 0 at
+  load. No other code writes it. [I] stays for row 93: the rest of J3 (the element nibble's dependence, the seed-argument
+  scan of `GameTick`'s graph). (data:g_HitClassCounter@0x0088CAD0, 0x0057CE4F)
+- Not settled in part 1 (part 2 of the batch): sim/frame row 117 (the send-queue writers).
+
+### 9. Plan 0066 batch S7a, part 2: the frame's reach to the packet senders (2026-11-16, `lane/n66n`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7a.py` (`246c8301…`, section `p2xrefs`; the walker of § 8). Output
+`workspace/logs/n66n/s7a-p2/check-s7a-p2.txt` (`95d0ebe5…`, `S7a total bad=0`).
+
+- **Contradicted in part: "nothing else leaves the frame but queued packets, flushed after it"** (frame row 117).
+  `ClientFlushPackets` (0x0052E320) has three calls: `ServerGamesFlush` (0x0052FE29), `SrvJoinAct` (0x005304A6) and
+  itself (0x0052E459); `GameTick`'s direct-call graph (2 422 functions, fatal path stopped) does not reach it. But it
+  reaches the transmit routine `0x0052B330` (it compresses the bytes and hands them to 0x0052AEB0 or to
+  0x006C03A0), which `ClientFlushPackets` also uses (0x0052E3B5), at one site: `GameTick` → `ClientsRoomSync`
+  (0x0052D8F9) → `AutosaveTick` (0x0052D4A9) → 0x0052CAF0 (0x0052D40E) → 0x0053B220 (0x0052CB88) → `0x0052B330`
+  (0x0053B231). 0x0053B220 sends a one-byte packet `0xB0` at once (0x0053B22D–0x0053B231), not through the queue.
+  `AutosaveTick` makes that call per client when its save conditions hold and `[0x00883D50]` is non-zero
+  (0x0052D3D9); what sets that word, and so whether a stock single-player game takes the branch, is not read. [C] for
+  the call chain and the packet; [I] stays for the rest of the claim: 751 indirect call sites of the graph are not
+  followed. Backlog
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
+  (fn:sub_0052D350_AutosaveTick@0x0052D350, fn:sub_0052E320_ClientFlushPackets@0x0052E320, 0x0053B231)
+
+### 10. Plan 0066 batch S7f: constants, tables and the net queue with a second tool (2026-11-16, `lane/n66o`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7f.py` (`df779d0e…`, section `frame`): every site read in objdump's
+listing and in r2's decoding of the same address, both compared with the instruction the reading expects; the raw-byte
+xref scan of `tools/sweep2_s7a.py`. Output `workspace/logs/n66o/s7f/check-s7f.txt` (`b7d57335…`, 182 lines,
+`S7f total bad=0`). Inventory rows are sim/frame's.
+
+- **Row 8, `g_ServerFps`:** the image word at 0x00731014 is 25. `SetServerFps` (0x0052DF80) has no call, jump or
+  abs32 reference; the word has two references, `SetServerFps`'s store (0x0052DF8E) and the initializer's `idiv`
+  (0x006CAF16), so no other code writes it. [C] (fn:sub_0052DF80_SetServerFps@0x0052DF80, data:g_ServerFps@0x00731014)
+- **Row 9, the frame interval:** 0x006CAF10 is `mov eax, 1000; cdq; idiv [g_ServerFps]; mov [0x00883D60], eax; ret`,
+  40 on the image. Its one reference is the dword at 0x006CC6F8 in `.rdata`, inside the table 0x006CC614..0x006CC720
+  that `CRT_cinit` walks (`mov esi, 0x6CC614` at 0x00681CDE, `mov edi, 0x6CC720`, every non-null entry called at
+  0x00681CF5). `g_ServerFrameInterval` has two stores, `SetServerFps` (0x0052DF95) and the initializer (0x006CAF1C),
+  and two reads in `ServerGamesFrame` (0x0052FC5E, 0x0052FCD3). [C] (0x006CAF10, data:g_ServerFrameInterval@0x00883D60)
+- **Row 10, `g_GameSlots`:** 1 024 dwords. Its 19 references: 16 slot loops whose pointer ends at `cmp reg, 0x883D38`
+  (14) or, in the two four-way unrolled counts 0x0052BFE0 and 0x0052DB30, `cmp ecx, 0x883D3C` from `0x882D3C`; two
+  reads of slot 0 in `HostAbendMsg` (0x0052F6EF, 0x0052F850); one clear, `ecx = 0x400; rep stosd` in `SrvJoinAct`
+  (0x005306A9). The dword after the array, 0x00883D38, is a separate variable with two stores (0x0052C047,
+  0x0052C0CD). No reference indexes past it. [C] (data:g_GameSlots@0x00882D38)
+- **Row 11, `g_UnitTypeEventList`:** six dwords, types 0..5 → `0, 1, 3, 2, 4, −1`. Its readers are 7 scaled loads
+  (`[reg*4 + 0x6E0B9C]`) in 5 functions: `EventQueueAt` (2), `EventQueueEveryFrame` (1), `EventFree` (2) and two
+  unnamed list-address helpers at 0x00540B30 and 0x00540B70 (1 each); no reference to a byte inside the table. [C]
+  for the values and the reader list; the spec names two readers, a refinement in backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+  (data:g_UnitTypeEventList@0x006E0B9C)
+- **Row 23:** 0x0052D8DF–0x0052D907 holds seven calls and no `j*` or `ret`, and no branch anywhere in `.text` targets
+  an address inside the run (both tools agree on every instruction). [C] (0x0052D8DF–0x0052D907)
+- **Row 27, the net queue:** `NetQueuePop` (0x006BEAD0) returns −1 for a null context, an index at or past `+0x87C`, or an
+  empty head; it takes the head at `[+0x870][i]` under `EnterCriticalSection(+0x854)`, moves the head to the record's
+  `+0x5BC` link and clears the tail word `[+0x874][i]` when the taken record was the tail (0x006BEB13–0x006BEB4C). Both
+  appends, in 0x006BF370 (0x006BF46C–0x006BF4BE) and 0x006C08A0 (0x006C0A5A–0x006C0AB8), set the new record's link to
+  0, write it to the old tail's link or to the empty head, then make it the tail, under the same lock. The other
+  functions that touch `+0x870`, `+0x874` or `+0x5BC` are the clear (0x006BE3C0), two read-only walks (0x006BEA70,
+  0x006BF580), the array setup (0x006BF985) and the teardown (0x006C0170); the pop pushes the taken record on the free
+  list `+0x878` (0x006BEB96) and 0x006BF370 takes from it (0x006BF3D7). The drain pops each queue until −1 (0x0052D004,
+  0x0052D031, 0x0052D061), from the one context word `[0x00882D08]`. [C] (fn:sub_006BEAD0_NetQueuePop@0x006BEAD0,
+  0x006BF493–0x006BF4BB, fn:sub_0052CFE0_SrvDrainMessages@0x0052CFE0)
+- **Row 29, the packet table:** `SrvPacketDispatch` returns 3 for type 0, a type ≥ 0x67 (`cmp al, 0x67; jae`) or a
+  null entry. 91 of the types 0x01..0x66 have a handler; the 11 nulls are 0x2B, 0x4A, 0x4E, 0x55–0x57, 0x5A–0x5C,
+  0x64, 0x65. The switch on `type − 0x14` (index bytes 0x0054D848, jump table 0x0054D838) skips the mode test for
+  0x14, 0x15, 0x3C, 0x43, 0x66, sends 0x41 to `cmp [esi+0x10], 0x11` (refused when the player is null or not in mode
+  0x11), and every other type to `PlayerModeAllowed(1, 0, 0)`, refused when it returns 0. [C] for the table and the
+  exceptions. Queue 1 is popped only by `NetQueuePop1` (one caller, the drain) from the one context; [I] stays for
+  "all clients and all games share queue 1": which queue index the two appends receive is the network layer's, not
+  read. (fn:sub_0054D750_SrvPacketDispatch@0x0054D750, data:g_SrvPacketTable@0x006E0D18)
+- **Row 44, the dispatches:** player (0x00581226) and monster (0x005A7F89) test `kind ≤ 14` unsigned (`cmp …, 0xE; ja`)
+  and skip a null entry; the runners load the kind as a zero-extended byte (`movzx`, 0x00540FB9, 0x0054101D,
+  0x005410B9), so a stored −1..−15 arrives as 241..255 and fails the test. Objects (0x00586AD7) and items (0x00562DA7)
+  load the entry with no compare and call `IsBadCodePtr` on it (import 0x006CC34C), the fatal path on a bad one.
+  Entry 14 is 0 in all four tables and the object table's 12..14 are 0. `MissileFrameEvent` calls `MissileDoFrame`
+  (0x005ADCC4) and drops the kind (`ret 4`); each dispatch has exactly the two calls of its own runner. [C]; "kind 14
+  is queued only with a callback" stays [I] (F2's site scan, not repeated). (fn:sub_00581220_PlayerEventDispatch@0x00581220,
+  fn:sub_005A7F80_MonEventDispatch@0x005A7F80, fn:OBJ_EventDispatch@0x00586AD0, fn:sub_00562DA0_ItemEventDispatch@0x00562DA0,
+  fn:sub_005ADCC0_MissileFrameEvent@0x005ADCC0)
+
 ## Data touched
 
 - `struct:Game+0xA8` (frame), `struct:Game+0xAC..+0xB4` (fps), `struct:Game+0xBC` (acts), `struct:Game+0x88`

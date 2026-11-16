@@ -107,6 +107,8 @@ written from the code before they were read. Little exists beyond anecdotes; not
 |---|---|---|---|
 | `0x0052D870` | `sub_0052D870_GameTick` | frame++, new-room updates, unit events, client room sync, every 12 frames `RoomsDeactivate`, every 11 frames the level-unload tick per act | I |
 | `0x0052D440` | `sub_0052D440_ClientsRoomSync` | per client: `ClientRoomSync` | I |
+| `0x0061A140` | `sub_0061A140_ActRoomAtCoordsActivate` | fatal on a null act, then `RoomAtCoordsActivate`; its one direct caller is 0x00553790 in `sub_00553720_PortalPartnerGet` (§ 12) | I |
+| `0x0061B7B0` | `sub_0061B7B0_RoomAtCoordsActivate` | `0x00642C30` (the room at given coordinates) then `RoomActivateB` on it; a fifth caller of `RoomActivateB` (§ 12) | I |
 | `0x005380D0` | `sub_005380D0_ClientRoomSync` | client room ← its player's room; on a change `ClientRoomChange` | I |
 | `0x00537B50` | `sub_00537B50_ClientRoomChange` | DRLG reference move, level reference move, near-set difference → client add/remove per active room | C |
 | `0x0053A8E0` / `0x0053A9B0` | `sub_0053A8E0_RoomClientEnter` / `sub_0053A9B0_RoomClientLeave` | add / remove the client in the room's client list (`+0x48`, `+0x78`) and tell the units | C |
@@ -1046,6 +1048,216 @@ Static, no session. Kept outputs under `workspace/logs/p49r/` (manifest `p49r-ma
 Unnamed functions are given by address. Their callers, as far as Ghidra's xrefs and the image's pointer tables give
 them, are in the first column; their purpose is not read. The quest sites set the pin when an event starts and clear
 it when it ends. That is a reading of the call order, not a traced lifetime.
+
+### 11.5 Plan 0066 batch S7d: new checks over the kept logs (2026-11-15, `lane/n66m`)
+
+*Added 2026-11-15.* `tools/sweep2_s7d.py check` (`59732e90…`) runs `tools/rooms.py`'s `Checker` (`1971372c…`)
+unchanged as the control over the 13 logs of run:2026-10-17-lifecycle and the 3 of run:2026-10-17-h7a-lifecycle
+(`SUMMARY mismatches=4 checks=2891656`: the kept checks' 2 215 807 and 675 849, the 4 the known `+0xC4` bit `0x2000`
+records of h7a-h-barb3), then new observers on the same lines. Kept output `workspace/logs/n66m/s7d/check-s7d.txt`
+(`6e30d778…`, `S7d total bad=0`), `manifest.sha256` passing from `workspace/logs/n66m`. Record:
+[experiments § Addendum S7d](experiments.md#addendum-2026-11-15-plan-0066-batch-s7d-new-checks-over-the-16-kept-lifecycle-logs-lanen66m).
+
+- [C] **References count paths.** Over every move, the change of each snapshot room's four counts from `RM0` to `RMX`
+  equals `DrlgRefAdd(new)`'s and `DrlgRefRemoveNear(old)`'s walks counted once per path: 253 936 of 253 936 (room,
+  distance) deltas. Counted once per room and distance instead, 71 894 of them differ, and the log differs from that
+  variant in all 71 894. `refs[3]` reaches 52. (fn:sub_0061B390_DrlgRefAddNear@0x0061B390, fn:sub_0061B5B0_DrlgRefRemoveNear@0x0061B5B0, run:2026-10-17-lifecycle, run:2026-10-17-h7a-lifecycle)
+- [C] **One client activates its room's near list.** After each move, every DRLG room of the new room's near list has an
+  active room (`+0x30` ≠ 0) and status ≤ 1: 9 944 of 9 944 room-moves. Rooms two steps away and outside that list
+  stay at status 2 (15 382), 4 217 of them still active from earlier. Whether the distance 2 and 3 rooms' files are
+  loaded (`+0x28`) is not checked. (fn:sub_0061B490_DrlgRefAdd@0x0061B490, struct:DrlgRoomLife+0x0C)
+- [C] **`RoomActivateB`:** a `DRLG_RoomActivate` follows the call exactly when `+0x30` = 0 at its entry (7 690 calls,
+  244 of them on an unbuilt room); a room it built at status 4 that no later move references is listed at the next
+  release pass active with status 4 (158 of 158; 45 others got a reference first). (fn:sub_0061B730_RoomActivateB@0x0061B730)
+- [C] **`+0x78` at the first walk:** a room activated by a client's move (`ACTA` inside `RM0`..`RMX`) has `+0x78` ≥ 1 at
+  its first new-rooms walk in 3 111 of 3 111; after `RoomActivateB` 118 of 153 have 0, so the walk does not imply it.
+  (fn:sub_00537B50_ClientRoomChange@0x00537B50, struct:DungeonRoomLife+0x78)
+- [C] **A first activation's restore** (the populate branch): no monster, item or unit record and the game and room
+  seeds unchanged from `RS0` to `RSX` in 1 459 first activations and in the 2 re-activations of rooms never walked
+  before their release. (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40)
+- [C] **`ActiveRoomFree`, what the log shows:** each of 3 212 freed rooms is absent from the next release pass's list
+  (23 pointers reused by another DRLG room meanwhile, each listed again with that room); a freed DRLG room's move
+  snapshots show `+0x30` = 0 until its next activation (54 691). The near-list removal, the unit bits and the free order
+  are not logged. (fn:sub_0061A910_ActiveRoomFree@0x0061A910)
+- [C] **The save order where it separates:** 3 monsters (classes 435, 498) whose mode-12 draw cleared `save` and whose
+  MonStats2 `restore` is 2 were saved: the `restore` test decides after the draw. Tests 3, 4, 6 and 7 were not reached
+  (§ 11). (fn:sub_005431F0_InactiveMonsterSaveTest@0x005431F0)
+- [C] **No live player in a released room:** 0 of 12 476 save-test lines are a player's; none of the 3 212 freed rooms
+  is the client's current room (the last `ClientRoomChange`); every client's new room is in its own near list
+  (1 144 changes; 16 with no new room). The 1 291 monsters freed with their room (not saved, not kept) are never met
+  again in a `MON` or `MR0` line to the end of their log. (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, 0x0052D2BB)
+- [C] **A restored alive monster comes back in mode 1** whatever its mode at the save: 2 726 of 2 726, 32 of them saved
+  in mode 2, 4 or 5; the 368 flag-4 records came back in mode 12. States and timers are not in the log.
+  (fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
+- [C] **Record order:** in 829 restores the `MR0` record ids come in the reverse of their room's save order (the
+  `MREC` lines after `US`), 563 of them with two records or more. Unit ids rise along 372 of those 563, so the order is
+  the list's, not the units' age. (fn:sub_005421A0_InactiveMonsterSave@0x005421A0, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0)
+- [C] **`SpecialMonRestore` and `MinionRestore` placements:** 107 special records in mode 1, 106 at the record's x, y
+  with 3 room draws, 1 placed elsewhere with 7; 323 minion records in mode 1, 317 at the record's x, y with 3 room draws,
+  6 elsewhere with 7 (a fallback; the draws do not tell radius 4 from 5). No logged special record carried flag 4.
+  (fn:sub_005A4440_SpecialMonRestore@0x005A4440, fn:sub_005A46E0_MinionRestore@0x005A46E0)
+- [I] **H3's write order** is not separated: the log samples the unit after creation (`MRC`), after the stat writes
+  (`MRS`, 0x0054284F) and before `MonRegionUnitLeave` (`MRE`), in that order for all 3 094 created units, which is the
+  breakpoints' order, not the writes'. (0x005427FB–0x00542916)
+- [C] **`PresetUnitSpawn` only in a populate walk:** 408 of 408 `PSU0` lines fall in the walk block of a room with flags
+  bit 0 clear; 286 later restore-only walks of rooms that had one hold none. (fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
+### 12. Plan 0066 batch S7a, part 1: caller and pin scans with a second tool (2026-11-16, `lane/n66n`)
+
+Static, no game. `tools/sweep2_s7a.py` (`49f0d2dc…`, section `xrefs2`): the raw-byte call/jump/abs32 scan of
+`tools/xrefscan.py`, each site decoded by r2, the pushed arguments by r2's linear listing from the int3-padded entry.
+Output `workspace/logs/n66n/s7a/check-s7a.txt` (`43476f6e…`, `S7a total bad=0`), `manifest-s7a.sha256` passing from
+`workspace/logs/n66n/s7a`.
+
+- [C] **`RoomUpdateOne` has exactly three direct callers** (lifecycle row 7): 0x0055379D, 0x0056CF7D, 0x0059E018, no jump
+  and no absolute reference; the third tool agrees with the first. (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0)
+- [C] **Every caller of `RoomRestoredSet` passes 1** (lifecycle row 20, the parenthetical): three calls, 0x0052D12C and
+  0x0052D14A push the immediate 1, 0x0052D20C pushes `EBX`, set to 1 at 0x0052D19B and not written again before the call
+  (callee-saved). The setter's `and [eax+0x34], 0xFFFFFFFD` branch (0x0061A547) is therefore not taken by a direct call.
+  [I] stays: that no other code clears bit 1 of room `+0x34`; the one other `and [reg+0x34], mask` without bit 1 is
+  0x00648B54 in `PathSetTargetPoint` (a path record), and stores of a register to `+0x34` of an unresolved base were not
+  traced. (fn:sub_0061A510_RoomRestoredSet@0x0061A510, 0x0052D19B)
+- [C] **The 31 pin sites** (lifecycle row 27): `RoomPinSet` has 31 direct calls in 24 functions (int3-padded entries), no
+  jump, no absolute reference. `DrlgRoomPinFlag` ORs `0x400000` into room `+0x28` for a 0 argument and ANDs it out
+  otherwise (0x0061BAC0–0x0061BAD3), so a 0 push is a set: 18 sites push 0 (the one register push, `EAX` at 0x005EEAC9,
+  follows `test eax, eax; jne`, so it is 0) and 13 push 1, with the owners § 11.4 (c) names. That the quest sites set
+  at an event's start and clear at its end stays a reading of the call order. (fn:sub_0061AED0_RoomPinSet@0x0061AED0,
+  fn:sub_0061BAC0_DrlgRoomPinFlag@0x0061BAC0)
+- **Contradicted in part: lifecycle row 2.** `RoomActivateB` has ten direct calls. Nine lie in the families the spec
+  names: `PresetLevelBuild` (0x006681D2), the warp destination (0x0066AB5A, 0x0066AC32), the waypoint room (0x0066ADAC),
+  the warp record (0x0066B16A, 0x0066B171) and the level point (0x0066B313, 0x0066B330, 0x0066B3C0). The tenth,
+  0x0061B7CA, lies in a separate function, 0x0061B7B0 (int3-padded; Ghidra's references attribute it to
+  `RoomActivateB`), which takes the room at given coordinates (`0x00642C30`) and activates it; its one direct caller
+  is 0x0061A140, whose one direct caller is 0x00553790 in `sub_00553720_PortalPartnerGet`, the "unit spawn at coordinates
+  whose room was not active" that also calls `RoomUpdateOne` (0x0055379D). [I] So a unit spawn at coordinates is a fifth
+  on-demand activation, beside warp, waypoint, level point and preset build; what reaches 0x00553720 is not read here.
+  Backlog: [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../../backlog/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
+  (fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0061B7B0_RoomAtCoordsActivate@0x0061B7B0,
+  fn:sub_0061A140_ActRoomAtCoordsActivate@0x0061A140, 0x0061B7CA, 0x0061A173, 0x00553790)
+- Not settled in part 1 (part 2 of the batch): lifecycle rows 11, 12, 29, 36, 48.
+
+### 13. Plan 0066 batch S7a, part 2: bit and caller scans with a second tool (2026-11-16, `lane/n66n`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7a.py` (`246c8301…`, sections `stores` and `p2xrefs`; the method as
+[path/0001 § 16](../path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n)).
+Output `workspace/logs/n66n/s7a-p2/check-s7a-p2.txt` (`95d0ebe5…`, `S7a total bad=0`).
+
+- [C] **`0x200000` at room `+0x28`** (lifecycle row 29): over all of `.text`, one dword access of `+0x28` with
+  `0x200000` or its complement, and no byte access of `+0x2A` with `0x20` or `0xDF`: the write
+  `or dword [esi+0x28], 0x200000` at 0x0066F232. Two register tests of `0x200000` exist (0x0062E57D, 0x0063135C, in
+  `ITEMS_Deserialize` and `ITEMS_SerializeBits`), neither on a value loaded from `+0x28`. (0x0066F232)
+- [C] **Bit `0x2000` into unit `+0xC4`** (lifecycle row 48): six immediate stores at `+0xC4` hold the bit, all quest
+  setups storing a function entry (`0x00592C80`, `0x0059EA20`, `0x005B64A0`, `0x005B7B80`, `0x005BA9A0`: int3-padded
+  starts, quest callbacks, not unit flags); of the 22 register dword stores at `+0xC4`, one follows an `or` with the bit
+  within ten instructions: 0x0064C08B → 0x0064C097, in 0x0064C040. (0x0064C040, 0x0064C097)
+- [C] **The champion bit** (lifecycle row 36, in part): the `or` writes of bit `0x04` at monster data `+0x16` are three,
+  `SpecialModsRoll` 0x005A083E (`or word, 4`), `SpecialMonRestore` 0x005A44A3 (`or word, 4`) and `ChampionMemberMark`
+  0x005A4905 (`or word, 5`, right after its `MonMarkSpecial` call at 0x005A48F4); no `and` or `btr` in `.text` clears bit
+  `0x08` there but one in a CRT stack frame (0x0068DB37). [I] stays: the whole-field writes, 196 `mov`s of an immediate
+  and 877 register writes covering `+0x16`, their bases not traced, with the block copy the claim already names; and the
+  order after `MonMarkSpecial` for the first two writes (the callers' reading).
+  (fn:sub_005A0320_MonMarkSpecial@0x005A0320, 0x005A083E, 0x005A44A3, 0x005A4905)
+- **Not raised: a monster's drop's `+0x24`** (lifecycle row 11). `ItemCreate`'s direct-call graph (1 988 functions, 619
+  indirect sites) reaches all four item `+0x24` writers of items/0014 (`ItemGroundExpiry`, `ItemPlaceOnGround`,
+  `UnitRelocate`, `InactiveItemRestoreOne`), every one through `UnitFree`'s chains, so reach does not separate the
+  readings; a path-sensitive reading would be needed. The claim stays `[I]` as it stands. (fn:sub_00558D90_ItemCreate@0x00558D90)
+- **Contradicted in part: `ItemPlaceOnGround`'s callers** (lifecycle row 12): 12 calls in 11 functions, no jump or
+  pointer. The spec's list (`CursorDrop`; an overflow, `BeltOverflow` and `CorpseOverflowDrop`; `DropGoldAmount`;
+  `NPC_MenuAction` three times; `CubeDropEmptied`) holds for eight, and four callers are missing: `QUESTS_GiveItem`
+  (0x005467B5), `DropEar` (0x0055A286), `PLAYER_CorpseCreate` (0x0057FA7D) and `TargetBeltItemToGround` (0x005A3213).
+  [C] for the list of calls; what each caller drops stays the callers' reading. Backlog
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md).
+  (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0)
+
+### 14. Plan 0066 batch S7b: the frame windows' room and timer lines (2026-11-16, `lane/n66o`)
+
+No game, no Ghidra. `tools/sweep2_s7b.py check` over the 13 windows of run:2026-11-04-frame, -frame2 and -frame3
+(`workspace/logs/n66o/s7b/check-s7b.txt`, `914b090d…`, `S7b total bad=0`); the record and the counts are
+[frame/0007 § Plan 0066 batch S7b](../frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o).
+Rows are plan 0066's `drlg-lifecycle.md` rows.
+
+- [C] **`GameTick` once per frame** (row 1): 5 500 `FT0`/`FT1` pairs, consecutive stamps, one game per window.
+  (fn:sub_0052D870_GameTick@0x0052D870, run:2026-11-04-frame2)
+- [C] **§ A's order** (row 5): the walk's `RU0` (rank 3) before every unit event, the `D12` (18), `U11` (19) and `S1500` (20)
+  lines after them and in that order, 0 inversions over 58 678 ranked lines; the 84 `RR` of a walked act inside a tick each
+  after its frame's `D12` line, in a frame ≡ 0 mod 12. (0x0052D8EB, 0x0052D938, fn:sub_0052D240_RoomsDeactivate@0x0052D240,
+  run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **A room activated by the client sync in frame N is walked at N + 1** (row 6): 80 `RC` of a walked act at depth 0
+  after frame N's events, each first walked at N + 1, populated (51 rooms leave the walk with bits 0 and 1) or restored (32).
+  The remainders are taken on the incremented frame (`FT0`'s `pre` + 1: every `TM` line at its due frames only, 5 500
+  frames); their sign is not separated. (0x0052D1A9–0x0052D21D, run:2026-11-04-frame2, run:2026-11-04-frame3)
+- [C] **The sweep's period** (row 8): `S1500` at the two in-window frames ≡ 0 mod 1500 (1500 of the pilot pack window and of
+  town #3) and at no other of the 5 500, absent at the 9 frames ≡ 750 mod 1500. That it frees records is not logged.
+  (0x0052D310–0x0052D322, run:2026-11-04-frame)
+- [C] **`DUNGEON_RoomCreate`'s link and flags** (row 15): the act lists modelled by prepending at each `RC` and unlinking at
+  each `RR` equal all 23 later walks; every walk follows an `RC` of its act since the last walk; the 85 `RC` of acts no walk
+  visits carry `+0x34` = 4, the 84 of walked acts 0 or 1. Whether the 0 or 1 is the DRLG room's `+0x60` bit 0, and
+  `RoomActivateA`'s neighbour step, re-seed, type init and act counters, are not in these logs. (0x0061991F–0x00619925,
+  fn:DUNGEON_RoomCreate@0x00619890, run:2026-11-04-frame2, run:2026-11-04-frame3)
+
+### 15. Plan 0066 batch S7f: the inactive records' writer/reader pairs with a second tool (2026-11-16, `lane/n66o`)
+
+Static, no game, no Ghidra. `tools/sweep2_s7f.py` (`df779d0e…`, section `lifecycle`; every site read by objdump and
+r2, as frame/0001 § 10). Output `workspace/logs/n66o/s7f/check-s7f.txt` (`b7d57335…`, `S7f total bad=0`). Rows are
+drlg/lifecycle's; each bullet names the writer sites, then the reader sites.
+
+- **Row 38, the room record (0x18):** two inserters write it, `InactiveRoomRecordFind` (0x00541D8B–0x00541DAA) and the
+  same code inlined in `InactiveUnitSave` (0x00542EA3–0x00542ECD): x at `+0x00`, y at `+0x04`, the three heads zeroed,
+  `+0x14` the next. Both walks stop at the first record whose x is below the key (`jg`, 0x00541D50, 0x00542E83), so the
+  list is x descending, y only compared for equality. The heads: items `+0x08` (pushed at 0x00541C3C), monsters `+0x0C`
+  (0x005424DE), units `+0x10` (0x0054306F); `InactiveRecordTake` reads all three (0x0054193C, 0x00541944) and unlinks by
+  `+0x14`. [C] (fn:sub_00541D20_InactiveRoomRecordFind@0x00541D20, fn:sub_00542E30_InactiveUnitSave@0x00542E30)
+- **Row 39, the item record (0x0F + n):** built on the stack and copied: `+0x00` 0, `+0x04` from 0x00558A10, `+0x08`
+  `0x00629F20(item)`, `+0x0C` the length `ITEMS_Serialize(item, buf, 0x400, 1, 1, 0)` returns, `+0x0E` its bytes, n + 0xF
+  bytes in all (0x00541B34–0x00541BA6). `InactiveItemRestoreOne` reads `+0x0C` and `+0x0E` (0x0054199B, 0x005419A6) and
+  `+0x04` (0x005419DB); `InactiveItemsRestore` reads `+0x04` and `+0x00` (0x00541AD0, 0x00541AD5). `+0x08` has no reader
+  in either, nor in `ActInactiveItemRecsExpire` (it reads the head and `+0x04`). [C] for the layout and its readers.
+  (fn:sub_00541B10_InactiveItemSave@0x00541B10, fn:sub_00541990_InactiveItemRestoreOne@0x00541990)
+- **Row 40, flag `0x40`:** set when 0x00573540(unit, 2) is non-zero (0x0054235A–0x00542363); the restore passes
+  `flags & 0x40` to `MonRegionUnitLeave` (0x00542934–0x00542954). [C] for the pair; what the callee does with it is its
+  own reading.
+- **Row 41, `+0x1C`:** −1 first (0x0054224B); 0x0058F440 returns AI control `+0x2C` and `+0x30`, or −1 for a non-monster or
+  when `+0x30` is not 1 (0x0058F44E, 0x0058F46C–0x0058F472, 0x0058F47D–0x0058F480); the save keeps the id only when it is not −1 and the type is 1
+  (0x0054246B–0x00542475). The restore passes `+0x1C` to `MonSetOwnerRestore` (0x005427E7–0x005427FB). [C]
+- **Row 42, `+0x20`, `+0x24`, `+0x28`:** `+0x20` is AI control `+0x34`, written in the same branch as `+0x1C` (so only
+  when the link type is 1), and 0x0058F440 then clears AI control `+0x2C` to −1 and `+0x34` to 0 (0x0058F4AF–0x0058F4BB).
+  `+0x24`: `0x00666120` moves the dword at AI control `+0x38` (0x0058F000) into the record and zeroes the source
+  (0x00542093–0x00542098, 0x00666120–0x00666124). `+0x28`: AI control's first dword (0x005422C9–0x005422D7, 0x005B0D60).
+  Readers: `+0x20` at 0x005425D6 and 0x005427DD; `+0x24` moved back by `InactiveMonAiRestore` (0x00541E91–0x00541EA2)
+  when non-zero, then whatever is left freed by 0x00666130 (0x00542959–0x00542963); `+0x28` to `MonAiInit`
+  (0x00542862–0x0054286B). [C]; the conditional `+0x20` and the clears are refinements, in backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+- **Row 43, `+0x2C`:** 0x00573520 returns monster data `+0x58` (0x00573533), stored at 0x005423F5; the restore passes it
+  to `MonRegionUnitLeave` (0x00542928, 0x00542949–0x00542954). [C]
+- **Row 44, `+0x30`, `+0x32`, `+0x3C`:** the name seed word (0x005422DF), the nine mod bytes (0x00542404–0x0054243B),
+  the superunique id word when 0x005A0180(unit, 2) sets `0x800` (0x00542305–0x0054231C). Read at 0x005426AF, 0x00542676,
+  0x00542696, 0x005428A1, 0x0054269A and 0x00541EC3. No instruction of the save, the restore or the AI restore touches
+  `+0x3B`, `+0x3E` or `+0x3F`. [C]
+- **Row 45, `+0x4C`, `+0x50`:** `InactiveMonAiSave` writes them from five sources (0x0054202B–0x00542133); the AI restore
+  reads them (0x00541E7D, 0x00541E83, 0x00541ECA, 0x00541ED0). [C]
+- **Row 46, `+0x58`:** the old monster head (0x005424D8–0x005424DB), then the record becomes the head (0x005424DE); the
+  restore walks by it (0x00542563) and so does 0x00542A8D. [C]
+- **Row 64, bit `0x200`:** the save copies unit `+0xC8` to `+0x14` (0x005424A1–0x005424AF); the restore sets `0x200` in
+  the new unit's `+0xC8` iff the record's has it (0x005428F9–0x00542903). [C] for the pair. No `or` of an immediate
+  holding `0x200` into `[reg+0xC8]` exists in `.text`; 18 register `or`/`mov` stores to `[reg+0xC8]` do, the restore's
+  among them, and the other 17 are not resolved, so "only" stays [I].
+- **Row 77:** the release (0x00542089–0x00542098) and the write back (0x00541E99–0x00541EA2) are the `+0x24` pair of
+  row 42. [C]
+- **Rows 57, 62, the `0` of `SpecialMonRestore`:** pushed as `SpecialModsApply`'s third argument (0x005A454E, after
+  `esi` and `ebx`, call 0x005A4558). `SpecialModsApply` (0x005A2120–0x005A21CA, `ret 0xC`) reads that argument once,
+  at 0x005A2123, and a zero skips its call of `sub_005A0C00_UniqueMinions` (0x005A2135). [C] for the argument and its
+  only test; that the skipped call is what makes minions is the callee's name, so row 62's "restored without new
+  minions" stays [I].
+- **Rows 61, 63, `MinionRestore`'s flag:** after `or word [eax+0x16], 0x10` (0x005A47DF) it fills {1, 2, 3, 4}
+  (0x005A47E4–0x005A47F9) and calls `g_UModHandlers[mod]` for those four (0x005A4806–0x005A481A) and for its nine saved
+  mod bytes (0x005A4825–0x005A4839) with `push 0`, where `SpecialModsApply` pushes 1 in the same slot (0x005A214D). The
+  handlers of mods 1 (`UModRndName`) and 8, 27, 28 (`UModResist`) test that slot first (0x005A0CE7, 0x005A138F) and skip
+  their body on 0: `rndname` before its `0x6AC690C5` step (0x005A0CF0). [C]
+- **Row 70, the drivers' bit 0:** `RoomUpdateOne` tests `[room+0x34] & 1` (0x0052D0FB) and `NewRoomsUpdate` the same
+  with `bl` = 1 (0x0052D19B, 0x0052D1C9; `ebx` not written between). Clear: `RoomPresetUnits`, the restore,
+  `RoomObjectsPopulate`, `RoomPopulate`, then the bit is set. Set: `RoomRestoredGet`, and when it returns 0
+  `RoomInactiveUnitsRestore` directly (0x0052D142, 0x0052D205), none of the three population calls. [C] for the driver;
+  the restore's spawn chain (`SpawnWithId`'s flags, `SUnitPathCreate`'s marks) stays [I].
+  (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
 
 ## Data touched
 
