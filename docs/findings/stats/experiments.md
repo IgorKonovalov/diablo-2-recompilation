@@ -593,3 +593,11 @@ run:2026-10-16-calc-emu under `EmuTrace` (the plan 0038 S1e review follow-ups, (
   [data/0005 § 11](../data/0005-calc.md#11-static-emulation-of-the-functions-and-the-missile-context-run2026-10-16-calc-emu).
   (fn:STAT_ByTimeValue@0x0065CA30, fn:sub_00626200_StatEvaluate@0x00626200, fn:MISS_CalcVar@0x0064B340,
   fn:MISS_EvalCalc@0x0064B7C0)
+
+## Pointer: plan 0066 batch S4e part 1, the stats family
+
+Record: run:2026-11-16-sweep2-s4e-emu. Plan 0066 batch S4e (`lane/n66z`), part 1: the stats family (the readers' `fMin` floor, the maxima getters,
+`StatEvaluate`'s ops 2, 3, 10 and 12, `StatRecompute`'s take test) under emulation. The record is kept with the
+batch's items parts in [items experiments](../items/experiments.md#run2026-11-16-sweep2-s4e-emu); the claims are in
+[stats/0001 § 11](0001-aggregate.md#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu).
+(fn:sub_00624F60_StatListGetValue@0x00624F60, fn:sub_006266C0_StatRecompute@0x006266C0)

@@ -126,8 +126,13 @@ No community source was compared; every claim is from the code. The doubling dra
   player's own, so the distance test holds with any input. `sub_005492F0_PktBeltItemBad` wants mode 2. (0x0054B560)
 - [I] **`0x27`.** Length 9. `+1` is the target and `+5` the used item; both must pass `sub_00549220_PktOwnedItemBad`.
   (0x0054B280, 0x00561ED0)
+- *2026-11-16 (plan 0066 S4e part 3, [items/0013 § 12](0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu)):*
+  the three bullets above are `[C]` (ADR-0021) up to the use function's call (run:2026-11-16-sweep2-s4e-emu), with two
+  refinements: `PktOwnedItemBad` passes an owned item or else the player's cursor item, and `0x26`'s distance test
+  passes for any dynamic-path unit (the player) but can fail for a static-path unit with a coordinate above `0xFFFF`.
+  The return of 3 on a flagged refusal comes after the call and stays `[I]`.
 - [I] **`0x61`.** Length 3; expansion games only (`game+0x70`), else 3. With a cursor item that is not a quest item the
-  mercenary path runs; the player must have no used skill and be alive, and the pet of type 7 alive. (0x0054D430)
+  mercenary path runs; the player must have no used skill and be alive, and the pet of type 7 alive. (0x0054D430) *Update 2026-11-16 (plan 0066 S4e part 5c): `[C]` (ADR-0021) to `MercGiveCursorItem` and `0x0054D130`, family `merc`, with refinements: a busy player whose interaction is with a player returns 3, the pet's room must be in the player's room's near list (`0x0065A590`), no inventory returns 3, with no cursor item a non-zero `u16` at `+1` goes to `0x0054D130`, the pet is the first type-7 node with bit 0 clear; [items/0013 § 16](0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu).*
 - [I] A refusal flagged by the use function returns 3 from the handler; what the drain does with 3 is P1.3's. (0x0054B1E0)
 
 ## 2. The dispatch
@@ -141,6 +146,8 @@ row; kind 4's `use` is an address in the table and the empty ones return 0.
 [I] After the boundary: a test returning 0, or a use returning 0, clears the use marks (`sub_005BE1C0_InvClearUseMark`)
 and sends message `0x7C`; a test's non-zero leaves them. **`ItemUse` returns 0 after any test**, and the use's own return
 otherwise. Only kind 1 has a test, and it returns 1. (0x005BF320–0x005BF34C, 0x005BF38C–0x005BF3B6)
+
+*Update 2026-11-16 (plan 0066 S4e part 5c): `[C]` (ADR-0021), family `c2`, with the stock entries run: kind 1's test returning 1 leaves the marks and `ItemUse` returns 0; a use returning 0 reaches `InvClearUseMark`; a use returning 1 is `ItemUse`'s return. Still `[I]`: message `0x7C` after `InvClearUseMark` (its queue can allocate; → H4c), a test returning 0 (no stock entry's does) and use returns other than 0 and 1 (0x005BF324, 0x005BF390, 0x005BE16F, run:2026-11-16-sweep2-s4e-emu); [items/0013 § 16](0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu).*
 
 ## 3. Consumption, in the callers
 
@@ -225,7 +232,8 @@ for (k = 0; k < 3; k++) {
 - [I] **The draw's chance** for `n`: `Σ min(100, r >> 1) / (100 n)` over `r < n`, from `tools/item_inventory.py`
   `double_chance`: 2.0 % at 10, 5.76 % at 25, 12.0 % at 50, 24.5 % at 100, 49.5 % at 200, 79.8 % at 500. The stats read are
   `STATS_GetUnitStat(user, 3 or 1, 0)`; on a non-player user they are whatever its list holds, usually none, so no draw.
-  (0x005BE514–0x005BE53B)
+  (0x005BE514–0x005BE53B) *2026-11-16 (plan 0066 S4e part 5b, items/0013 § 15): the rule `r2 < r1 >> 1` at each pair `[C]` (ADR-0021) over 146
+  `n`, players and non-players, and no draw at a stat ≤ 0; the formula is the uniform-pair count (refinement).*
 - [I] **Stock totals** (`python3 -I tools/item_inventory.py stock`): `hp1` 30 → 7 680 stored units for a Sorceress, 11 520 for
   an Amazon, 15 360 for a Barbarian, i.e. 30, 45 or 60 life. The stored rate truncates: `hp3` (100, `len` 171) gives
   25 600 / 171 = 149 per frame, 25 479 over the 171 frames, 99 life and a remainder. Stock `ValShift` of stats 26 and 74 is
@@ -272,7 +280,7 @@ first is carried and spread over the longer window. (0x005BE678–0x005BE6CF) *N
 - [C] (ADR-0021) **Blood Golem.** For a positive life amount on a player: pet type 3, class `0x122`; the row's MonStats
   `+0x170` names a Skills row, whose `+0x15C` is a percent. `share = v · p / 100` truncated goes to `GolemHeal`, up to the
   golem's maximum, and the player keeps `v − returned` (after, `[I]`). No such pet or another class returns `v`.
-  (family `golem` 300, and 27 + 11 cases of `stat3`, `stat5`, run:2026-11-03-use-emu, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0) [I] `v = 0` sets the golem to full; no use entry sends it. *Corrected 2026-11-04 (`lane/s60` review): kind 5 calls the share before its cap with no `v > 0` test (`0x005BEC10`), so only a maximum of 0 would send it, no stock case. Kinds 3 and 5 return 1 when a slot applied, else 0 (`0x005BE73D`, `0x005BED90`), which decides C2's clear and the caller's removal.*
+  (family `golem` 300, and 27 + 11 cases of `stat3`, `stat5`, run:2026-11-03-use-emu, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0) [I] `v = 0` sets the golem to full; no use entry sends it. *Corrected 2026-11-04 (`lane/s60` review): kind 5 calls the share before its cap with no `v > 0` test (`0x005BEC10`), so only a maximum of 0 would send it, no stock case. Kinds 3 and 5 return 1 when a slot applied, else 0 (`0x005BE73D`, `0x005BED90`), which decides C2's clear and the caller's removal.* *2026-11-16 (plan 0066 S4e part 5b, items/0013 § 15): `[C]` (ADR-0021) to the set, from `GolemHealShare`'s own branch (0x005C68AC → 0x005C68F0); `GolemHeal` itself returns 0 at `v ≤ 0` (refinement of the anchor).*
 
 ## 7. What the columns gate
 

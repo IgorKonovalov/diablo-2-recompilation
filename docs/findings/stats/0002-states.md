@@ -494,6 +494,40 @@ The record: [experiments § The stats sessions of run:2026-10-21-shortfalls2](ex
   The defender held no shield (28 `DRB` lines with `sh` 0), so the shield-held branch of block chance is not run.
   (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-11-15-sweep8-two-clients)
 
+### 12. Plan 0066 batch S4e part 5e: the elemental appliers' lists (run:2026-11-16-sweep2-s4e-emu, static)
+
+Objdump, 35 pins (`workspace/logs/n66z/s4e/run9/static.txt`) and a call scan of each body (`xref.txt`): each of the
+four appliers makes exactly one `STATLIST_Alloc`, one `StatListSetState`, one `STATLIST_SetRemoveCallback` and one
+link call 0x00626E10. A second tool beside [combat/delivery](../../specs/combat/delivery.md) D2–D4's Ghidra reading. Row: stats/states 14.
+
+- [C] (static) **The same list shape in all four**: `STATLIST_Alloc(game pool, 2, len-derived third argument, the
+  attacker's type, the attacker's guid)`, or 6 and −1 without an attacker (0x0057ACD2..0x0057ACDF, and the `mov
+  eax, 6` of each), then the state, the remove callback and `link(defender, list, 1)`. States: poison 2, burn 115
+  (`0x73`), cold 11 (`0xB`), freeze 1. Alloc sites 0x0057ACEA, 0x0057AE6A, 0x0057B06C, 0x0057B360.
+  (fn:COMBAT_ApplyPoison@0x0057AC50, fn:COMBAT_ApplyBurn@0x0057ADD0, fn:COMBAT_ApplyCold@0x0057AF80,
+  fn:COMBAT_ApplyFreeze@0x0057B230, fn:STATLIST_Alloc@0x006251F0, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static) **Refinement: the remove callbacks differ.** Poison and burn set 0x0056E900; cold sets 0x0057AD80;
+  freeze sets 0x0057B170 (0x0057AD1C, 0x0057AE9C, 0x0057B08C, 0x0057B36F). What the two others do at expiry was not
+  read. (run:2026-11-16-sweep2-s4e-emu)
+- [I] Only the list's make-up is pinned; the timer calls (0x005417D0) and cold's stats 67..69 follow the link and
+  were not compared.
+
+### 13. Plan 0066 batch S4e part 5f: the pet release routed (run:2026-11-16-sweep2-s4e-emu, static)
+
+Objdump pins and the route scan of `tools/items_s4e10_emu.py` (`workspace/logs/n66z/s4e/run10/static.txt`,
+`sites.txt`; record in [items/experiments](../items/experiments.md#part-5f-the-closing-static-part-2026-11-16)). Row:
+stats/states 46.
+
+- [C] (static) **The release chain.** `STATE_DefaultRemoveCB` calls `PetLimitRefresh` (0x0056E960); `PetLimit` calls
+  `PetRemove` (0x005758DB), which calls `PetUnitRelease` (0x00575137), which calls `UnitKilled` (0x005744DB) and
+  `MonSetMode` (0x00574501), beside skills/0015 § 10's reading. (fn:sub_00575850_PetLimit@0x00575850,
+  fn:sub_005750E0_PetRemove@0x005750E0, fn:sub_00574450_PetUnitRelease@0x00574450, run:2026-11-16-sweep2-s4e-emu)
+- [I] **Whether a stock expiry releases a pet is not settled statically.** It needs a player at a pet limit that a
+  timed state's skill levels raised (the skill shrine's, for one) when the state ends; and `PetLimit`'s
+  `PetRemove` call reaches the pool's free (0x005758DB → 0x00574850 → 0x0040B480), `PetUnitRelease`'s
+  `UnitKilled` call the same (0x005744DB), and `MonSetMode` an import (0x00574501 → … → 0x00580B2F; `sites.txt`), so
+  an emulation of the release would need a declared callee return (ADR-0029, R2). Moved to b (H4e).
+
 ## Data touched
 
 tbl:States.txt:curse, tbl:States.txt:group, tbl:States.txt:plrstaydeath, tbl:States.txt:monstaydeath,

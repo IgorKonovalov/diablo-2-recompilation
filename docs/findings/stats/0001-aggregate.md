@@ -22,7 +22,10 @@ finding, write for write; § 9 lists what each claim was checked against and wha
   fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0, run:2026-10-17-stats)
 - [I] Both readers floor the value at `MinAccr << ValShift` when the stat has `fMin` and the unit is a player or a
   monster: no read of the run reached the floor. (fn:sub_00624F60_StatListGetValue@0x00624F60, tbl:ItemStatCost.txt:fMin,
-  tbl:ItemStatCost.txt:MinAccr)
+  tbl:ItemStatCost.txt:MinAccr) **S4e 2026-11-16, contradicted in part:** the test is `v < MinAccr` (unshifted), and
+  only then is `MinAccr << ValShift` returned, so a value between the two is kept; the floor also needs the list's
+  extended bit and a non-NULL record argument, and an absent entry returns 0 unfloored. `[C]` as code, [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu).
+  (0x00624FC5–0x00624FD1, run:2026-11-16-sweep2-s4e-emu)
 - [C] **The cache is kept by propagation.** Every add or set on any list passes the delta up the parent chain
   (`STATLIST_Propagate`): a stat with no `op` link adds the delta to each extended list's cache; a stat that feeds an
   `op` or is an `op` target is re-evaluated (`sub_006266C0_StatRecompute`). The walk stops after a list with flag
@@ -35,7 +38,9 @@ finding, write for write; § 9 lists what each claim was checked against and wha
   `CharStats × (full − own) × 64` for energy and vitality. The arithmetic is § 4. (fn:sub_00626200_StatEvaluate@0x00626200,
   fn:ITEMSTATCOST_Load@0x00637A00, run:2026-10-17-stats)
 - [I] Op 3 (no row), op 6 and 7 (time of day; no spawnable row) and the empty ops 10 and 12 were not reached.
-  (fn:sub_00626200_StatEvaluate@0x00626200, fn:STAT_ByTimeValue@0x0065CA30)
+  (fn:sub_00626200_StatEvaluate@0x00626200, fn:STAT_ByTimeValue@0x0065CA30) **S4e 2026-11-16:** op 3, 10 and 12 as
+  code, and "no row" for op 3, 10 and 12 over the table, `[C]` in [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu); ops 6 and 7 are § 10's. Which affixes carry
+  the 36 op-6/7 rows stays `[I]`. (0x0062632D, run:2026-11-16-sweep2-s4e-emu)
 - [C] **Op 6 and 7 as code** (plan 0051 Phase 1b, § 10): `STAT_ByTimeValue` and `StatEvaluate`'s cases 6 and 7
   (with `ActTimeOfDay`, ops 10, 12 and above 13 between them) were run under emulation on synthetic lists. They
   reproduce § 4's arithmetic bit for bit in 9 000 calls, 0 mismatches. Each case adds a term only when the list's
@@ -250,7 +255,10 @@ while (list) {
   player or monster and a positive cached stat 0, see below), 4/5 (linked unit a player or monster with positive
   stat 0), 6/7 (list of a player or monster) or 13 (list of an item); ops 8, 9, 10, 11 never take. So a source of op
   1, 2–7, 12 or 13 keeps its **old** cache value (0 on first use) while its target is non-zero, and its dependents are
-  not walked. (fn:sub_006266C0_StatRecompute@0x006266C0, 0x006267AD the op class table at 0x0062690C)
+  not walked. (fn:sub_006266C0_StatRecompute@0x006266C0, 0x006267AD the op class table at 0x0062690C) **S4e
+  2026-11-16:** `[C]` as code for every class, both outcomes, with two refinements: ops 2/3 read the value with no floor
+  and ops 4/5 through `STATS_GetUnitStat` with it, and an op byte above 13 takes (unreachable on loaded data), [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu).
+  (0x006267A0, run:2026-11-16-sweep2-s4e-emu)
 - [I] **The write order, by instruction** (plan 0041 P3 review, objdump): `StatEvaluate` at 0x006266D0; no `+0x51`:
   `CacheWrite` at 0x006266EA and return; `v = 0`: `CacheWrite` at 0x00626708; per `+0x58` target (three words at
   most, `0xFFFF` ends): `StatRecompute` of the target at 0x00626775, its `CacheWrite` at 0x00626786, the take test only
@@ -265,7 +273,9 @@ while (list) {
   player the per-level sources are hidden; a monster's strength is usually 0. The loader fills only `+0x5E..+0xDD`
   with `0xFFFF` (`rep stos`, 0x20 dwords), not `+0x0DE`, so the 0 of a non-target row is the record's initial
   content, which no code read here writes; Phase 2 question 3 confirms it. (0x006267C0–0x006267DA,
-  0x006267F7–0x00626811, 0x00638250–0x00638262)
+  0x006267F7–0x00626811, 0x00638250–0x00638262) **S4e 2026-11-16:** the word read is the source row's `+0x0DE + 6k`
+  `[C]` as code (a model reading the target's row fails 80 cases), [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu); what a loaded non-target row holds there
+  stays as stated. (run:2026-11-16-sweep2-s4e-emu)
 - [I] **Level-up.** `level` is the `op base` of the 37 per-level rows, so it has dependents; a change of stat 12
   re-evaluates `level` (no targets, so it is always written) and then every per-level row and their targets.
   (fn:ITEMSTATCOST_Load@0x00637A00, tbl:ItemStatCost.txt:op base)
@@ -335,7 +345,9 @@ return acc;
 - [I] `UnitGetMaxHp`, `UNIT_GetMaxMana` and `UNIT_GetMaxStamina` read the cached full stats 7, 9 and 11 with the
   `fMin` floor (`MinAccr` 1, 0, 0). So `maxhp = base 7 + Σ items/states/sets flat 7 + op 9 + op 11 + op 2 + op 6`,
   each as § 4. (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, fn:UNIT_GetMaxMana@0x00625D60,
-  fn:UNIT_GetMaxStamina@0x00625DB0, tbl:ItemStatCost.txt:MinAccr)
+  fn:UNIT_GetMaxStamina@0x00625DB0, tbl:ItemStatCost.txt:MinAccr) **S4e 2026-11-16:** the getters' bodies `[C]` as
+  code (the cached stat through `StatListGetValue` with the stat's record; 0 for a NULL unit or list, or a count at or
+  below the stat), [§ 11](#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu); the floor is the corrected one of § 1. (run:2026-11-16-sweep2-s4e-emu)
 - [I] **The rescale callback.** On a cache change of stat 7, 9 or 11 with `new ≠ old`, `old > 0` and current
   (6, 8, 10) > 0: `r = ftol((float)(new / max(old, 256) × cur))` (`fild`/`fidiv`/`fimul`, stored to a float32), and
   the current value becomes `r` (at least 1) when `max(r, 1) < new`, else `new`. A monster with a MonStats `+0x1A0`
@@ -507,6 +519,10 @@ and predicts every line from § 1–§ 8 (method and counts in the run record). 
   run:2026-10-17-stats)
   - *Correction 2026-11-15 (plan 0066 S4d part 2):* counted over the kept logs, 136 is the commonest gap in 12 of the
     18 sessions and all 10 of run:2026-10-20-shortfalls; in six it is 1 (bursts after actions). Still `[I]`.
+  - *Update 2026-11-16 (plan 0066 S4e part 5f, § 14):* what queues the idle refresh is read: `ActsClockPass` calls
+    `PlayerEquipRefresh(…, 1)` for each client's player of an act slot whose `ActClockTick` returns non-zero (0x0052D7D2,
+    0x0052D822) `[C]` (static); that the 136 is act index 3's bucket period stays `[I]`.
+    (fn:sub_0052D7B0_ActsClockPass@0x0052D7B0, fn:sub_0055FDE0_PlayerEquipRefresh@0x0055FDE0)
     (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, [stats/experiments § Addendum S4d part 2](experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
   - [C] *Correction 2026-11-15:* the body-to-cursor pickup unlinks the item through `sub_0063AAF0_InvItemRemove` →
     `UNIT_UnlinkItemStatList`, not `ITEMS_DetachFromOwner` (260 unlinks with no detach in the frame); and the
@@ -566,6 +582,233 @@ pinned image under Ghidra 12.1.2's p-code emulator with `EmuTrace.java` (ADR-001
   `+0x04 → {+0x08, +0x28}`. So the phase `x` as a time of day (90 per quarter, 360 a cycle, from the `q·90` offset
   and the 180/359 folds) is a reading of the code's constants, not a run observation. Neither is who reaches the
   cases in play, given that no stock row is spawnable. (fn:sub_0061C100_ActTimeOfDay@0x0061C100)
+
+### 11. Plan 0066 batch S4e part 1: the stats family under emulation (run:2026-11-16-sweep2-s4e-emu)
+
+Plan 0066 Phase 1, batch S4e (`lane/n66z`, 2026-11-16), part 1. The code run on the pinned image under Ghidra 12.1.2's
+p-code emulator with `EmuBoundary.java` (ADR-0015; no observed boundary, no import), compared with
+`tools/stats_s4e_emu.py`'s models over 11 000 synthetic cases, 0 mismatches, 30 controls each separating with `passed`
+0. Record, counts and read set: [items experiments](../items/experiments.md#run2026-11-16-sweep2-s4e-emu). Each confirmed
+statement below covers the code as a map from its arguments and the declared bytes to its return value and the bytes it writes
+(ADR-0015 (3)); the offsets' meanings keep their own tags.
+
+- [C] **The readers' floor.** `StatListGetValue` (EBX list, EDI key, stack record; `ret 4`) reads the cache `+0x48`
+  when the list's `+0x10` bit 31 is set, else the own array `+0x24`; `StatListGetBaseValue` always reads `+0x24`. Both
+  binary-search the array with a signed key compare and return 0 for an absent key, unfloored. A present value `v` is
+  replaced only when all hold: the record argument is not NULL, its `+0x05` has the bit of the mask 0x006CE270 (`4`),
+  the list's `+0x10` bit 31 is set (for the base reader too), the list's `+0x44` is not NULL, and the dword it points
+  to (the owner's type) is 0 or 1. Then **`v < MinAccr` (signed, `+0x2C` unshifted)** gives
+  `MinAccr << (ValShift & 31)` (`+0x18`), 32-bit. So a value at or above `MinAccr` but below `MinAccr << ValShift` is
+  returned as it is (65 cases). 2 581 present reads, 524 floor tests, 211 floored (25 with `ValShift` ≥ 32), 648
+  absent. Controls: the threshold `MinAccr << ValShift` 79 cases, no extended test 83, no owner-type test 240,
+  unsigned 172, `≤` 10, absent entries floored 87. (fn:sub_00624F60_StatListGetValue@0x00624F60,
+  fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0, 0x00624FC5–0x00624FD1, 0x00624F25–0x00624F31,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] **`STATS_GetUnitStat(unit, stat, param)`** (`ret 0xC`): 0 for a NULL unit, a NULL `unit +0x5C`, a stat below 0
+  or at or past the DataTables count `+0xBD4`; else `StatListGetValue(unit +0x5C, (stat << 16) + param word, the
+  stat's record)`, so with the floor above. 675 stats out of range. (fn:STATS_GetUnitStat@0x00625480,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] **The maxima getters** `UnitGetMaxHp`, `UNIT_GetMaxMana`, `UNIT_GetMaxStamina` (`unit`; `ret 4`): 0 for a NULL
+  unit or a NULL `unit +0x5C`, 0 when the DataTables count is at or below 7, 9 or 11 (signed `jle`) or the record
+  address `+0xBCC + 0x144 × stat` is 0; else `StatListGetValue(unit +0x5C, stat << 16, that record)`. They read no
+  CharStats cell and add nothing: the value is the cached stat with the floor. 1 500 cases (hp 510, mana 539, stamina
+  451), 653 at a count at or below the stat. Controls: stat − 1 562, the own value 408, `≥` on the count 117, no
+  floor 39. (fn:sub_00625D10_UnitGetMaxHp@0x00625D10, fn:UNIT_GetMaxMana@0x00625D60,
+  fn:UNIT_GetMaxStamina@0x00625DB0, run:2026-11-16-sweep2-s4e-emu)
+- [C] **`StatEvaluate`'s op 3** (ECX list, EDX key): per entry `{op base +0xDE, source +0xE0, op +0xE2, param +0xE3}`
+  of the target's table, op 3 has op 2's gates: the list's `+0x08` is 0 or 1; the op base is not `0xFFFF` and below
+  the count; `b = StatListGetValue(list, base << 16, NULL) >> (ValShift(base) & 31)` (arithmetic, no floor: the
+  record argument is NULL) is above 0; `p = Eval(list, source << 16)` is not 0. Then `term = (p × b) >> (param & 31)`
+  (32-bit product, arithmetic shift); op 2 adds `term`, op 3 adds `MulDiv(b0, term, 100)` with `b0` the
+  own-plus-children sum. Ops 10 and 12 go to the next entry (0x00626665), as does any op above 13. 2 500 cases: op 2
+  terms 949, op 3 1 347, op 10 670 and op 12 643 skipped, wrapped products 356 / 551, a param ≥ 32 72 / 132, nested
+  sources 428. Controls: op 3 as op 2 600, op 3 on the running total 310, no list-type test 722, logical shifts 357,
+  op 10 as op 2 111. (fn:sub_00626200_StatEvaluate@0x00626200, 0x0062632D–0x0062639B, 0x00626658,
+  fn:sub_00483360_MulDiv@0x00483360, run:2026-11-16-sweep2-s4e-emu)
+- [C] **No stock row has op 3, 10 or 12**: the 359 rows' `op` cells are blank 275, 1 ×2, 2 ×33, 4 ×2, 5 ×2, 6 ×34,
+  7 ×2, 8, 9, 11 ×2, 13 ×5 (`static.txt`). (tbl:ItemStatCost.txt:op, run:2026-11-16-sweep2-s4e-emu)
+- [C] **The take test** (§ 3) as a map: `StatRecompute(list, key, record, arg)` (`ret 8`) tests a target only when its
+  new value is not 0, by the source row's `+0x54` through the class bytes 0x0062690C: ops 1 and 12 always take; ops 2
+  and 3 take when the list's `+0x08` is 0 or 1 and the word `w` is not `0xFFFF` and `StatListGetValue(list, w << 16,
+  NULL)` is above 0 (no floor); ops 4 and 5 when the list's `+0x04` is not NULL, its first dword is 0 or 1, `w` is not
+  `0xFFFF` and `STATS_GetUnitStat(linked unit, w, 0)` is above 0 (with the floor); ops 6 and 7 when `+0x08` is 0 or 1;
+  op 13 when it is 4; ops 0 and 8–11 never; **an op byte above 13 always takes** (`ja` at 0x006267A0 to 0x00626827).
+  `w` is the word at the **source** row's `+0x0DE + 6k` (the quirk below). A source with no take and `v ≠ 0` is
+  written and its dependents walked. 3 000 cases: taken / not, class 1 63 / 622, class 2 88 / 669, class 3 258 / 238,
+  class 4 55 / 211, class 5 396 / 0, class 0 0 / 630, above 13 121 taken. Controls: `w` from the target's row 80, the
+  test at a target of 0 104, op 6/7 never 119, above 13 not 43, class 0 taken 243, class 5 not 158, op 13 never 24,
+  op 6/7 for any type 93, op 13 by the player/monster test 65, op 2/3 with the floor 6, op 4/5 without 9.
+  (fn:sub_006266C0_StatRecompute@0x006266C0, 0x00626790–0x00626827, 0x006267AD, run:2026-11-16-sweep2-s4e-emu)
+- [I] The op byte above 13 does not reach the take test on loaded data: `ITEMSTATCOST_Load` zeroes an `op` outside
+  1..13 (§ 4, E1). (fn:ITEMSTATCOST_Load@0x00637A00)
+- [I] **Not covered:** ops 1, 4–9, 11 and 13 inside `StatEvaluate` (no case's op table held them; ops 6 and 7 are § 10's),
+  a list with children, the allocator paths of insert and remove, the stat callback, and what the offsets hold in
+  play. The phase of ops 6 and 7 (`owner +0x1C` → `+0x04` → `+0x08`, `+0x28`) as a time of day stays § 10's `[I]`.
+  (fn:sub_00626200_StatEvaluate@0x00626200)
+
+### 12. Plan 0066 batch S4e part 5d: `AddStat`'s removal under emulation, and the static remainders (run:2026-11-16-sweep2-s4e-emu)
+
+Family `addst` of `tools/items_s4e8_emu.py`, 2 500 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced
+write; 5 controls, each separating, `passed` 0 (`workspace/logs/n66z/s4e/run8/check.txt`). The static reads are the
+tool's `static` (objdump; 23 family pins and 90 row pins, `static.txt`) and `xref` (raw bytes and rel32 scans,
+`xref.txt`) commands, each a second tool beside the Ghidra readings of §§ 2, 4, 6, 7 (`lane/n66z`). Record in
+[items experiments](../items/experiments.md#part-5d-itemautoequipslot-addstats-removal-and-the-static-remainders-2026-11-16).
+Rows: stats/aggregate 10, 11, 13, 17, 23, 37.
+
+- [C] (ADR-0021) **`AddStat`'s add and removal at 0** (A3), family `addst`: `STATLIST_AddStat(list, stat, add, param)`
+  (0x00627030, stdcall) on a plain list with no parent (flags 0, `0x40`, `0x2000` or `0x2040`). A null list or an
+  `add` of 0 changes nothing (`zeroadd` 31). The key is `stat << 16` plus the param's low 16 bits (`keyswap` 2 285),
+  looked up by a signed binary search (0x00624B90). A found entry takes `value + add` (`set`, the value replaced,
+  1 588); a sum of 0 removes it (`STATLIST_RemoveEntry` 0x00624D10): the later entries move down one (CRT memmove
+  0x00683840) and the count drops by 1 (545 returns with the array dumped; `noremove` 923), and when the capacity
+  then exceeds the count by more than 8 the array is resized to capacity − 4 entries through 0x0040B4B0 (observed:
+  size `(cap − 4) × 8`, EDX the array; 378; `shrink4` 185). A missing key goes to `STATLIST_InsertEntry` (observed,
+  EAX the key; 702). After the resize call, `[I]`; a parent's propagation and the client mark (flag bit 31) were not
+  run. (fn:STATLIST_AddStat@0x00627030, fn:STATLIST_RemoveEntry@0x00624D10, 0x00627073, 0x00624D57,
+  run:2026-11-16-sweep2-s4e-emu)
+- [C] (static, 15 pins) **`StatListLinkOwner`** (B1, 0x00627910): a null unit, item or item list (`+0x5C`) returns;
+  an item (type 4) whose location byte (item data `+0x44`, 0x00627D40) is 11 or 12 only goes to `STATLIST_Unlink`
+  0x006269F0; a list whose `+0x04` is the unit switches damage; otherwise `STATLIST_LinkToUnit(unit, list,
+  withDamage)` and `+0x04` ← the unit. **Refinement:** the switch is conditional on the list's flag `0x40000000`:
+  `withDamage` non-zero calls `STATLIST_EnableDamageStats` only when it is set, 0 calls `STATLIST_DisableDamageStats`
+  only when it is clear (0x00627956, 0x0062796D); the other two combinations return. (fn:sub_00627910_StatListLinkOwner@0x00627910,
+  0x00627936, 0x0062798F, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static, 30 pins) **The stat-point code's own addition** (D1): `PLAYER_SpendStatPoint` (0x00570D60; ECX the
+  unit, EDX the attribute 0..3) needs stat 4 above 0 (0x00570D6B); strength (0) and dexterity (2) move one point
+  from stat 4. Energy (1, 0x00570A80) and vitality (3, 0x00570B60) take `n` = 1 and the CharStats row (stride 0xC4,
+  DataTables `+0xBC4`, count `+0xBC8`): energy adds `+0x48` (`ManaPerMagic`) × n << 6 to stat 8 when n > 0 and to
+  stat 9, then sets 8 to 9 when above it; vitality adds `+0x46` × n << 6 to stat 7 and, when n > 0, to 6, clamping 6
+  to 7, then `+0x47` × n << 6 to 11 and (n > 0) 10, clamping 10 to 11. Every add is `UnitAddStat`, every clamp
+  `UnitSetStat` 0x00627260. (fn:PLAYER_SpendStatPoint@0x00570D60, 0x00570ADB, 0x00570BC3, 0x00570C1A,
+  tbl:CharStats.txt:ManaPerMagic, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static, `xref.txt`, 17 pins) **The stat callback's cases** (G3, `MonStatCallback` 0x0055B800): keys 7..204
+  map through the index bytes at 0x0055BE04 to 11 cases (0x0055BDD8): 7, 9, 11, 83, {97, 107}, 98, {126, 127}, 151,
+  188, 204, and the 186 others to the return. 126 runs 127's code: the case at 0x0055BCB0 passes the unit alone to
+  0x0056DFA0 and reads no key. 107 runs 97's case (0x0055BACA). The event registration, before the switch: when
+  ItemStatCost `itemevent1` (`+0x48`, s16) is above 0 and the fourth argument non-zero, `AddStatEvent` 0x0056E740
+  is called with `itemevent1`/`itemeventfunc1` (`+0x4C`) and, when `itemevent2` (`+0x4A`) is above 0, with
+  `itemevent2`/`itemeventfunc2` (`+0x4E`), unless 0x005C0BE0 reports one; with a fourth argument of 0 it calls
+  0x005C0B50. (fn:sub_0055B800_MonStatCallback@0x0055B800, fn:sub_0056E740_AddStatEvent@0x0056E740, 0x0055B867,
+  0x0055B8DE, run:2026-11-16-sweep2-s4e-emu)
+- [I] **Refinements** (one tool's reading): for 107 the case first requires a player (type 0) whose class equals the
+  skill row's `+0xC` byte (`SKILLS_GetRecord`, 0x0055BADC..0x0055BAF3), else it returns; the registration tests the
+  callback's fourth argument, non-zero or 0, and a lookup, not a crossing of 0. What 0x005C0BE0 and 0x005C0B50 do
+  was not read. *2026-11-16, § 13: `[C]` (ADR-0015, ADR-0021), family `evt`.* (0x0055BADC, 0x005C0BE0, 0x005C0B50)
+- [C] (static, 10 pins) **The set lookup reads each set list's own stat 71** (J3): for each of the six entries of
+  `g_SetBonusStates` (0x006EE424, loop bound 6 at 0x00663C35) `UNIT_FindStatListByState` 0x006256B0 gives the list,
+  and `sub_00625D00_StatListGetBaseStatJ(list, 71, 0)` jumps to `StatListGetBaseStat` 0x00625350, which reads through
+  `StatListGetBaseValue` 0x00624ED0, the own entries (§ 11's `read` family); the value is compared with the set id.
+  (0x00663BC4, 0x00663BDD, 0x0062539A, 0x00663BE2, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static, 18 pins, `xref.txt`) **List fields** (A2): `STATLIST_Alloc` (0x006251F0) allocates 0x3C bytes, zeroes
+  them and stores the pool at `+0x00`, its fourth argument at `+0x08`, its fifth at `+0x0C`, flags at `+0x10` and
+  its third at `+0x18`; the set code passes the unit's `+0x00` (type) and `+0x0C` (guid) (0x00663C5F..0x00663C6E; the
+  other 70 of 71 rel32 callers unread). `STATLIST_SetRemoveCallback` writes `+0x38` (0x00625CED; 39 rel32 callers,
+  no abs32; other writers of `+0x38` were not scanned). `UnitStatListCreate` (0x00626D40) allocates 0x64 bytes, sets flag bit 31, `+0x44` the
+  unit and `+0x58` one block of 8 × ((DataTables `+0xC4` + 31) >> 5) bytes, and stores the list at the unit's
+  `+0x5C`. (fn:STATLIST_Alloc@0x006251F0, fn:STATLIST_SetRemoveCallback@0x00625CE0,
+  fn:sub_00626D40_UnitStatListCreate@0x00626D40, run:2026-11-16-sweep2-s4e-emu)
+- [I] **Not covered:** the reader that calls `+0x38`, the two child chains, the changed keys and the stat callback
+  field of an extended list; the 70 other `STATLIST_Alloc` callers' fifth argument. (fn:STATLIST_Alloc@0x006251F0)
+
+### 13. Plan 0066 batch S4e part 5e: the stat event list under emulation (run:2026-11-16-sweep2-s4e-emu)
+
+Family `evt`, 3 000 cases (find 1 182, remove 1 218, add 600), 0 mismatches, 0 stops, 0 undeclared reads, no traced
+write; 5 controls, each separating, `passed` 0 (`tools/items_s4e9_emu.py`, `workspace/logs/n66z/s4e/run9/check.txt`;
+record in [items/experiments](../items/experiments.md#part-5e-itemautoequipslot-through-itemreqcheck-the-stat-event-list-and-the-elemental-appliers-2026-11-16)). The
+world is declared from scratch: a game (`+0x1C`, the pool), a unit and up to 8 event nodes on its list at `+0x90`
+(next `+0x1C`, previous `+0x18`). Observed: the allocator 0x0040B430 and the free 0x0040B480 (ADR-0021). Row:
+stats/aggregate 23.
+
+- [C] (ADR-0015) **0x005C0BE0, the find** `(ECX game, EDX unit; kind, stat, c)`: 0 for a null unit; else the first
+  node in list order with `+0x04` = kind, `+0x08` = stat and `+0x0C` = c, or 0 (206 found, 923 not, 53 null units;
+  control `noc`, `+0x0C` ignored, 212; `last`, the last match, 45). (0x005C0C02, 0x005C0C0F, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015, ADR-0021) **0x005C0B50, the remove** `(ECX game, EDX unit; kind, stat)`: walks the unit's list; a
+  node with `+0x04` = kind and `+0x08` = stat whose word `+0x02` has bit 0 set gets bit 1 set and stays (106 cases
+  marked; `nomark` 195); the first such node with bit 0 clear is unlinked (the previous node's `+0x1C`, or the unit's
+  `+0x90` for the head, takes its next; the next node's `+0x18` its previous) and handed to the free 0x0040B480 with
+  ECX the game's `+0x1C`, EDX the node and `(0x006E2FFC, 0x95, 0)` (380; `nostat`, the stat ignored, 465). The walk
+  after the free is past the boundary. (0x005C0B86, 0x005C0B8A, 0x005C0BA2, 0x005C0BC4, run:2026-11-16-sweep2-s4e-emu)
+- [C] (ADR-0015, ADR-0021) **`AddStatEvent` 0x0056E740** `(ECX game, EDX unit; event, stat, 0, func, kind, stat)`:
+  a `func` above 0x31 (112) or whose `g_StatEventFuncs` (0x007325B0) entry is 0 (262) returns 0; a null unit returns 0
+  (51); else 0x005C0AD0 calls the allocator for 0x20 bytes from the game's pool with `(0x006E2FFC, 0x57, 0)` (175;
+  control `nobound`, no bound on `func`, 112). The table has 31 non-zero entries (1..31) of the 50 read; its one
+  reference is the load at 0x0056E74B (`xref.txt`). (fn:sub_0056E740_AddStatEvent@0x0056E740,
+  data:g_StatEventFuncs@0x007325B0, 0x0056E746, 0x005C0AF2, run:2026-11-16-sweep2-s4e-emu)
+- [I] **After the allocation** (objdump, one reading): 0x005C0AD0 zeroes the node, stores the event as a byte at
+  `+0x00`, its second argument at `+0x0C`, the third at `+0x10`, the handler at `+0x14`, the kind at `+0x04`, the
+  stat at `+0x08`, and pushes it at the head of the unit's `+0x90` list. So `MonStatCallback`'s registration
+  (§ 12: `AddStatEvent(itemevent1, stat, 0, itemeventfunc1, 2, stat)`, then `itemevent2` the same) makes kind-2
+  nodes keyed by the stat in both `+0x08` and `+0x0C`, which is what its find (kind 2, the stat twice) looks for;
+  with a node found, neither event is added; at a fourth argument of 0 its remove (kind 2, the stat) frees every such
+  node not in use. (0x005C0B0D..0x005C0B40, 0x0055B872..0x0055B8C2)
+- [I] Callers (`xref.txt`): the find has 3 rel32 callers, the remove 10, `AddStatEvent` 11, 0x005C0AD0 2; only the
+  callback's (0x0055B87A, 0x0055B897, 0x0055B8B9, 0x0055B8C2) were read.
+
+### 14. Plan 0066 batch S4e part 5f: the static remainders (run:2026-11-16-sweep2-s4e-emu, static)
+
+No emulation. Objdump pins and full scans by `tools/items_s4e10_emu.py` (`workspace/logs/n66z/s4e/run10/static.txt`,
+`xref.txt`, `sites.txt`, `logs.txt`; record in
+[items/experiments](../items/experiments.md#part-5f-the-closing-static-part-2026-11-16)), each a second tool beside
+the Ghidra reading named. Rows: stats/aggregate 2, 10, 29, 31, 36, 40, 41.
+
+- [C] (static) **Aggregate 2: the other link and unlink paths' callers.** `sub_00627910_StatListLinkOwner` has 44
+  rel32 callers in 14 functions and no abs32: `ITEMS_AttachToOwner` (0x0055C43E), `ITEMS_DetachFromOwner`
+  (0x0055C826), `sub_0055F140_KeyConsume` (0x0055F56B), `HIRE_Hire`, the two weapon relinks (0x00535D10, 0x00623C80),
+  the damage-stat enable and disable (0x00627860, 0x00627A40), the two kick functions (0x005D54B0, 0x00646280) and four
+  client functions below 0x00500000. `KeyConsume` has 2 rel32 callers: `OBJOP_Chest` (0x00585FB9) and
+  `sub_00581A10_ObjEvent7Thunk` (0x00581DC1). (`xref.txt`; fn:sub_00627910_StatListLinkOwner@0x00627910,
+  fn:sub_0055F140_KeyConsume@0x0055F140, run:2026-11-16-sweep2-s4e-emu)
+- [I] Which of these callers the `StatListLinkOwner` links and `KeyConsume` unlinks logged in S4d part 2 came
+  through, and what `KeyConsume` does to the key (an operated chest's key), is not read.
+  (fn:sub_0055F140_KeyConsume@0x0055F140)
+- [C] (static) **Aggregate 10: the `+0x38` reader.** `STATLIST_Unlink` loads `+0x38` (0x00626BD9) and, when it and
+  `[ebp-0xc]` are non-zero, calls it with `ECX` = `[ebp-0xc]`, `EDX` = the list's `+0x14` (state) and the list pushed
+  (0x00626BD2..0x00626BE7), beside drlg/0009's reading of the same call. `STATLIST_SetRemoveCallback` is the writer
+  part 5d pinned (0x00625CED). (fn:STATLIST_Unlink@0x006269F0, fn:STATLIST_SetRemoveCallback@0x00625CE0,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] Other writers of `+0x38`, the child chains, the changed keys, the stat callback field and the extended fields
+  stay unread (a field-offset scan cannot tell a stat list's `+0x38` from another struct's). (fn:STATLIST_SetRemoveCallback@0x00625CE0)
+- [C] (static) **Aggregate 29: what queues the idle refresh.** `sub_0052D7B0_ActsClockPass` walks the five act slots
+  at `Game+0xBC` (0x0052D7BB, bound 5 at 0x0052D855); for a slot whose `sub_0061C040_ActClockTick` returns non-zero
+  (0x0052D7D2, 0x0052D7D9) it calls `sub_0055FDE0_PlayerEquipRefresh(…, 1)` for each client's player (0x0052D813,
+  0x0052D822, next client `+0x4A8`), which calls `EquipReqRefresh` with 0 (0x0055FDE4, 0x0055FDE8). This is frame/0001's
+  reading. `PlayerEquipRefresh` has 3 rel32 callers (the clock pass, `PlayerSetSkill` 0x00570413, `PLAYER_LevelUp`
+  0x00570A0E); `EquipReqRefresh` has 22 (`xref.txt`). (fn:sub_0052D7B0_ActsClockPass@0x0052D7B0,
+  fn:sub_0055FDE0_PlayerEquipRefresh@0x0055FDE0, run:2026-11-16-sweep2-s4e-emu)
+- [I] **The 136.** All 28 kept logs (s1017 and p47h) start in level 103, Act IV's town, and 22 of them have 136 as
+  their commonest gap (`logs.txt`); frame/0001's act-clock computation gives act index 3 a bucket return every
+  `17 × 128 / 16` = 136 frames. That the idle refreshes are those returns stays `[I]`: no kept log has an `ACL`
+  line to pair with them. (fn:sub_0061C040_ActClockTick@0x0061C040, run:2026-11-16-sweep2-s4e-emu)
+- [C] (static) **Aggregate 31, the ethereal half in part.** `ITEMS_MakeEthereal(item)` sets flag `0x400000` on its
+  argument (`ITEMS_SetFlag`, 0x0065E502) and writes the argument's stats through `sub_00627260_UnitSetStat`, each with
+  `ESI` (the argument) pushed: 21..24, 159, 160 for a type-45 base, else 31 (0x0065E52F..0x0065E5EA); it has 3 rel32
+  callers (`ItemRollEthereal`, `PROP_Func23_Ethereal`, `CubeModApply`), beside items/0006's reading of the same stat set
+  (weapon 21..24, 159, 160, else 31). (fn:ITEMS_MakeEthereal@0x0065E4D0,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] "Only" stays `[I]`: the flag's other users (19 `push 0x400000` in 12 functions, `xref.txt`) were not read.
+  (fn:ITEMS_MakeEthereal@0x0065E4D0)
+- [C] (static) **Aggregate 36's remainder: `add func` 0 at creation.** In set mode `ItemApplyProps` gives each `prop`
+  block state 0 and flags 0x40 (0x0065FFB4..0x0065FFB8, call 0x0065FFC5); for an `aprop` block it reads `add func`
+  (`+0x87`, 0x0065FFE3) and, when it is 0, passes state 0 (0x00660032) and flags 0x40 (0x0065FFF2), else the
+  `g_SetAPropStates` and `g_SetAPropListFlags` entries (0x0065FFF9, 0x00660000). So an `aprop` of a row with `add
+  func` 0 is built exactly as a `prop`, beside items/0006's reading. (fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0,
+  run:2026-11-16-sweep2-s4e-emu)
+- [I] **Aggregate 40 not settled in S4e.** The 9 aura-bit readers (`EVENT_SelectedAuraTick`, `AuraSelect`,
+  `PlayerSetSkill` twice, `MissileCreate`, `ITEMAURA_Start`, `ITEMAURA_Stop`, `SummonInitStats`, `MERCAI_PickSkill`)
+  each need a reason skills 127–129 never reach them on stock data (a passive's selection refused, no item aura, no
+  missile, no summon or hireling skill row): table checks not made here.
+  (fn:SKILLS_RefreshPassive@0x00646D60, fn:ITEMAURA_Start@0x005BF510)
+- [C] (static) **Aggregate 41, in part.** `EquipReqRefresh` returns early only for a null unit, a non-player unit
+  without `+0xC4` bit 9, or a unit with no inventory (0x0055DBCE, 0x0055DBE6, 0x0055DBFF; the scan finds no other
+  branch over the call, `xref.txt`); otherwise, after its loop, it calls `PlayerSkillReselect` (0x0055DEA0) with the
+  wanted skills saved by 0x0055D9D0 (0x0055DBF2). The reselect calls `PlayerSetSkill` for a side whose wanted skill
+  is set, found, different from the current one, and not given 2 or 7 by `SKILLS_CanUse` (0x0055DA76..0x0055DAB3,
+  and 0x0055DAF7 for the left side). frame/0001 reads the same. (fn:sub_0055DA70_PlayerSkillReselect@0x0055DA70,
+  fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, run:2026-11-16-sweep2-s4e-emu)
+- [I] **Whether a stock refresh takes it** stays `[I]`: no logged refresh moved a seed (S4d part 2), and the path
+  from `PlayerSetSkill` to the draw crosses the allocator (`PlayerSetSkill` 0x0057026C → 0x0053C590 → 0x0040B430;
+  `AuraSelect`'s `STATLIST_Alloc` at 0x0056FFFD) and `SKILLS_SrvDo` (0x0056FFB4) (`sites.txt`), so an emulation would
+  need a declared callee return (ADR-0029, R2). It needs a session where a refresh restores a wanted skill.
 
 ## Data touched
 

@@ -3961,3 +3961,399 @@ grid reading, 0 mismatches; verdict "not separated (no fresh bit-0-only word)", 
 2026-11-15 (option (a)). Kept in `workspace/logs/sweep8/` (`2026-11-15-sweep8-p12-s1-3-p12.log`, `.marks.tsv`) and
 `workspace/logs/n65h/` (`checks/p12.txt`, `p12.out`; `manifest-p12.sha256`, 4 lines, passes from the repository root).
 Backs [path/0007](../path/0007-community-cross-check.md#plan-0065-phase-1-the-p12-session-run2026-11-15-sweep8-p12).
+
+## run:2026-11-16-sweep2-s4e-emu
+
+Plan 0066 Phase 1, batch S4e (`lane/n66z`). The batch splits by family (inventory README § 4: "S4e items and
+stats"); **part 1 is the stats family**, recorded here, its claims in
+[stats/0001 § 11](../stats/0001-aggregate.md#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu)
+(pointer under [stats experiments](../stats/experiments.md#pointer-plan-0066-batch-s4e-part-1-the-stats-family)). The items parts (price core,
+request handlers, inventory families) will add their own sections under this heading.
+
+### Part 1: the stats family (2026-11-16)
+
+- **Question:** do the stat-list readers (`sub_00624F60_StatListGetValue`, `sub_00624ED0_StatListGetBaseValue`,
+  `STATS_GetUnitStat`), the three maxima getters, `StatEvaluate`'s ops 2, 3, 10 and 12, and `StatRecompute`'s take
+  test map their inputs as [stats/aggregate](../../specs/stats/aggregate.md) C5, D1, F2 and G1 state, on a declared
+  stat-list image?
+- **Setup:** Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (`GHIDRA_PROJ_DIR=workspace/ghidra-n66z`, heap
+  3 GB, one instance at a time, a 4 GB scope), `re/ghidra_scripts/EmuBoundary.java` unchanged, one kept launch per
+  family (`run.sh` in the run directory), after one development pass of 60 cases per family (`dev/`,
+  `manifest-dev.sha256`, not cited). New tool `tools/stats_s4e_emu.py` (`02c23870…`; `cases`/`check`/`static`/`manifest`; every
+  draw from `random.Random("n66z-s4e-<family>")`). Declared image, written per case: `g_pDataTables` (0x00744304) to a
+  scratch DataTables (`+0xBCC` the records, `+0xBD4` their count); ItemStatCost records of 0x144 bytes with only the
+  fields the code reads (`+0x04`, `+0x05`, `+0x18`, `+0x2C`, `+0x50..+0x54`, the targets `+0x58`, the dependents
+  `+0x5E`, the op table `+0xDE`); stat lists (`+0x00`, `+0x04`, `+0x08`, `+0x10`, own `+0x24`, `+0x3C` null, `+0x44`,
+  cache `+0x48`, `+0x5C` null), the owner's type dword, a unit's `+0x00` type and `+0x5C` list. Guards on the fatal
+  path and the allocator (0x00408090, 0x00408A60, 0x00681E09, 0x0040B4B0, 0x0040B430, 0x0040B480): none reached; the
+  generator rejects a `take` case whose model would grow the cache (`count ≥ capacity` at 0x00624CA4) or shrink it
+  (`capacity − count > 8` at 0x00624D57). No observed boundary, no import (ADR-0021 and ADR-0029 not used).
+- **Families:** `read` 4 000 (`StatListGetValue`, `StatListGetBaseValue` with EBX list, EDI key; `STATS_GetUnitStat`
+  with stats below 0, at and past the count), `max` 1 500 (the three getters; counts 0, −1, stat − 1, stat, stat + 1,
+  random; a record base that makes the record address 0), `ops` 2 500 (`StatEvaluate` on a target whose op table holds
+  ops 2, 3, 10, 12 and above 13, 1 to 16 entries; sources plain or with their own op 2/3 table; `ValShift` and the op
+  param up to 255), `take` 3 000 (`StatRecompute` of a source with one to three targets and up to three dependents,
+  every op byte 0–13 and above, list owner types 0, 1, 2, 3, 4 and random, a linked unit of each type or none).
+- **Result:** `workspace/logs/n66z/s4e/run/check.txt` (`e138a326…`, 46 lines), `static.txt` (`8149f77b…`, 41 lines),
+  `r2.txt` (`f083ed6b…`, 11 lines), `manifest.sha256` (`c0773683…`, 24 lines, passes from that directory); `cases`
+  regenerates every `.cases` and `.mem` byte for byte. 11 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no
+  traced write. Tallies: `read` present 2 581, absent 648, the floor tested 524, floored 211 (25 with `ValShift` ≥ 32),
+  kept at or above `MinAccr` but below `MinAccr << ValShift` 65, a null record 199, `fMin` off 575, a plain list 544,
+  no owner 143, another owner type 596, a stat out of range 675; `max` 1 500 (hp 510, mana 539, stamina 451), the count
+  at or below the stat 653, a record address 0 29, floored 40; `ops` op 2 terms 949, op 3 terms 1 347, `b ≤ 0` 965 /
+  1 305, the list type outside 0/1 1 988 / 2 924, op base 0xFFFF or past the count 200 / 333, `p = 0` 288 / 392, a
+  param ≥ 32 72 / 132, a wrapped product 356 / 551, op 10 skipped 670, op 12 643, above 13 2 005, nested 428; op 3's
+  `MulDiv` took its 32-bit (488), wrapped (205), `a`-first (190) and `b`-first (464) paths; `take` class 0 (ops 0,
+  8–11) 630 tests not taken, class 1 (ops 2, 3) 63 taken / 622 not, class 2 (ops 4, 5) 88 / 669, class 3 (ops 6, 7)
+  258 / 238, class 4 (op 13) 55 / 211, class 5 (ops 1, 12) 396 taken, an op above 13 121 taken; a target value of 0
+  (no test) 2 277, the source written and its dependents walked 1 186, a source of 0 876, inserts 1 925, removals
+  1 472, flag `0x20000000` set 1 535. **30 controls, each separating, `passed` 0:** `read` 8 (the spec's
+  `MinAccr << ValShift` threshold 79, no extended test 83, no owner-type test 240, unsigned 172, `≤` 10, no shift mask
+  22, absent entries floored 87, own for cache 1 986), `max` 5 (stat − 1 562, the base value 408, `≥` for `>` on the
+  count 117, no floor 39, the spec's threshold 17), `ops` 5 (op 3 as op 2 600, op 3 on the running total 310, no
+  list-type test 722, logical shifts 357, op 10 as op 2 111), `take` 12 (the word from the target's row 80, the test
+  at a target of 0 104, no take 424, op 6/7 never 119, above 13 not taken 43, op 2/3 with the floor 6, op 4/5 without
+  it 9, class 0 taken 243, class 5 not 158, class 4 never 24, op 6/7 for any type 93, op 13 by the player/monster
+  test 65).
+- **Read set** (ADR-0015 (2), enumerated by the tracer): the mask dword 0x006CE270 (`4`, .rdata; byte reads at
+  0x00624EFC, 0x00624F9F, dword at 0x00625019), `StatEvaluate`'s jump table 0x00626688, the take class table
+  0x0062690C and jump table 0x006268F4, and the CRT `memmove` 0x00683840's own jump tables (0x00683950..0x00683B54),
+  all in `.text` or `.rdata`, not writable (`static.txt`). The callback mask 0x006CE274 is never read: every list's
+  `+0x5C` is null, read first.
+- **Tool limits** (ADR-0015 (5)): the shifts by `CL` (`shl edx, cl` at 0x00624F2F and 0x00624FCF; `sar` at
+  0x00626301, 0x00626326, 0x00626372, 0x00626399) are cited from r2 (`r2.txt`); cases with `ValShift` or the param at
+  32 and above match the count masked to 5 bits (the `nomask` control fails 22).
+- **Not covered** (ADR-0015 (3)): what the game holds at the offsets read (the meanings carry their own tags); who
+  calls the code and when; the allocator paths of insert and remove; the stat callback (`+0x5C`); a list with children
+  (`STATLIST_SumOwnAndChildren`'s child walk, [C] by run:2026-10-17-stats); ops 1, 4–9, 11 and 13 inside
+  `StatEvaluate` (none in these cases' op tables; every row here has `+0x52` = 0 except the `ops` targets).
+
+### Part 2: the price core and the gold, wear and replenish helpers (2026-11-16)
+
+- **Question:** do `ITEMS_TradePriceCore`, `ItemCanRepair`, `ItemHasDurability`, `RechargeCost`, the two gold caps,
+  `UnitAddGoldStat`, `ITEMS_DurabilityLossRoll`, `ItemReplenishDurTimer` and `ITEMEVENT_Replenish` map their inputs as
+  [items/economy](../../specs/items/economy.md) §§ B–H state, on a declared world? Claims in
+  [items/0011 § S4e part 2](0011-economy.md#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu).
+- **Setup:** Ghidra 12.1.2 p-code emulator on the pinned `game.exe` (`workspace/ghidra-n66z`, heap 3 GB, one instance,
+  a 4 GB scope), `re/ghidra_scripts/EmuBoundary.java` unchanged, one kept launch per family (`run.sh`), after two
+  development passes (`dev2/` 60 cases per family and `dev2full/` the full size, both with earlier tool revisions, each
+  with `manifest-dev.sha256`, not cited). New tool `tools/items_s4e_emu.py` (`cdfe09bd…`; draws from
+  `random.Random("n66z-s4e2-<family>")`, the tables from `random.Random("n66z-s4e2-image")`). Declared image (`load`
+  and `dword` directives re-applied per case, the cases' `w` lines over them): `g_pDataTables` (0x00744304) → a scratch
+  DataTables (`+0xA78/+0xA80` MonStats, `+0xB98/+0xBA0` Skills, `+0xBCC/+0xBD4` ItemStatCost, `+0xBF8/+0xBFC` ItemTypes,
+  `+0xC00/+0xC04` the equivalence bit rows, `+0xC18/+0xC1C` SetItems, `+0xC24/+0xC28` UniqueItems, `+0xC6C/+0xC70`
+  6 and 0x3F); `g_nItems`/`g_pItems` (0x0096CA58/C), `g_ItemCodeLink` (0x0096BCC4) → a link of 40 sorted code pairs,
+  the affix count and records (0x0096CA7C/80), Books (0x0096CC60/64), Npc (0x0096C5D8/DC; 8 records, class 513 last);
+  random record bytes with the read fields drawn per case. Units: `+0x00` type, `+0x04` class, `+0x14` ItemData
+  (`+0x00` quality, `+0x18` flags, `+0x28` file index, `+0x30` version, `+0x36..+0x43` affixes, `+0x48` ear level,
+  `+0x64` next), `+0x5C` stat list (`+0x10`, own `+0x24`, `+0x44` = 0, cache `+0x48`), `+0x60` inventory (magic,
+  `+0x0C` first), `+0xDC` event list; the game's `+0x70` and `+0xA8`; the owner's seed `+0x20/+0x24`. Guards:
+  0x00408A60, 0x00681E09, 0x0040B4B0, 0x0040B430, 0x0040B480 (none reached; 0x00408090 a guard where not observed).
+  Observed boundaries (ADR-0021, call site asserted by its return address): `price` the error routine 0x00408090;
+  `gold` 0x00627260, 0x006272B0; `wear` 0x00627260, 0x0055F850, 0x00558530, 0x005531C0; `timer` 0x005417D0; `repl`
+  0x00627260. No import is reached (ADR-0029 not used).
+- **Families:** `price` 6 000 (modes 0–3, 4 and 7; `d` 0–3; quality 0–10; every base kind; NPC rows redrawn per case,
+  `sell mult` 0 with `buy mult` non-zero in about 30 %; quest ids 1–47 against a random 128-byte record), `rep` 2 000,
+  `gold` 1 500, `wear` 2 500, `timer` 800, `repl` 1 500.
+- **Result:** `workspace/logs/n66z/s4e/run2/check.txt` (`09e30b28…`, 74 lines), `static.txt` (`fc40bd45…`, 26 lines,
+  22 pins), `r2.txt` (`970a0a52…`, 90 lines), `manifest.sha256` (`75befcaa…`, 40 lines, passes from that directory);
+  `cases` regenerates every `.cases`, `.mem`, `.json` and table file byte for byte, and `check` reproduces `check.txt`
+  from the committed revision. 14 300 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write. `price`:
+  B1 171, B2 1 012, B3 by mode 86/74/59/42/56, `r` capped 1 048, ear 307, body 517 (no record 588), tome 592, armour
+  step 395 (46 over an ear), large-form `AddTerm` 1 047, staff 231, recharge 133, quality 7 without a record 287 (with
+  one 232), Encode 4 entries 2 410, D1 17, D2 full 173 / stat 252 116 / fraction 180, recharge added 270, `r` on repair
+  316, gamble computed 677 (rings and amulets 38, `x` floored 159, `e` floored 138, negative weight 68) and version 0 305, the
+  error routine 127 (0xBBA 17, 0xCDC 110), `d = 3` on the last Npc record 18 with 18 traced reads at 0x0062FCFA of
+  0x22066260. `rep`: `ItemCanRepair` branches 204/190/193/92/38/239, `ItemHasDurability` 424/240/44/66 (evaluations, direct and inside `ItemCanRepair`), `RechargeCost`
+  154 small, 73 large, 287 skipped. `gold`: cap 295, stash cap 309, add 395, negative 387, carried 63, stash 51. `wear`:
+  no type 645, no durability 1 472, classic 22, miss 155, timer 38, break 86, `q − 1` 31, zero 36, version 0 15.
+  `timer`: queued 602, rate 0 109, already queued 89. `repl`: durability write 90, at maximum 84, quantity write 210, at
+  maximum 148, rate 0 116, none 852. **40 controls, each separating, `passed` 0** (`check.txt` lists each with its
+  `sep`).
+- **Read set** (ADR-0015 (2), enumerated by the tracer): `g_BitMask32` 0x006CE268 (.rdata), the quality jump table
+  0x0062FD9C and `PriceStatTerms`' Encode jump table 0x006292DC (.text), none writable (`static.txt`); and in `price`
+  the dword past the Npc table, read at 0x0062FCFA for `d = 3` on the last record (accounted and counted, used by no
+  mode-0 output). Every other read lies in the declared image.
+- **Tool limits** (ADR-0015 (5)): the wear LCG's `mul`/`adc` (0x00559E9B–0x00559EB5), the timer's `cdq; idiv`
+  (0x00558560), `cmp ax, 1; jb` (0x00559F4E, 0x0062F06E) and the gamble's `sar; add; jns` (0x00629450) are cited from
+  r2 (`r2.txt`).
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets read; the callers and their inputs; everything
+  after each observed boundary (the stat writes, `ItemBreak`, the timer's queue, the packets, `HandsRefresh`, the
+  error routine's exit); `ReplenishStep` after its write (the floor of 125, the broken repair); `DropGoldAmount`
+  (its loop crosses 0x0064E810 and the item creation 0x00559CE0, to the harness).
+
+### Part 3: the item request handlers and UnitInteract's item case (2026-11-16)
+
+- **Question:** do the use requests `0x20`, `0x26`, `0x27`, the interaction requests `0x13`, `0x16`, `UnitInteract`'s
+  item case and the moves `0x17`, `0x18`, `0x19` map their inputs as [items/use](../../specs/items/use.md) § B and
+  [items/inventory](../../specs/items/inventory.md) §§ D, E, I state, up to the callee each ends at? Claims in
+  [items/0013 § 12](0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 5, 8 and items/0012 § 1.
+- **Setup:** as part 2 (Ghidra 12.1.2, `workspace/ghidra-n66z`, heap 3 GB, a 4 GB scope, `EmuBoundary.java` unchanged),
+  one kept launch per family, after one development pass (`dev3/`, 60 then 300 cases per family with earlier tool
+  revisions, `manifest-dev.sha256`, not cited). New tool `tools/items_s4e3_emu.py` (draws from
+  `random.Random("n66z-s4e3-<family>")`). Declared image: `bytes` directives zero-fill, before every case, the game's
+  unit hash heads (game + 0x1120..0x1D20), the player (unit, PlayerData, path, inventory), four items (unit, ItemData,
+  static path), four interaction partners, a room chain and the packet; the cases' `w` lines write the non-zero fields
+  (unit `+0x00` type, `+0x0C` guid, `+0x10` mode, `+0x14` data, `+0x2C` path, `+0x60` inventory, `+0x64`/`+0x68`/`+0x6C`
+  the interaction, `+0xE4` the hash chain; ItemData `+0x45` page, `+0x5C` owner; inventory magic and `+0x20` cursor;
+  PlayerData `+0x4C`, `+0x50`, `+0x5C`; path `+2`/`+6`, `+0x0C`/`+0x10`, `+0x1C` room, `+0x4C` mask; room `+0x10` →
+  `+0x58` → `+0x1D0` the level id). Guards: 0x00408090, 0x00408A60, 0x00681E09 and the pool allocator's entries
+  (none reached). Observed boundaries, call site asserted by the return address: `use` 0x0055E170, 0x00562390,
+  0x00561ED0; `act` 0x00548B00; `pick` 0x00548A50, 0x0055CF50, 0x00563560, 0x0064E260, 0x00649560; `mv` 0x00563C00,
+  0x00560200, 0x00560420, 0x00549A60, 0x00554190, 0x00573140, 0x005B5810. No import is reached.
+- **Families:** `pos` 1 500, `use` 3 000, `act` 1 200, `pick` 2 500, `mv` 4 500.
+- **Result:** `workspace/logs/n66z/s4e/run3/check.txt` (`1bc77600…`, 61 lines), `static.txt` (`8de890ed…`, 41 lines,
+  32 pins, 6 read-only tables, `InteractIsPlayer`'s argument reads 0), `manifest.sha256` (`741310ae…`, 27 lines, passes
+  from that directory); `cases` regenerates every `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces
+  `check.txt` from the committed revision. 12 700 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write;
+  outcomes per family and boundary in `check.txt` (each count in items/0013 § 12 is copied from it). **16 controls,
+  each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2), enumerated by the tracer): `GameFindUnit`'s head offsets 0x006E10E0 and
+  `UnitInteractDistance`'s table 0x006EB180 (.rdata), `UnitInteract`'s switch table 0x00548E8C, `LevelIsTown`'s tables
+  0x006426C0/0x006426C8 and `UNIT_GetSizeX`'s switch table 0x00620570 (.text), none writable (`static.txt`). Every
+  other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; the callers; everything after each boundary
+  (the use functions, `UnitInteract`'s callee on the other unit types, the walk, the pickups, the line test and the
+  unmark, `CursorDrop`, `InvPlaceItem`, `InvItemToCursor`, `NoManaMsg`, the interaction and trade callees), so the
+  handlers' returns after those calls stay `[I]` (0x0054B250, 0x0054AD70, run:2026-11-16-sweep2-s4e-emu).
+
+### Part 4: the other request handlers, InvItemToCursor, InvPlaceItem's refusals (2026-11-16)
+
+- **Question:** do the requests `0x1A`..`0x1F`, `0x21`..`0x25` and `0x63`, `InvItemToCursor`, `InvPlaceItem` as
+  `0x18` calls it, `InvPageGet` and `InvRowForUnit` map their inputs as [items/inventory](../../specs/items/inventory.md)
+  §§ A, B5, D, E state, up to the callee each ends at? Claims in
+  [items/0013 § 13](0013-grids-belts-stacks.md#13-plan-0066-batch-s4e-part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-invpageget-invrowforunit-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 2, 4, 5, 12.
+- **Setup:** as part 3, one kept launch per family (about 41 s for the six), after two development passes (`dev4a/`,
+  60 cases per family, and `dev4b/`, 300, each with an earlier tool revision and its own `manifest-dev.sha256`, 30
+  lines, passing from its directory; not cited). New tool `tools/items_s4e4_emu.py` (`56e34310…`, draws from
+  `random.Random("n66z-s4e4-<family>")`; `rowfor`'s cases are an enumeration), importing part 3's world unchanged. Added
+  to the declared image, zero-filled before every case: the inventory's page array (`+0x14`, count `+0x18`) and cells,
+  the item list (`+0x0C`; ItemData `+0x64` next, `+0x69` location byte), a unit for `rowfor`, and Items rows 7..12,
+  inventory rows 0..15 and ItemTypes rows 0..3 with `tools/item_emu2.py`'s table pointers (0x00744304, 0x0096CA58/5C,
+  0x0096D4F0/F4). Guards as part 3 (the allocator entries 0x0040B430, 0x0040B4B0 among them). Observed boundaries,
+  call site asserted by the return address: `body` 0x005606B0, 0x00563D20, 0x00560CD0, 0x00560F00, 0x00561220 and part
+  3's 0x00554190, 0x00573140, 0x005B5810; `req` 0x00561B00, 0x0055E7C0, 0x0055E9A0, 0x0055E9B0, 0x00562250, 0x0055EB30,
+  0x00549A60, 0x0063C600 and the same three; `tocur` 0x0063AD90; `place` 0x0063AAF0. No import is reached.
+- **Families:** `body` 3 000, `req` 4 000, `tocur` 1 500, `place` 2 500, `pageget` 1 000, `rowfor` 5 952.
+- **Result:** `workspace/logs/n66z/s4e/run4/check.txt` (`aa788c1b…`, 100 lines), `static.txt` (`f189e4b8…`, 75
+  lines, 39 pins; the six part-3 tables and `InvRowForUnit`'s switch table 0x00621134 not writable; the two `.data`
+  ranges named in `.text` only by three loads of the class table and its count and 23 pushes of the body row's
+  address, no store), `manifest.sha256` (`ed4ce77e…`, 32 lines, passes from that directory); `cases` regenerates every
+  `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces `check.txt` from the committed revision. 17 952
+  cases, 0 mismatches, 0 undeclared reads, no traced write; 375 `pageget` cases stop at a guard (68 at 0x0040B430, 307
+  at 0x0040B4B0), each where the model expects that guard; outcomes per family and boundary in `check.txt` (each
+  count in items/0013 § 13 is copied from it). **19 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): part 3's tables, `InvRowForUnit`'s switch table 0x00621134 (.text), and two `.data`
+  ranges read as the image's values: the body row 0x0074479C (13 × 1) and `InvRowForUnit`'s class table
+  0x00744544..0x0074457F (seven class → row pairs and the count). Every other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; the callers; everything after each boundary
+  (each handler's function and its tail, `InvTakeItem` and what follows it, `InvItemRemove` and `InvGridPut`'s fill,
+  `InvPlaceSocketed`, `BeltFreeSlot` and `0x63`'s placement, `NoManaMsg`'s return of 2); `TradeBeltLock`'s use by
+  `0x1C`, which no case reaches; a page made on first use (the allocator); `InvGridFree`; `InvItemToCursor`'s
+  non-type-4 unit in the type-4 list.
+
+### Part 5a: the search on full pages and in sequence, InvGridFree, the belt tests, BeltPutItem, the ground expiry and the quest call (2026-11-16)
+
+- **Question:** do `InvSpotFindBySize` on full, near-full and one-hole pages and in sequence, `InvGridFree`,
+  `BeltHoldsSameGroup`, `ItemAutoBeltTest`, `BeltPutItem`, `ItemGroundExpiry` with quality 9 and `ItemPlaceOnGround`
+  with its flag set map their inputs as [items/inventory](../../specs/items/inventory.md) §§ B2, B5, F3, F4, K1, K2 and
+  the worked example state, up to the callee each ends at? Claims in
+  [items/0013 § 14](0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0013 §§ 1, 6 and items/0014 § 2.
+- **Setup:** `main` `30e8a46c` merged first. One kept launch per family on `workspace/ghidra-n66z` (`-Xmx3G`,
+  `MemoryMax=4G`, about 77 s for the eight), after one development pass (`dev5a/`, 60 cases per family, an earlier tool
+  revision whose `ground` model lacked `+0xC4` bit 0, with its `check-dev.txt` and `manifest-dev.sha256`, 41 lines,
+  passing from its directory; not cited). New tool `tools/items_s4e5_emu.py` (`43fe6fcc…`; draws from
+  `random.Random("n66z-s4e5-<family>")`, `seq` also replays the worked example's two sequences), building its cases
+  on `tools/item_emu2.py`'s world (search, seq, gridfree, holds, autobelt, beltput; its regions zero-filled before
+  every case by the memory spec) and `tools/item_emu3.py`'s (expiry, ground), both unchanged; parts 1–4's tools and
+  `run/` to `run4/` untouched. Guards: the error routine's callees 0x00408A60, 0x00681E09, and the allocator entries
+  0x0040B430, 0x0040B480, 0x0040B4B0; none is hit. Observed: the error routine 0x00408090 (item_emu2's families),
+  `InvItemRemove` 0x0063AAF0 (`beltput`, return address asserted 0x0063B138), `QUESTS_RaiseItemDropped` 0x00543DB0
+  (`ground`, return address 0x00558B2B, ECX and the pushed item asserted). No import is reached.
+- **Families:** `search` 3 000, `seq` 733 (62 sequences), `gridfree` 1 500, `holds` 1 500, `autobelt` 1 200, `beltput`
+  1 500, `expiry` 800, `ground` 400.
+- **Result:** `workspace/logs/n66z/s4e/run5/check.txt` (`6e87e907…`, 137 lines), `static.txt` (`320b0b98…`, 26 lines,
+  25 objdump pins, each as cited), `manifest.sha256` (`fc4c8808…`, 42 lines, passes from that directory); `cases`
+  regenerates every `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces `check.txt` from the committed
+  revision. 10 633 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; outcomes per family in
+  `check.txt` (each count in items/0013 § 14 is copied from it). **22 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): item_emu2's and item_emu3's tables as their runs declare them, and the belt row
+  `0x007447B4` (16 × 1, `.data`), read as the image's value; every other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; the callers (that a stock path makes no
+  quality-9 item; `ItemToBelt`'s steps before `BeltPutItem`); `InvItemRemove` and what follows in `InvGridPut`;
+  `QUESTS_RaiseItemDropped` itself; `GroundDropCell` and `CursorDrop` (the search's pool allocation, ruling R2: inventory
+  63 and 81's remainder go to H4d).
+
+### Part 5b: the Blood Golem's heal, the doubling draw, kind 3's return and StackRequest (2026-11-16)
+
+- **Question:** do `GolemHealShare` and `GolemHeal` with `v = 0` and `v ≠ 0`, `ItemUsePotion`'s doubling draw at chosen
+  `(r1, r2)`, kind 3's return for amounts at and below 0, and `StackRequest` map their inputs as
+  [items/use](../../specs/items/use.md) F1c, F1h, H5 and [items/inventory](../../specs/items/inventory.md) G4 state, up
+  to the callee each ends at? Claims in
+  [items/0013 § 15](0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0012 §§ 5, 6 and items/0013 § 7.
+- **Setup:** `main` `30e8a46c` (already merged at the part's start; nothing newer). One kept launch per family on
+  `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`, about 36 s for the four), after three development passes, each with
+  its `check-dev.txt` and `manifest-dev.sha256` passing from its directory, not cited: `dev6a/` (60 cases per family, an
+  earlier revision that read `StackMerge`'s arguments one word off and had no wrapping golem sums; its check under the
+  final tool fails, as kept), `dev6b/` (300 per family, the generators of the final revision before one fix), `dev6c/`
+  (the full counts, the same revision: one `potret` case had a calc of `0x8000000D` written as a positive Python int, so
+  the model scaled a value the game reads as negative; the generator now passes every calc through `s32`). New tool
+  `tools/items_s4e6_emu.py` (`d75c9ae3…`; draws from `random.Random("n66z-s4e6-<family>")`, the `double` seeds built
+  backwards through `tools/rng.py`'s step), building on `tools/use_emu.py`'s world (golem, double, potret; its regions
+  zero-filled before every case) and on `tools/items_s4e3_emu.py`'s units with `tools/item_emu2.py`'s tables
+  (stackreq), all unchanged; parts 1–5a's tools and `run/` to `run5/` untouched. Guards: the error routine 0x00408090
+  and its callees 0x00408A60, 0x00681E09, and the allocator entries 0x0040B430, 0x0040B480, 0x0040B4B0; none is hit.
+  Observed: `UnitSetStat` 0x00627260 (`golem`, return addresses 0x005C6901 and 0x005C5F47 compared), `UnitAddStat`,
+  `STATLIST_Alloc`, `UnitQueueEvent`, `STATLIST_SetStat`, `GolemHeal` (`double`, `potret`; sites and seed compared by
+  `use_emu.cmp_stat`), `StackMerge` 0x0055E590 (`stackreq`, return 0x0055E8B1). No import is reached.
+- **Families:** `golem` 1 200, `double` 3 000, `potret` 2 400, `stackreq` 2 000.
+- **Result:** `workspace/logs/n66z/s4e/run6/check.txt` (`108ce34a…`, 116 lines), `static.txt` (`6499c56a…`, 30 lines,
+  29 objdump pins, each as cited), `manifest.sha256` (`576815a0…`, 22 lines, passes from that directory); `cases`
+  regenerates every `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces `check.txt` from the committed
+  revision. 8 600 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; outcomes per family in `check.txt`
+  (each count in items/0013 § 15 is copied from it). **16 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): `use_emu`'s and `item_emu2`'s tables as their runs declare them, `items_s4e3_emu`'s hash
+  heads; the image reads are the switch tables, bit masks and counts listed in the tool's `ACCOUNTED` (as `use_emu`'s
+  and `item_emu2`'s runs list them); every other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; `UnitSetStat`, `UnitAddStat`,
+  `STATLIST_SetStat` and what follows them (kind 3's 1 after an applied slot; the golem functions' returns after the
+  set); `StackMerge` (its first set is items/0013 § 7's; after it, the stat messages' packet queue can allocate, so
+  inventory 57 goes to H4d); the uniformity of `low mod n` behind the chance formula.
+
+### Part 5c: the mercenary button, ItemUse after its entries, ItemSkillQtyAdjust and the routes (2026-11-16)
+
+- **Question:** do `Pkt61MercItem`, `ItemUse` with its stock test and use entries run, and `ItemSkillQtyAdjust` map
+  their inputs as [items/use](../../specs/items/use.md) B (`0x61`), C2 and [items/inventory](../../specs/items/inventory.md)
+  C1, C2 state, up to the callee each ends at; and which rows' routes cross an allocator (ruling R2)? Claims in
+  [items/0013 § 16](0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu),
+  dated notes in items/0012 §§ 1, 2.
+- **Setup:** `main` `ac87a5f5` merged at the part's start. One kept launch per family on `workspace/ghidra-n66z`
+  (`-Xmx3G`, `MemoryMax=4G`, about 30 s for the three), after four development passes, each with its `check-dev.txt`
+  and `manifest-dev.sha256` passing from its directory, not cited: `dev7a/` (60 per family; the `c2` dumps of the
+  kind-3 cases were not emitted and the book cases had no player data, so 42 mismatches), `dev7b/` (300 per family),
+  `dev7c/` (`merc` only, 300, reweighted), `dev7d/` (the full counts under the revision before the last controls were
+  added; its outputs match, its controls are fewer). New tool `tools/items_s4e7_emu.py` (`8ba80ecb…`; draws from
+  `random.Random("n66z-s4e7-<family>")`), building on `tools/items_s4e3_emu.py`'s world (merc), `tools/use_emu.py`'s
+  world with `tools/items_s4e6_emu.py`'s `potret` generator (c2) and `tools/use_emu.py`'s world (qty), all unchanged;
+  parts 1–5b's tools and `run/` to `run6/` untouched. Guards: 0x00408A60, 0x00681E09 and the allocator entries
+  0x0040B430, 0x0040B480, 0x0040B4B0; none is hit. Observed: `merc` `MercGiveCursorItem` 0x0054D230, 0x0054D130 and the
+  error routine 0x00408090; `c2` `InvClearUseMark` 0x005BE1C0, `SendUnitPacket6` 0x0053B3D0, 0x0053D220, kind 1's use
+  0x005BE230 and kind 3's callees; `qty` 0x005531C0, `UnitAddStat` 0x006272B0, 0x00570080 and 0x00408090.
+- **Families:** `merc` 3 000, `c2` 2 500, `qty` 2 500.
+- **Result:** `workspace/logs/n66z/s4e/run7/check.txt` (`a7d99e9b…`), `static.txt` (`411de8b4…`, 48 objdump pins, each
+  as cited), `sites.txt` (`2b6f5e27…`, 19 roots), `manifest.sha256` (`e1cfd74e…`, 18 lines, passes from that directory);
+  `cases` regenerates every `.cases`, `.mem` and `.json` byte for byte, and `check` reproduces `check.txt` from the
+  committed revision. 8 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; outcomes per family in
+  `check.txt` (each count in items/0013 § 16 is copied from it). **18 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): the declared worlds of the three tools named; the image reads are `GameFindUnit`'s head
+  offsets, the use table and its count (0x00741790, 0x0074178C), the stack cookie and the switch tables, bit masks and
+  counts of `items_s4e6_emu.py`'s and `item_emu2.py`'s `ACCOUNTED`; every other read lies in the declared image.
+- **Not covered** (ADR-0015 (3), ADR-0021): the meanings of the offsets; `MercGiveCursorItem`, 0x0054D130 and what
+  follows them; message `0x7C` and `ItemUse`'s return after `InvClearUseMark`; a test returning 0 (none of the stock
+  entries does); `ItemSkillQtyAdjust` after the message builder (the send, the skill resets, the grant, the 1).
+- **Moved, not run** (`sites.txt`): items/inventory 20 and items/use 54 (classes c-emu → b), the remainders of
+  inventory 25, 26, 27, 39, 42, 45/99 and use 22, 34; reasons in items/0013 § 16's last bullet.
+
+### Part 5d: ItemAutoEquipSlot, AddStat's removal and the static remainders (2026-11-16)
+
+- **Question:** does `ItemAutoEquipSlot` choose the location as [items/inventory](../../specs/items/inventory.md) I6
+  states, does `STATLIST_AddStat` remove an entry at 0 as [stats/aggregate](../../specs/stats/aggregate.md) A3 states,
+  and do the static remainders of S4c/S4d (stats/aggregate 10, 13, 17, 23, 37) read the same with a second tool;
+  which row's route crosses an allocator (ruling R2)? Claims in
+  [items/0013 § 17](0013-grids-belts-stacks.md#17-plan-0066-batch-s4e-part-5d-itemautoequipslot-under-emulation-and-cursordrops-cursor-clear-routed-run2026-11-16-sweep2-s4e-emu)
+  and [stats/0001 § 12](../stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu).
+- **Setup:** `main` `31a4949c` merged at the part's start (it changes only `tools/d2pilot.py` and `tools/gdb/`). One kept launch per family on `workspace/ghidra-n66z`
+  (`-Xmx3G`, `MemoryMax=4G`, about 20 s for the two), after four development passes, each with its `check-dev.txt`
+  and `manifest-dev.sha256` passing from its directory, not cited: `dev8a/` (300 per family; the `addst` cases with an
+  empty array wrote an empty `w` line, which the script rejects, so `addst` did not run; three `auto` controls did
+  not separate), `dev8b/` (1 500 per family; the CRT memmove's jump tables not yet declared, 5 undeclared reads),
+  `dev8c/` (the full counts, reweighted), `dev8d/` (`auto` only, 4 000, with the ammunition and one-handed
+  scenarios). New tool `tools/items_s4e8_emu.py` (`ab66b398…`; draws from `random.Random("n66z-s4e8-<family>")`), its
+  world declared from scratch; parts 1–5c's tools and `run/` to `run7/` untouched (run7's `check` reproduces its
+  `check.txt`). Guards: 0x00408A60, 0x00681E09 and the allocator entries 0x0040B430, 0x0040B480, 0x0040B4B0 (the
+  last observed in `addst`); none is hit. Observed: `auto` `ItemReqCheck` 0x0062EAF0; `addst`
+  `STATLIST_InsertEntry` 0x00624C80 and 0x0040B4B0; both the error routine 0x00408090.
+- **Families:** `auto` 6 000, `addst` 2 500.
+- **Result:** `workspace/logs/n66z/s4e/run8/check.txt` (`097e2c36…`), `static.txt` (`9842c53a…`, 23 family pins and
+  90 row pins in five sets, each as cited), `sites.txt` (`05cfb200…`, 5 roots), `xref.txt` (`9615a76c…`: the stat
+  callback's switch from the raw bytes, the rel32 callers of `STATLIST_SetRemoveCallback` and `STATLIST_Alloc`),
+  `manifest.sha256` (`9c5d612d…`, 14 lines, passes from that directory); `cases` regenerates every `.cases`, `.mem` and
+  `.json` byte for byte, and `check` reproduces `check.txt` from the committed revision. 8 500 cases, 0 mismatches,
+  0 stops, 0 undeclared reads, no traced write; outcomes per family in `check.txt` (each count in the two sections is
+  copied from it). **19 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): the declared scratch world (ItemTypes, their equivalence bits, Items rows, the user,
+  its inventory and body page, the worn items; a plain stat list, its array and the ItemStatCost rows); the image
+  reads are the DataTables pointer and the Items count and rows (both declared), the body page's 13 × 1 row
+  (0x0074479C), the bit masks (0x006CE200..0x006CE300), the stack cookie and the CRT memmove's own jump tables
+  (0x00683840..0x00683C00).
+- **Not covered** (ADR-0015 (3), ADR-0021): `ItemReqCheck` and the path past its return; `STATLIST_InsertEntry`, the
+  resize and what follows; a parent's propagation and the client mark; the meanings of the offsets. The static rows
+  are code readings by objdump and the raw bytes, a second tool beside the findings' Ghidra readings, not runs.
+- **Routed, not run** (`sites.txt`): items/inventory 61's remainder (the cursor clear after `GroundDropCell` and
+  `ItemPlaceOnGround`) to H4d; reasons in items/0013 § 17's last bullet.
+
+### Part 5e: ItemAutoEquipSlot through ItemReqCheck, the stat event list and the elemental appliers (2026-11-16)
+
+- **Question:** does `ItemAutoEquipSlot` with `skipReq` 0 follow `ItemReqCheck`'s return as
+  [items/inventory](../../specs/items/inventory.md) I6 states; what do the stat event list's find (0x005C0BE0) and
+  remove (0x005C0B50) do, and how does `AddStatEvent` reach its node (stats/aggregate 23's remainder); do the burn,
+  cold and freeze appliers make poison's list (stats/states 14)? Claims in
+  [items/0013 § 18](0013-grids-belts-stacks.md#18-plan-0066-batch-s4e-part-5e-itemautoequipslot-through-itemreqcheck-run2026-11-16-sweep2-s4e-emu),
+  [stats/0001 § 13](../stats/0001-aggregate.md#13-plan-0066-batch-s4e-part-5e-the-stat-event-list-under-emulation-run2026-11-16-sweep2-s4e-emu)
+  and [stats/0002 § 12](../stats/0002-states.md#12-plan-0066-batch-s4e-part-5e-the-elemental-appliers-lists-run2026-11-16-sweep2-s4e-emu-static).
+- **Setup:** `main` `31a4949c` (unchanged since part 5d; nothing to merge). One kept launch per family on
+  `workspace/ghidra-n66z` (`-Xmx3G`, `MemoryMax=4G`; `req` about 33 s), after five development passes, each
+  with its `check-dev.txt` and `manifest-dev.sha256` passing from its directory, not cited: `dev9a/` (400 `req`; five
+  controls did not separate), `dev9b/` (1 500 `req`, reweighted: 34 returns of 1), `dev9c/` (1 500 `req`, drawn by
+  rejection: 124 returns of 1), `dev9d/` (600 `evt`; control `nostat` passed 10, its marks on words already marked
+  being no change), `dev9e/` (600 `evt`, the marks counted only where they change the word; `req` not run there).
+  New tool `tools/items_s4e9_emu.py` (draws from `random.Random("n66z-s4e9-<family>")`); its `req` world is part 5d's
+  `gen_auto` called unchanged (its `AW` class wrapped to keep the world for the model), with this part's fields
+  written after it. Parts 1–5d's tools and `run/` to `run8/` untouched (run8's `check` reproduces its `check.txt`).
+  The `evt` family's labels were added after a first kept `evt` pass, so `evt` was rerun under the final revision;
+  `req`'s `.cases`, `.json` and `.mem` were regenerated and checked identical before that rerun. Guards: 0x00408A60,
+  0x00681E09 and the allocator entries (`req` all three; `evt` 0x0040B4B0, with 0x0040B430 and 0x0040B480 observed);
+  none is hit. Observed: the error routine 0x00408090.
+- **Families:** `req` 6 000, `evt` 3 000.
+- **Result:** `workspace/logs/n66z/s4e/run9/check.txt`, `static.txt` (49 family pins and the 35 pins of states 14),
+  `xref.txt` (the references to `g_StatEventFuncs`, the callers of the event functions, the four appliers' call
+  scans), `manifest.sha256` (13 lines, passes from that directory); `cases` regenerates every input byte for byte and
+  `check` reproduces `check.txt` from the committed revision. 9 000 cases, 0 mismatches, 0 stops, 0 undeclared reads,
+  no traced write; outcomes and branch counts per family in `check.txt`. **15 controls, each separating, `passed` 0.**
+- **Read set** (ADR-0015 (2)): the declared scratch world (part 5d's plus the Items requirement fields, the item's and
+  the user's stat lists, the ItemTypes class bytes, 360 zeroed ItemStatCost rows, the MonStats count; a game, a unit
+  and its event nodes); the image reads are the bit masks (0x006CE200..0x006CE300), the body page's 13 × 1 row
+  (0x0074479C) and `g_StatEventFuncs` (0x007325B0, 50 dwords: its one reference in the code is the load at
+  0x0056E74B, `xref.txt`).
+- **Not covered** (ADR-0015 (3), ADR-0021): the level requirement's quality arms 4..8, its socket and skill-stat
+  loops; the allocation and free and what follows them; the 23 other callers of the event functions. The states 14
+  pins are an objdump reading beside the specs' Ghidra reading, not a run.
+
+### Part 5f: the closing static part (2026-11-16)
+
+- **Question:** the 11 rows S4e part 5e left (items/inventory 17, 18, 87; stats/aggregate 2, 10, 29, 31, 36, 40, 41;
+  stats/states 46), and items/economy 46's caller half left by part 2. Claims in
+  [items/0013 § 19](0013-grids-belts-stacks.md#19-plan-0066-batch-s4e-part-5f-the-servers-record-reads-and-the-quality-9-writers-run2026-11-16-sweep2-s4e-emu-static),
+  [stats/0001 § 14](../stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)
+  and [stats/0002 § 13](../stats/0002-states.md#13-plan-0066-batch-s4e-part-5f-the-pet-release-routed-run2026-11-16-sweep2-s4e-emu-static).
+- **Setup:** `main` `31a4949c` (unchanged; nothing to merge). No emulation and no Ghidra launch. New tool
+  `tools/items_s4e10_emu.py` (objdump and the image's raw bytes; `sites` reuses `items_s4e7_emu.cmd_sites` with this
+  part's roots under `MemoryMax=4G`; `logs` reads `workspace/logs/stats/s1017-run.lst` and `p47h-run.lst`). Parts
+  1–5e's tools and `run/` to `run9/` untouched (run9's manifest passes; its `static` reproduces `static.txt`). Three
+  development passes of `static`/`xref` wrote into `run10/` before the final revision (the server-call filter, the
+  `lea` follow window, economy 46's pins) and were overwritten, not kept; every kept output is from the committed
+  revision.
+- **Result:** `workspace/logs/n66z/s4e/run10/static.txt` (100 pins over 10 rows, all ok), `xref.txt` (the 13 server
+  record calls' buffer operands; the callers of `ITEMS_SetQuality` with their quality argument,
+  `StatListLinkOwner`, `KeyConsume`, `EquipReqRefresh`, `PlayerEquipRefresh`, `PlayerSkillReselect`,
+  `PetLimitRefresh`, `ITEMS_MakeEthereal`; the branches over 0x0055DEA0; the 19 `push 0x400000`), `sites.txt` (4
+  roots, 13 calls reaching an allocator or import), `logs.txt` (28 logs, all first in level 103, 22 with 136 the
+  commonest EQR gap), `manifest.sha256` (4 lines, passes from that directory).
+- **Not covered:** an `esp`-relative alias of a record buffer; the flag `0x400000`'s 19 other users; the 9 aura-bit
+  readers' reachability for 127–129; the class sources of the non-literal object creators; the CubeMain quality
+  bytes; anything past the allocator or import each `sites.txt` route names. Every `[C]` here is an objdump reading
+  beside a Ghidra reading already in a finding or spec, not a run. (run:2026-11-16-sweep2-s4e-emu)
