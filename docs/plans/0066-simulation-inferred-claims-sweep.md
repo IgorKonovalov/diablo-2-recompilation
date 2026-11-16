@@ -4083,4 +4083,53 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   callbacks are stated there); (12) aggregate's two `[L]` open questions reworded to drop the parts now emulated or read.
 - **Gate:** fast green (74 warnings; new: W4 on the three wiki pages the refresh entry names); `--full` green
   (39 surveys); `tools/quirks.py check` 0 errors.
-- **Review:** Tier A, [request](../backlog/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-stats-items-cluster.md).
+- **Review:** Tier A, [request](../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-stats-items-cluster.md).
+
+### 2026-11-16 — Phase 3 stats/items cluster review (architect, Tier A, `lane/n66si`): accept with fixes (3)
+
+- **Merged `main` first** (`c6c85ae8`: the site builder, ADR-0034, gate rule E19; `51a25a13`), clean, no markers;
+  `tools/backlog.py archive` moved nothing; gate fast green after the merge (E19 raises nothing in the six specs).
+- **Checked.** The six inventory files' *Phase 3* lines partition their rows exactly (aggregate 42: 16 / 15 / 2 / 9;
+  states 54: 7 / 7 / 1 / 39; stats/README 3: 0 / 1 / 0 / 2; economy 86: 32 / 22 / 2 / 30; use 64: 19 / 9 / 0 / 36;
+  inventory 101: 48 / 16 / 1 / 36; a script over the lists against each table's rows, no row twice or missing, every
+  stated bucket count equal to its list). § 6's six rows carry the same counts; "before" equals each spec's front matter
+  at `845aa88f` and "after" the front matter now; the research-map rows and the quirks index agree (gate).
+  `tools/quirks.py check` 0 errors (Q369, Q490, Q514 `[C]`; Q391 reworded to the act clock pass, `[C]`; Q49 `[I]`).
+  No `[L]` outside *Open questions* in the six specs; no Mermaid line changed. Eight new `fn:` anchors sampled
+  (`PlayerSkillReselect`, `ActsClockPass`, `PlayerEquipRefresh`, `UNIT_SetStateBit`, `UNIT_HasState`,
+  `COMBAT_ApplyFreeze`, `GolemHealShare`, `PLAYER_SpendStatPoint`) resolve in `re/symbols.csv`. The wiki refresh entry
+  is filed (W4 on three pages). The owner's note on the move conventions of inventory 61, states 46 and aggregate 41 is
+  stated in the lane's entry and in each of the three inventory lines, left as filed; not resolved here.
+- **Promotion re-check** (32 statements, weighted to the judgment calls), each against stats/0001 §§ 11–14,
+  stats/0002 §§ 12–13, items/0011 § S4e part 2, items/0013 §§ 1, 12, 15, 19 and the S4a, S4c, S4d part 1 and part 2
+  records: aggregate A2, A3 (row 11: `AddStat`'s add, removal and shrink, the insert observed; the client mark and the
+  parent propagation `[I]`), D1 ×3 (row 16: op 3 and the skipped ops, the flat sum and op 7, the stat-point code with
+  CharStats `+0x46..+0x48`; `BaseStat`'s floor and ops 4–5's shift `[I]`), F2 (row 20, the floor as § 11 states it),
+  H4 and n6 (rows 29, 42: the clock pass two-tool, 22 of 28 logs, the 136 period `[I]`); states A2 (row 5), B1 and its
+  gate line (rows 13, 7), B2 (25 sites: 6 named + 19), C2, E3, F2, F3, G2 ×3 (rows 41, 42: the effect table, the six
+  shrine lists' `curse`, shrine 6's stat 171; the curse replacement and the skill shrine's reader `[I]`), G4 (row 37),
+  the H table's remove-callback row (row 46); economy B6 ×2 (rows 17, 18), D3 (Npc.md's value ranges), D5 (row 26), F1
+  (row 40), F7 ×2 (rows 39, 44), H7 (row 78), `D2S_WriteCorpses` (row 46); use `0x20`, `0x26`, `0x27`, `0x61` (rows
+  18–20), F1c, H5 (row 52); inventory G (row 60) and G4 (row 58). Each holds but the three below.
+- **Fixes (3).** *Misread (1):* states E3 gave "all 81 911 ticks of that run", anchored to run:2026-10-20-shortfalls
+  alone; S4d part 2's counts are "s1017 / p47h", 54 719 in run:2026-10-17-stats and 27 192 in the shortfalls run. E3
+  now states both runs and anchors both; the 4 326 mode-3 ticks under the bonus are unchanged. *Omission (2):* states C2's
+  "147 of 148 logged frees" and the H table's "149 logged freeing expiries" (119 + 30) count the shortfalls run too and
+  now anchor it; economy F7's header raised "one item per call" on S4a's `repairall` check, which no step note stated
+  or cited: the note now states it (4 009 calls, one item each; the repair-alls' items exactly their calls', 7, 7, 7;
+  a single repair only its item) and cites items/experiments § S4a. No tag moved; the front matter, § 6 and the
+  research-map rows stand.
+- **Judgment calls.** (1) The eleven filed-raised rows split (aggregate 11, 16; states 37, 41, 42; economy 17, 18, 26,
+  39, 44; use 18–20): accepted; each remainder is a sentence no run or second tool covers, and the spec keeps it `[I]`.
+  (2) States 7 raised whole on row 13's objdump and raw-byte reading of the same gate: accepted (two tools, the same
+  claim; spec-writer review-fixes 8). (3) Economy 78's none-queued test and signed division raised for the durability
+  timer on row 11's emulation (`r` −49 to 5 000, 109 and 89 no-queue cases): accepted; S4a's route predates the
+  emulation, and the quantity timer stays `[I]`. (4) The six corrected rows counted corrected: accepted (combat and frame
+  precedents). (5)–(12): accepted as stated in the lane's entry; (10) checked against Npc.md's `sell mult` 960..2048 and
+  `buy mult` 512, (6) against the S4a/S4b Tier B fix 2.
+- **Not a fix, noted.** Economy F7's first bullet keeps "the quantity and charge refills are read from the code" as its
+  own sentence inside the `[C]` bullet (the header's `[I]`, "note F7", points at it); the wording states the scope.
+  states-inventory row 23's S4d cell says "all 81 911 ticks" without the run split; it is the reverser's record, left.
+- **Gate:** fast green (74 warnings, none from the fixes; the W4s the refresh entry answers); `--full` green
+  (39 surveys); `tools/quirks.py check` 0 errors.
+- **Verdict: accept with fixes (3)**: misread 1, omission 2. The review request is closed with this entry.

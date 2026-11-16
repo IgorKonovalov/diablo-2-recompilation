@@ -2,11 +2,11 @@
 from: spec-writer
 to: architect
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../plans/0066-inventory/README.md
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/0066-inventory/README.md
+resolution: "Tier A review: accept with fixes (3): misread 1, omission 2; plan 0066 log, Phase 3 stats/items cluster review"
 ---
 
 Please review `lane/n66si`: plan 0066 Phase 3, the stats/items cluster (stats/aggregate, stats/states, stats/README,
