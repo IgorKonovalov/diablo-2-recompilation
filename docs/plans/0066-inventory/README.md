@@ -483,6 +483,9 @@ each cluster's re-tag.
 | combat (`lane/n66y`) | [combat/reductions](combat-reductions.md) | 25 | 18 | 0 | 2 | 5 | C 46 / I 25 / L 5 | C 58 / I 5 / L 4 |
 | combat (`lane/n66y`) | [combat/delivery](combat-delivery.md) | 67 | 23 | 14 | 2 | 28 | C 81 / I 67 / L 4 | C 114 / I 42 / L 4 |
 | combat (`lane/n66y`) | [player/party](player-party.md) (row 12 only) | 26 | 1 | 0 | 0 | 25 | C 46 / I 30 / L 3 | C 47 / I 29 / L 3 |
+| quests (`lane/n66qr`) | [quests/progression](quests-progression.md) | 322 | 50 | 61 | 1 | 210 | C 118 / I 322 / L 6 | C 231 / I 272 / L 6 |
+| quests (`lane/n66qr`) | [quests/travel](quests-travel.md) | 86 | 14 | 23 | 1 | 48 | C 79 / I 88 / L 5 | C 118 / I 75 / L 5 |
+| quests (`lane/n66qr`) | [quests/README](quests-README.md) | 6 | 1 | 2 | 0 | 3 | C 11 / I 6 / L 2 | C 14 / I 5 / L 2 |
 
 A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
 `[C]` count rises by more than the `[I]` count falls.

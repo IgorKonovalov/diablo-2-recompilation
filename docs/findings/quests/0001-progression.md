@@ -2615,7 +2615,7 @@ count, the object list) and `tools/ds1.py`. Row by row in `docs/plans/0066-inven
   functions directly, which give a level id (`RoomGetLevelId`), an act, rooms or a room count; none is a level-struct
   getter. Scope: direct calls. (fn:sub_00642BB0_LevelEnsure@0x00642BB0, fn:sub_006772C0_LevelLinkBuild@0x006772C0)
 - No row contradicted. One refinement (the record's read side, above) is in
-  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
 
 ## Data touched
 
