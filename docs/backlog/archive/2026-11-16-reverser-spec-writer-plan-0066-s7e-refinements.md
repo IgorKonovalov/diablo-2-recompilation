@@ -34,3 +34,9 @@ faulting access stays `[I]` (ADR-0015 (5)).
    after the return (`PortalObjectCreate` 0x0056D218, "the open fails"). The bullet is the lane's draft text; the lane did
    not write it into the spec (it is the spec-writer's file). Then the spec's tag count and the research-map row move by
    the number of `[C]` statements the bullet adds.
+
+**2026-11-16, spec-writer (`lane/n66qr`, plan 0066 Phase 3, quests cluster):** item 3 taken. quests/travel B1 now
+holds the scope bullet `[C]` (ADR-0015, ADR-0029 (a)) on family `ffn` of run:2026-11-16-sweep2-s7e, 596 of 600 cases,
+the 4 left out named; A5's step 5 and G2's walk back are `[C]` on the same family, G2's "the open fails" stays `[I]`
+(the caller after the return). Items 1 (sim/frame D9/E1) and 2 (drlg/collision E4) are left open for the path/frame
+cluster.

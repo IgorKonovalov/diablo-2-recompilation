@@ -3,6 +3,15 @@
 - **Spec:** [quests/progression](../../specs/quests/progression.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 322; the *Count* column sums to 322.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66qr`, 2026-11-16): re-tagged.** The spec's front matter is now C 231 / I 272 / L 6 (it was C 118 /
+  I 322 / L 6). Statement `[C]` whole: rows 1, 2, 4–6, 8, 14, 15, 18, 20–33, 35–38, 45, 64, 68, 72, 78, 98, 101, 126,
+  130, 138, 142, 175, 179, 259, 262, 284, 304, 314–316, 318, 319, 321 (50; row 179 with the computed-class caveat).
+  Split: 3, 7, 13, 16, 19, 34, 39, 42, 43, 50, 56, 58, 59, 63, 65, 66, 69, 73, 75, 89, 104, 117, 119, 120, 124, 125,
+  127, 128, 131, 132, 141, 159, 166, 167, 182, 184, 190, 196, 210, 220, 221, 224, 227, 229–231, 237, 250, 254, 260, 273,
+  294, 296, 302, 303, 305, 307, 312, 313, 320, 322 (61; rows 230, 254 and 302, filed whole, split on a clause no kept
+  output tests; rows 43 and 227, kept by their routes, split for the half S3c raised in another row, review-fixes 8).
+  Corrected: 49 (1; C4 per quest). Kept `[I]`: the other 210 rows; rows 96 and 252 carry text corrections (the act
+  change's missing e3; the A4Q3 sites' owner).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

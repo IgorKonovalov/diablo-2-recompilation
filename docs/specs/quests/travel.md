@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, drlg/collision, drlg/warps, objects, quests/progression, save/d2s]
 consumed_by: [quests/progression, monsters/spawn, objects]
-tags: {C: 79, I: 88, L: 5}
-updated: 2026-11-10
+tags: {C: 118, I: 75, L: 5}
+updated: 2026-11-16
 ---
 
 # Travel: waypoints, act changes, town portals, warps and placement
@@ -25,14 +25,14 @@ events (quest words written, quest gates) is [quests/progression](progression.md
 
 | When | Function | Tag |
 |---|---|---|
-| click on a waypoint, a portal or another object (packets `0x13`/`0x16`, object distance below `0x33`) | `sub_00548B00_UnitInteract` case 2 → `OBJ_OperateDispatch` → `g_ObjOperateFns[OperateFn]` | [I] (fn:sub_00548B00_UnitInteract@0x00548B00, fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18) |
-| the client picks a waypoint row (packet `0x49`, `{u32 object id, u16 level}`) | `sub_0054C5D0_Pkt49WaypointTravel` → `sub_00584F60_WaypointTravel` | [I] (fn:sub_0054C5D0_Pkt49WaypointTravel@0x0054C5D0, fn:sub_00584F60_WaypointTravel@0x00584F60) |
-| an NPC menu action other than 1–3 (13-byte packet) | `NPC_MenuAction` → `sub_0054B830_NpcTravelMove` | [I] (fn:NPC_MenuAction@0x00579D60, fn:sub_0054B830_NpcTravelMove@0x0054B830) |
-| the player uses an item whose `Misc.pSpell` is 2 (`tsc`, `tbk`) | `g_ItemUseFns[2].use` = `ITEMUSE_TownPortal`, by the dispatch of [items/use § C](../items/use.md#c-the-dispatch-itemuse) | [I] (fn:ITEMUSE_TownPortal@0x005BE290, data:g_ItemUseFns@0x00741790, tbl:Misc.txt:pSpell) |
-| click on a warp tile (unit type 5, distance below 5) | `sub_00548B00_UnitInteract` case 5 → `sub_005550B0_WarpExitPos` | [I] (fn:sub_00548B00_UnitInteract@0x00548B00, fn:sub_005550B0_WarpExitPos@0x005550B0) |
-| the dead player presses "resurrect" (packet `0x41`, mode 17 only) | `sub_0054C0E0_Pkt41Resurrect` | [I] (fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0) |
-| a player joins the game | `sub_005394A0_PlayerPlaceInAct` (callers 0x00530237, 0x0053A3EB, 0x0053A4E6) | [I] (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0) |
-| the client reports its act loaded (packet `0x48`) | `sub_0054C590_Pkt48ActChangeClear` | [I] (fn:sub_0054C590_Pkt48ActChangeClear@0x0054C590, data:g_SrvPacketTable@0x006E0D18) |
+| click on a waypoint, a portal or another object (packets `0x13`/`0x16`, object distance below `0x33`) | `sub_00548B00_UnitInteract` case 2 → the operate wrapper 0x00584540 (also called by `MonAiOpenDoor`) → `OBJ_OperateDispatch` → `g_ObjOperateFns[OperateFn]` | [C] the chain, three tools agreeing on every call (case 2 is entry 2 of the table at 0x00548E8C, its distance test `cmp eax, 0x32` at 0x00548B6D, the wrapper's call 0x00548BA2, the dispatch 0x005845B2, the slot call 0x0058450E; fn:sub_00548B00_UnitInteract@0x00548B00, fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18, [quests/0002 § 17](../../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p)) |
+| the client picks a waypoint row (packet `0x49`, `{u32 object id, u16 level}`) | `sub_0054C5D0_Pkt49WaypointTravel` → `sub_00584F60_WaypointTravel` | [C] each of the 155 logged waypoint travels lies inside a packet-0x49 handler, called from 0x0054C67F (fn:sub_0054C5D0_Pkt49WaypointTravel@0x0054C5D0, fn:sub_00584F60_WaypointTravel@0x00584F60, run:2026-10-18-quests2, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)) |
+| an NPC menu action other than 1–3 (13-byte packet) | `NPC_MenuAction` → `sub_0054B830_NpcTravelMove` | [C] the call: 35 logged `NpcTravelMove` runs came from `NPC_MenuAction` (returns 0x0057A67F, 0x0057A704, 0x0057A7DB), each with one level change (run:2026-10-18-quests2, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)); [I] the 13-byte packet and the action-code test (fn:NPC_MenuAction@0x00579D60, fn:sub_0054B830_NpcTravelMove@0x0054B830) |
+| the player uses an item whose `Misc.pSpell` is 2 (`tsc`, `tbk`) | `g_ItemUseFns[2].use` = `ITEMUSE_TownPortal`, by the dispatch of [items/use § C](../items/use.md#c-the-dispatch-itemuse) | [C] the slot holds 0x005BE290, `tbk` and `tsc` are the only Misc rows with `pSpell` 2 (152 rows), and the 68 logged uses came from one call site (return 0x005BF38A) (fn:ITEMUSE_TownPortal@0x005BE290, data:g_ItemUseFns@0x00741790, tbl:Misc.txt:pSpell, run:2026-10-18-quests2, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)); [I] the use's refusals other than in a town (G1) |
+| click on a warp tile (unit type 5, distance below 5) | `sub_00548B00_UnitInteract` case 5 → `sub_005550B0_WarpExitPos` | [C] 114 of the 115 logged warps came from `UnitInteract` (return 0x00548C37) with the player within 4.5 of the warp (run:2026-10-18-quests2, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)); [I] the refusal at distance 5 or more (none logged) and the one warp from 0x0058202C, at 8.1 (fn:sub_00548B00_UnitInteract@0x00548B00, fn:sub_005550B0_WarpExitPos@0x005550B0) |
+| the dead player presses "resurrect" (packet `0x41`, mode 17 only) | `sub_0054C0E0_Pkt41Resurrect` | [C] the 3 logged resurrections came from the packet dispatch (return 0x0054D81A) and returned 0 (run:2026-10-19-quests3: h-death3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)); [I] the mode-17 test and the refusals (fn:sub_0054C0E0_Pkt41Resurrect@0x0054C0E0) |
+| a player joins the game | `sub_005394A0_PlayerPlaceInAct` (callers 0x00530237, 0x0053A3EB, 0x0053A4E6) | [C] the 54 logged placements came from the first caller (return 0x0053023C; run:2026-10-18-quests2, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)); [I] the other two callers (fn:sub_005394A0_PlayerPlaceInAct@0x005394A0) |
+| the client reports its act loaded (packet `0x48`) | `sub_0054C590_Pkt48ActChangeClear` | [C] the 3 logged packets 0x48 (x-meshif, x-meshifw, x-tyrael3) came from the packet dispatch (return 0x0054D81A) and returned 0 (fn:sub_0054C590_Pkt48ActChangeClear@0x0054C590, data:g_SrvPacketTable@0x006E0D18, run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)) |
 
 ## Inputs
 
@@ -70,10 +70,10 @@ events (quest words written, quest gates) is [quests/progression](progression.md
 |---|---|---|---|
 | waypoint travel wait | 10 000 ms after the stamp | 0x0054C60F | [C] (run:2026-10-17-quests, one client; run:2026-10-20-two-clients, a declared stamp) |
 | portal use wait | 5000 ms after the stamp | 0x005848CD | [C] (run:2026-10-17-quests, one client; run:2026-10-20-two-clients, a declared stamp) |
-| placement mask, radius, step | `0x1C09`, 50, 1 | fn:sub_0061B060_ActLevelSpot@0x0061B060 | [I] |
-| act-change second search | mask `0x1C89`, radius 50, step 5 | fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0 | [I] |
-| portal field end search | size 3, masks `0x3E01`/`0xC01`, no fallback | fn:sub_0056D130_PortalObjectCreate@0x0056D130 | [I] |
-| portal town end search | mask `0xBE11`, radius 50, step 5 | fn:sub_0056CF40_PortalPartnerCreate@0x0056CF40 | [I] |
+| placement mask, radius, step | `0x1C09`, 50, 1 | fn:sub_0061B060_ActLevelSpot@0x0061B060 | [C] (313 logged spot searches: size 2 (245) or 3 (68), both masks `0x1C09`, radius 50, step 1, no fallback; run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)) |
+| act-change second search | mask `0x1C89`, radius 50, step 5 | fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0 | [C] (87 logged act-change searches: size 2, masks `0x1C89`, radius 50, step 5; run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)) |
+| portal field end search | size 3, masks `0x3E01`/`0xC01`, no fallback | fn:sub_0056D130_PortalObjectCreate@0x0056D130 | [C] (62 logged field ends: size 3, masks `0x3E01`/`0x0C01` with the point, radius 50, step 1, fallback 0; run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)) |
+| portal town end search | mask `0xBE11`, radius 50, step 5 | fn:sub_0056CF40_PortalPartnerCreate@0x0056CF40 | [C] (62 logged town ends: size 3, masks `0xBE11`, radius 50, step 5; run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)) |
 | portal-use state | state 102 for 75 frames | fn:OBJOP_Portal@0x00584870 | [I] |
 | point-type groups (`0x006EED88`, `{has, group}`) | type 0 → group 0; types 5–9 → group 1; type 11 → none | fn:sub_0066AC40_LevelPointPick@0x0066AC40 | [C] (run:2026-10-17-quests) |
 
@@ -174,6 +174,9 @@ Step notes:
 - A2. [C] On a level without `Position` the lookup draws nothing in the waypoint-room, warp-room and middle-room
   branches: 1958 lookups (waypoint arrivals and `NearWarpTest`'s type-11 lookups). (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0,
   run:2026-10-17-quests)
+- A2. [C] On a `Position` level the 42 logged type-13 arrivals took the level's waypoint room and the other types ran
+  `LevelPointPick` (types 0, 5 and 11 logged); the level entered was the one asked in all 191 logged level changes.
+  (fn:sub_0066B2B0_LevelPointFind@0x0066B2B0, run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
 - A2. [I] The last fallback, `RangeB(level seed, level+0x08)`, never ran in either run. (0x0066AE70)
 - A3. [C] Types 0 and 11 step the level seed once on a `Position` level when a point matches: type 0 in 22 lookups,
   type 11 in 334, 343 chained pairs of one level's seed (each lookup's exit seed the next one's entry); the type-11
@@ -188,13 +191,16 @@ Step notes:
 - A3. [C] Type 5 on Harrogath (109), whose one point is of type 0, takes that point with no draw (`LevelPointPick`'s
   n = 0 exit), the level seed unchanged: five trips through the Harrogath portal. (fn:sub_0066AC40_LevelPointPick@0x0066AC40
   0x0066AC90, run:2026-10-19-quests3: x-tyrael3)
-- A5. [I] The act-change search uses step 5, so the player can land up to several cells from the point found by A1.
-  (fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0, 0x0064E7E0)
+- A5. [C] (ADR-0015, ADR-0029 (a)) The act-change search uses step 5, so the player can land up to several cells from
+  the point found by A1: emulated through the wrapper 0x0064E7E0 with step 5 as `PlayerChangeAct` pushes it (0x0053ADB5),
+  300 act-form cases (200 at step 5) to the return with 0 mismatches, the found cell up to 32 subtiles (Manhattan) from
+  the start; a step-1 control fails 268 cases. In the game the 87 logged act changes all landed on the spot's own cell.
+  (fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0, 0x0064E7E0, [run:2026-11-16-sweep2-s7e](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e), [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
 
 ### B. The free-cell search
 
 ```
-B1. COLL_FindFreeNear(room, pos, other, size, maskA, maskB, fallback, radius: i32, step: i32) → room:   [I] (fn:COLL_FindFreeNear@0x0064DEA0 0x0064DF6B–0x0064E1F7)
+B1. COLL_FindFreeNear(room, pos, other, size, maskA, maskB, fallback, radius: i32, step: i32) → room:   [C] (fn:COLL_FindFreeNear@0x0064DEA0 0x0064DF6B–0x0064E1F7, run:2026-10-19-quests3, run:2026-11-16-sweep2-s7e; B1 notes)
       base ← RoomAt(room, pos)                                       ; kept even when none
       if base ≠ none and CollisionTest(base, pos, size, maskA) = 0 and (no other or Walk(base, pos, other, maskB) = 0):
         return base                                                  ; pos unchanged
@@ -261,13 +267,26 @@ Step notes:
   `0x007497A4`, and 8 is the centre. In a check of the whole file every cell walks to the one byte 8, each walk as long as
   the Chebyshev distance. (fn:sub_0066A670_FieldWalkBlocked@0x0066A670, fn:sub_0066A5D0_FieldStep@0x0066A5D0,
   data:0x00749780, data:0x007497A4, run:2026-11-04-ground-emu)
-- B1. [I] The centre's row and column 128 are declared to that run; by the reading the loader stores half the file's 256
-  rows and columns. (0x0066A344, 0x0066A3E0)
-- B1. [I] Sizes other than 1 and steps other than 1 are the reading: neither end of a portal was run (the field end's
-  size 3 at step 1, with the walk; the town end's size 3 at step 5, with none). There
-  `free` is `CollisionTest` of [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size) on `maskA`; with no `other`
-  there is no walk and `maskB` is unused. Of the travel callers only the field end of G2 passes an `other`; the moving base
-  applies to all of them. (fn:COLL_FindFreeNear@0x0064DEA0, 0x0056D213)
+- B1. [C] The centre is row 128 and column 128: `FieldLoad` stores `height >> 1` and `width >> 1` (0x0066A344,
+  0x0066A3E0), the two words `FieldStep` adds; each word has 5 references, all in `FieldLoad`, `FieldFree` and
+  `FieldStep` (three tools agree), and `expfield.d2`'s header gives 256 × 256 (65 546 bytes = 10 + 256 × 256).
+  (fn:sub_0066A2B0_FieldLoad@0x0066A2B0, fn:sub_0066A5D0_FieldStep@0x0066A5D0, [quests/0002 § 18](../../findings/quests/0002-travel.md#18-plan-0066-batch-s3c-part-2-the-travel-tables-and-the-field-centre-2026-11-16-lanen66p))
+- B1. [C] In the game, the model above reproduces all 1 102 logged searches of the travel events, at the sizes and steps
+  the logged callers passed (2 and 3; 1 and 5): size 2 at step 1 moved in 64 (2 portal, 62 warp), size 3 at step 1 with the walk moved in 62 field
+  ends, every other search in place; step 5 never moved a search (149) and the walk never changed a field end's cell
+  (a walk-free model finds the same cell in all 62). (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
+- B1. [C] (ADR-0015, ADR-0029 (a)) **Sizes 0 to 4 and steps 1 to 5 hold to the return**, as the code's map: the search
+  through both travel wrappers (0x0064E7E0 as `PlayerChangeAct` calls it, step 5; 0x0064E810 as `PortalObjectCreate`
+  calls it, radius 50, step 1, size 3 with `maskA` `0x3E01` and the walk's `maskB` `0x0C01`) and directly with an
+  origin. Family `ffn`: 600 cases run, 4 left out (a map with no cell array, outside the claim under ADR-0015 (2) and
+  (5)), 0 mismatches in the other 596. The ring
+  step (control `step1` fails 268 cases), the walk and its mask (`nowalk` 94, `walkmaskA` 37) and the footprints
+  (`sizeone` 326) each separate. There `free` is `CollisionTest` of
+  [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size) on `maskA`; with no `other` there is no walk and
+  `maskB` is unused. Not covered: the callers' code after the return. (fn:COLL_FindFreeNear@0x0064DEA0, 0x0064E7E0,
+  0x0064E810, [run:2026-11-16-sweep2-s7e](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e))
+- B1. [I] Of the travel callers only the field end of G2 passes an `other`; the moving base applies to all of them.
+  (fn:COLL_FindFreeNear@0x0064DEA0, 0x0056D213)
 - B1. [C] The search draws nothing, logged in the game: the game, quest and player seeds were unchanged across every
   placement it ran in. (fn:COLL_FindFreeNear@0x0064DEA0, run:2026-10-17-quests)
 
@@ -324,16 +343,25 @@ Step notes:
   mode 1 (87) or already 2 (8), and one first seen with no arrival was in mode 0 (4); the object lines are periodic, so
   first seen is not the creation, and the reading of `InitFn` 17's creation mode is not raised. (fn:OBJINIT_Waypoint@0x00547210,
   run:2026-10-19-quests3, `quests.py wpmodes`)
-- C1. [I] There is no proximity or touch test of the waypoint's own: activation is the operate, gated only by the generic
-  operate tests (§ J). `WAYPOINT_IndexFromLevel` maps through `Levels.Waypoint`. (fn:OBJ_OperateDispatch@0x00584420,
-  fn:WAYPOINT_IndexFromLevel@0x00660E00, tbl:Levels.txt:Waypoint)
-- C2. [I] The arrival list is pushed only by `WaypointTravel` (§ D) and emptied by the first waypoint init that matches;
-  freeing one node zeroes the head, so older nodes are dropped. (fn:sub_00547170_WaypointArrivalAdd@0x00547170, 0x00547290)
+- C1. [C] There is no proximity or touch test of the waypoint's own: activation is the operate, gated only by the generic
+  operate tests (§ J). `WaypointOperate` has no direct call (three tools); its two absolute references are slot 23 of
+  `g_ObjOperateFns` and a compare in `WaypointTravel` (0x00584FA4) that tests a target's slot without calling it, so the
+  activation runs only through `OBJ_OperateDispatch`. `WAYPOINT_IndexFromLevel` maps through `Levels.Waypoint`: it reads
+  the Levels record's byte `+0xE4` (0x00660E1E, 0x00660E27) and fails on 0xFF, and the column is equal in `.txt` and
+  `.bin` over all 137 rows, 39 of them with an index. (fn:OBJ_OperateDispatch@0x00584420,
+  fn:sub_00584E30_WaypointOperate@0x00584E30, fn:WAYPOINT_IndexFromLevel@0x00660E00, tbl:Levels.txt:Waypoint, [quests/0002 § 18](../../findings/quests/0002-travel.md#18-plan-0066-batch-s3c-part-2-the-travel-tables-and-the-field-centre-2026-11-16-lanen66p))
+- C2. [C] The arrival list is pushed only by `WaypointTravel` (§ D) and emptied by the first waypoint init that matches;
+  freeing one node zeroes the head, so older nodes are dropped. The head (objrgn `+0x1110`) is written at 0x00546CE9
+  (the region's init), 0x00546EF4 (cleared at teardown), 0x00547201 (`WaypointArrivalAdd`, the push) and 0x005472EC
+  (`OBJINIT_Waypoint`, cleared); `WaypointArrivalAdd` has one caller, `WaypointTravel` (0x00585108); three tools agree.
+  (fn:sub_00547170_WaypointArrivalAdd@0x00547170, fn:OBJINIT_Waypoint@0x00547210, 0x00547290, [quests/0002 § 17](../../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p))
+- C3. [C] Of the 16 waypoint rows (`InitFn` 17, `OperateFn` 23), exactly five have `Sync` 0: 429, 494, 496, 511, 539,
+  each with `FrameDelta` 200 for mode 1 and 100 for mode 2; the other eleven have `Sync` 1 (`Objects.txt` and its `.bin`
+  read alike). (tbl:Objects.txt:Sync, tbl:Objects.txt:FrameDelta, [quests/0002 § 18](../../findings/quests/0002-travel.md#18-plan-0066-batch-s3c-part-2-the-travel-tables-and-the-field-centre-2026-11-16-lanen66p))
 - C3. [I] **The draw.** `SetMode` → `UNIT_AnimInit` draws `RangeB(object seed, FrameDelta[mode] >> 3)` when the row's
-  `Sync` is 0 ([objects § G](../objects/README.md#g-creation-sunitcreate-for-an-object) step G2). Five waypoint rows have
-  `Sync` 0: 429, 494, 496, 511, 539 (`FrameDelta` 200 for mode 1, 100 for mode 2); the other eleven have `Sync` 1 and
-  never draw. So operating one of the five in mode 0 draws once on its seed, at its `SetMode(object, 1)`; so does C2's
-  arrival match. (fn:UNIT_SetMode@0x00624690, fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync, tbl:Objects.txt:FrameDelta)
+  `Sync` is 0 ([objects § G](../objects/README.md#g-creation-sunitcreate-for-an-object) step G2), so the eleven `Sync` 1
+  rows never draw, and operating one of the five in mode 0 draws once on its seed, at its `SetMode(object, 1)`; so does
+  C2's arrival match. (fn:UNIT_SetMode@0x00624690, fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync)
 - C3. [I] **The change to mode 2 draws nothing.** Object event 1, which C1 and C2 queue, is `sub_00581490_ObjEvOperateEnd`:
   for an object in mode 1 whose Objects row has `Mode2` set it writes mode 2 directly, not through `UNIT_SetMode`, so it
   starts no animation and draws on no seed whatever the row's `Sync`; then, when the row's `HasCollision2` is 0, it unmarks
@@ -346,9 +374,12 @@ Step notes:
   that mode 2: 1 case, 0 mismatches, and the 93 other kept logs with a waypoint check the same as before. Scope: that one
   waypoint, whose `Sync` 1 does not separate a draw. (fn:sub_00581490_ObjEvOperateEnd@0x00581490,
   run:2026-10-27-sweep-collision, [quests/0002 § 15](../../findings/quests/0002-travel.md#15-object-event-1-on-a-waypoint-plan-0063-phase-2b-2026-11-10-lanen63s))
-- C4. [I] Other writers of the waypoint record: `NPC_MenuAction` after an NPC act change (levels 40, 75, 109; § E),
-  `DurancePortalOperate` (103; § F) and the Harrogath portal (109; § F). (fn:WAYPOINT_Set@0x00660EC0,
-  fn:NPC_MenuAction@0x00579D60, fn:sub_00584750_DurancePortalOperate@0x00584750, fn:sub_005B4FF0_A4Q2_HarrogathWaypointSet@0x005B4FF0)
+- C4. [C] Other writers of the waypoint record: `NPC_MenuAction` after an NPC act change (levels 40, 75, 109; § E),
+  `DurancePortalOperate` (103; § F) and the Harrogath portal (109; § F). `WAYPOINT_Set` has 6 calls, three tools
+  agreeing: `NPC_MenuAction` 3 (0x0057A6B4, 0x0057A739, 0x0057A7BC), `DurancePortalOperate` (0x005847FC), `WaypointOperate`
+  (0x00584E7C, the activation) and `A4Q2_HarrogathWaypointSet` (0x005B501C); `WAYPOINT_Load` is called only by the two
+  save readers and the client's menu. (fn:WAYPOINT_Set@0x00660EC0, fn:WAYPOINT_Load@0x00661030,
+  fn:NPC_MenuAction@0x00579D60, fn:sub_00584750_DurancePortalOperate@0x00584750, fn:sub_005B4FF0_A4Q2_HarrogathWaypointSet@0x005B4FF0, [quests/0002 § 17](../../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p))
 
 ### D. Waypoint travel
 
@@ -379,14 +410,21 @@ Step notes:
 - D1. [C] **With a declared stamp** the gate compares against `stamp + 10000` on every logged compare (4 of 4): the
   declarer's waypoint travel was refused 4.4 s after its declaration and passed 33 s after. (0x0054C60F,
   run:2026-10-20-two-clients, [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
+- D2. [C] Code 0 in the 148 logged packets 0x49 that named a level, each followed by its level change; the 7 packets
+  with level 0 changed no level. (fn:sub_00549570_WaypointTravelCheck@0x00549570, run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
 - D3. [C] Waypoint travel reads no quest word and draws nothing but the destination's level seed of § A: the game, quest
   and player seeds were unchanged across 108 travels (61 + 47). (fn:sub_00584F60_WaypointTravel@0x00584F60,
   run:2026-10-17-quests, run:2026-10-18-quests2)
-- D3. [C] The arrival type is 13, with no draw, for the towns and levels 46 and 74 the runs reached; [I] for levels
-  133–136 and for the type-0 rule on the other levels. (fn:sub_00584F60_WaypointTravel@0x00584F60, run:2026-10-17-quests)
-- D3. [I] The act tabs of the waypoint menu are a client gate: the server tests only the target's waypoint bit
+- D3. [C] The arrival type is 13, with no draw, for the towns and levels 46 and 74 the runs reached
+  (fn:sub_00584F60_WaypointTravel@0x00584F60, run:2026-10-17-quests); [C] type 0 for the 106 logged field arrivals
+  (run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)); [I] for levels 133–136.
+- D3. [C] The act tabs of the waypoint menu are a client gate: of the target, the server tests only its waypoint bit
   ([save/d2s § E](../save/d2s.md#e-fixed-sections), [save/0002 § 5](../../findings/save/0002-quest-words.md#5-arcane-sanctuary-74-in-the-waypoint-menu-plan-0027-phase-2-2026-10-15)).
-  (fn:sub_00549570_WaypointTravelCheck@0x00549570)
+  `WaypointTravelCheck`'s 17 calls (0x00549570–0x005496E2, three tools) include no quest reader; the target level reaches
+  only `WAYPOINT_IndexFromLevel` (0x005496A6) → `PlayerWaypointRecord` → `WAYPOINT_IsSet` (0x005496BE), and no test
+  reads the target's act. Besides, the check refuses (code 2) when the operator's and the waypoint's rooms lie in
+  different acts (`cmp bl, al` at 0x005495BC) and tests the player's position (`PktPosFar`, 0x00549647).
+  (fn:sub_00549570_WaypointTravelCheck@0x00549570, [quests/0002 § 17](../../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p))
 
 ### E. Act change through an NPC
 
@@ -435,6 +473,8 @@ E4. Pkt48ActChangeClear(player, a2):                                 [C] for the
 
 Step notes:
 
+- E1. [C] NPC 155 moved the player to level 40 at type 0 (11 trips) and NPC 210 to level 75 at type 0 (7), each move
+  before its `NpcActTravel` in the frame. (fn:NPC_MenuAction@0x00579D60, run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
 - E1. [C] The player is moved before the travel word is written: 22 Warriv trips (11 east, 11 west) in run 1, and Meshif
   east in run 2. (fn:NPC_MenuAction@0x00579D60, fn:sub_005467E0_NpcActTravel@0x005467E0, run:2026-10-17-quests,
   run:2026-10-18-quests2)
@@ -468,6 +508,9 @@ Step notes:
 - E2. [C] NPC 264's westward return (`NpcTravelMove(40, 5)`) steps Lut Gholein's level seed once per trip and NPC 175's
   return to level 1 draws nothing (A3). (fn:sub_0054B830_NpcTravelMove@0x0054B830, run:2026-10-17-quests,
   run:2026-10-19-quests3: x-meshifw)
+- E2. [C] Into another act `NpcTravelMove` calls `PlayerChangeLevel(level, type)`: 40 logged moves to levels 40, 75, 1
+  and 109 at types 0 and 5. (fn:sub_0054B830_NpcTravelMove@0x0054B830, fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0,
+  run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
 - E2. [I] NPC 520's return uses type 5 too, with A3's draw rule (a draw only when the town has a group-1 point); not
   logged. (fn:sub_0054B830_NpcTravelMove@0x0054B830)
 - E5. [I] `TownLevelLeave(old, new)` marks the old town's store stale ([items/vendors](../items/vendors.md)) and, on
@@ -497,8 +540,10 @@ F2. DuranceActTravel(level):                                         [I] (fn:sub
 | Baal's portals 563/569 (70) | on 131 → 132 at type 11 once Baal opened it; elsewhere → 131 | quest 36's private flag | [I] (fn:sub_0058E6A0_A5Q6_BaalPortalOperate@0x0058E6A0) |
 | the last portal 565 (72) | → 109, `+0x4C` = 1, word 40 bit 10 | word 40 bit 13 | [I] (fn:sub_0058E740_A5Q6_LastPortalOperate@0x0058E740) |
 
-- F1. [I] Object 410 `Siege Control` shares `OperateFn` 46, but no DS1 id, `objgroup` cell or creation call names it, so
-  it is never placed; on any level but 102 the handler moves no one. (fn:sub_005BCFD0_A3Q6_ForcePortalOpen@0x005BCFD0)
+- F1. [C] Object 410 `Siege Control` shares `OperateFn` 46 with 342 (`.txt` and `.bin`), but no DS1 unit (two readers,
+  2 274 files), no `objgroup` cell and none of the 17 instructions with the immediate 0x19A creates it, so stock data
+  never places it. (tbl:objgroup.txt:ID0, [quests/0002 § 18](../../findings/quests/0002-travel.md#18-plan-0066-batch-s3c-part-2-the-travel-tables-and-the-field-centre-2026-11-16-lanen66p))
+- F1. [I] On any level but 102 the handler moves no one. (fn:sub_005BCFD0_A3Q6_ForcePortalOpen@0x005BCFD0)
 - F3. [I] Each of these objects in mode 0 goes to mode 1 and queues object event 1 when operated. Their destination
   point lookups draw as § A. (fn:OBJOP_LevelPortal@0x00584D00, fn:OBJOP_ArcanePortal@0x005846B0)
 
@@ -566,12 +611,20 @@ Step notes:
   population draws on the game seed between draws 1 and 3: 41 draws in 9 of the 62 opens. It is a boundary oracle
   ([drlg/lifecycle](../drlg/lifecycle.md)): a reimplementation asserts the game seed at its exit.
   (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, run:2026-10-17-quests)
-- G2. [I] The field end's search tests a walk back to the point `(x, y)` with mask `0xC01` (B1: that walk, not a second
-  footprint), its size 3 not run; its form of the call pushes radius 50 and step 1; with no free cell and no fallback the open fails. (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:COLL_FindFreeNear@0x0064DEA0, 0x0056D213, 0x0064E81C, 0x0064E81E)
+- G2. [C] (ADR-0015, ADR-0029 (a)) The field end's search tests a walk back to the point `(x, y)` with mask `0xC01`
+  (B1: that walk, not a second footprint), at size 3; its form of the call pushes radius 50 and step 1. Emulated through
+  the wrapper 0x0064E810 to the return: 150 portal-form cases, 100 at size 3, 0 mismatches; the controls `walkmaskA`
+  (37) and `nowalk` (94) each fail. (fn:sub_0056D130_PortalObjectCreate@0x0056D130, fn:COLL_FindFreeNear@0x0064DEA0,
+  0x0056D213, 0x0064E81C, 0x0064E81E, [run:2026-11-16-sweep2-s7e](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e))
+- G2. [I] With no free cell and no fallback the open fails (the caller after the return, 0x0056D218, not run).
+  (fn:sub_0056D130_PortalObjectCreate@0x0056D130)
 - G1. [C] The refusal in a town: six uses of the tome in the Rogue Encampment and in Harrogath returned at the town test
   (0x005BE2E2 → 0x005BE3CE) with no portal created, the player's portal unchanged and no draw on the game, quest or
   player seed. (fn:ITEMUSE_TownPortal@0x005BE290 0x005BE2DB–0x005BE2E2, run:2026-10-19-quests3: x-entry, x-entry2,
   h-entry, x-anya, nm-anya, h-anya)
+- G1. [C] Each of the 62 logged field uses created one class-59 pair and set player data `+0x48` to the new field end's
+  id (27 id checks in the logs that carry it); the 6 town uses created none and left it. (fn:ITEMUSE_TownPortal@0x005BE290,
+  run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
 - G1. [I] The refusal on level 136 was not reached. (fn:ITEMUSE_TownPortal@0x005BE290)
 - G2a. [I] A portal from Duriel's lair (73) puts its town end at level 40's point type 12 when quest 13's private byte
   `+0x3C` is 1 ([quests/progression § Word 14](progression.md#word-14-tal-rashas-tomb-and-duriel-quest-object-13)).
@@ -607,6 +660,9 @@ G3. OBJOP_Portal(game, object, operator) (OperateFn 15):             [I] (fn:OBJ
 
 Step notes:
 
+- G3. [C] A use raises quest event 3 exactly when the operator stands in a town: 122 logged uses, 61 from a town each
+  with one event 3 inside the use, 61 from the field with none; the operator moved in all 122. (fn:OBJOP_Portal@0x00584870,
+  run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
 - G3. [C] A portal use draws on no seed of its own: the game, quest and player seeds were unchanged across 122 uses; a
   room activated by the arrival is an oracle. (fn:OBJOP_Portal@0x00584870, run:2026-10-17-quests)
 - G3. [C] With one client the 5000 ms gate passes on every read: stamp 0, `stamp + 5000 ≤ GetTickCount()` (unsigned),
@@ -679,9 +735,17 @@ H4. The walk command PlayerModeCmd(0, 2, x, y, 0) first calls PlayerModeAllowed:
 
 Step notes:
 
+- H1. [C] 114 of the 115 logged warps came through `UnitInteract`'s case 5 with the player within 4.5 of the warp unit
+  (largest coordinate distance 4). (fn:sub_00548B00_UnitInteract@0x00548B00, run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
+- H1. [I] The refusal at distance 5 or more was not met, and one warp came from 0x0058202C at distance 8.1.
+  (fn:sub_00548B00_UnitInteract@0x00548B00)
+- H2. [C] The quest gate is called exactly when the destination is 73, 100, 118, 128 or 132: 115 logged warps, the one
+  call 83 → 100. (fn:sub_005550B0_WarpExitPos@0x005550B0, run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
 - H2. [C] A warp draws on no seed: the game, quest and player seeds were unchanged across 106 warps (the sewer-dock pair,
   LvlWarp rows 20 and 21, 100 times; row 64 into 100; row 76 into 120; 2 in run 1), and the free search after each is
   § B's. (fn:sub_005550B0_WarpExitPos@0x005550B0, run:2026-10-18-quests2)
+- H3. [C] The gate into 100 passes once the orb is broken: x-orb's warp 83 → 100 after the orb broke called
+  `QUESTS_WarpGate(83, 100)`, which returned 0. (fn:QUESTS_WarpGate@0x00545B80, run:2026-10-18-quests2, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g))
 - H3. [I] The gates are quest code ([quests/progression § Warp and portal gates](progression.md#warp-and-portal-gates)).
   The gate into 100 was logged allowing once (after the orb broke) and never refusing; level 120's warp tiles (WRP rows 82
   and 83) were never taken, so the 118/128 branch never ran. (fn:sub_005BBFA0_A3Q5_DuranceWarpGate@0x005BBFA0,
@@ -723,9 +787,12 @@ I2. PlayerPlaceInAct(player, given = 0):                              [C] (fn:su
   operator's own player data `+0x160` (`PlayerTickGet(player, 0)`), with one client (stamp 0) and with a stamp a
   declaration wrote (two clients). (fn:sub_0055B6C0_PlayerTickGet@0x0055B6C0, 0x0054C5F5, 0x005848BA,
   run:2026-10-17-quests, run:2026-10-20-two-clients)
-- J2. [I] The stamp is written only by `PlayerTickSet`, whose one caller is the hostility declaration `0x005A5E50`
-  ([multiplayer/0001 § 4](../../findings/multiplayer/0001-cases.md#4-the-hostility-declaration-and-the-two-travel-gates));
-  no portal is exempt, the operator's own included. (fn:sub_0055B720_PlayerTickSet@0x0055B720)
+- J2. [C] The stamp is written only by `PlayerTickSet`, whose one caller is the hostility declaration `0x005A5E50`
+  ([multiplayer/0001 § 4](../../findings/multiplayer/0001-cases.md#4-the-hostility-declaration-and-the-two-travel-gates)):
+  `PlayerTickSet` has one call, 0x005A5F51, and of the 4 stores at displacement `+0x160` in .text the one in the server
+  range is `PlayerTickSet`'s 0x0055B76B (three tools). (fn:sub_0055B720_PlayerTickSet@0x0055B720, [quests/0002 § 17](../../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p))
+- J2. [I] No portal is exempt from the gate, the operator's own included (G3 tests the stamp before the owner).
+  (fn:OBJOP_Portal@0x00584870 0x005848CD)
 - J3. [C] **The hostility declaration** (`0x005A5E50`, hostile = 1) writes the pair's stamp `now + 60000` and the
   declarer's `+0x160` ← `now`, and refuses a second declaration while the pair's stamp is ahead: in the two-client run
   both declarations wrote both stamps as predicted (2 of 2), and one made 50 s after the first was refused with the
@@ -761,14 +828,22 @@ I2. PlayerPlaceInAct(player, given = 0):                              [C] (fn:su
 
 ## Outputs
 
-- The player's new room and subtile position, the client's act on an act change, and a walk command after a waypoint
-  arrival, a portal use or a warp. [I] (fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0, fn:sub_005809D0_PlayerModeCmd@0x005809D0)
-- Record writes: the waypoint bit (operate, NPC act change, Durance and Harrogath portals); the act-travel words 7, 15,
-  23 and 28 with word 10's first-crossing bits. [I] (fn:WAYPOINT_Set@0x00660EC0, fn:sub_005467E0_NpcActTravel@0x005467E0)
-- Objects: the portal pair, player data `+0x48` and `+0x4C`, state 102 on a portal user. [I] (fn:ITEMUSE_TownPortal@0x005BE290,
-  fn:OBJOP_Portal@0x00584870)
-- Seed draws as tabulated above; quest event 3 for every level change ([quests/progression § B](progression.md#b-events-and-dispatch)).
-  [I] (fn:QUESTS_DispatchEvent@0x005438E0)
+- The player's new room and subtile position, the client's act on an act change: [C] the level entered was the one
+  asked in all 191 logged level changes (fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0, run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)).
+  A walk command after a waypoint arrival, a portal use or a warp: [I] (fn:sub_005809D0_PlayerModeCmd@0x005809D0).
+- Record writes: the act-travel words 7 (Warriv), 15 and word 10's first-crossing bits (Meshif), bit 0 then bit 13 each,
+  and 28 (the Harrogath portal): [C] (0x00546997, 0x0054692B, 0x005468FB, 0x005B590F; fn:sub_005467E0_NpcActTravel@0x005467E0,
+  run:2026-10-18-quests2, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)). Word 23 and the waypoint bit (operate, NPC act change, Durance and Harrogath
+  portals): [I] (fn:WAYPOINT_Set@0x00660EC0).
+- Objects: the portal pair and player data `+0x48` [C] (62 field uses, 6 town uses; fn:ITEMUSE_TownPortal@0x005BE290,
+  run:2026-10-19-quests3, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)); player data `+0x4C` and state 102 on a portal user [I] (fn:OBJOP_Portal@0x00584870).
+- Seed draws as tabulated above. Quest event 3 for every level change within one act, none for an act change
+  ([quests/progression § B](progression.md#b-events-and-dispatch)): [C] each of the 341 logged same-act level changes
+  (101 waypoint, 115 warp, 122 portal, 3 resurrection) was followed by one dispatched event 3 (0x00543BB7) naming the
+  old and the new level, a portal used in a town raising one more inside the use (G3), and none of the 87 act changes
+  (40 by NPC, 47 by waypoint) was (fn:QUESTS_DispatchEvent@0x005438E0, run:2026-10-18-quests2, [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g)). [I] The guard
+  that skips the act change is not read. NPC 155's act change calls quest object 6's event-3 slot directly, not through
+  the dispatch, when word 6 bits 13 and 0 are set (E3). (fn:sub_005467E0_NpcActTravel@0x005467E0 0x00546A22–0x00546AA3)
 
 ## Worked example
 
@@ -805,8 +880,10 @@ manifest, and checked by `tools/quests.py check` with 0 mismatches.
   seed. A waypoint arrival into a town (type 13) does **not**.
 - **The portal pair draws three times, not five.** The objects are created already in their final mode; calling
   `SetMode` with the same mode must not draw.
-- **Move first, write second.** An NPC act change moves the player before it writes the travel word; a reimplementation
-  that writes first runs the arrival's quest event 3 against the wrong record.
+- **Move first, write second.** An NPC act change moves the player before it writes the travel word (E1). It dispatches
+  no event 3 (Outputs); a level change within one act does. NPC 155's branch instead calls quest object 6's event-3 slot
+  itself, after the word's write and only when word 6 bits 13 and 0 are set (E3, read from the code). A reimplementation
+  that dispatches event 3 for an act change runs quest handlers the game does not run there.
 - **`+0x4C` blocks operates** until the client sends packet 0x48; it is set only when a travel word was newly written.
 - **Point 0 without a draw.** A type-5 lookup on a town without a group-1 point returns the first point and draws
   nothing; do not draw `Range(0)`.

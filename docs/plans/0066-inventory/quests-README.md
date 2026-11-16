@@ -3,6 +3,9 @@
 - **Spec:** [quests/README](../../specs/quests/README.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 6; the *Count* column sums to 6.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66qr`, 2026-11-16): re-tagged.** The spec's front matter is now C 14 / I 5 / L 2 (it was C 11 /
+  I 6 / L 2). Statement `[C]` whole: row 3 (1; the computed-class caveat of progression row 179 written in). Split: 1,
+  2 (2). Corrected: none (0). Kept `[I]`: 4–6 (3). Also: the evidence paragraph (row 6) names plan 0066's raises.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

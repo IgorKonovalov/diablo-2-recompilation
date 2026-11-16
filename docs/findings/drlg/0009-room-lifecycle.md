@@ -900,6 +900,7 @@ recipe (b), and static reads for recipe (c), the expiry sweep and the mismatch. 
   `sub_005B13E0_MonSpcWalkCheck` (`sweep-h7a-umodtele-tree`). (fn:sub_005B11F0_UModTeleportTry@0x005B11F0,
   fn:sub_005DD220_AiCtlFlagTest@0x005DD220, fn:sub_005DD250_AiCtlTeleportFlagSet@0x005DD250,
   fn:sub_0054DC40_SpawnPosPick@0x0054DC40, fn:sub_00463740_RoomAtSubtile@0x00463740, fn:sub_0061AB00_RoomIsTown@0x0061AB00)
+  *Refined 2026-11-16 (`lane/n66x`, plan 0066 S1o part 2, checked by the architect):* the sequence has two draws of its own on the acting unit's seed that this bullet leaves out: `Range(100) < 15` at 0x005B12DB before the pick, and, after the town test, with the life percentage below 30, `Range(100) < 25` at 0x005B1355. A first draw of 15 or more returns 0 with no cast (0x005B12E3 → 0x005B13CA); a second draw below 25 goes, unless the unit has state 0x34 (0x005B135F–0x005B1369), through a read and a write of stat 6 (0x005B136F–0x005B139C, meaning unread) before the cast, and one of 25 or more, or a life percentage of 30 or more, goes to the cast directly (0x005B13A1). So "only then" holds for the town test, not for the draw. (ai/0001 § 9) (run:2026-11-16-sweep2-s1f)
 - [I] **The Zakarum priests' teleport refuses a town point.** Their AI, `sub_005F72D0_AiZakarumPriest` (MonAI row 49,
   table entry 0x0073CD28, `sweep-h7a-aitable-priest`), checks its target point with
   `sub_005FD470_MonSkillTargetOk` (0x005F73BB). For skill `0xB8` that function takes the room at the point

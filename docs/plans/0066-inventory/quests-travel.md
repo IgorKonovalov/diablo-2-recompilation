@@ -3,6 +3,13 @@
 - **Spec:** [quests/travel](../../specs/quests/travel.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 86; the *Count* column sums to 86.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66qr`, 2026-11-16): re-tagged.** The spec's front matter is now C 118 / I 75 / L 5 (it was C 79 /
+  I 88 / L 5 at the branch point, 2 of the 88 `[I]` being plan 0063's, not in this inventory: C3's "the change to mode 2
+  draws nothing" and the draws table's event-1 row). Statement `[C]` whole: rows 1, 2, 8–12, 19–21, 30, 31, 33, 36 (14;
+  row 20, B1's header, on S3a's 1 102 searches with S7e's sizes 0–4 and steps 1–5). Split: 3–7, 17, 22, 32, 34, 35, 37,
+  38, 56, 58, 60, 63, 69–71, 78, 83–85 (23; row 22's remainder is the callers' survey, the S7e scope bullet (backlog s7e
+  item 3) being its `[C]` half; row 78 split, its "no portal is exempt" being G3's reading). Corrected: 86 (1; quest event 3
+  within one act, none for an act change). Kept `[I]`: 13–16, 18, 23–29, 39–55, 57, 59, 61, 62, 64–68, 72–77, 79–82 (48).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
