@@ -812,7 +812,7 @@ class Anim:
                                                           ", reached by the fallback chain %s (uniques-sets.md E)" % " -> ".join(res["steps"])),
                 "Inventory icon: %s (items/0003: the identified view; magic and rare items take the first affix colour, "
                 "unique and set items their invtransform colour)." % inote,
-                "Not modelled here: ItemInitStats values, the ethereal and socket rolls, the automagic pick after them "
+                "Not modelled here: gold amount and gold find (tc.md H8-H9), ItemInitStats values, the ethereal and socket rolls, the automagic pick after them "
                 "(affixes.md J), the durability fix of a failed unique or set, property values."],
                item=itm)
 
@@ -848,9 +848,12 @@ class Anim:
         if kind in ("pick7", "pick5"):
             sec = "C" if kind == "pick7" else "D"
             what = "unique" if kind == "pick7" else "set"
-            calc = ["uniques-sets.md %s: candidates in table order (version, enabled, code '%s', ladder, level <= ilvl %d); "
-                    "weight = max(1, rarity); %d candidate%s, total weight %d." % (
-                        sec, AT.base(ic["cls"])["name"], ic["ilvl"], i["n"], "" if i["n"] == 1 else "s", i["total"])]
+            filt = ("version, enabled, code '%s', ladder, level <= ilvl %d" if what == "unique" else
+                    "version, level <= ilvl %d, code '%s'")
+            fa = (AT.base(ic["cls"])["name"], ic["ilvl"]) if what == "unique" else (ic["ilvl"], AT.base(ic["cls"])["name"])
+            calc = ["uniques-sets.md %s: candidates in table order (%s); weight = %s; %d candidate%s, total weight %d." % (
+                        sec, filt % fa, "max(1, rarity)" if what == "unique" else "rarity, 1 when it is 0",
+                        i["n"], "" if i["n"] == 1 else "s", i["total"])]
             if i["n"]:
                 calc.append("Candidates (row: weight): " + ", ".join(
                     "%s" % (AT.uniq[c[0]]["name"] if kind == "pick7" else AT.setit[c[0]]["name"])
@@ -886,7 +889,7 @@ class Anim:
             ri = res["rare"]
             AT_ = self.M.AT
             calc.append("affixes.md E: rare names first (prefix side, then suffix side): '%s' and '%s'; count %d "
-                        "(table g_RareAffixCountTable[low & 7], or 3 + low %% 2 for a jewel)." % (
+                        "(table g_RareAffixCountTable[low & 7] after one Step, or 3 + Range(item.seed, 2) for a jewel)." % (
                             AT_.rare[ri["n1"] - 1]["name"], AT_.rare[ri["n2"] - 1]["name"], ri["count"]))
         shown = []
         for (kind2, pre2, must, rec, aid) in res["picks"]:
@@ -909,7 +912,8 @@ class Anim:
             calc.append("affixes.md G: %s (RNG_Range(seed, nLow); success only for a weapon or armour)." %
                         (", ".join(res["low"]) or "no row"))
         if kd == "normal":
-            calc.append("affixes.md H: the normal builder draws nothing of its own (charms take the magic pair).")
+            calc.append("affixes.md H1: for a base other than a charm, body part, scroll or book the normal builder draws nothing "
+                        "of its own on the item seed (a charm takes the forced-affix pair, an inferred path).")
         if kd == "magic" and len(res["picks"]) == 0:
             pass
         calc.append("Result: %s%s." % ("success" if res["ok"] else "failure", "" if not fb or res["ok"] else
@@ -985,7 +989,7 @@ def draw(cv, A, st, k, total):
             cv.rect(12, y - 2, 620, 20, C["cur"])
         s = "%s%s  %s%d/%d  ND %d  T %d" % ("  " * d, f["name"][:22].upper(), "FIXED " if f["neg"] else "PICKS ",
                                              f["left"], f["picks"], f["nd"], f["total"])
-        cv.text(16, y, s[:50].replace("{", "("), col)
+        cv.text(16, y, s[:50], col)
         y += 20
         if y > 230:
             break
@@ -1030,17 +1034,18 @@ def draw(cv, A, st, k, total):
             cv.icon(x + (150 - w * sc) // 2, 434 + (112 - h * sc) // 2, A.pending_icons[d["icon"]], sc)
         else:
             cv.text(x + 8, 470, "NO ICON", C["dim"], 1)
-        for j, ln in enumerate(anim_common.wrap(d["name"].upper(), 24)[:2]):
-            cv.text(x + 6, 554 + 12 * j, ln, C[QCOL[d["q"]]], 1)
+        for j, ln in enumerate(anim_common.wrap(d["name"].upper(), 24)[:3]):
+            cv.text(x + 6, 550 + 12 * j, ln, C[QCOL[d["q"]]], 1)
         if d["base"].upper() != d["name"].upper():
-            cv.text(x + 6, 590, d["base"].upper()[:24], C["dim"], 1)
+            for ln in anim_common.wrap(d["base"].upper(), 24)[:1]:
+                cv.text(x + 6, 592, ln, C["dim"], 1)
         x += 156
         if x > 1250:
             break
     # caption
     cv.rect(0, 624, W, H - 624, C["panel"])
     cv.text(10, 630, "STEP %d/%d" % (k + 1, total), C["acc"])
-    for j, ln in enumerate(anim_common.wrap(st["text"].upper().replace("{", "(").replace("}", ")"), (W - 20) // 12)[:3]):
+    for j, ln in enumerate(anim_common.wrap(st["text"].upper(), (W - 20) // 12)[:3]):
         cv.text(10, 650 + 22 * j, ln, C["txt"], 2, bold=True)
     return bytes(cv.cv)
 
