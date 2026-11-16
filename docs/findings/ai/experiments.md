@@ -1913,3 +1913,62 @@ minutes under a 4 GB scope; no game, no Ghidra.
     (backlog item 5).
 - **Not settled** (reasons in the inventory rows): machinery 42 (`PathPlan`'s `0x40000` exit to `PathPlanStraight`
   0x006499B9 comes before the one `PathTargetNotTown` call, 0x00649AE5), 94; README 23, 33.
+
+## run:2026-11-16-sweep2-s1ne
+
+- **Question:** (plan 0066 Phase 1, batch S1ne part 1) Do twelve monsters/ai machinery and README functions map their
+  declared image to their return, the words they write, or the arguments of their one observed boundary call as the
+  specs state them (at `b5999f5e`)? Ruling R2 applies: every callee runs whole, and the boundary ends the case.
+- **Setup:** Ghidra p-code emulator via `re/ghidra_scripts/EmuBoundary.java` (unchanged), lane project copy
+  `workspace/ghidra-n66ne` (`import-symbols` first), heap 3 GB, one headless run inside
+  `systemd-run --user --scope -p MemoryMax=4G`. No wine, no slot. Models, case writer and checker are
+  `tools/ai_s1ne_emu.py` (`48908a51…`). It imports `tools/ai_s1e_emu.py` unchanged (its `Mem`, `W`, `E` and callee
+  models, and its memory spec without the guard lines) and draws every case from `random.Random("n66ne-<family>")`.
+  12 families × 240 cases = 2 880. The declared image is S1e's plus a state-mask array at DataTables `+0x0D4`. The
+  `ovr` cases with no MonsterData declare 0x00–0x3F as case memory (the stores through `ECX` 0). Image constants
+  read unwritten: `g_BitMask32`, `g_UnitHashOffsets`, and the `UNIT_GetSizeX` jump table 0x0062057C. Guards: the fatal
+  path (0x00408090, 0x00408A60, 0x00681E09) and the pool entries (0x0040B430, 0x0040B480, 0x0040B4B0). Observe:
+  `UnitQueueEvent` 0x005417D0. The route listing is `tools/ai_s1ne_routes.py` (`30b33c81…`): the S7e walker plus
+  room-walker marks and each root's call sites.
+- **Procedure** (from the worktree root; `D=workspace/logs/n66ne/s1ne/run`):
+  ```
+  python3 -I tools/ai_s1ne_routes.py > workspace/logs/n66ne/s1ne/routes/routes.txt
+  python3 -I tools/ai_s1ne_emu.py cases --dir $D
+  GHIDRA_PROJ_DIR=workspace/ghidra-n66ne GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+    tools/ghidra.sh emuboundary $D/s1ne.cases $D/s1ne.mem > $D/s1ne.out
+  python3 -I tools/ai_s1ne_emu.py check --dir $D > $D/check.txt
+  python3 -I tools/ai_s1ne_emu.py manifest --dir $D --write
+  ```
+  The controls are S1e's: every named test is reversed alone, and every ordered compare has its strictness switched
+  alone (`name~`). This run adds signedness controls (`pending>T unsigned`, `pending<T+n signed`, `dsq unsigned`) and
+  `mask 0xC` in `gmummy`. The cases that end at the boundary are checked for the return address of the call site
+  (0x005A7428 or 0x005A7482 for `neutral`, 0x005DE186 for `dearl`).
+- **Outputs:** `$D/manifest.sha256` (`25f3755b…`, 12 lines: `check.txt` `a88ddd26…`, `s1ne.out` `34e0acc1…`,
+  `s1ne.cases` `a6a1ae35…`, `s1ne.mem`, `tool.sha256`, the seven images). `sha256sum -c manifest.sha256` passes from
+  `$D`. `tool.sha256` hashes the six tools and scripts and passes from the worktree root. `routes/manifest.sha256`
+  (`routes.txt` `734b4230…`) passes from `workspace/logs/n66ne/s1ne/routes`. `cases` regenerates `s1ne.cases`
+  byte for byte, and `check` reproduces `check.txt` byte for byte. Development runs: `workspace/logs/n66ne/s1ne/dev0`
+  (the run before the `mask 0xC` control; its own manifest) and session scratch. Neither is cited.
+- **Observed** (`check.txt`):
+  ```
+  S1NE <12 families> cases=240 match=240 bad=0 passed=0, every control separated     (each)
+  obs: neutral 167, dearl 199; fatal: ovr 82 (guard 0x00408090)
+  controls: adu 3, adps 3, dsq 0, ovr 8, ovs 5, neutral 7, dearl 5, entry 7, gate 3, deadmin 7, fallen 12, gmummy 19
+  S1NE traced reads accounted: UNIT_GetSizeX jump table 720, g_BitMask32 1047, g_UnitHashOffsets 42
+  S1NE traced unaccounted: 0
+  S1NE total cases=2880 match=2880
+  S1NE result=ok
+  ```
+- **Results** ([ai/0001 § 14](0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)
+  holds the claims and counts; the inventory rows hold the raises):
+  - `adu`, `adps`, `dsq`: the distance maps, with `UNIT_GetSizeX` for types 0, 1, 2, 4 and 5. `adps`'s `shr` of a
+    negative size is a refinement. `dsq` has no named test: its map rests on the 240 matches, 84 of them with a sum past
+    2³¹ − 1.
+  - `ovr`, `ovs`: D2 as stated, plus the `ECX` 0 stores of a unit with no MonsterData.
+  - `neutral`: C1 for a monster already in NU, up to the queue call. The exit with no MonStats record is new.
+  - `dearl`: C4 with two corrections, `n = 0 → 1` (a negative `n` kept) and the unsigned compare.
+  - `entry`, `gate`: D1 for states 10–12 through the gate and for 18 and past. D1b holds.
+  - `deadmin`, `fallen`, `gmummy`: T13a and T22a, the callbacks' maps. In `gmummy`, `IsUndead` covers bits 3 or 4,
+    and 2 champion corpses are taken with `uniquesToo` 0.
+- **Not covered:** every path past `UnitQueueEvent`; `SUNIT_SetMode` with a mode change (the anim chain to `wsprintfA`);
+  `UNIT_CancelEvents`' unlink path; `UNIT_GetSizeX` of an item; the think words that fill the callbacks' blocks.

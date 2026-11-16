@@ -4016,3 +4016,59 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Not settled rows (26):** every Route cell names a page, a calc pool, a room or a run; none lies wholly past an
   allocating call (rows 84, 127 and m63 corrected above).
 - **Gate:** fast green (68 warnings, none from the fixes). The review request stays open for the merge.
+
+### 2026-11-16 — Phase 1, batch S1ne part 1 (reverser-static, `lane/n66ne`): 17 of 44 rows settled; resume note for part 2
+
+- **Done.** Branched from `main` `c6c85ae8`; there is no newer `main` to merge. `lane/n66m1` (S1m) is not merged, so its
+  machinery 53 route is not in this branch. Two new tools. `tools/ai_s1ne_routes.py` (`30b33c81…`; read-only, objdump
+  only) is the S7e walker over the batch's 42 roots, with room-walker marks and each root's call sites.
+  `tools/ai_s1ne_emu.py` (`48908a51…`) imports `tools/ai_s1e_emu.py` unchanged. One kept `tools/ghidra.sh emuboundary`
+  launch ran on `workspace/ghidra-n66ne` (`-Xmx3G`, `MemoryMax=4G`, `import-symbols` first): 12 families, 2 880 cases,
+  0 mismatches, 0 unaccounted traced reads or writes, 79 controls, every one separated, `passed` 0. The one observed
+  boundary is `UnitQueueEvent` 0x005417D0 (366 cases end there at the checked call sites), and 82 cases stop at the
+  fatal guard as their claim states. The record is
+  [run:2026-11-16-sweep2-s1ne](../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne):
+  `workspace/logs/n66ne/s1ne/run/` (`check.txt` `a88ddd26…`, `manifest.sha256` `25f3755b…`, 12 lines, passes from
+  there) and `routes/` (`routes.txt` `734b4230…`). `cases` regenerates the case file byte for byte, and `check`
+  reproduces `check.txt`. The claims are in
+  [ai/0001 § 14](../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne).
+- **Rows (17 of 44).** **Raised 9:** machinery 8, 36 and 37 (the override pair), 73 (`AiGreaterMummyCb`), and 28
+  (B8, from the kept run:2026-10-27-ai-emu `ring` family with no new run, S2ae part 1's practice); README 5 and 6
+  (`aidel` 15, stun 45), 24 (`MonAiEntryGet`, states 10–12 and 18 and past) and 25 (the gate). **Raised in part 8,**
+  with the remainder named in each Route cell: machinery 17 (the type-3 size), 18 (the other callers, the data bound),
+  65 and 111 (the think's bound words), README 17 (a unit not in NU: R2, the mode change reaches `wsprintfA`), 20
+  (`UNIT_CancelEvents`' unlink), 50 (the `MonAiInit` bound, which is part 2), and 56 (`MonSkillTargetOk`). There are no
+  class moves, so the totals are unchanged.
+- **Corrections** go to Phase 3 through
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md)
+  (six items). The largest is README C4: `n` = 0 becomes 1, a negative `n` is kept, and the compare is unsigned, not
+  `max(n, 1)`. The others: C1's exit with no MonStats record, D2's `ECX` 0 stores, A7's unsigned `shr` of the size,
+  `IsUndead`'s two bits, and `AiDeadMinionCb`'s distance taken first.
+- **Symbols:** none (an emulation over a declared image, review-fixes 14).
+- **Totals** (`tools/quests_s3c.py totals`, `bad=0`, on `main` `c6c85ae8`, unchanged): a-logs 623, a-run 334, b 517,
+  c 389, c-emu 435, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626.
+- **Resume note for part 2** (a fresh lane on `lane/n66ne`; `workspace/ghidra-n66ne` stays, with symbols imported).
+  27 rows are left: machinery 5, 6, 9, 11–14, 16, 24, 27, 29–33, 46, 48, 50–52, 108, 112; README 29, 31, 39, 42, 43.
+  Merge `main` first (S1m's machinery 53 now routes c-emu, and its nine direct `MonSetMode` callers bear on rows 24
+  and 27). Extend `tools/ai_s1ne_emu.py` with new families in a new run directory, and leave `run/` as it is.
+  Groundwork from `routes.txt`:
+  - **The walkers** (m24, 27, 29–33, 48, 50): emulate each to an observed `MonAiMove` 0x005DEB60 or `MonSetMode`
+    0x005A7C20. `MonAiPathOverride`, `AiDistUnits` and the seed steps run whole (part 1). `MonAiWanderNearUnit` reaches
+    `MonAiMove` through `MonAiWanderRing` (0x005DE30E). Read each walker's SITE lines for calls before the boundary.
+  - **The target search** (m5, 6, 11–14, 16, 51, 52): make `InMeleeRange` 0x00622C40 (an inventory page and
+    `COLL_LineTest`), `UnitLineBlocked` 0x00622AA0 (`COLL_LineTest`) and `MonAlignSet` 0x005543B0 (the stat setter to
+    0x0040B430) observed boundaries, or run `MonAlignSet` whole with the alignment stat present. Kinds 5 and 6 run
+    `AiUnitSearch` with `AiSearchNearRooms` on declared rooms (S1e's `mephpick` precedent). `MonAiPreferDecoy`'s
+    `PathPlan` (0x005DD580) is a boundary. A claim about the code after any of these calls goes to b.
+  - **`AiParams*`** (m46): `Head` and `Find` have no pool path, so they can be run. `Alloc`, `Push` and `Pop` reach the
+    pool (0x0058ECBD, 0x0058ED70): that half goes to b (R2).
+  - **`MonAiInit`** (README 29, 31; README 50's remainder): its param-list free 0x0058EDE0 reaches 0x0040B480 (declare an
+    empty list), and the import call at 0x005B0F30 (slot 0x006CC34C) needs ADR-0029's reading first.
+  - **`MonAiPreChecks` and `MonSpcWalkCheck`** (README 39, 42): `MonAiIdle` 0x005DE080, the door search 0x005B0F50
+    (`PathPlan`, `RoomAtSubtile`), `StepAway`, `UModTeleportTry` 0x005B11F0 (`RoomAtSubtile`, a stat-list allocation)
+    and 0x005DC640 (`COLL_LineTest`) as boundaries; the claims after them go to b.
+  - **The notation and the worked example** (m9, 108): check whether the earlier kept runs that emulated `RNG_Range`,
+    `RangeB` and `RangePow2` whole already cover the notation's maps (S2ae part 1's practice). **m112:** the cat-emu-9
+    BloodLord cases with a negative `Skill1`. **README 43:** the hand maps of rows 6, 13, 28, 29 and 35 to their first
+    boundary.
+- **Review:** none yet. The Tier B request comes when S1ne is whole.

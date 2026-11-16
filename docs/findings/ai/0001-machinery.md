@@ -676,6 +676,85 @@ flowchart TD
   and exit seeds and need no line. So **capped per-event breakpoints keep P2's logs bounded**; the injected logger is
   not needed for this plan. ADR-0022's frame windows (every event of every unit, uncapped) are a different case.
 
+### 14. Plan 0066 batch S1ne part 1: twelve maps emulated, the routes read (2026-11-16, `lane/n66ne`)
+
+Twelve functions run under EmuBoundary on the declared image of `tools/ai_s1e_emu.py` plus a mask array at
+DataTables `+0x0D4` (`tools/ai_s1ne_emu.py`; record run:2026-11-16-sweep2-s1ne). Every callee runs whole, except
+`UnitQueueEvent` 0x005417D0, an observed boundary (ADR-0021): its route reaches `EventBlockNew`'s allocation
+(0x00540C56). A case that ends there claims the map from the inputs to that call's arguments and nothing after it.
+The routes come from `tools/ai_s1ne_routes.py` (`routes.txt`). Every `[C]` below is the function's map on the declared
+image, 240 cases a family, 0 mismatches, 0 unaccounted traced reads or writes, and every separated control `passed` 0.
+The counts come from `check.txt`.
+
+- [C] **`AiDistUnits`** (0x005DC380). Positions come from path `+0x02/+0x06` (u16; 0 with no path) for types 0, 1
+  and 3, and from `+0x0C/+0x10` (full dwords) for 2, 4 and 5. Each component difference is taken in 32 bits, its
+  absolute value by `neg` (so `INT_MIN` stays), and `UNIT_GetSizeX(a)` is then subtracted from both, with a floor of 0.
+  The result is `(2·max + min) / 2` by `cdq; sub; sar 1`, compared signed. `UNIT_GetSizeX` (0x00620510) gives 2 for
+  type 0, the MonStats2 `+0x08` **signed** byte for type 1 (0 without a record), the object record's `+0xD0` dword for
+  type 2, 1 for type 4 and 0 for type 5 (jump table 0x0062057C). Tags: size negative 22, 0 91, positive 127; floored
+  25 and 25; a wrapped sum 20. All three controls are separated. `a` of type 3 (an item's size through 0x0046ACE0) was
+  not run and stays `[I]`. (fn:sub_005DC380_AiDistUnits@0x005DC380, 0x00620510, run:2026-11-16-sweep2-s1ne)
+- [C] **`AiDistToPointSized(u, x, y)`** (0x005DC480) subtracts `(size >> 1) + 1`, and the `>>` is an unsigned `shr`
+  of the size word. So a negative MonStats2 size (27 cases) subtracts about 2³¹, not `size / 2 + 1`. This refines
+  machinery A7's "size / 2 + 1". (0x005DC4F9, run:2026-11-16-sweep2-s1ne)
+- [C] **`UnitDistSq`** (0x005B0BD0) is `dx² + dy²` mod 2³², with the full-width static positions of types 2, 4 and 5
+  among the inputs: 84 sums past 2³¹ − 1 and 41 wrapped squares, all matching. The signed compare after it is `[C]` for
+  the two callbacks run here (`AiFallenCorpseCb`, `AiGreaterMummyCb`: control `dsq unsigned` separates 6 and 7 cases).
+  The other callers' compares, and A8's "no stock path reaches a wrap" (a data bound), stay `[I]`.
+  (fn:sub_005B0BD0_UnitDistSq@0x005B0BD0, run:2026-11-16-sweep2-s1ne)
+- [C] **`MonAiPathOverride`** (0x005DE190) and **`AiPathOverrideSet`** (0x005A6260): machinery D2 holds. A `param`
+  outside −126..126 (`lea; cmp 0xFC; ja`) reaches the fatal entry 0x00408090 (82 cases stop at its guard). Type 1
+  becomes 7 (23). Each of the three words is stored only when it is non-zero, and the byte is capped at 77 for 78 and
+  above (56 and 115 cases; strictness separated in 14 and 29). **Refinement:** for a unit that is not a monster with
+  MonsterData, `MonAiPathOverride` calls `AiPathOverrideSet` with `ECX` 0. Its stores then go to 0x18, 0x1C and 0x20
+  (84 cases, case memory at 0). In the game that is a write through a null pointer whenever a word is non-zero. Which
+  callers can pass such a unit is not read here. (0x005DE1CE, run:2026-11-16-sweep2-s1ne)
+- [C] **`MonModeStartNeutral`** (0x005A73E0), up to its `UnitQueueEvent` call, for a monster already in mode NU. In that
+  case `SUNIT_SetMode`'s `0x00624690` returns at once, and `0x0057C980` meets no queued hit of the unit. The function
+  queues nothing when `UnitEventFirstFrame(2) > T` (signed; 66 cases). Under state 21 it calls
+  `UnitQueueEvent(game, unit, 2, T + 45, 0, 0)` (37). Otherwise the frame is `T + a`, where `a` is the MonStats `+0x4F`
+  byte when `Game+0x6A` = 0 and `Game+0x74` = 0 (48), or the byte at `+0x4F + difficulty` (82), and 15 when that byte is 0
+  (35). All seven controls are separated, `pending>T unsigned` among them (35). **Refinement:** with no MonStats pointer
+  in MonsterData it returns 1 with nothing queued (7 cases); README C1 has no such exit. A unit in another mode takes
+  `SUNIT_SetMode`'s mode change (0x006246AE–0x006246C4), whose route reaches `wsprintfA` (0x0064F9C2 via 0x00624390;
+  read at depth 8). That path is not emulated (R2) and stays `[I]`. (fn:sub_005A73E0_MonModeStartNeutral@0x005A73E0,
+  0x005A7419, 0x005A747D, run:2026-11-16-sweep2-s1ne)
+- [C] **`MonAiDelayEarlier(n)`** (0x005DE130), up to its `UnitQueueEvent` call. **Corrections to README C4:** (1) `n`
+  becomes 1 only when it is 0 (25 cases). A negative `n` is kept, giving `T + n` (47), so it is not `max(n, 1)`. (2) The
+  test "the pending one is due at or after `T + n`" is an **unsigned** `cmp; jb` (0x005DE15F). Control
+  `pending<T+n signed` separates 8 cases, and its strictness separates 7. It keeps the pending event (41 cases) when one
+  is pending, it is not due at `T`, and it is below `T + n` unsigned. Otherwise it cancels kind 2 and calls
+  `UnitQueueEvent(game, unit, 2, T + n, 0, 0)` (199). `UNIT_CancelEvents` ran whole only on records with `+0x02` bit 0
+  set, which it marks with bit 3. Its unlink path (`Game+0xB8`, 0x00540CE8 on) was not run and stays `[I]`.
+  (fn:sub_005DE130_MonAiDelayEarlier@0x005DE130, 0x00540CD0, run:2026-11-16-sweep2-s1ne)
+- [C] **`MonAiEntryGet`** for states 10 to 12 and for 18 and past. States 10–12 return the state row when the gate
+  0x00623470 is true (9 cases) and the class row when it is false (62). Any other non-zero state returns
+  `0x0073D358 + 16·state` with no bound, the shift wrapping in 32 bits (112 cases from 18 to 2³² − 1). **The gate**
+  is MonStats in range, then `MonModeAllowed(class, 2)` (MonStats2 `+0xF0` bit 2 through MonStats `+0x18`), then
+  `+0x0C` bit 6 clear, then `+0x0E` bit 0 (README D1b; 240 cases in the `gate` family; every control separated).
+  (fn:sub_005B15D0_MonAiEntryGet@0x005B15D0, 0x00623470, fn:sub_0046C140_MonModeAllowed@0x0046C140, run:2026-11-16-sweep2-s1ne)
+- [C] **`AiDeadMinionCb`** (0x005DCDA0): machinery T13a holds for the callback. It computes `AiDistUnits(searcher,
+  candidate)` **first**, before its null and type tests, and refuses when that distance is above `blk+0x0C` (signed).
+  It then requires type 1, mode 12, `Unit+0xC4` bit `0x02`, no state of DataTables `+0x150`, and `MonsterOwner` equal
+  to the searcher. On a take it counts in `blk+4` and keeps the unit at `blk+0` and the distance at `blk+8` (39 taken;
+  7 controls, `dist>bound~` 2). **`AiFallenCorpseCb`** (0x005F1380) holds as T13a states, with `UnitDistSq ≤ blk+0x0C`
+  signed and `MonTypeFlag(0x0C)` clear (38 taken; 12 controls). The bound words come from the think and stay `[I]`.
+  (run:2026-11-16-sweep2-s1ne)
+- [C] **`AiGreaterMummyCb`** (0x005F2A00): machinery T22a holds for the callback, with every test separated (19
+  controls). "`MONSTATS_IsUndead`" is MonStats `+0x0D` bit 3 **or** bit 4 (0x0063E990, the masks 8 and 0x10). With
+  `uniquesToo` 0 the refusal tests `MonTypeFlag` 8 only: the control "mask 0x0C" (champion or unique refused) separates
+  3 cases, and 2 champion corpses (flag 4 alone, `uniquesToo` 0) are taken as `corpse` (README's C40 code side).
+  Tags: corpse 34, wounded 9, in range only 4. The skill's own target test (`MonSkillTargetOk`) is not run here.
+  (fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00, fn:MONSTATS_IsUndead@0x0063E990, run:2026-11-16-sweep2-s1ne)
+- [I] **The routes** (`routes.txt`, 42 roots, depth 4). These have no pool, room walker or import path: the distances,
+  `UnitDistSq`, the override pair, `AiParamsHead`/`Find`, the three callbacks, `MonAiEntryGet` and the gate.
+  `AiParamsAlloc`/`Pop`/`Push` reach the pool directly (0x0058ECBD, 0x0058ED70). The walkers reach `MonAiMove` or
+  `MonSetMode` and the pool behind them. `MonAiFindTarget`/`FindHostile`/`ForcedTarget` reach `MonAlignSet`'s stat
+  setter (0x0062520B), `InMeleeRange`'s inventory page (0x0063AE8C) and `COLL_LineTest` (0x006229D7), and
+  `MonAiPreferDecoy` reaches `PathPlan` (0x005DD580). `MonAiPreChecks` and `MonSpcWalkCheck` reach the room and
+  collision walkers and nine imports. One tool read these routes, so they are `[I]`. They place part 2's rows, as in
+  S2ae part 1. (run:2026-11-16-sweep2-s1ne)
+
 ## Data touched
 
 - tbl:MonStats.txt:AI (`+0x1E`), tbl:MonStats.txt:aidel (`+0x4F`), tbl:MonStats.txt:aidist (`+0x52`),
