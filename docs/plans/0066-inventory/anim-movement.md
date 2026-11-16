@@ -3,6 +3,11 @@
 - **Spec:** [anim/movement](../../specs/anim/movement.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 44; the *Count* column sums to 44.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66v`, 2026-11-16): re-tagged.** The spec's front matter is now C 58 / I 32 / L 8 (it was C 26 /
+  I 46 at `main` `2ffce327`; two `[I]` of plan 0063 P3 are not in this inventory). Statement `[C]` whole: rows 1, 9,
+  12, 18, 19, 27, 30, 34, 37–39, 41–44 (15; row 44's open question is closed into D2). Split, the remainder `[I]` as the
+  *Route* cell names: 2, 3, 7, 10, 11, 16, 20–26, 29, 31, 32, 35, 40 (18). Kept `[I]` (H6c, H6d, deferred, d-none): 4–6,
+  8, 13–15, 17, 28, 33, 36 (11).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

@@ -15,5 +15,5 @@ the room-walk attempt of its ruling (c). Emulation run:2026-11-16-sweep2-s6f (`t
 from that directory; 16 100 cases, 0 mismatches, 81 of 88 controls separating, the 7 others named). Outcomes, class
 moves (movement 22, 43 b → c-emu; H6d 21 → 19), totals and judgment calls are in the plan log entry of 2026-11-16
 (S6f). Refinements to the spec-writer in
-[2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections](../2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections.md).
+[2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections](2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections.md).
 Not blocking.

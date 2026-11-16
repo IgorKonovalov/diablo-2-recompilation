@@ -2,11 +2,11 @@
 from: reverser
 to: spec-writer
 date: 2026-11-15
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../findings/anim/experiments.md
-resolution: ""
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/anim/experiments.md
+resolution: "Done in plan 0066 Phase 3 (lane/n66v): items 1-4 and 6 written into anim/timing (I2 MonAttackFrame code 1 strikes, code 2 none, the drop [I]; E3 RescheduleSkip's +0x44; M4's refusal sentence; F1's two restart rules) and anim/movement D2 (the turn's frame, open question closed); item 5 (a monsters/stats lead) routed to the reverser in [2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part](../2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part.md)."
 ---
 
 Plan 0066 batch S6a (`lane/n66k`, 2026-11-15) corrections for Phase 3 in specs/anim/timing.md (lines at `b5999f5e`, match by text). Record: findings/anim/experiments.md, the S6a addendum to run:2026-10-30-anim-p3b; `workspace/logs/n66k/check.txt`.
@@ -20,4 +20,3 @@ Plan 0066 batch S6a (`lane/n66k`, 2026-11-15) corrections for Phase 3 in specs/a
 
 5. **Lead, not an anim row:** monsters/stats § G's `fanatic` row ("champion part; AddStat(67, clamp(...))"): the two logged `fanatic` units at `Velocity` 4 carry stat 67 = 175 at neutral, 75 + the clamp only, not 195 (`check-part2.txt` `mon-stat67`, run:2026-10-30-anim-p3b). Either the "champion part" there excludes the champion's + 20 or the wording needs it said; the reverser's code reading of `UModFanatic` (0x005A11F0) decides.
 6. **Open question answered** (anim/movement D2 and *Open questions*, line 374 at `b5999f5e`): the 6 offset-1 cases of the run's turn are not the drain's turn: each `EF` is queued in phase 11 by a later set in the same frame (2 sets 3 → 2 after a request, 4 same-mode sets 2 → 2); the 75 drain turns step in their frame (`run-turn`, `run-turn-ef`).
-

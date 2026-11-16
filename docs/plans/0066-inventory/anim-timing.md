@@ -3,6 +3,14 @@
 - **Spec:** [anim/timing](../../specs/anim/timing.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 134; the *Count* column sums to 134.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66v`, 2026-11-16): re-tagged.** The spec's front matter is now C 168 / I 91 / L 22 (it was
+  C 65 / I 135 at `main` `2ffce327`; one `[I]` line of plan 0068 P4 is not in this inventory). Statement `[C]` whole:
+  rows 1–4, 7, 10, 13, 17, 20, 24, 25, 30–34, 36, 39–43, 45, 46, 50, 51, 53, 55, 56, 58, 60, 63, 65, 68–73, 94, 96–98,
+  100, 106, 109, 121, 130, 132 (49). Split, the `[C]` half and the remainder `[I]` as the *Route* cell names: 5, 6, 8,
+  14–16, 18, 19, 21–23, 27–29, 37, 38, 47–49, 54, 57, 59, 61, 62, 64, 66, 74, 76, 77, 79, 86, 88, 89, 92, 93, 95, 101,
+  104, 105, 107, 108, 110, 112, 114, 117, 119, 124–128, 131 (52). Corrected to the finding: 67, 75 (2). Kept `[I]`
+  (H6a–H6d, deferred, not raised, S6g, d-none): 9, 11, 12, 26, 35, 44, 52, 78, 80–85, 87, 90, 91, 99, 102, 103, 111,
+  113, 115, 116, 118, 120, 122, 123, 129, 133, 134 (31). Rows 69 and 70 are whole with the S6c corrections.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

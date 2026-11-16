@@ -462,3 +462,19 @@ and sampled 50 rows in 21 specs, opening the kept logs for 22 a-logs rows.
 - **path/README 67** (Jump: no stock user) is (c), a full-table check of every excel column, not d-edit: the claim is the data's, and the data check settles it; Jump's behaviour itself (row 14) stays b with only a monster arm.
 - **frame 126** (`ActsClockPass` refreshes every client's player) is the only d-2c in frame; lifecycle 18 (`+0x78` as a client count, sorted list) the other. Rows that mention multi-client unions in passing (lifecycle 14, frame 66) kept their single-client majority class with the note in the route.
 - **path-README 62 (type 0)** and **path-README 66 (town-follow with a hostile)** are (b) though possibly unreachable in stock play; no finding says they are, so I did not mark d-none.
+
+## 6. Phase 3: the re-tag per cluster
+
+Each cluster's inventory files carry a *Phase 3* line under their header: the rows whose statement is now `[C]` whole,
+split (the `[C]` half, the remainder `[I]` as the *Route* cell names), corrected to the finding, or kept `[I]`. Rows
+keep their Phase 0 class and batch, so § 1's totals stay the classification; this table records the specs' tags after
+each cluster's re-tag.
+
+| Cluster (lane) | Spec | Rows | Whole | Split | Corrected | Kept | Front matter before | Front matter after |
+|---|---|---|---|---|---|---|---|---|
+| anim (`lane/n66v`) | [anim/timing](anim-timing.md) | 134 | 49 | 52 | 2 | 31 | C 65 / I 135 / L 22 | C 168 / I 91 / L 22 |
+| anim (`lane/n66v`) | [anim/movement](anim-movement.md) | 44 | 15 | 18 | 0 | 11 | C 26 / I 46 / L 8 | C 58 / I 32 / L 8 |
+| anim (`lane/n66v`) | [anim/README](anim-README.md) | 13 | 4 | 5 | 0 | 4 | C 14 / I 13 / L 2 | C 23 / I 9 / L 2 |
+
+A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
+`[C]` count rises by more than the `[I]` count falls.

@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [anim/timing, stats/aggregate, stats/states, monsters/stats, drlg/collision]
 consumed_by: [anim/timing, combat/overview, skills/missiles, path/overview, path/search]
-tags: {C: 26, I: 46, L: 8}
-updated: 2026-11-10
+tags: {C: 58, I: 32, L: 8}
+updated: 2026-11-16
 ---
 
 # Movement: speeds, the per-frame step, the run drain and knockback
@@ -35,10 +35,10 @@ flowchart LR
 | When | Function | Tag |
 |---|---|---|
 | A moving or knockback mode's rate is set | fn:UNIT_AnimSetRate@0x00623F50 (the path speed) | [C] (run:2026-10-27-anim: 127 584 path speeds) |
-| A player starts running (or is knocked back) | fn:sub_00620E80_RunVelocityStat@0x00620E80 | [I] |
+| A player starts running (or is knocked back) | fn:sub_00620E80_RunVelocityStat@0x00620E80 | [C] (run:2026-10-30-anim-p3b: stat 67 + 50 at every logged run start, 5 121, and at both mode-19 starts, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k)) |
 | A moving unit's every-frame event | fn:sub_00554CA0_UnitMoveStep@0x00554CA0 → fn:sub_00650840_PathStep@0x00650840 | [C] (run:2026-10-27-anim: 99 241 steps) |
 | A running player's frame, outside town | fn:sub_0057F240_RunStaminaDrain@0x0057F240 | [C] (run:2026-10-27-anim: 37 434 frames) |
-| A knockback path is planned | fn:sub_0067A000_PathPlanKnockback@0x0067A000 | [I] |
+| A knockback path is planned | fn:sub_0067A000_PathPlanKnockback@0x0067A000 | [C] E1's point in 575 of 576 unblocked monster plans, the line test's cut by `PathLineFree` (run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k); run:2026-11-16-sweep2-s6f); [I] the 1 plan off E1 |
 | A monster's MonStats speeds at load | fn:sub_00650F00_MonStatsSpeeds@0x00650F00 | [C] (run:2026-10-27-anim) |
 
 ## Inputs
@@ -70,7 +70,7 @@ flowchart LR
 |---|---|---|
 | The path plan (its points, the replan and the target revalidation's planner calls, `0x00679720`) | taken as given by the run; specified in [path/search](../path/search.md) and [path/overview § C](../path/README.md#c-pathplan) | [C] (run:2026-10-27-anim) |
 | The collision test `0x0064FF90`'s result per crossed subtile | taken as given ([drlg/collision](../drlg/collision.md)) | [C] (run:2026-10-27-anim) |
-| The AI's mode command and its velocity block; the catalogue speed writers (Charge, Leap Attack) | taken as given (plans 0052, 0046) | [I] (fn:sub_005A6380_MonModeVelocity@0x005A6380, fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0) |
+| The AI's mode command and its velocity block; the catalogue speed writers (Charge, Leap Attack) | taken as given (plans 0052, 0046) | [C] the 33 067 monster rate calls from `MonModeVelocity` reproduce with the stat 67 they carry (fn:sub_005A6380_MonModeVelocity@0x005A6380, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k)); [I] the block's `+0x10` and Charge's `MulDiv`, not tallied (fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0) |
 
 ### Constants
 
@@ -96,9 +96,9 @@ A1. The moving branch of UNIT_AnimSetRate (anim/timing J2):       [C] (fn:UNIT_A
       PathSetSpeed(path, (pbase × X) ÷ 100)                         ; signed; writes +0x7C and the maximum +0x84
     knockback branch: +0x4C ← vbase;  PathSetSpeed(path, 0x1000)
 
-A2. RunVelocityStat(class, unit), from UNIT_AnimInit for a player form in mode 3 or 19:   [I] (fn:sub_00620E80_RunVelocityStat@0x00620E80, all of A2)
+A2. RunVelocityStat(class, unit), from UNIT_AnimInit for a player form in mode 3 or 19:   [C] (fn:sub_00620E80_RunVelocityStat@0x00620E80, run:2026-10-30-anim-p3b, all of A2 but the line marked)
       list ← a new stat list with flag 4 (dropped at the next mode change)
-      if CharStats[class].WalkVelocity ≠ 0:
+      if CharStats[class].WalkVelocity ≠ 0:                          ; [I] the 0 branch: no stock class (fn:sub_00620E80_RunVelocityStat@0x00620E80)
         SetStat(list, 67, (RunVelocity × 100) ÷ WalkVelocity − 100)  ; unsigned 64-bit divide; 50 on stock data
         link the list to the unit
 ```
@@ -112,15 +112,22 @@ A2. RunVelocityStat(class, unit), from UNIT_AnimInit for a player form in mode 3
   a running monster's path base is its walk `Velocity`; the RN record's speed changes only its animation rate.
   `PathSetSpeed` also sets path `+0x38 = 15` when the speed changed. (fn:sub_00648690_PathSetSpeed@0x00648690,
   0x006241A9–0x006241C9)
-- A1. [I] **The animation base** `vbase`: a player's `0x65` in run, `0xD5` otherwise; a monster's MonStats `+0x38`
-  in RN, else `+0x36` (A4). (fn:sub_006213D0_AnimMoveBaseRate@0x006213D0, 0x0062140E–0x0062141B)
+- A1. [C] **The animation base** `vbase`: a player's `0x65` in run, `0xD5` otherwise; a monster's MonStats `+0x38`
+  in RN, else `+0x36` (A4): the logged rate at 33 390 monster RN calls whose `+0x38` differs from `+0x36`, and players'
+  run on `0x65` (5 395) and walk on `0xD5` (938). (fn:sub_006213D0_AnimMoveBaseRate@0x006213D0, 0x0062140E–0x0062141B,
+  run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
 - A2. [C] A player's run is the walk base with the mode-scoped stat-67 list: the run's path speed 2 304 at `X` 150
-  (A1). (run:2026-10-27-anim) [I] The list is made at the run's start and dropped at the next `UNIT_SetMode` to
-  another mode; the class it reads is the unit's real class, the path base the display class (the wolf and bear keep
-  RN and the +50; the vampire and fetish forms have no RN mode). (fn:sub_006272E0_StatListsDropOnMode@0x006272E0,
-  0x0062449F, 0x00624158–0x006241A9)
-- A3. [I] **A monster's stat 67** starts at 75; the `champion`, `possessed`, `fast` and `fanatic` mods add to it
-  ([monsters/stats § G](../monsters/stats.md#g-the-mod-handlers-stat-effects)); and `MonSetMode` calls
+  (A1). (run:2026-10-27-anim) [C] The list is made at the run's start and dropped at the next `UNIT_SetMode` to
+  another mode (stat 67 + 50 at 5 121 run starts, − 50 at 5 119 ends; `RunVelocity · 100 ÷ WalkVelocity − 100` = 50 for
+  every class), and the wolf (26) and bear (28) keep RN and the + 50. (fn:sub_006272E0_StatListsDropOnMode@0x006272E0,
+  0x0062449F, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k)) [I] The class it reads is the unit's real class, the path base the
+  display class (every class's ratio is 50, so the logs do not separate them); the vampire and fetish forms have no RN
+  mode; the unsigned divide is not separated. (0x00624158–0x006241A9)
+- A3. [C] **A monster's stat 67** starts at 75 (6 578 logged units with no mod, 338 of them at `Velocity` 0); the
+  `champion` and `possessed` mods give 95 (50 and 7 units), `fast` the `Velocity` clamp (161) and the two logged
+  `fanatic` units 175 (75 and the clamp only). (fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-30-anim-p3b,
+  [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k)) [I] 74 logged units carry none of these values, unexplained; the mods' code is
+  [monsters/stats § G](../monsters/stats.md#g-the-mod-handlers-stat-effects)'s. `MonSetMode` calls
   `MonModeVelocity` when the mode command's block has a non-zero `+0x10`, which writes that value as stat 67 into the
   unit's `0x4000` list (made with flags `0x4004`, so it too drops at a mode change) and re-runs the rate. So a
   monster's run is faster than its walk only through the AI's command. (fn:sub_005A6380_MonModeVelocity@0x005A6380,
@@ -128,7 +135,7 @@ A2. RunVelocityStat(class, unit), from UNIT_AnimInit for a player form in mode 3
 
 ```
 A4. MonStatsSpeeds, for each MonStats row i at load:              [C] (fn:sub_00650F00_MonStatsSpeeds@0x00650F00, run:2026-10-27-anim, all of A4)
-      b ← MonStats[i].BaseId  (out of range → i)                   ; [I] the out-of-range case
+      b ← MonStats[i].BaseId  (out of range → i, also written back into the row's BaseId, 0x00650F37)   ; no stock row out of range
       walk: i32 ← ANIMDATA_Lookup(mode 2, type 1, class b).speed  ; [I] the fallback record's 256 when no WL record
       if b ≠ i and Velocity(b) > 0: walk ← ((i16) Velocity(i) × walk) ÷ Velocity(b)   ; unsigned
       +0x36 ← min(walk, 0x7FFF)
@@ -140,7 +147,8 @@ A4. MonStatsSpeeds, for each MonStats row i at load:              [C] (fn:sub_00
 
 - A4. [C] Every monster moving and knockback call (124 391) uses `+0x36`/`+0x38` as A4 gives for its class, the
   `Run(i) / Run(b)` scaling of the run base below class 410 included (54 classes). (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
-  tbl:MonStats.txt:Run, run:2026-10-27-anim)
+  tbl:MonStats.txt:Run, run:2026-10-27-anim) [C] The `BaseId` guard (0x00650F29–0x00650F3C) as the pseudocode gives
+  it, by a second read; none of the 734 stock rows is out of range. ([anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l))
 - A4. [I] **A class with no walk record** (the classic `9A` traps, `compellingorb` and the `E9` rows) gets walk base
   256, run 128 below class 410. No stock row's base comes after it, so row `b`'s `+0x36` is computed first.
   (fn:ANIMDATA_Lookup@0x0066A9B0, 0x00650F80–0x00650F9D, 0x00650FBE–0x00650FD4)
@@ -148,10 +156,12 @@ A4. MonStatsSpeeds, for each MonStats row i at load:              [C] (fn:sub_00
   a path when it was created with create flag bit 0, so the branch writes `+0x4C = ⌊256 · X / 100⌋` (192 at `X` 75)
   and a path speed of 0: the animation runs while the unit does not move. (fn:sub_00554850_SUnitPathCreate@0x00554850,
   0x00624128–0x006241D4)
-- A6. [I] **Other writers of a unit's path speed**: the knockback and moving branches, `MonInitMode`, and five
-  catalogue skill functions (Charge's start among them, plan 0046); `PathMoveReset` copies `+0x80` into `+0x7C`
-  under path flag `0x8000` at every player move start. (fn:sub_00648690_PathSetSpeed@0x00648690,
-  fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0, fn:sub_00648DC0_PathMoveReset@0x00648DC0)
+- A6. [C] **Other writers of a unit's path speed**: `PathSetSpeed` has 25 call sites; at or above 0x00520000 they are
+  the knockback and moving branches of the rate, `MonInitMode`, five catalogue skill functions (Charge's start among
+  them, plan 0046) and `MissileCreate` twice; `PathMoveReset` copies `+0x80` into `+0x7C` under path flag `0x8000` at
+  every player move start (a second tool, [anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)). (fn:sub_00648690_PathSetSpeed@0x00648690,
+  fn:sub_005CF6B0_SkillSt31Charge@0x005CF6B0, fn:sub_00648DC0_PathMoveReset@0x00648DC0) [I] Direct stores to `+0x7C`
+  outside `PathSetSpeed` are not scanned. (fn:sub_00648690_PathSetSpeed@0x00648690)
 - A6. [I] Charge's start sets `MulDiv(RunVelocity << 8, max(stat 67, 50) + Param1, 100)`, `Param1` 150
   ([skills/0011 § 5](../../findings/skills/0011-paladin.md)); the run's 160 Charge steps ran at 5 760 at stat 67 100
   (`2 304 · 250 / 100`, what that reading gives), but the speed is a catalogue writer's, taken as given and not
@@ -179,7 +189,7 @@ B1. PathStep(unit, k):                                            [C] (fn:sub_00
       p ← unit.path;  p.flags &= ~8
       if p.flags & 0x20 and p.nPoints > 0 and p.speed ≠ 0
          and (p.flags & 0x40000 or PathStepTargetCheck(p)) and p.iPoint < p.nPoints:
-        if k ≤ 0: k ← 0x400                                        ; [I] the server passes 0x400
+        if k ≤ 0: k ← 0x400                                        ; the server passes 0x400 (B1 below)
         s: i32 ← (p.speed × k) >> 6                                ; = 16 v on the server
         p.stepX ← (p.dirX × s) >> 12;  p.stepY ← (p.dirY × s) >> 12 ; imul, sar: signed 32-bit
         if p.stepX ≠ 0 or p.stepY ≠ 0:
@@ -195,13 +205,16 @@ B1. PathStep(unit, k):                                            [C] (fn:sub_00
   logged collision results (3 steps stopped by a blocked subtile, 2 102 after a replan). (fn:sub_00650840_PathStep@0x00650840,
   fn:sub_00650090_PathStepSnap@0x00650090, fn:sub_00650660_PathStepMove@0x00650660,
   fn:sub_00650150_PathStepCollide@0x00650150, run:2026-10-27-anim)
-- B1. [I] `PathStep` has one server caller, `UnitMoveStep` with `k = 0x400`, so the axis step is `⌊d · v / 256⌋` in
-  1/65536 subtile. `PathVelocityStep` adds an acceleration every fifth call, but a unit's path has none: `PathSetAccel`'s
-  only server caller is `MissileCreate`. (fn:sub_00554CA0_UnitMoveStep@0x00554CA0, fn:sub_00648700_PathSetAccel@0x00648700,
-  0x006502E6–0x00650320)
-- B2. [I] **The direction** `(+0x6A, +0x6E)` is a `g_PathDirTable` row, axes swapped and signed by octant, toward the
-  next point, set after each plan and each move; every row's norm² lies between 16 767 217 and 4096², so a speed `v`
-  moves `v / 16` subtiles per frame along an axis (`v · 2896 / 4096 / 16` on the diagonal). Walk 0.375, run 0.5625,
+- B1. [C] `PathStep` has one server caller, `UnitMoveStep` (0x00554CD5) with `k = 0x400`, so the axis step is
+  `⌊d · v / 256⌋` in 1/65536 subtile ([anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)). `PathVelocityStep` computes the axis step `(d · ((v · k) >> 6)) >> 12` and
+  adds an acceleration every fifth call (it counts `+0x8C` to 5, then `v += acc` capped at `+0x84` with `acc` cleared,
+  or floored at 0), an ADR-0015 map over 3 064 cases (run:2026-11-16-sweep2-s6e-2); but a unit's path has none:
+  `PathSetAccel`'s only server-range caller is `MissileCreate` ([anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)). (fn:sub_00554CA0_UnitMoveStep@0x00554CA0,
+  fn:sub_00648700_PathSetAccel@0x00648700, fn:sub_006502D0_PathVelocityStep@0x006502D0, 0x006502E6–0x00650320)
+- B2. [C] **The direction** `(+0x6A, +0x6E)` is a `g_PathDirTable` row, axes swapped and signed by octant; every one
+  of its 128 rows has a norm² between 16 767 217 and 4096² (a second read, [anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)), so a speed `v` moves `v / 16`
+  subtiles per frame along an axis (`v · 2896 / 4096 / 16` on the diagonal). (data:g_PathDirTable@0x006EB7E0)
+- B2. [I] It points toward the next point and is set after each plan and each move; walk 0.375, run 0.5625,
   knockback 1 subtile per frame on an axis. (fn:sub_0064FE40_PathAimNextPoint@0x0064FE40,
   fn:sub_0064FC60_PathDirection@0x0064FC60, data:g_PathDirTable@0x006EB7E0) The aim's return and its facing step are
   [path/overview § H](../path/README.md#h-the-aim-and-the-facing-step): `PathStep` calls it with `f` = 1 and `arg` = 1, so
@@ -211,33 +224,46 @@ B1. PathStep(unit, k):                                            [C] (fn:sub_00
   centre (`(word << 16) + 0x8000`), when both remaining axis distances are at most `m` the step becomes exactly the
   remaining delta and the point counts as reached. So a point `d` subtiles away on an axis takes `⌈65536 d / step⌉`
   frames, the last one partial: walk 8 frames for 3 subtiles, run 6, knockback 3. (fn:sub_00650090_PathStepSnap@0x00650090)
-- B4. [I] **The collision walk.** When the step changes the subtile, `PathStepCollide` halves both axes together
+  [C] The logged segments started at a centre take `⌈rem ÷ step⌉` frames per point in 2 387 of 2 407; the 20 longer
+  ones (14 monster, 6 player run) are not compared with the collision walk. (run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
+- B4. [C] **The collision walk.** When the step changes the subtile, `PathStepCollide` halves both axes together
   until each is within one subtile, adds that increment from the old position and tests each new subtile it enters
-  with `0x0064FF90`; each free tested subtile counts in path `+0x1D4`; at a blocked one the position stops at the centre
-  of the last free subtile (a monster path with flag `0x10` then re-plans, any other path ends); at the 10th crossing
-  the walk stops testing and the full step's target is taken unchecked, with flag `0x8` set. A reached point
-  increments `+0x24`; the byte `+0x90` drops at each subtile change for path types other than 8 and 11.
-  (fn:sub_00650150_PathStepCollide@0x00650150, fn:sub_00650350_PathReplan@0x00650350, 0x00650177,
-  0x00650259–0x00650279, 0x00650292–0x006502AA) [C] The run reproduces this walk over the logged test results (B1).
-  (run:2026-10-27-anim)
-- B5. [I] **The end.** With no point left, `PathStop` snaps to the subtile centre, clears flag `0x20`, the points and
-  the step, and `UnitMoveStep` returns 2. `PathStepTargetCheck` (unless flag `0x40000`) re-plans when the target unit
-  has moved more than 5 subtiles from the planned end, or ends a path whose target is within its byte `+0x93`.
-  (fn:sub_006507B0_PathStop@0x006507B0, fn:sub_006503F0_PathStepTargetCheck@0x006503F0)
-- B6. [I] **Wrap bound.** `d · s` (`s = 16 v`) fits 32 bits up to `v = 32 767` and wraps from `v = 32 768` on a
-  component of +4096, turning that axis negative; no test guards it. A player reaches it from `X = 2 134`, a
-  `Velocity`-15 monster from `X = 854`; whether a stock source does is not surveyed. (0x00650330–0x00650345)
+  with `0x0064FF90`; each free tested subtile counts in path `+0x1D4` (recorded at `+0x1D8…` under flag `0x20000`); at
+  a blocked one the position stops at the centre of the last free subtile; at the 10th crossing the walk stops testing
+  and the full step's target is taken unchecked. Flag `0x8` is set at every unblocked end with at least one counted
+  crossing, not only at the 10th (0x00650295–0x006502A2). (fn:sub_00650150_PathStepCollide@0x00650150, 0x00650177,
+  0x00650259–0x00650279, 0x00650292–0x006502AA; an ADR-0015 map over a declared room, each test's result taken from
+  the run's trace, 3 000 cases: run:2026-11-16-sweep2-s6f) The run reproduces this walk over the logged test results
+  (B1). [C] (run:2026-10-27-anim)
+- B4. [I] After a block, a monster path with flag `0x10` re-plans and any other path ends; a reached point increments
+  `+0x24`; the byte `+0x90` drops at each subtile change for path types other than 8 and 11 (`PathStep`'s, not run
+  whole). (fn:sub_00650350_PathReplan@0x00650350, fn:sub_00650840_PathStep@0x00650840)
+- B5. [C] **The end.** With no point left, `PathStop` snaps to the subtile centre, clears flag `0x20`, sets the point
+  count and index `+0x28` and `+0x24` to 0 and the step `+0x72`/`+0x76` from the `.rdata` pair 0x006EB7D4 (both 0), and
+  `UnitMoveStep` returns 2: the arrival's mode set follows in the step's frame (C2). (fn:sub_006507B0_PathStop@0x006507B0,
+  run:2026-11-16-sweep2-s6f, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k)) [I] `PathStepTargetCheck` (unless flag `0x40000`) re-plans
+  when the target unit has moved more than 5 subtiles from the planned end, or ends a path whose target is within its
+  byte `+0x93`. (fn:sub_006503F0_PathStepTargetCheck@0x006503F0)
+- B6. [C] **Wrap bound.** `d · s` (`s = 16 v`) fits 32 bits up to `v = 32 767` and wraps from `v = 32 768` on a
+  component of +4096, turning that axis negative; a component of −4096 reaches −2³¹ exactly at `v = 32 768` and wraps
+  from 32 769; the diagonal 2 896 does not wrap there; no test guards it. (0x00650330–0x00650345,
+  fn:sub_006502D0_PathVelocityStep@0x006502D0, run:2026-11-16-sweep2-s6e-2) [I] A player reaches it from `X = 2 134`, a
+  `Velocity`-15 monster from `X = 854` (derived from the rate formulas); whether a stock source does is not surveyed.
+  (fn:UNIT_AnimSetRate@0x00623F50)
 
 ### C. Who steps
 
-- C1. [I] `UnitMoveStep` has 11 call sites, each in a mode's every-frame function: the player's skill frame
+- C1. [C] `UnitMoveStep` has 11 call sites, each in a mode's every-frame function: the player's skill frame
   (move-first skills) and move frame (walk, run, town walk, knockback), and the monster's DT (while moving), S3,
-  `MonAttackFrame` (two), WL, RN, KB and `MonSeqFrame`, and a missile's move ([skills/missiles](../skills/missiles.md)).
-  So a moving unit steps once per game frame; its first step runs in the start's frame only when the every-frame event
+  `MonAttackFrame` (two), WL, RN, KB and `MonSeqFrame`, and a missile's move (`MissileMoveCollide`,
+  [skills/missiles](../skills/missiles.md)) (a second tool, [anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l)). (fn:sub_00554CA0_UnitMoveStep@0x00554CA0)
+  [I] So a moving unit steps once per game frame; its first step runs in the start's frame only when the every-frame event
   is queued before its type's list ([anim/timing § H](timing.md#h-the-event-queue-and-the-frame-order)).
   (fn:sub_00554CA0_UnitMoveStep@0x00554CA0, fn:sub_00580C20_PlrModeMoveFrame@0x00580C20)
-- C2. [I] Player walk and run, and monster WL and RN, end when `UnitMoveStep` returns 2; a walking monster's animation
-  advances but does not end the mode. `PlrModeMoveFrame` runs state 13's handler and, in run, the drain (§ D) before
+- C2. [C] Player walk and run, and monster WL and RN, end when `UnitMoveStep` returns 2: a step reaching the last
+  point is followed in its frame by the mode set (player walk 657, run 3 816, monster WL 2 578, RN 249).
+  (fn:sub_00554CA0_UnitMoveStep@0x00554CA0, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k)) [I] A walking monster's animation
+  advances but does not end the mode (not tallied). `PlrModeMoveFrame` runs state 13's handler and, in run, the drain (§ D) before
   the step, and a wall-clock position history after it, which the step does not read. (0x005A84C9–0x005A84D2,
   0x005A84FB–0x005A8504, 0x00580C49–0x00580D7C)
 
@@ -245,7 +271,7 @@ B1. PathStep(unit, k):                                            [C] (fn:sub_00
 
 ```
 D1. RunStaminaDrain(unit) → bool, each run frame:                 [C] (fn:sub_0057F240_RunStaminaDrain@0x0057F240, run:2026-10-27-anim, all of D1)
-      if the unit's room is a town: return 1                       ; [I] read from the code
+      if the unit's room is a town: return 1                       ; [C] 4 685 town drains, run:2026-10-30-anim-p3b
       if the unit has no inventory: return 0                        ; [I] read from the code
       q: i32 ← CharStats.RunDrain × 2
       q ← q × (Armor[body location 3].speed ÷ 10 + 1)              ; signed: speed 0, 5, 10 → × 1, 1, 2
@@ -258,28 +284,39 @@ D1. RunStaminaDrain(unit) → bool, each run frame:                 [C] (fn:sub_
 
 - D1. [C] 37 434 logged run frames take `max(1, RunDrain · 2 · (armour speed / 10 + 1) + ⌊that · stat 154 / 100⌋)`
   from stat 10. (fn:sub_0057F240_RunStaminaDrain@0x0057F240, tbl:CharStats.txt:RunDrain, tbl:Armor.txt:speed,
-  run:2026-10-27-anim) [I] The town and no-inventory returns are read from the code. (0x0057F290–0x0057F2E6)
-- D2. [I] **The turn to a walk.** On 0, `PlrModeMoveFrame` restarts the move (`PlrModeStartMove`), which turns a run
+  run:2026-10-27-anim) [C] The town return: 4 685 logged town drains return 1 with stamina above 0 unchanged.
+  (run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k)) [I] The no-inventory return is read from the code (every logged runner has an
+  inventory). (0x0057F290–0x0057F2E6)
+- D2. [C] **The turn to a walk.** On 0, `PlrModeMoveFrame` restarts the move (`PlrModeStartMove`), which turns a run
   with stamina 0 into a walk, before this frame's step. Phase 2 part 3 reached it: a Sorceress turned from mode 3 to
-  mode 2 81 times in five run sessions, and the turn's `EF` against the unit's next `PS0` sits at offset 0 in 75 and
-  at offset 1 in 6, which are not explained (run:2026-10-30-anim-p3b; [Open questions](#open-questions)).
-  (fn:sub_00580C20_PlrModeMoveFrame@0x00580C20, fn:sub_0057F090_PlrModeStartMove@0x0057F090)
+  mode 2 81 times in five run sessions (`op-run2` to `op-run6`). The 75 turns that follow the drain's 0 in their frame
+  queue the walk's `EF` in phase 3 and take the first walk step in that frame. The other 6 are not the drain's turn:
+  each `EF` is queued in phase 11 by a later set in the same frame (2 sets 3 → 2 after a request, with the frame's
+  drain returning 1, and 4 same-mode sets 2 → 2 after the drain's 0). (fn:sub_00580C20_PlrModeMoveFrame@0x00580C20,
+  fn:sub_0057F090_PlrModeStartMove@0x0057F090, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
 
 ### E. Knockback
 
 ```
-E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0067A000_PathPlanKnockback@0x0067A000, all of E1)
-      n: i32 ← (path.+0x90 >> 1) + 1                               ; +0x90 = 5 → n 3; 10 (base class 78) → n 6
+E1. PathPlanKnockback (path type 8):                               [C] (fn:sub_0067A000_PathPlanKnockback@0x0067A000, run:2026-10-30-anim-p3b, run:2026-11-16-sweep2-s6f, all of E1)
+      n: i32 ← (path.+0x90 >> 1) + 1                               ; +0x90 = 5 → n 3; [I] 10 (base class 78) → n 6
       (dx, dy) ← the unit's subtile − the attacker's;  M ← max(|dx|, |dy|)
       point ← the unit's subtile + (n·dx ÷ M, n·dy ÷ M)            ; signed; unchanged when M = 0
       point ← PathLineFree(ctx.start, point)                       ; 0x00679720: path/search A4, its last free point when blocked
       no point when it equals the start;  else the path's one point
 ```
 
-- E1. [I] **Start.** A player: `COMBAT_GetHit` with result bit `0x8` commands mode 19 at the attacker;
-  `PlrModeStartMove(19)` sets path type 8 and `+0x90 = 5`. A monster: a class without the KB mode takes a get-hit
-  instead; base class 78 (`sandleaper1`) adds `0x8` to every get-hit unless frozen; the knockback start needs both GH
-  and KB, sets path type 8 and `+0x90` 10 for base class 78 else 5. (fn:COMBAT_GetHit@0x0057CEE0,
+- E1. [C] The plan: 575 of 576 unblocked monster plans of the 131 logs put the point where E1 gives it against the
+  player attacker (378 off an axis), and the line test's cut is `PathLineFree`'s (300 of 300 kept emulated plans
+  recounted, 193 cut, 142 to the start); `n = (+0x90 >> 1) + 1` holds over the 7 values met, 5 to 77.
+  (fn:sub_0067A000_PathPlanKnockback@0x0067A000, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k), run:2026-11-16-sweep2-s6f) [I] The
+  one plan off E1 is a possibly stale attacker position, not compared. (run:2026-10-30-anim-p3b)
+- E1. [C] **Start**, for a monster: a hit with bit `0x8` on a class whose MonStats2 `mKB` is 1 sets mode 13 (919) or a
+  kill's 0 (104) in its frame, and every first knockback step has path type 8, one point and `+0x90` 5 (644).
+  (fn:COMBAT_GetHit@0x0057CEE0, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k)) [I] A player: `COMBAT_GetHit` with result bit `0x8`
+  commands mode 19 at the attacker; `PlrModeStartMove(19)` sets path type 8 and `+0x90 = 5`. A monster: a class without
+  the KB mode takes a get-hit instead; base class 78 (`sandleaper1`) adds `0x8` to every get-hit unless frozen; the
+  knockback start needs both GH and KB, sets path type 8 and `+0x90` 10 for base class 78 else 5. (fn:COMBAT_GetHit@0x0057CEE0,
   fn:sub_005A54F0_MonGetHitAddKnockback@0x005A54F0, fn:sub_0046C140_MonModeAllowed@0x0046C140, 0x005A77E3–0x005A785F)
 - E2. [C] **Speed.** The knockback branch sets the path speed to `0x1000`, one subtile per frame on an axis (A1).
   (run:2026-10-27-anim)
@@ -292,8 +329,9 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 - E3. [C] **A monster's length**: its knockback ends on its animation, in the frame its advance reaches the `GH`
   record's length at the walk-base rate `+0x36` (541 ends), however far the path got; then `MonKnockbackEnd`'s
   get-hit command. (fn:sub_005A8520_MonKnockbackEnd@0x005A8520, fn:UNIT_AnimAtEnd@0x006217C0, run:2026-10-27-anim)
-  [I] From `+0x44 = 0` that is `max(1, ⌈L / r⌉ − 1)` calls of its every-frame event, derived from the advance and
-  `UNIT_AnimAtEnd`. (0x005A8636–0x005A864F)
+  [C] From `+0x44 = 0` that is `max(1, ⌈L / r⌉ − 1)` calls of its every-frame event, derived from the advance and
+  `UNIT_AnimAtEnd`: 717 of 717 logged knockbacks advance that many times to `MonKnockbackEnd`, all with `⌈L ÷ r⌉ ≥ 2`.
+  (0x005A8636–0x005A864F, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
 
 ### F. The slowing states
 
@@ -302,6 +340,8 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
   `item_slow` and the curses through their stat lists, each re-running the rate. A mid-move change takes effect at
   once: the moving branch writes the path speed at each call and the step reads `+0x7C` every frame.
   (fn:UNIT_AnimSetRate@0x00623F50, fn:COMBAT_ApplyCold@0x0057AF80, fn:sub_006502D0_PathVelocityStep@0x006502D0)
+  [C] The 32 logged mid-window speed changes (cold 10, others 22) take effect at the next step; the floor 25 is not
+  reached and the "only" is not separated. (run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
 - F1. [C] 212 slowed monster windows and 9 slowed player windows are reproduced (the step and the speed of A1).
   (run:2026-10-27-anim)
 - F2. [I] **Slows Target** sets stats 68 and 69 only (attack and default rate), capped at 50 for players, bosses,
@@ -312,9 +352,11 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 
 ### G. Draws
 
-- G1. [I] None. The step, the snap, the collision walk, the speeds, the knockback planner and the run drain call no RNG
-  function. A movement step is an event kind with no draw and chains on nothing. (fn:sub_00650840_PathStep@0x00650840,
-  fn:sub_0057F240_RunStaminaDrain@0x0057F240)
+- G1. [C] None. The step, the snap, the collision walk, the speeds, the knockback planner and the run drain call no RNG
+  function: a second walker from `PathStep` and `RunStaminaDrain` with `PathPlan` stopped reaches 154 functions and no
+  draw; the one draw beyond is `PathPlanRandomWalk` through `PathReplan`, the next bullet's. A movement step is an event
+  kind with no draw and chains on nothing. (fn:sub_00650840_PathStep@0x00650840,
+  fn:sub_0057F240_RunStaminaDrain@0x0057F240, [anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l))
 - G1. [C] The replan and the target revalidation reach the planner, and `PathReplan`'s plans draw nothing: 836 + 889 replans (810 of the 836 stock)
   reproduce with the unit seed unchanged, all with a target unit at `PathPlan`'s entry. [path/overview § D](../path/README.md#d-the-17-types-planner-and-draws) has the draws per type, of
   which only the random walk (type 10) and type 16 make any: `PathReplan` writes neither and plans any other type as it stands, which the logged replans
@@ -324,28 +366,33 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
 
 - [C] Per moving unit per frame: the 16.16 position and the point index; per run frame, stamina. (fn:sub_00650840_PathStep@0x00650840,
   fn:sub_0057F240_RunStaminaDrain@0x0057F240, run:2026-10-27-anim)
-- [I] The mode end on arrival (2 from `UnitMoveStep`), which [anim/timing § I](timing.md#i-the-mode-machines) turns
-  into the next mode. (fn:sub_00554CA0_UnitMoveStep@0x00554CA0)
+- [C] The mode end on arrival (2 from `UnitMoveStep`), which [anim/timing § I](timing.md#i-the-mode-machines) turns
+  into the next mode in the step's frame (C2). (fn:sub_00554CA0_UnitMoveStep@0x00554CA0, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
 
 ## Worked example
 
-1. [I] **A player's walk** (CharStats `WalkVelocity` 6, no FR/W, stat 67 100): `pbase = 6 << 8 = 1536`, `X = 100`, `v
+1. [C] **A player's walk** (CharStats `WalkVelocity` 6, no FR/W, stat 67 100): `pbase = 6 << 8 = 1536`, `X = 100`, `v
    = 1536`; `s = (1536 × 0x400) >> 6 = 24 576`; on the axis row (`d` 4096) the step is `(4096 × 24 576) >> 12 = 24 576`
    = 0.375 subtile; 3 subtiles take `⌈196 608 / 24 576⌉ = 8` frames. Running: stat 67 150 (`(9 × 100) ÷ 6 − 100 = 50`
    added), `v = 2304`, step 36 864 (0.5625), 6 frames for 3 subtiles. (`p50d-model.txt`, the tool's model;
-   run:2026-10-27-anim's speeds A1)
+   run:2026-10-27-anim's speeds A1; in the 131 logs a player's walk at `X` 100 has path speed 1 536 and rate 213 at 440
+   calls, and 3 subtiles on an axis take 8 frames, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
 
 ## Reimplementation notes
 
-- [I] **The run is a stat, not a base.** A player's run speed comes from the walk base and a +50 stat-67 list that
-  lives only while the run lasts; a monster runs at its walk path speed unless its AI command carries a velocity.
-  (fn:sub_00620E80_RunVelocityStat@0x00620E80, fn:sub_005A6380_MonModeVelocity@0x005A6380)
-- [I] **Two bases.** The path speed (`WalkVelocity` or `Velocity << 8`) moves the unit; the animation base (`vbase`)
-  only paces the animation. They take the same factor `X`. (fn:UNIT_AnimSetRate@0x00623F50)
-- [I] **The snap is exact.** A step that would pass the point lands on its subtile centre, so frames per point are a
-  ceiling, and the next step starts from the centre. (fn:sub_00650090_PathStepSnap@0x00650090)
-- [I] **The tenth crossing is unchecked.** A very fast step can pass a blocked subtile after ten free crossings.
-  (0x00650292–0x006502AA)
+- [C] **The run is a stat, not a base.** A player's run speed comes from the walk base and a +50 stat-67 list that
+  lives only while the run lasts (A2). (fn:sub_00620E80_RunVelocityStat@0x00620E80, run:2026-10-30-anim-p3b) [I] A
+  monster runs at its walk path speed unless its AI command carries a velocity (A3).
+  (fn:sub_005A6380_MonModeVelocity@0x005A6380)
+- [C] **Two bases.** The path speed (`WalkVelocity` or `Velocity << 8`) moves the unit; the animation base (`vbase`)
+  only paces the animation. They take the same factor `X`: 208 555 monster and 5 889 player moving calls at `X` ≠ 100
+  give both from one `X`. (fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
+- [C] **The snap is exact.** A step that would pass the point lands on its subtile centre (3 277 logged point
+  reaches), so frames per point are a ceiling, and the next step starts from the centre.
+  (fn:sub_00650090_PathStepSnap@0x00650090, run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
+- [C] **The tenth crossing is unchecked.** A very fast step can pass a blocked subtile after ten free crossings (376
+  emulated walks reach the 10th crossing, 69 of them across a blocked cell). (0x00650292–0x006502AA,
+  run:2026-11-16-sweep2-s6f)
 
 ## Evidence
 
@@ -358,8 +405,12 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
   logs: `step` 125 141, `pathspeed` 150 696, `drain` 49 914, 0 mismatches; no movement claim raised by it);
   [run:2026-10-30-anim-p3](../../findings/anim/experiments.md#run2026-10-30-anim-p3) and
   [run:2026-10-30-anim-p3b](../../findings/anim/experiments.md#run2026-10-30-anim-p3b) (part 3's closing check over
-  131 logs: `step` 179 727, `pathspeed` 216 788, `drain` 88 103, 0 mismatches; the run's turn to a walk reached, no
-  movement claim raised).
+  131 logs: `step` 179 727, `pathspeed` 216 788, `drain` 88 103, 0 mismatches; the run's turn to a walk reached).
+- Plan 0066 raises (Phase 3, `lane/n66v`): the S6b addendum to run:2026-10-30-anim-p3b (new tallies over the same 131
+  logs), the [S6c static addendum](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l),
+  and the emulations [run:2026-11-16-sweep2-s6e-2](../../findings/anim/experiments.md#run2026-11-16-sweep2-s6e-2) and
+  [run:2026-11-16-sweep2-s6f](../../findings/anim/experiments.md#run2026-11-16-sweep2-s6f); the rows and what stays
+  inferred are in [the plan's inventory](../../plans/0066-inventory/anim-movement.md).
 - Tables: the § Timing sections of [CharStats](../../tables/CharStats.md#timing-plan-0050-phase-0),
   [MonStats](../../tables/MonStats.md#timing-plan-0050-phase-0), [States](../../tables/States.md#timing-plan-0050-phase-0),
   [ItemStatCost](../../tables/ItemStatCost.md#timing-plan-0050-phase-0).
@@ -373,13 +424,6 @@ E1. PathPlanKnockback (path type 8):                               [I] (fn:sub_0
   Target on a player (P1b-13: 13 player movement windows under a slow over the 131 logs, not a 30); a player's
   knockback length (two mode-19 starts in part 1, none in parts 2 and 3). Phase 2 parts 2 and 3 left them short or
   unreported; P1b-14 and P1b-15 were not played in part 3 (run:2026-10-30-anim-p3b).
-- [I] **The run's turn to a walk at 0 stamina (D2), reached in Phase 2 part 3.** A Sorceress, whose run drains stat
-  10, turned from mode 3 to mode 2 by `MSET` 81 times in five run sessions (`op-run2` to `op-run6`: 3, 8, 11, 22 and 31
-  a log). The checker's tally `ef-first-run-turn` pairs the turn's `EF` line, queued in the frame of a drain `DR0`
-  line, with the unit's next `PS0`: offset 0 in 75, offset 1 in 6. The six offset-1 cases are not explained (not
-  every `EF` after a drain is the turn's own, and the tally does not separate them), and the 81 pairs are left out of
-  `ef-first`'s phase rule, so its 0 mismatches do not cover the turn; the turn's frame stays inferred.
-  (run:2026-10-30-anim-p3b, fn:sub_00580C20_PlrModeMoveFrame@0x00580C20, fn:sub_0057F090_PlrModeStartMove@0x0057F090)
 - [L] Whether a player under stun is refused anything other than through the get-hit it takes.
 
 ### Community sources: differences of 1.14d
