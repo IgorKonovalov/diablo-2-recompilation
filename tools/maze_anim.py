@@ -455,6 +455,18 @@ def fill_poly(cv, W, H, pts, col):
                 cv[y * W + x] = col
 
 
+def _levels(root):
+    """Levels.txt: id -> {name, vis[0..7]} (tbl:Levels.txt:Vis0..7, LevelName)."""
+    rows = list(csv.reader(open(os.path.join(maze_render._excel(root), "levels.txt"), encoding="latin-1"),
+                           delimiter="\t"))
+    h, out = rows[0], {}
+    for row in rows[1:]:
+        if len(row) > h.index("Vis7") and row[h.index("Id")].strip().isdigit():
+            out[int(row[h.index("Id")])] = dict(name=row[h.index("LevelName")],
+                                                vis=[int(row[h.index("Vis%d" % k)] or 0) for k in range(8)])
+    return out
+
+
 def build(root, level, seed, scale):
     steps, rooms, total = trace(root, level, seed)
     r = maze_render.Renderer(root, scale)
@@ -464,10 +476,19 @@ def build(root, level, seed, scale):
     gw = max(q["rect"][0] + q["rect"][2] for q in rooms) + 1 - x0
     gh = max(q["rect"][1] + q["rect"][3] for q in rooms) + 1 - y0
     pal_name, per_room = None, []
-    for q in rooms:
+    lv = _levels(root)
+    vis = lv[level]["vis"]
+    warps = []          # (room index, slot m, dest level, centre gx, centre gy) of the warp slot cells (warps.md, fmt:ds1)
+    for qi, q in enumerate(rooms):
         cells = []
         if q["file"]:
             rel, d = r._load(q["file"])
+            for m, pts in sorted(ds1._scan_cells(d)["slot"].items()):
+                dest = vis[m] if m < len(vis) else 0
+                if dest:
+                    cx = sum(p[0] for p in pts) / len(pts) + 0.5
+                    cy = sum(p[1] for p in pts) / len(pts) + 0.5
+                    warps.append((qi, m, dest, q["rect"][0] - x0 + cx, q["rect"][1] - y0 + cy))
             pal_name = pal_name or palette.palette_for_tiles(rel)
             own = ds1._own_dt1s(d, r.tiles)
             lay = d["layers"]
@@ -511,7 +532,7 @@ def build(root, level, seed, scale):
     CH = IH + 5 * 18 + 8
     C = {k: nearest(pal, v) for k, v in dict(
         panel=(24, 24, 32), fill=(60, 70, 110), edge=(150, 160, 220), new=(255, 220, 60), txt=(235, 235, 235),
-        dim=(140, 140, 140), link=(80, 220, 120), floor=(190, 180, 150), wall=(110, 70, 50)).items()}
+        dim=(140, 140, 140), link=(80, 220, 120), warp=(90, 230, 255), floor=(190, 180, 150), wall=(110, 70, 50)).items()}
     ms = max(2, min(200 // max(gw, gh), 8))
     mw, mh = gw * ms, gh * ms
     mx, my = CW - mw - 14, 28
@@ -530,6 +551,13 @@ def build(root, level, seed, scale):
     def mcenter(i):
         q = rooms[i]["rect"]
         return (mx + int((q[0] - x0 + q[2] / 2) * ms), my + int((q[1] - y0 + q[3] / 2) * ms))
+
+    def P2(fx, fy):
+        return (ix + ox + int((fx - fy) * tw / 2) + tw // 2, oy + int((fx + fy) * th / 2))
+
+    def wlabel(dest):
+        kind = "ENTRY" if dest < level else "EXIT"
+        return "%s: %s" % (kind, lv.get(dest, {}).get("name", "LEVEL %d" % dest))
 
     def frame(k, st, done, lead, total_steps):
         cv = bytearray(CW * CH)
@@ -581,6 +609,25 @@ def build(root, level, seed, scale):
                             cv[o:o + ms] = bytes([C["wall"]]) * ms
         for lk in st["links"]:
             line(cv, CW, CH, mcenter(lk[0]), mcenter(lk[1]), C["link"], 2)
+        for qi, m, dest, fx, fy in warps:          # warp marks, once their room's tiles are drawn
+            if qi >= done:
+                continue
+            cx, cy = P2(fx, fy)
+            dx, dy = tw * 3 // 2, th * 3 // 2
+            pts = [(cx, cy - dy), (cx + dx, cy), (cx, cy + dy), (cx - dx, cy)]
+            for a in range(4):
+                line(cv, CW, IH, pts[a], pts[(a + 1) % 4], C["warp"], 3)
+            for yy in range(cy - 3, cy + 4):
+                cv[yy * CW + cx - 3:yy * CW + cx + 4] = bytes([C["warp"]]) * 7
+            lab = wlabel(dest)
+            lw, lx, ly = len(lab) * 12 + 8, min(max(cx - len(lab) * 6 - 4, 2), CW - len(lab) * 12 - 10), cy - dy - 26
+            ly = max(ly, 24)
+            for yy in range(ly, ly + 20):
+                cv[yy * CW + lx:yy * CW + lx + lw] = bytes([C["panel"]]) * lw
+            text(cv, CW, CH, lx + 4, ly + 3, lab, C["warp"])
+            mxx, myy = mx + int(fx * ms), my + int(fy * ms)
+            for yy in range(myy - 3, myy + 4):
+                cv[yy * CW + mxx - 3:yy * CW + mxx + 4] = bytes([C["warp"]]) * 7
         # caption strip
         cv[IH * CW:] = bytes([C["panel"]]) * (CW * (CH - IH))
         text(cv, CW, CH, 10, IH + 6, "STEP %d/%d    RNG DRAWS SO FAR: %d" % (k + 1, total_steps, st["rng"]), C["new"])
@@ -603,11 +650,19 @@ def build(root, level, seed, scale):
             "Def %d is the room's LvlPrest row (%s); its File1..6 columns list the preset maps (DS1) it may use."
             % (q["d"], q["name"]),
             "File choice: %s." % q["how"],
-            "The tiles drawn are that DS1's floor and wall cells, looked up in the level type's tile files (DT1)."]))
+            "The tiles drawn are that DS1's floor and wall cells, looked up in the level type's tile files (DT1)."] + [
+            "This preset holds a warp: wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s); "
+            "marked in cyan (drlg/warps.md, warp slot cell)." % (m, m, dest, lv.get(dest, {}).get("name", "?"))
+            for qi, m, dest, _fx, _fy in warps if qi == i]))
     txt = ("Final composite: %d rooms after %d RNG draws. Drawn relative to the layout's corner; the game "
            "then moves the whole level to its place in the act (not drawn, shape unchanged)." % (n, total))
     frames.append(frame(len(frames), dict(text=txt, rng=total, rooms=range(n), links=[]), n, None, total_steps))
-    caps.append(dict(text=txt, calc=[
+    wl = ["Warp (cyan mark): room %d, DS1 wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s) "
+          "(drlg/warps.md, warp slot cell). %s is by level order: the lower id is taken as the way in. The act's "
+          "link lists can override Vis at run time (warps.md § C); not modelled here."
+          % (qi + 1, m, m, dest, lv.get(dest, {}).get("name", "?"), wlabel(dest).split(":")[0].capitalize())
+          for qi, m, dest, _fx, _fy in warps]
+    caps.append(dict(text=txt, calc=wl + [
         "Placement shift (spec drlg/maze.md G1): growth never looks at where the level sits in the act; rooms grow "
         "freely around the first room, so coordinates can go negative.",
         "At the end the game takes the bounding box of all rooms (x0, y0) and adds (level.x - x0, level.y - y0) to "
@@ -635,7 +690,8 @@ border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;te
 <li>Two random streams are used: the level seed (which room to grow from, each new room's seed) and every room's own
 seed (which side to grow on, merge rolls, and at the end which preset file the room uses).</li>
 <li>A draw advances a seed (lo, hi) as lo*0x6AC690C5 + hi (64-bit) and returns the new lo. "lo %% n" picks one of n.</li>
-<li>Blue outline: placed room; yellow: this step's room; green line: a door between two rooms.</li>
+<li>Blue outline: placed room; yellow: this step's room; green line: a door between two rooms;
+cyan diamond: a warp (entry or exit stairs) from the preset map, labelled with the level it leads to.</li>
 <li>The seed is an illustrative input, not one the game derives from a game seed. Rooms the model tries and drops
 are listed in the calculations but not drawn.</li></ul></details>
 <script>
