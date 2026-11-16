@@ -1,7 +1,7 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
-> 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035); not started
+> **Status:** in progress: Phase 1 done 2026-11-16; approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
+> 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
 > **Owner skill(s):** architect, archivist, spec-writer, human
 > **Related ADRs:** 0009-public-documentation-site, 0035-public-export-hosting, 0034-local-documentation-site, 0012-human-wiki, 0031-constants-of-the-code-image, 0005-presentation-formats-tools-only, 0006-docs-gate
@@ -371,3 +371,41 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
 - 2026-11-16 — approved by the owner (answers above); ADR-0035 records the host. Phases re-cut for a Starlight
   export: the builder writes Markdown, Phase 4 (the export repository's files) is new, the two cuts are Phases 1–7
   and 8–10. Next: Phase 1 (architect).
+- 2026-11-16 — **Phase 1 done** (architect, lane/n70m). `docs/export/manifest.txt` and `docs/export/README.md` (the
+  format, ownership, the exclusions as rules). The manifest's format: `group <slug> <order> <label>`,
+  `page <path> <group|-> <order>`, `table <path> <header line> <reason>`; a page's route is `<group>/<file stem>`.
+  Cut 1 holds 24 pages: the three export-only pages at the top level (`export/index.md`, `export/reading-the-tags.md`,
+  `export/about.md`; Phase 5 writes them under these names), 20 wiki pages and the glossary, in six groups that follow
+  the wiki's reading order: Foundations (randomness, game data), Building the world (levels, monsters, objects), Items
+  (items, other item paths, economy, inventory), Characters and combat (characters, combat, stats and states, skills,
+  saves), The running game (quests, seed to world, animation, pathing, monster AI, server frame), Reference (quirks,
+  glossary). Left out besides `how-we-know.md`: `docs/wiki/README.md`, by the rule that no folder index is exported (it
+  states the wiki's working rules and links ADRs and plans; the front page replaces it). No table over 20 body rows in
+  any named page (the wiki README's reading-order table is the only one), so no `table` line. Every path exists but the
+  three Phase 5 pages; no route repeats; gate green. *What is not known yet* sections are kept (prose, no `[L]`, no
+  `src:`); front matter, *Open questions*, illustration blocks and links to pages outside the manifest go by rule.
+  **What the named pages hold against the check** (counted with `grep` over the named pages, this worktree): the
+  first cut will not be green on the wiki and glossary as they stand, and no phase yet fixes them (Phase 8 is the
+  specs only):
+  - **Method words (X9):** 218 lines say *emulation*/*emulated*/*emulator*, 20 name a tool (*harness*, *logger*,
+    *logged run*, *decompile*, *disassembler*, *Ghidra*). Most in inventory (39), pathing (40), combat (33), monster AI
+    (36), server frame (20), game data (15), skills (13). They are how the wiki keeps its "nothing hidden" rule (seen in
+    play, confirmed under emulation, read from the code), so the redactor can't remove them without rewording.
+  - **"breakpoint" is also a game term** (animation, quirks: attack-speed breakpoints, 8 lines); X9 must not fail it.
+  - **X2's `run:`:** 25 wiki lines end a phrase with "run:" ("not confirmed by a run:"); X2 should match the id shape
+    `run:` followed by an id character, not the word.
+  - **Repository references (X3) in prose and link text:** combat and skills ("the ADR-0014 …" link text, "plan
+    0052"); the glossary ("findings/rng/0001", "rng/0002" as link text, ADR-0004, ADR-0021, plan 0052).
+  - **The glossary (X1):** 42 lines carry in-memory offsets (`ItemData+0x04`, `Game+0x1B24`), struct sizes in hex and
+    `sub_XXXXXXXX` names in prose. It is a working glossary; the redactor will not clean it.
+  - **Banned topic (X9):** characters.md lines 74–75 mention the main menu's *Battle.net* button and *Open Battle.net*
+    as game types; no authentication, but the plan's rule fails any mention.
+  - Cosmetic, not a check failure: each topic page's *Where to read more* names only specs, which cut 1 does not hold;
+    the rewriter leaves their text without targets.
+  **Needs a decision before Phase 3's green** (the orchestrator or the owner): either (a) a wiki-and-glossary residue
+  batch (spec-writer, Tier A, about 0.25 M + 0.17 M), which rewords the method sentences in the working wiki (the
+  wiki's own rule then reads "confirmed" or "inferred" without the method), strips the glossary's offsets and
+  repository references, and words the Battle.net lines away; or (b) the same edits only in the export, which the
+  design rules out (the redactor never rewrites a sentence); or (c) X9 narrowed to tool names, leaving *emulation*
+  in, which keeps 218 lines but weakens risk (1)'s mitigation. Recommended: (a), as a Phase 5b beside Phase 5, and
+  the two pattern points (breakpoint, `run:`) handed to Phase 2. Next: Phases 2, 4 and 5 (side by side).

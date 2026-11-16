@@ -1,0 +1,54 @@
+# The export's allowlist (plan 0070, ADR-0009, ADR-0035). Owner: architect.
+# A page reaches the public export only by being named on a `page` line here. Rules and
+# exclusions: README.md in this folder. Paths are relative to docs/.
+#
+# Lines (whitespace-separated; `#` starts a comment; blank lines ignored):
+#   group <slug> <order> <label…>           a sidebar group; <slug> is its route folder
+#   page  <path> <group-slug|-> <order>     a page; route <group-slug>/<file stem>, or <file stem> for `-`
+#   table <path> <line-of-header> <reason…> a table over 20 body rows allowed (X6); none in this cut
+#
+# Cut 1: the export-only pages, the wiki (except README.md and how-we-know.md), the glossary.
+
+# Sidebar groups, in sidebar order. Top-level pages (group `-`) come before every group.
+group foundations  1  Foundations
+group world        2  Building the world
+group items        3  Items
+group characters   4  Characters and combat
+group running      5  The running game
+group reference    6  Reference
+
+# Top level: the export-only pages (Phase 5 writes them; spec-writer, reviewed like a wiki page).
+page export/index.md              -            1
+page export/reading-the-tags.md   -            2
+page export/about.md              -            3
+
+page wiki/randomness.md           foundations  1
+page wiki/game-data.md            foundations  2
+
+page wiki/levels.md               world        1
+page wiki/monsters.md             world        2
+page wiki/objects.md              world        3
+
+page wiki/items.md                items        1
+page wiki/items-other-paths.md    items        2
+page wiki/economy.md              items        3
+page wiki/inventory.md            items        4
+
+page wiki/characters.md           characters   1
+page wiki/combat.md               characters   2
+page wiki/stats-and-states.md     characters   3
+page wiki/skills.md               characters   4
+page wiki/saves.md                characters   5
+
+page wiki/quests.md               running      1
+page wiki/seed-to-world.md        running      2
+page wiki/animation.md            running      3
+page wiki/pathing.md              running      4
+page wiki/monster-ai.md           running      5
+page wiki/server-frame.md         running      6
+
+page wiki/quirks.md               reference    1
+page glossary.md                  reference    2
+
+# Tables over 20 body rows allowed in advance: none. (No page above holds one at cut 1;
+# the only wiki table over 20 rows is the reading-order table of wiki/README.md, which is not exported.)
