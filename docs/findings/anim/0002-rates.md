@@ -343,6 +343,10 @@ return s;
   (`idiv`, a fault); for `s < −k` it is positive and above `k` (14 520 at `s = −121`). (0x00621769–0x00621777,
   `p50b-bp.txt` `EDGE bonus`)
 
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* the negative half is separated by the kept `bonus` outputs: of
+the 832 negative-stat calls, an unsigned divide would change 798 and a floor divide 562, and the emulator matched
+none ([run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3), `bonus`). `s = −k` stays a reading.
+
 ### 3. The branches
 
 #### 3.1 Cast
@@ -578,6 +582,11 @@ start stores at 0x005D91EC)
   ≥ 200 the same); `PAGHHTH` (5 frames): FHR 0, 7, 15, 27, 48, 86, 200 give 10, 9, 8, 7, 6, 5, 4; `AMA11HS` (16 frames, start 2,
   event at 10) at `X` 100 lasts 14 frames with its event at `T + 8`. (fn:SUNIT_ScheduleModeEvents@0x005539B0,
   `p50b-bp.txt`)
+
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* K3's attack form equals a brute-force search through J1 and J2
+over 1 297 362 targets (`k3`, [run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3)) with one refinement: a target `X_m` of 15, the clamp's floor, needs no IAS
+whatever `stat68 + terms` is (2 241 targets, all with `stat68 + terms` below 15), where K3 asks for `s_min(X_m −
+stat68 − terms)`.
 
 ## Draws
 

@@ -32,3 +32,11 @@ run:2026-11-16-sweep2-s6e-2: (4) the gfxtype 2 map has the exception anim/0001 �
 6 in monster mode 4 takes player mode 12, not `g_MonToPlrMode[4]` (0x00645328–0x0064533E); (5) the fallback's steps
 and the MonStats2 column names are now `[C]` (B3's second bullet can carry the tag). For anim/movement B6 (line 225):
 a component of −4096 reaches −2³¹ at `v = 32 768` and wraps from 32 769 (0x00650336–0x00650345).
+
+*2026-11-16, S6e part 3 (`lane/n66l`):* from run:2026-11-16-sweep2-s6e-3: (6) anim/timing K3 (line 730 at
+`b5999f5e`): a target factor `X_m` of 15, the clamp's floor, needs no IAS whatever `stat68 + terms` is, where K3 asks
+for `s_min(X_m − stat68 − terms)` (2 241 brute-force targets, all with `stat68 + terms` below 15). (7) A reading for
+F1 (line 351), `[I]`: `UNIT_AnimAdvance` never returns from a wrap on a record whose frame count is at or below the
+start frame (0x00623ED1–0x00623EE8 subtract `+0x48` and add `S << 8` back); whether a stock record reaches it is not
+checked. (8) C2's missile divide truncates toward zero (0x0062464D–0x00624659), so a negative `animrate` rounds
+up; C3's no-path call passes the unit's own type, class and mode (`+0`, `+4`, `+0x10`).

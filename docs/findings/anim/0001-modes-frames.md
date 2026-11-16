@@ -303,6 +303,15 @@ return 0;                                    // same mode: no animation restart
   So a scheduled mode starts from `+0x44 = 0` whatever `UNIT_AnimInit` set; the schedule reads the start frame from
   `UNIT_AnimStartFrame` itself. (fn:SUNIT_AnimInit@0x005533D0)
 
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* `UNIT_AnimInit`'s missile and item branches hold as an ADR-0015
+map over 1 500 emulated cases (`ainit`, [run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3)): a missile with a row gets `+0x4C ← (i16 animrate << 8) ÷ 1024`
+truncating toward zero (0x0062464D–0x00624659; a floor divide fails 143 negative inexact cases) and `+0x48 ← AnimLen
+<< 8`, returns 1; a class below 0 or at the count returns 0 with `+0x48`/`+0x4C` untouched; an item in mode 3 or 5
+gets the stated constants, other modes nothing. `SUNIT_AnimInit` up to its first call (observed boundaries,
+ADR-0021): `+0x4E ← 0`, the sequence test only for a player in 18 or a monster in 14, otherwise `+0x30 ← 0` and
+`+0x44 ← 0` before the rate call (a path) or `UNIT_AnimSetRecord(unit, +0, +4, +0x10)` (no path), each `[C]` to the
+call. What the callees then write stays `[I]`.
+
 ### 4. The start frame
 
 ```c
@@ -321,6 +330,12 @@ return 0;
   added at the schedule's start and after each wrap of the per-frame advance; `SKILL_AttackStart` (`0x0056CA40`) is
   its fourth caller. (data:g_AttackStartFrames@0x006E8E60, data:g_ItemWeaponClassIndex@0x007446A0,
   `p50a-anim-scan.txt` `START`, `IWCLS`, `CALL UNIT_AnimStartFrame`)
+
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* the mode-15/16 half holds as an ADR-0015 map (`sf`, 905 cases,
+[run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3)): a type-0 unit in 15 or 16 reads `g_AttackStartFrames` (0x00623BED) only when `UNIT_CanDualWield` is true
+(classes 4 and 6), and the cell read is 0; without an inventory the weapon class is 0. With S6c's table dump (every
+class-4 and class-6 cell is 0) the half's return is 0 for any weapon class; the class an item gives (0x00629FE0) is
+not run.
 
 ### 5. Sequences
 
@@ -479,6 +494,12 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
   rate plus `+0x44`, a 32-bit add, signed `≥ +0x48`; a null unit fatal) is `[C]` by emulation
   ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family `atend`, 600 cases, every test and
   strictness separated). Which frame functions call it stays as read.
+
+*2026-11-16 (plan 0066 S6e part 3, `lane/n66l`):* the wrap's start frame and the re-scan below `0x100` hold as an
+ADR-0015 map (`adv`, 4 000 cases, [run:2026-11-16-sweep2-s6e-3](experiments.md#run2026-11-16-sweep2-s6e-3)): 478 wraps add `UNIT_AnimStartFrame << 8` (1, a player's
+hand-to-hand A1; control `sadd` 453); 604 cases with a rate below `0x100` take an event standing on the frame they
+started from (control `r100` 969). Reading, `[I]`: on a record whose frame count is at or below the start frame a
+wrap never ends (0x00623ED1–0x00623EE8; the development run's case 1369).
 
 ### 9. Player modes
 

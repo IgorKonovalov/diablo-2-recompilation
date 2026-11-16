@@ -31,3 +31,13 @@ H6d), with the remainders of timing 88 and 128, because their routes cross `COMP
 (ADR-0029; the class moves are the review's to confirm). S6e is not whole yet: part 3 (timing 18, 30, 40, 45;
 movement 22, 43; 16 remainders) has a resume note in the plan log entry of 2026-11-16 (S6e part 2), which also lists
 this part's judgment calls. Review S6c and S6e together once part 3 lands, or S6c + S6e parts 1–2 now, as you prefer.
+
+*2026-11-16, extended a third time (`lane/n66l`, S6e part 3): S6c and S6e are whole; please review them together.*
+Part 3 closes S6e (run:2026-11-16-sweep2-s6e-3, `tools/anim_s6e3_emu.py`; `workspace/logs/n66l/s6e/run3/check.txt`
+`ab744e1a…`, `manifest.sha256` `1d84bce4…`; 7 216 cases, 0 mismatches, 32 of 33 emulated controls separating, plus
+the `bonus` recount and the `k3` brute force): timing 30, 40, 43 raised; remainders of timing 24, 86, 98 raised, of
+23 and 29 in part; movement 22, 43 c-emu → b (H6d) and the room-walking remainders (timing 62, movement 2, 23, 31) to
+H6d/H6c under R2; timing 18, 45, 49 and the remainders of 46 and 61 named not settled with their reasons (scratch
+item and sequence images, no ADR block). The plan log entry of 2026-11-16 (S6e part 3) lists the judgment calls and
+corrections 6–8 (routed by the part 1 spec-writer entry). Still the architect's: the proposed batch H6d (now 21
+rows) and the d-edit question for timing 91.

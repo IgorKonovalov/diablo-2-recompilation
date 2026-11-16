@@ -1930,3 +1930,55 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (special 43, 0038). No reject-grade miss.
 - **Ledger cell:** audit of lane/n66p: overclaim 2; no reject-grade miss (5th Tier B after the n66m audit; count
   restarts).
+
+### 2026-11-16 — Phase 1, batch S6e part 3 of 3 (reverser-static, `lane/n66l`): S6e closed; 3 rows raised, 2 moved, 5 remainders raised (2 of them in part), 5 named not settled
+
+- **Done.** `main` `1f507662` merged into the branch at `4ebce920` (plan-log keep-both; the inventory README's totals
+  recomputed from the 29 files). New tool `tools/anim_s6e3_emu.py` (`5a4b9681…`; parts 1 and 2's tools and seeds
+  unchanged), one kept `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66l` (`-Xmx3G`, `MemoryMax=4G`).
+  `sf`, `adv`, `ainit` run every callee whole; `sinit` stops at observed boundaries (ADR-0021) at
+  `UNIT_AnimSetRate`, `UNIT_AnimSetRecord` and `sub_006633B0_UnitAnimData`, its claim ending at the call (R2). Two
+  checks without the emulator: the kept p50b `bonus` outputs recounted, and K3 against a brute force. 7 216 cases,
+  0 mismatches; 33 emulated controls, 32 separating with `passed` 0 (`adv m1516`: the dual classes' cell is 0, `sf`
+  separates the test by its trace); `bonus` 2 and `k3` 1 controls separating, `passed` 0. Record:
+  [run:2026-11-16-sweep2-s6e-3](../findings/anim/experiments.md#run2026-11-16-sweep2-s6e-3);
+  `workspace/logs/n66l/s6e/run3/` (`check.txt` `ab744e1a…`, `manifest.sha256` `1d84bce4…`, 6 lines, passes from
+  there; `cases` regenerates the case file byte for byte). The first launch looped in a case the generator should not
+  have drawn (an advance wrap on a record with frames ≤ the start frame; see corrections) and was stopped (killed by
+  pid, confirmed dead); it is kept with the route closures under `workspace/logs/n66l/s6e/dev3/`
+  (`manifest-dev.sha256`, 23 lines), not cited for a raise. Dated notes in anim/0001 §§ 3, 4, 8 and anim/0002 §§ 2, 7.
+- **Rows settled.** Raised: timing 30 (the mode-15/16 half reads a 0 cell, with S6c's table dump), 40 (the wrap adds
+  the start frame; 478 wraps), 43 (the re-scan below `0x100`; 604 separating cases). **Remainders raised:** timing 24
+  (`+0x44`/`+0x30 ← 0` and the no-path branch, to the call), 86 (the negative-`s` divide, from the kept outputs; `s = −k`
+  stays `[I]`), 98 (K3's attack form, with refinement 6). **Remainders raised in part:** timing 23 (the missile and
+  item branches; the shapeshifted calls → H6d), 29 (the store before the rate call; that it holds to the schedule →
+  H6d). **Moved to b:** movement 22 and 43 (c-emu → b, H6d): `PathStepCollide` walks rooms, which R2 sends to the
+  harness; remainders of timing 62 and movement 23 (room walks: `PathPlan`, `PathStop`) to H6d and of movement 2 and
+  31 (`PathLineFree`) to H6c. **Not settled, named (S6e closes with them; no ADR blocks any):** timing 18
+  (`COMPOSIT_WeaponClass`: a scratch inventory and item image, 28 functions), 45, 49 and the remainder of 46
+  (`UnitSeqRecord`: the same item image for a player's column and the `monseq` loader's table for a monster, 38–44
+  functions), the remainder of 61 (`PlayerModeEnd`'s hand refresh and mode-19 branch: observed boundaries at
+  0x00580310, 0x0057EEC0 and the Skills `durability` test). They stay in their class with the reason in the row; a
+  later static batch can take them as one family set (items and sequences), which did not fit this part's budget.
+- **Corrections (refinements and readings; the spec's text is Phase 3's):** (6) K3: `X_m = 15` needs no IAS;
+  (7) F1, `[I]`: a wrap on a record with frames ≤ the start frame never ends; (8) C2's missile divide truncates
+  toward zero; C3's no-path call passes the unit's own type, class and mode. Routed by annotating
+  [the part 1 backlog entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+- **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
+- **Totals** from the 29 files' *Totals by class* after the merge of `main` `1f507662`: a-logs 623, a-run 341, b 469,
+  c 390, c-emu 475, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 488, Phase 2 810 (inventory
+  README § 1 tables, the S6e row, the H6c and H6d rows and the moves note updated; H6d proposed at 21 rows).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** Timing 253 (D1's S3/S4 half), 351 (the
+  start frame's wrap, with reading 7), 368 (the re-scan); halves: 199 (C2's missile and item branches, with
+  correction 8), 219 (C3 up to its calls), 245 (C3's store), 644 (J1's negative divide), 730 (K3's attack form,
+  with correction 6).
+- **Review:** the Tier B request
+  [`2026-11-15-reverser-architect-review-plan-0066-s6c`](../backlog/2026-11-15-reverser-architect-review-plan-0066-s6c.md)
+  now covers S6c and S6e whole. Judgment calls: (1) timing 30 raised whole on the itemless emulation plus S6c's dump
+  of every class-4/6 cell, not on an item's weapon class (0x00629FE0 unrun); (2) timing 86's remainder raised from a
+  kept earlier emulation's outputs recounted with separating controls, not a new run; (3) timing 98's remainder
+  raised as a closed-form check (class c in substance) through J1 and J2, which are `[C]`; (4) movement 22/43 and
+  the room-walking remainders sent to the harness under R2's "walk rooms" clause, although plan 0054 emulated
+  room walks over declared images under ADR-0021 (the architect may prefer a static route); (5) five rows named
+  not settled rather than a part 4. The proposed batch H6d and the d-edit question for timing 91 stay the
+  architect's (H6d's wording now names the part 3 additions).

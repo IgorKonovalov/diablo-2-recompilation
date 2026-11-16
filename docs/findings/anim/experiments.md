@@ -812,3 +812,60 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
   (`sub.cases`, `sub.out`, compared by `subcheck.py`: 0 differences) and the disassembly listings; not cited.
 - **Covers:** the three maps on the declared image. Not covered: what fills the transform list and the States records
   (the loader), and the rates and record look-ups above.
+
+## run:2026-11-16-sweep2-s6e-3
+
+- **Question:** (plan 0066 Phase 1, batch S6e, part 3, `lane/n66l`) Do `UNIT_AnimStartFrame`, `UNIT_AnimAdvance` with
+  a start frame other than 0, `UNIT_AnimInit`'s missile and item branches and `SUNIT_AnimInit` up to its first callee
+  map their inputs as [anim/0001 §§ 3, 4, 8](0001-modes-frames.md) state, every named test separated by a case? Does
+  the kept `bonus` emulation of run:2026-10-27-anim-rates-emu separate the signed divide for negative stats, and does
+  K3's attack form (anim/0002 § 7) equal a brute-force search through J1 and J2?
+- **Setup:** as [run:2026-11-16-sweep2-s6e-2](#run2026-11-16-sweep2-s6e-2): Ghidra 12.1 p-code emulator on the pinned
+  `game.exe` (`GHIDRA_PROJ_DIR=workspace/ghidra-n66l`, heap 3 GB, one instance, a 4 GB scope),
+  `re/ghidra_scripts/EmuBoundary.java` unchanged, one kept `emuboundary` launch. New tool `tools/anim_s6e3_emu.py`
+  (`5a4b9681…`; `cases`/`check`/`manifest`, every draw from `random.Random("n66l-s6e3-<family>")`; parts 1 and 2's
+  tools and seeds unchanged). `sf`, `adv` and `ainit` run every callee whole (no `observe` reached; R2). `sinit` ends
+  at observed boundaries (ADR-0021) at `UNIT_AnimSetRate` 0x00623F50, `UNIT_AnimSetRecord` 0x00620F00 and
+  `sub_006633B0_UnitAnimData` 0x006633B0: its claim stops at the call. Two `trace` lines (0x00623BAF, 0x00623BED)
+  show per case which `g_AttackStartFrames` read ran. Declared image (the tool's docstring): the DataTables pointer
+  with a scratch Missiles base and count, a scratch Missiles table (48 records of 0x1A4), a unit and a record. The
+  unit has `+0x60` 0 (no inventory: `sub_00623990_SkillSrcDamWeapon` returns 0 at 0x006239A2, so the weapon class is
+  0 and 0x00629FE0 is not reached) and `+0xC8` 0 (no transform). Guards on the fatal and allocator entries.
+- **Families:** `sf` (905: types 0–4 × classes 0–6 × modes 0–20, plus 300 drawn with monster classes 0x1A1/0x1A2);
+  `adv` (4 000: a player in modes 7, 8, 15, 16 and others, records of 1–0xA0 frames with events in and past 0x90,
+  rates 0–0x7FFF; a quarter with one event on the frame stood on only; frame counts kept above the start frame, see
+  below); `ainit` (1 500: types 3 and 4, classes inside, at and past the count and negative, `animrate` over the whole
+  i16 range, item modes 3, 5 and others); `sinit` (811: types 0–4 × modes 0–20 with and without a path, 600 drawn
+  with modes 14 and 18 weighted, and the null unit). Without the emulator: `bonus` (the 3 413 kept calls of
+  `workspace/logs/anim/p50b-emu/bonus.out`, `8be5b94f…`, whose case file `tools/anim_rates.py` regenerates byte for
+  byte) and `k3` (1 297 362 targets: speeds 128–512, frame counts 2–29, start frames 0–2, every length the factor
+  range reaches, stat68 0–175, dual terms −10, 0, 15).
+- **Result:** `workspace/logs/n66l/s6e/run3/check.txt` (`ab744e1a…`, 63 lines; manifest `manifest.sha256`
+  `1d84bce4…`, 6 lines, passes from that directory; `cases` regenerates `s6e3.cases` (`91bd8f5a…`) byte for byte):
+  `SCAN check bad=0`. 7 216 emulated cases, 0 mismatches, 0 stops other than the expected one (the null unit's fatal
+  at 0x00408090). Tallies: the mode-7/8 read ran at all 38 type-0 cases in modes 7 and 8 (classes 0–6) and the
+  mode-15/16 read only for classes 4 (4 cases) and 6 (7); 478 `adv` wraps with a start frame of 1 (the Amazon and the Sorceress
+  hand to hand); 604 `adv` cases with a rate below 0x100 and an event on the frame stood on only; `ainit` 517
+  missile rows (143 negative rates whose divide is inexact), 487 missiles without a row (return 0), 496 items;
+  `sinit` 112 cases at the sequence test, 335 at the rate call (a path), 363 at the record call (no path), each
+  with `+0x4E` 0 and, past the sequence test, `+0x30` and `+0x44` 0 before the call, the record call's arguments the
+  unit's own `+0`, `+4`, `+0x10`. Controls: 33 on the emulated families, 32 separating with `passed` 0; the one that
+  does not is `adv m1516` (the dual classes' cell is 0, so the mode-15/16 path gives the same advance; `sf` separates
+  it by the trace, 49). `bonus`: 832 negative-stat calls equal; an unsigned divide changes 798 of them, a floor divide
+  562, the emulator matched none. `k3`: 0 differences once one refinement is applied: a target factor `X_m` of 15 (the
+  clamp's floor) is reached with no IAS whatever `stat68 + terms` is, where K3 as written asks for `s_min(X_m −
+  stat68 − terms)` (2 241 targets, all with `stat68 + terms` below 15); the floor control separates 284 292, passed 0.
+  Every traced read is a listed image constant (`g_AttackStartFrames`, the two jump tables and the case index); no
+  write outside the image.
+- **A reading the development run showed (`[I]`):** `UNIT_AnimAdvance` never returns when it wraps on a record whose
+  frame count is at or below the start frame: each pass subtracts `+0x48` and adds `S << 8 ≥ +0x48` back
+  (0x00623ED1–0x00623EE8). The development run's case 1369 (a Sorceress in mode 8, start frame 1, a 1-frame
+  record, rate 0x300) passed 0x00623BAF without end and the run was stopped (killed by pid, confirmed dead); the kept run draws frame counts above the start frame. Whether a
+  stock record reaches it (a frame count of 1 or 2 under a start frame of 1 or 2) is not checked here; routed to
+  the spec-writer as a reading.
+- **Dev run:** `workspace/logs/n66l/s6e/dev3/` (`manifest-dev.sha256`, 23 lines, passes from there): the stopped first
+  launch (`run3-abort/`, its partial output gzipped: the 905 `sf` cases equal, then case 1369), the objdump listing
+  and the direct-call closures (`closure.py`, `c_*.txt`) used to choose the routes; not cited for a raise.
+- **Covers:** the four maps on the declared image, `SUNIT_AnimInit` up to its first call, the kept `bonus` outputs'
+  negative half and K3's attack inversion. Not covered: what `UNIT_AnimSetRate`, `UNIT_AnimSetRecord` and
+  `UNIT_SeqInit` do after the calls (H6d), the weapon class of an item (0x00629FE0), the missile table's loader.
