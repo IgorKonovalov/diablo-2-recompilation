@@ -1137,8 +1137,10 @@ def m_r114(r):
 
 
 def m_r118(r):
-    """R118 Succubus. `StatListFindFlag` (0x00625760) is not a boundary: its result is the rev 7 word `R118.flag0x20` (EAX at
-    0x005E1E34), else it forks (revision 6)."""
+    """R118 Succubus. `StatListFindFlag` (0x00625760) is not a boundary: its result is the word `R118.flag0x20` (EAX at
+    0x005E1E34), else it forks (revision 6). On a rev 7 log the word is the dword AT the address in EAX (the rev 7 `w_eax`
+    fault; a line only when EAX != 0), not the result: it is read as the result anyway so that `regress` and the 84-log check
+    stay byte-identical, and its outcomes there are not evidence. Rev 8 logs read EAX."""
     cmpw = r7(r, "R118.cmp")                    # revision 7 of the checker: the two words of `cmp [ebp-0xC], eax` (0x005E1E45)
     d, a4 = (r.dist, r.aip(4)) if cmpw is None else (cmpw[0], cmpw[1])
     ctl = r7(r, "R118.ctl")
@@ -2101,8 +2103,8 @@ def m_r117(r):
 
 # ---- H1b R119 SuccubusWitch (catalogue 3306)
 def m_r119(r):
-    """R119 SuccubusWitch. `StatListFindFlag(t, 0x20)` is not a boundary here (0x005E2157): its result is the rev 7 word
-    `R119.flag0x20` (EAX at 0x005E215C), else it forks (revision 6)."""
+    """R119 SuccubusWitch. `StatListFindFlag(t, 0x20)` is not a boundary here (0x005E2157): its result is the word
+    `R119.flag0x20` (EAX at 0x005E215C), else it forks (revision 6). Rev 7 logs hold the dword at EAX instead (see m_r118)."""
     dist, a4 = r.dist, r.aip(4)
     cmpw = r7(r, "R119.cmp")                    # revision 7 of the checker: the words of `cmp [ebp-8], eax` (0x005E216D)
     if cmpw is not None:
