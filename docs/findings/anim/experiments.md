@@ -707,3 +707,60 @@ data, single player, the same saves (`saves-2026-10-30-anim-p3/`, unchanged), `/
   rows set `SplGetModeChart` with no case in the switch; (4) `MonStatsSpeeds`' out-of-range guard also writes `i` into
   the row's `BaseId`; (5) `PlayerModeEnd`'s draws include those below `HandsRefresh`, which README A's "the next
   start's, PlayerModeAllowed's, the AI's" does not name.
+
+## run:2026-11-16-sweep2-s6e
+
+- **Question:** (plan 0066 Phase 1, batch S6e, part 1 of 2, `lane/n66l`) Do `UNIT_AnimAtEnd`, `ANIMDATA_Find`,
+  `SUNIT_ScheduleModeEvents` (with the event queue and its pool run whole) and the rate-class predicates map their
+  inputs as [anim/0001 §§ 2, 7, 8](0001-modes-frames.md) and [anim/0002 § 3](0002-rates.md#3-the-branches) state, every
+  named test separated by a case?
+- **Setup:** Ghidra 12.1 p-code emulator on the pinned `game.exe` (lane copy `GHIDRA_PROJ_DIR=workspace/ghidra-n66l`,
+  heap 3 GB, one instance, a 4 GB scope), `re/ghidra_scripts/EmuBoundary.java` unchanged, one `emuboundary` launch
+  over all families, no `observe` line and no declared callee return (ruling R2): every callee runs emulated
+  (`sub_00611D20` the animdata pointer, the CRT `strlen` 0x006C9A38, `UNIT_AnimStartFrame` with `UNIT_AnimTransform`,
+  `UnitQueueEvent` → `sub_005416B0_EventQueueAt` → `sub_00540DF0_EventRecordAlloc` →
+  `sub_00540C30_EventRecordTake` with the CRT `memset`, the used-skill getters 0x00620250 and 0x006439A0, 0x006446A0,
+  0x00643CE0 and the Skills record getter 0x0045C4B0). Case writer, models and check: `tools/anim_s6e_emu.py`
+  (`cases`/`check`/`manifest`; every draw from `random.Random("n66l-s6e-<family>")`); the declared image is listed in
+  the tool's docstring (DataTables pointer and the MonStats and Skills regions, the animdata container built by the
+  loader's walk 0x0066A7F0–0x0066A804 with the fallback's 0x800 and 0x100 at `+0x40C`/`+0x410`, the stock
+  `animdata.d2` loaded `const`, a game, an event pool and a 200-node free list). Guards on the fatal and allocator
+  entries; a case the model sends to the fatal path must stop at 0x00408090.
+- **Families:** `atend` (600: sequence and plain units, the `i16` rate, the 32-bit add's wrap, 2 null units); `find`
+  (7 705: every stock name as stored and in mixed case, 3 529 each; the 29 duplicate names ×3; 300 absent names; 120
+  more stock names meant to carry bytes after the NUL, which no stock name leaves room for (all 3 529 names have 7
+  characters), so that kind adds no separation; 80 with bytes outside `a`–`z`; 60 long names, half steered into empty blocks);
+  `sched` (1 300: a monster or a player outside modes 7, 8, 15 and 16, so the start frame is 0; `r` = 0 (40),
+  no step `r ≥ L` (183), negative `i16` rates (30), lengths that are not whole frames, records of up to 0xA8 frames
+  with event bytes past 0x90); `pred` (2 019: `AnimRateIsMove`, `AnimRateIsAttack`, `AnimRateIsFixed`,
+  `AnimRateIsCast`, 0x00621680 and 0x006216B0 over types 0–5, every mode, classes on both sides of 410, negative and
+  past the count, the `npc` bit, null units, skill lists and skills, the skill flags and record bytes `+0x06` and
+  `+0x12`).
+- **Controls:** every named test of the four models reversed alone and every ordered compare's strictness switched
+  alone (`tools/anim_s6e_emu.py` docstring); `sep` counts the cases a control's prediction changes, `passed` those
+  the emulator still matches (must be 0). A reversed loop test that would run past twice the base case's own step
+  count (or 4 096 records) is cut and scored as a mismatch, since no emulated case can match it.
+- **Result:** `workspace/logs/n66l/s6e/run/check.txt` (`fca5054c…`, 359 lines; manifest `manifest.sha256`
+  `0539fe07…`, 12 lines, passes from that directory; tool `5362890f…`; `cases` regenerates `s6e.cases` byte for
+  byte): `S6E total cases=11624 bad=0 stops=0 controls=65 unseparated=6 unaccounted=0`. Per family, every case
+  matching: `atend` 600 (2 fatal as modelled, 242 sequence, 356 plain); `find` 7 705 (3 529 stock and 3 529 mixed-case
+  hits, 87 of 87 duplicate cases on the earlier record of the name, 300 absent → 0, 19 long names fatal and 41 long
+  names → 0, 21 of them of 9–12 characters in an empty block); `sched` 1 300 (40 `r = 0`, 183 no step, 30 negative
+  rates, 889 with steps, 158 of them with events past 0x90); `pred` 2 019 (116 fatal as modelled, types 2–5 in
+  `AnimRateIsMove` and `AnimRateIsAttack`, and null units). `E2 closed-form cases=1115 bad=0 with_dropped_event=128
+  no_step_with_event=104`: E2's derived frames and end equal the emulated lists. `J3 tables bad=0`: the player table
+  gives move 2, 3, 6; attack 7, 8, 11, 12; skill-move and skill-attack 13–16, 18; fixed 0, 17; the monster tables
+  move 2, 15 (and 8–11 below 410), attack 4, 5, fixed 0, 12, skill-move and skill-attack 8–11 and 14 in both.
+  59 of the 65 controls separate (`passed` 0 each); the 6 that do not: `find reclen~` (no stock record name of 8),
+  `pred:attack` and `pred:fixed` `c410` and `c410~` (the two monster tables are equal in the attack, skill-attack and
+  fixed columns, so the class split has no observable there), `sched qfr~` (no queued frame equals `T`). Every
+  traced read outside the declared image is a listed image constant (the mode-class tables, `g_BitMask32` words 0
+  and 3, the event type table, the two jump tables 0x00553AFC and 0x00623C04–0x00623C19); no write outside it.
+  `ANIMDATA over0x90`: one stock record has more than 0x90 frames (`42DTHTH`, 200), with no event byte, and none of
+  the 56 bytes an unbounded scan would read past 0x90 is 1–4.
+  The dev run under `workspace/logs/n66l/s6e/dev/` (an earlier revision; `manifest-dev.sha256`) is not cited.
+- **Covers:** the maps above on the declared image, with the start frame 0 and no sequence. Not covered: a start frame
+  other than 0 and the sequence branch of the schedule (the player start-frame path needs
+  `sub_00623990_SkillSrcDamWeapon`), `ANIMDATA_Lookup` (its name builder `COMPOSIT_BuildCofName`) and the loader
+  itself (its allocator and file read), which the declared container models: the fallback's values and the block
+  order stay the loader's static reading.

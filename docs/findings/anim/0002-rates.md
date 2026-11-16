@@ -459,6 +459,15 @@ r = (base * X) mod 2^32 / 100;                          // unsigned
   not change its pace, and a player sequence (mode 18, scheduled with `+0x3C`) is paced by the rate only through the
   cast or attack branch. (0x00624016, 0x006242FF, fn:UNIT_SeqInit@0x00621260; anim/0001 §§ 7–8)
 
+- *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* the four rate-class predicates and the two mode tests 0x00621680
+  (get-hit) and 0x006216B0 (block) run whole over types 0–5, every mode, both class ranges, the `npc` bit and the
+  used skill's flags and record bytes ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family
+  `pred`); their maps over the image's mode-class tables are `[C]`, and the tables list as § 3 states, with one
+  refinement: monster SQ (14) carries the skill-move and skill-attack flags in both monster tables. What the bytes
+  read (MonStats `+0x0D` bit 0, Skills `+0x06` bit 3 and `+0x12`) are as columns (`npc`, `UseAttackRate`,
+  `seqtrans`) stays the table docs' reading `[I]`. Types other than 0 and 1 are fatal in `AnimRateIsMove` and
+  `AnimRateIsAttack` and give 0 in the others.
+
 ### 4. Where the stat terms come from
 
 Read only to the depth the rate needs; the writers are other findings' or specs'.

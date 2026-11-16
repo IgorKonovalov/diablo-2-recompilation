@@ -197,6 +197,13 @@ Data: `g_MonModeRecords` `0x006E2260` (21 × 16 B), `g_MonModePerFrame` `0x006E2
   (`a`–`z`), takes the block `(sum of the bytes) & 0xFF`, fails fatally on a name or record longer than 8 characters,
   and compares the first two dwords of each 0xA0-byte record. (fn:ANIMDATA_Load@0x0066A770, 0x0066A80A, 0x0066A814,
   fn:ANIMDATA_Find@0x0066A8F0, 0x0066A92E, 0x0066A96A, data:g_pAnimData@0x0096C8A4)
+- *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* `ANIMDATA_Find` run whole on the stock file
+  ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family `find`, 7 705 cases, every test
+  separated): the uppercase of `a`–`z` in place, the block `& 0xFF`, the first record of two with one name (87 of 87
+  duplicate cases), the two-dword compare and none for an absent name are `[C]` as a map of the declared container.
+  **Refinement:** the name's length is tested inside the record loop (0x0066A941–0x0066A94B), so a name longer than 8
+  whose block is empty returns none with no fatal; the fatal needs a record in the block. The container's block
+  order and the fallback's values stay the loader's static reading `[I]` (the loader was not run).
 - [I] The record fields read: `+0x08` frames per direction (`+0x48 = +0x08 << 8` at every non-sequence init), `+0x0C`
   the speed that `UNIT_AnimSetRate` scales (anim/0002), `+0x10 + f` the event byte of frame `f`, read only for `f < 0x90`.
   (0x00624470, 0x006244F1, 0x00623E95, 0x00553A40)
@@ -402,6 +409,13 @@ unit->animFrame = game->frame << 8;
   `T + N + 1` (`N ≥ 1` steps) or `T + 2` (`N = 0`), and no frame event shares its frame. Illustration (not a run):
   `L = 16·256`, `S = 0`, `r = 256`, an event byte at frame 8 → frames 0–1 at `T + 1`, frame 8 at `T + 8`, the end at
   `T + 16`.
+- *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* `SUNIT_ScheduleModeEvents` run whole with the queue
+  (`sub_005416B0_EventQueueAt` and its pool) on a declared image, start frame 0, no sequence
+  ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family `sched`, 1 300 cases): the queued
+  list and `+0x44` equal E1's model in every case, every test and strictness but the queue's own `frame ≤ T` strictness
+  separated; `r = 0` (kind 1 at `T + 1`), the `0x90` bound, the four-way event switch, the `t = T` bump and the derived
+  frame numbers above (1 115 closed-form cases, 128 with an event past the last step, 104 with no step and an event)
+  are `[C]` as maps. A start frame other than 0 and the sequence branch stay `[I]`.
 - [I] **Callers** (6): the player starts for get-hit (`0x0057FE30`), block (`0x0057FDC0`), the skill modes
   (`sub_0057FE90_PlrModeStartSkillXY`, `sub_0057FEF0_PlrModeStartSkillUnit`) and death (`sub_00580EC0_PlayerDeath`),
   and `MonSetMode` for a scheduled monster mode. Each first cancels the unit's events 0 and 1
@@ -454,6 +468,10 @@ for (; f <= (unit->animFrame >> 8); f++) take(f);
   consecutive frames; at 0x100 or more each frame is taken once. (0x00623E58–0x00623E6E)
 - [I] `UNIT_AnimAtEnd`: in a sequence `+0x48 < 1`; else `+0x48 ≤ +0x44 + +0x4C`, i.e. the next advance would reach the
   length. The every-frame monster frame functions call it after advancing. (fn:UNIT_AnimAtEnd@0x006217C0)
+- *2026-11-16, plan 0066 S6e part 1 (`lane/n66l`):* `UNIT_AnimAtEnd`'s map (sequence `+0x48 ≤ 0`; else the `i16`
+  rate plus `+0x44`, a 32-bit add, signed `≥ +0x48`; a null unit fatal) is `[C]` by emulation
+  ([run:2026-11-16-sweep2-s6e](experiments.md#run2026-11-16-sweep2-s6e), family `atend`, 600 cases, every test and
+  strictness separated). Which frame functions call it stays as read.
 
 ### 9. Player modes
 
