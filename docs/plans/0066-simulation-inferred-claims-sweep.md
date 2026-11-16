@@ -1689,12 +1689,13 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   [quests/0001 § 21](../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p),
   [quests/0002 § 18](../findings/quests/0002-travel.md#18-plan-0066-batch-s3c-part-2-the-travel-tables-and-the-field-centre-2026-11-16-lanen66p).
   Every row's *Route* cell carries its dated S3c part 2 note, and README § 4's S3c row is updated.
-- **Raised 6:** progression 19, 179, 302; travel 21, 30; README 3. **Remainders raised 3:** progression 37, 316, 319,
+- **Raised 6** (5 after the Tier A review, which split 19): progression 19, 179, 302; travel 21, 30; README 3. **Remainders raised 3:** progression 37, 316, 319,
   so these rows are now raised whole.
 - **Raised in part 2**, with the remainders in the Route cells:
   - travel 32: the mode-0 operate's draw → a-run (H3e, the x-wpact5c activations);
   - travel 56: "on any level but 102 the handler moves no one" → d-none (the object is never placed).
-- **S3c whole:** raised 45, raised in part 6 (progression 104, 124, 159, 229; travel 32, 56), none contradicted.
+- **S3c whole:** raised 45, raised in part 6 (progression 104, 124, 159, 229; travel 32, 56), none contradicted. After the
+  Tier A review: raised 44, raised in part 7 (progression 19 added).
 - **Corrections and refinements:** travel 32's "its later change to mode 2 draws again" was already superseded by
   quests/0002 § 15 (event 1 writes mode 2 directly, no draw). The game record's read side gains
   `QUESTS_SendGameRecord`'s `SaveBytes` (progression 19). Both are in backlog
@@ -1704,7 +1705,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No class moved, so Phase 1 is 1 509, Phase 2 789 and blocked 328
   (README § 1).
 - **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.**
-  - progression whole: 156, 204, 973, 1546, 1587, 1590;
+  - progression whole: 204, 973, 1546, 1587, 1590; split: 156 (Tier A review);
   - travel whole: 264, 327; split: 332, 488;
   - README whole: 82.
 - **Judgment calls for the review:**
@@ -1723,3 +1724,44 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Review:** Tier B. The request
   [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s3b.md)
   is extended to S3b and S3c whole.
+
+### 2026-11-16 — S3b and S3c review (architect, Tier A, the audit of the fifth Tier B lane since `lane/n66m`): accept with fixes (2)
+
+- **Re-run** (no game, no Ghidra, under `systemd-run --user --scope -p MemoryMax=4G`): `quests_s3b.py check` over
+  `s3b-logs.lst` and `quests_s3b.py static` reproduce `check-s3b.txt` and `static-s3b.txt` byte for byte, and
+  `quests_s3c.py dataflow data part2` reproduces lines 1–405 of `check-s3c-p2.txt` (the rest is the `totals` section,
+  not re-run; the gate checks the totals). All kept manifests
+  pass (`manifest-s3b.sha256`, the 108-line inputs manifest from `workspace/logs/`, `manifest-s3c-p1.sha256`,
+  `manifest-s3c-p2.sha256`, the three dev manifests, none listing itself); the tool hashes named in the log entries
+  (`e8454b5a…`, `53242800…` at `76715dd9`, `37f80f75…`) match the committed revisions.
+- **Sites read** (objdump): `GameQuestSet` and `GameQuestGet` (0x00544720–0x0054479F: fatal exit when `[ctrl+0x8]` is 0,
+  then `SetState`/`GetState` on `[ctrl+0xC]`); `A3Q7_FirstJoin`'s `lea edx, [eax+0x1f]` / `push 0xd` / call at
+  0x005BD2EB–0x005BD2EE (row 229's correction holds); `FieldLoad`'s `sar ecx, 1` and store at 0x0066A344/0x0066A346;
+  the forced list's four compares at 0x00543B15–0x00543B40; `WaypointTravelCheck`'s `cmp bl, al` at 0x005495BC;
+  `A1Q6_CreditInLevel` tests w6 b0, b15 and level 0x25 before `SetKilled` at 0x00596302, and `AndarielDeath` w6 b0, b1
+  before 0x00596639 (the refinement's "tests b0 and b15, not b1" holds); `WaypointOperate` reads no position before
+  `WAYPOINT_Set` (its callees before 0x00584E7C are `UnitGetRoom`, `RoomGetLevelId`, `UNIT_GetPlayerData`,
+  `WAYPOINT_IndexFromLevel`), so travel row 30's "no proximity test of its own" stands. 13 anchors of the three
+  findings resolve to one `re/symbols.csv` row each; `GameQuestSet`'s raise has its logged role (518 writes, the
+  check's own test that none reached a player record).
+- **Fix (overclaim, 1): progression row 19 split.** The data-flow scan settles A6's write clause only. The rest of the
+  bullet ("both fatal before the first join", bits 13, 15 and w4 b11 as general rules, "sent to the clients after every
+  NPC message", 3 calls of `QUESTS_SendGameRecord`) is in no kept output. Row 19 is raised in part with that remainder
+  `[I]`, out of this plan; S3c is raised 44, raised in part 7; line 156 moves from the Phase 3 whole list to split
+  (inventory row, README § 4 and the part 2 entry corrected).
+- **Fix (overclaim, 1): row 179's scope.** "No code spawns class 377" rests on the immediates and the one numeric class
+  column; the spec line lacks the "a computed class is not excluded" caveat that line 1546 carries for 567. The row now
+  says so for Phase 3.
+- **Judgment calls.** S3b: (1) attribution by a unique (word, bit) or by the event: accepted. (2) refused kills' words
+  from the run records: accepted, the rows say so. (3) whole raises on one or few cases (5, 15, 72, 138): accepted;
+  each claim is a logged site and order, which a wrong reading would not match. (4)–(5) accepted. (6) `GameQuestSet` C:
+  accepted under review-fixes 14. S3c part 1: (1), (2), (4), (5) accepted. (3) the depth-2 "no quest reader" (rows
+  159, 314, 321): accepted as scoped, the scope being stated in the rows and in quests/0002 § 17. A full direct-call
+  closure is no better test: from `WaypointTravel` it reaches about 3 960 functions, quest readers among them through
+  `UnitTeleport` → pet release → `UnitKilled`, while the level-change event e3 is raised from `ClientRoomSync`
+  (0x00538182), not from the travel path. Phase 3 words these lines with the scope. Part 2: (1)–(6) accepted; (5)
+  matches R2's d-none rule.
+- **Audit:** neither fix is reject-grade: both are whole raises with an untested clause, fixed in place as at S3b
+  (special 43, 0038). No reject-grade miss.
+- **Ledger cell:** audit of lane/n66p: overclaim 2; no reject-grade miss (5th Tier B after the n66m audit; count
+  restarts).
