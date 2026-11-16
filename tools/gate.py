@@ -38,6 +38,10 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
            E18 docs/specs/quirks/README.md disagrees with the specs it indexes: `python3 -I tools/quirks.py
                check` (rules Q1-Q4 there; plan 0057, registered at the plan 0064 Phase 4 review), skipped
                when the index is absent
+           E19 an ```illustration block under docs/ (ADR-0034) that does not parse (six keys: id, tool, args,
+               seed, illustrates, caption), repeats an id, names no script in tools/, or has an `illustrates`
+               link that does not resolve: `python3 -I tools/site_build.py check` (registered at the
+               lane/site1 review)
            (a rule in DEMOTED is reported as a warning until the files it flags are fixed: plan 0053)
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
@@ -1366,6 +1370,7 @@ RULES = [
     ("E9", "mermaid blocks parse"),
     ("E17", "mermaid blocks draw, labels intact"),
     ("E18", "quirks index matches the specs (tools/quirks.py check)"),
+    ("E19", "illustration blocks parse and resolve (tools/site_build.py check)"),
     ("E10", "no tags, anchors or addresses in the wiki"),
     ("E11", "wiki pages based_on reviewed specs"),
     ("E12", "wiki sections link a spec"),
@@ -1451,6 +1456,7 @@ def run_gate(root, cache_root=None):
                             for n, body in mermaid_blocks(texts[rel])], cache_root or root, rep)
     check_mermaid_render(parsed, cache_root or root, rep)
     check_quirks(root, rep)
+    check_illustrations(root, rep)
     # W3: a symbol is cited when its name appears in some spec or finding
     # (one pass over the corpus: the names are [A-Za-z0-9_]+, so a word-set lookup equals the
     # bounded regex search; a name with another character falls back to the search)
@@ -1489,6 +1495,22 @@ def check_quirks(root, rep):
             rep.err("E18", QUIRKS_INDEX, int(lm.group(1)) + off if lm else 1, lm.group(2) if lm else rest)
     if not m or (out.returncode and not rep.errors.get("E18")):
         rep.err("E18", QUIRKS_INDEX, 1, f"tools/quirks.py check failed (exit {out.returncode}): "
+                f"{(out.stderr or out.stdout).strip()[-200:]}")
+
+
+def check_illustrations(root, rep):
+    """E19: run `tools/site_build.py check` on root's docs/ (about 0.2 s); each `ILLUSTRATION` line is one error."""
+    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "site_build.py")
+    out = subprocess.run([sys.executable, "-I", tool, "check", os.path.join(root, "docs")],
+                         capture_output=True, text=True)
+    m = re.search(r"^CHECK illustrations: (\d+) blocks", out.stdout, re.M)
+    rep.count("E19", int(m.group(1)) if m else 1)
+    for line in out.stdout.splitlines():
+        lm = re.match(r"ILLUSTRATION (\S+?):(\d+): (.*)", line)
+        if lm:
+            rep.err("E19", "docs/" + lm.group(1), int(lm.group(2)), lm.group(3))
+    if not m or (out.returncode and not rep.errors.get("E19")):
+        rep.err("E19", "tools/site_build.py", 1, f"site_build.py check failed (exit {out.returncode}): "
                 f"{(out.stderr or out.stdout).strip()[-200:]}")
 
 
