@@ -17,8 +17,10 @@ stay under workspace/ (anything else is refused). Outputs, all regenerable and n
 
 Steps: the first room; each room placed, in the order the replay model (tools/maze_replay.py, reading of
 docs/findings/drlg/0006-maze.md) creates them, with the door links the model adds; one step per special or
-theme re-assignment of existing rooms; then each room's LvlPrest Def and preset file (forced index, else
-seed lo % file count, as maze_render.py reads it) with its tiles drawn; the final composite. Rooms the
+theme re-assignment of existing rooms; then one step per room in conversion order (docs/specs/drlg/README.md
+step 9: the room list newest first; 9a the instance's level-seed draw, 9b a forced index, else the per-build
+rotation of MAZE_DEF_BASE < Def < base + 16, then step 5's level draws; maze_render.convert) with its LvlPrest Def,
+preset file and tiles drawn; the final composite. Rooms the
 model creates and frees again while probing (finder, sec. B) are not shown. The model stops before the
 placement shift (sec. G1, one translation of every room to the level's origin in the act), so the
 rectangles are drawn relative to the bounding box; the shift would not change the picture. The canvas is
@@ -52,12 +54,6 @@ def trace(root, level, seed):
         import maze_replay as M
     finally:
         sys.argv = saved
-    rows = list(csv.reader(open(os.path.join(excel, "lvlprest.txt"), encoding="latin-1"), delimiter="\t"))
-    h, lp = rows[0], {}
-    for row in rows[1:]:
-        if len(row) > 20 and row[h.index("Def")].strip().isdigit():
-            lp[int(row[h.index("Def")])] = (row[h.index("Name")], int(row[h.index("Files")] or 0),
-                                            [row[h.index("File%d" % i)] for i in range(1, 7)])
     if level not in M.MAZE:
         raise SystemExit("level %d is not in the maze set of lvlmaze.txt" % level)
     count = [0]
@@ -259,18 +255,17 @@ def trace(root, level, seed):
                         num[R] + 1, what, a_[0], a_[2] if a_[2] >= 0 else "none"), e[2], num[R])
     if carry and steps:
         steps[-1]["calc"] += carry
+    # README step 9: the conversion walks the room list the generator leaves, newest first (9a, 9b, then step 5)
+    conv, _s, _u = maze_render.convert(root, L.lt, (L.seed.lo, L.seed.hi),
+                                       [(R.x, R.y, R.w, R.h, R.d, R.idx) for R in L.rooms])
+    q_of = {R: (k, q) for k, (R, q) in enumerate(zip(L.rooms, conv))}
     rooms = []
     for R in final:
-        name, nf, files = lp[R.d]
-        live = [f for f in files[:max(nf, 1)] if f and f != "0"]
-        if R.idx >= 0 or not live:
-            k = max(R.idx, 0)
-            how = "forced index %d" % R.idx if R.idx >= 0 else "no file"
-        else:
-            k = R.seed.lo % len(live)
-            how = "room seed lo %#010x %% %d files = %d" % (R.seed.lo, len(live), k)
-        rooms.append(dict(rect=[R.x, R.y, R.w, R.h], d=R.d, name=name, how=how,
-                          file=live[k % len(live)] if live else None))
+        k, q = q_of[R]
+        how = ("forced index %d" % R.idx if R.idx != -1 else "rotation" if any(
+            "counter advances" in c for c in q["calc"]) else "level-seed draw") + ", File%d" % (q["idx"] + 1)
+        rooms.append(dict(rect=[R.x, R.y, R.w, R.h], d=R.d, name=q["name"], how=how, file=q["file"], order=k,
+                          draws=q["draws"], calc=q["calc"]))
     return steps, rooms, count[0]
 
 
@@ -409,14 +404,14 @@ def build(root, level, seed, scale):
         cv = bytearray(CW * CH)
         vis = sorted(st["rooms"])
         for i in vis:
-            if i < done:
+            if i in done:
                 continue
             pts = rect_pts(rooms[i]["rect"])
             fill_poly(cv, CW, IH, pts, C["fill"])
             for a in range(4):
                 line(cv, CW, IH, pts[a], pts[(a + 1) % 4], C["new"] if i == lead else C["edge"], 2)
         cells = []
-        for i in range(done):
+        for i in sorted(done):
             cells += per_room[i]
         cells.sort(key=lambda c: (c[2] != "floor", c[0] + c[1]))
         for gx, gy, _k, key, own in cells:
@@ -429,7 +424,7 @@ def build(root, level, seed, scale):
                     a, b = max(x, 0), min(x + len(run), CW)
                     if a < b:
                         cv[y * CW + a:y * CW + b] = run[a - x:b - x]
-        if lead is not None and lead < done:
+        if lead is not None and lead in done:
             pts = rect_pts(rooms[lead]["rect"])
             for a in range(4):
                 line(cv, CW, IH, pts[a], pts[(a + 1) % 4], C["new"], 2)
@@ -445,9 +440,9 @@ def build(root, level, seed, scale):
                 for xx in range(rw * ms + 1):
                     edge = yy in (0, rh * ms) or xx in (0, rw * ms)
                     cv[(ay + yy) * CW + ax + xx] = (C["new"] if i == lead else C["edge"]) if edge else (
-                        C["floor"] if i < done else C["fill"])
+                        C["floor"] if i in done else C["fill"])
         for i in vis:
-            if i < done:
+            if i in done:
                 for gx, gy, kind, _k, _o in per_room[i]:
                     if kind == "wall":
                         for yy in range(ms):
@@ -455,7 +450,7 @@ def build(root, level, seed, scale):
                             cv[o:o + ms] = bytes([C["wall"]]) * ms
         for lk in st["links"]:
             line(cv, CW, CH, mcenter(lk[0]), mcenter(lk[1]), C["link"], 2)
-        for qi, m, dest, fx, fy in (warps if done == len(rooms) and lead is None else ()):   # final frame only
+        for qi, m, dest, fx, fy in (warps if len(done) == len(rooms) and lead is None else ()):   # final frame only
             cx, cy = P2(fx, fy)
             dx, dy = tw * 3 // 2, th * 3 // 2
             pts = [(cx, cy - dy), (cx + dx, cy), (cx, cy + dy), (cx - dx, cy)]
@@ -484,23 +479,33 @@ def build(root, level, seed, scale):
     total_steps = len(steps) + n + 1
     frames, caps = [], []
     for st in steps:
-        frames.append(frame(len(frames), st, 0, st["new"], total_steps))
+        frames.append(frame(len(frames), st, set(), st["new"], total_steps))
         caps.append(dict(text=st["text"], calc=st["calc"]))
-    for i, q in enumerate(rooms):
-        txt = "Room %d: Def %d (%s), preset file %s (%s)." % (
-            i + 1, q["d"], q["name"], (q["file"] or "none").replace("\\", "/").split("/")[-1], q["how"])
-        frames.append(frame(len(frames), dict(text=txt, rng=total, rooms=range(n), links=[]), i + 1, i, total_steps))
+    conv_total, done = 0, set()
+    for i in sorted(range(n), key=lambda j: rooms[j]["order"]):     # README step 9: conversion order, newest first
+        q = rooms[i]
+        conv_total += q["draws"]
+        done.add(i)
+        txt = "Room %d (converted %d of %d, newest first): Def %d (%s), preset file %s (%s)." % (
+            i + 1, q["order"] + 1, n, q["d"], q["name"], (q["file"] or "none").replace("\\", "/").split("/")[-1],
+            q["how"])
+        frames.append(frame(len(frames), dict(text=txt, rng=total + conv_total, rooms=range(n), links=[]), set(done), i,
+                            total_steps))
         caps.append(dict(text=txt, calc=[
+            "Level draws in this step: %d (all on the level seed); %d so far." % (q["draws"], total + conv_total),
+            "Conversion (spec drlg/README.md step 9): after the generator, each maze room in the level's room list, "
+            "newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
             "Def %d is the room's LvlPrest row (%s); its File1..6 columns list the preset maps (DS1) it may use."
-            % (q["d"], q["name"]),
-            "File choice: %s." % q["how"],
+            % (q["d"], q["name"])] + q["calc"] + [
             "The tiles drawn are that DS1's floor and wall cells, looked up in the level type's tile files (DT1)."] + [
             "This preset holds a warp: wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s); "
             "marked in cyan on the final frame (drlg/warps.md, warp slot cell)." % (m, m, dest, lv.get(dest, {}).get("name", "?"))
             for qi, m, dest, _fx, _fy in warps if qi == i]))
-    txt = ("Final composite: %d rooms after %d RNG draws. Drawn relative to the layout's corner; the game "
-           "then moves the whole level to its place in the act (not drawn, shape unchanged)." % (n, total))
-    frames.append(frame(len(frames), dict(text=txt, rng=total, rooms=range(n), links=[]), n, None, total_steps))
+    txt = ("Final composite: %d rooms after %d RNG draws (%d in the generator, %d in the conversion). Drawn relative "
+           "to the layout's corner; the game then moves the whole level to its place in the act (not drawn, shape "
+           "unchanged)." % (n, total + conv_total, total, conv_total))
+    frames.append(frame(len(frames), dict(text=txt, rng=total + conv_total, rooms=range(n), links=[]), set(range(n)),
+                        None, total_steps))
     wl = ["Warp (cyan mark): room %d, DS1 wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s) "
           "(drlg/warps.md, warp slot cell). %s is by level order: the lower id is taken as the way in. The act's "
           "link lists can override Vis at run time (warps.md § C); not modelled here."
@@ -518,8 +523,8 @@ def build(root, level, seed, scale):
 
 MAZE_HELP = """<li>Rooms are LvlMaze SizeX by SizeY tile blocks. A room is placed flush against a parent room on one of four sides:
 0 west, 1 north, 2 east, 3 south.</li>
-<li>Two random streams are used: the level seed (which room to grow from, each new room's seed) and every room's own
-seed (which side to grow on, merge rolls, and at the end which preset file the room uses).</li>
+<li>Two random streams are used: the level seed (which room to grow from, each new room's seed, and at the end
+which preset file each room uses) and every room's own seed (which side to grow on, merge rolls).</li>
 <li>A draw advances a seed (lo, hi) as lo*0x6AC690C5 + hi (64-bit) and returns the new lo. "lo % n" picks one of n.</li>
 <li>Blue outline: placed room; yellow: this step's room; green line: a door between two rooms;
 cyan diamond: a warp (entry or exit stairs) from the preset map, labelled with the level it leads to.</li>
