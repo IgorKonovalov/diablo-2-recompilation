@@ -755,6 +755,102 @@ The counts come from `check.txt`.
   collision walkers and nine imports. One tool read these routes, so they are `[I]`. They place part 2's rows, as in
   S2ae part 1. (run:2026-11-16-sweep2-s1ne)
 
+### 15. Plan 0066 batch S1ne part 2: the walkers, `MonAiUseSeqSkill`, the parameter list and the notation (2026-11-16, `lane/n66ne`)
+
+Twenty-five functions run under EmuBoundary on § 14's declared image (`tools/ai_s1ne2_emu.py`; record
+run:2026-11-16-sweep2-s1ne-p2, `check.txt`), 120 cases a family, 3 000 in all, 0 mismatches, 0 unaccounted traced
+accesses, and every separated control `passed` 0. Two observed boundaries (ADR-0021): `MonAiMove` 0x005DEB60 and
+`MonSetMode` 0x005A7C20, whose routes reach the pool and `PathPlan`'s import (`routes.txt`). At a `MonAiMove` stop the
+case compares `ECX`, `EDX` and the six stack arguments; at a `MonSetMode` stop it compares the three stack arguments
+and the 0x20-byte command block they point to (read from the stack dump). Every case also compares the return address
+of the call, the unit seed, the path's `+0x90..+0x93` word, the skill list's `+0x10` and the override words
+`MonPathCtl+0x18..+0x20`. Run whole: `MonCmdInit`, `UNIT_SetUsedSkill`, `MonModeEveryFrame` (with the mode table
+0x006E23D0, 16 rows `{always, never, by MonStats2 +0x104 bit}`; modes 2, 13, 14 and 15 are always every-frame),
+`PathSetStopDist`, `PathGetX/Y`, `AiDistUnits`, `MonAiPathOverride`, `AiPathOverrideSet`, the override clear
+0x005A61F0, `UNIT_HasState`, `RNG_RangeB`, `SkillFindByOwner`, and `MonAiWanderRing` to its own `MonAiMove` call.
+Nothing after either boundary is claimed: what `MonAiMove` does on a refusal (B6), and the cancel that
+`MonAiWalkToPointOrStop` makes after a refused `MonSetMode`, stay `[I]`.
+
+- [C] **The `MonAiMove` walkers** (machinery B7). `MonAiWalkToUnit(t, f)` is `MonAiMove(t, 2, 0, 0, 1, f)`,
+  `MonAiRunToUnitFlags(t, f)` is `(t, 15, 0, 0, 1, f)`, `MonAiRunToUnit(t)` is `(t, 15, 0, 0, 1, 0)`, and
+  `MonAiWalkToUnitType13(t, f)` is `AiPathOverrideSet(type 13)` then `(t, 2, 0, 0, 1, f)`. `MonAiWalkToUnitStop(t, n)`
+  and `MonAiRunToUnitStop(t, n)` pass `(t, 2 or 15, 0, 0, n', 0)`. **Refinement:** `n'` is the whole argument dword
+  with only its low byte replaced by 1 when that byte is 0 (`cmp byte; mov byte`, 0x005DEF83): 31 and 28 cases keep
+  non-zero high bytes. Controls: `stop byte 0` 106 and 107. `MonAiWalkToUnitType13` with no MonPathCtl stores type 13
+  through `ECX` 0, as § 14's override pair does. (fn:sub_005DEC80_MonAiWalkToUnit@0x005DEC80,
+  fn:sub_005DEF80_MonAiWalkToUnitStop@0x005DEF80, fn:sub_005DED40_MonAiWalkToUnitType13@0x005DED40,
+  fn:sub_005DEFB0_MonAiRunToUnitStop@0x005DEFB0, run:2026-11-16-sweep2-s1ne-p2)
+- [C] **The `MonSetMode` walkers** (B7). `MonAiWalkToUnitOrZero(t)`, `MonAiWalkToPoint(x, y)`,
+  `MonAiWalkToPointOrStop(x, y)` and `MonAiWalkToPointCmd(x, y)` call `PathSetStopDist(path, 1)` (`…Cmd`: 0, which also
+  stores 0), then `MonCmdInit(U, 2, cmd)`, then put the unit (`WalkZ`, when non-zero; 0 leaves the point 0, 0) or the
+  point into the command and call `MonSetMode(G, cmd, 1)`. `MonAiRunToPoint` does the same in mode 15, or in mode 2
+  after clearing the override words (0x005A61F0) when the unit has state 60 (45 cases). The command block is
+  `{mode, unit, target, x, y, +0x15 = 101 or 100, the rest 0}`; every walker's mode here is always every-frame (101).
+  (fn:sub_005DECA0_MonAiWalkToUnitOrZero@0x005DECA0, fn:sub_005DED90_MonAiWalkToPoint@0x005DED90,
+  fn:sub_005DEDE0_MonAiRunToPoint@0x005DEDE0, fn:sub_005DEE50_MonAiWalkToPointOrStop@0x005DEE50,
+  fn:sub_005DEF30_MonAiWalkToPointCmd@0x005DEF30, run:2026-11-16-sweep2-s1ne-p2)
+- [C] **`MonAiStepAway(other, d, flag)`** (B9) to its `MonAiMove` call: 0 with no move when the unit or `other` is null
+  (20 cases). The axis signs are **signed** compares (control `sx unsigned` separates 13 cases, `sy unsigned` 11), and
+  the point is `u + (d & 0xFF)·s` in 32 bits. With `d & 0xFF > 5` it calls `MonAiPathOverride(U, 0, 0, d)` (74). Then
+  `MonAiMove(0, 2, x', y', 1, flag ? 4 : 0)`, and the seed is unchanged. (fn:sub_005DEFE0_MonAiStepAway@0x005DEFE0,
+  0x005DF0BB, run:2026-11-16-sweep2-s1ne-p2)
+- [C] **`MonAiStepAwayXY(o, n, f)`** (B10): the signs are **unsigned** (`jbe`/`jae`; controls `sx signed` 12, `sy
+  signed` 19), there is no null test of `o`, and with `n & 0xFF > 5` it calls `AiPathOverrideSet(ctl; 0, 0, n)` (90), then
+  `MonAiMove(0, 15, ux + (n & 0xFF)·sx, uy + (n & 0xFF)·sy, 1, f ? 4 : 0)` with no seed step.
+  (fn:sub_005DF140_MonAiStepAwayXY@0x005DF140, 0x005DF215, run:2026-11-16-sweep2-s1ne-p2)
+- [C] **`T56(target, byte, flag)`** (B11, F) past its override: one step of `U`'s seed, override type 6 when the new
+  low byte is `≥ 0x80` and 5 below (the strictness separated in 16 cases), `MonAiPathOverride(U, type, 0, byte)`, then
+  `MonAiMove(target, 2, 0, 0, 1, flag ? 4 : 0)` with the seed one step on (machinery F: no draw after the first step).
+  (fn:sub_005DF7D0_MonAiWalkToUnitType56@0x005DF7D0, 0x005DF834, run:2026-11-16-sweep2-s1ne-p2)
+- [C] **The ring walkers** (B8b, F). `MonAiWanderRingDirect(-, r)`, `MonAiWanderNearUnit(other, r)` and
+  `MonAiRunNearUnit(other, r)` share `Ring`'s draw block on `U`'s seed, with `r & 0xFF`: a step; on an odd low word
+  `dx = r & 0xFF` and `dy = RangeB(r & 0xFF)`, on an even one the other way round; a step that negates `dx` on an odd
+  low word; a step that negates `dy` on an odd low word. That is 4 steps, or 3 when `r & 0xFF` is 0 (`RangeB` takes no
+  step; 46 cases). Control `parity` separates 104, 98 and 112. **Refinements to B8b:** `WanderRingDirect` centres the
+  point on the unit itself, and its stack argument `+0x08` is not read; it does not go through `MonAiMove` but calls
+  `PathSetStopDist(path, 1)`, `MonCmdInit(U, 2)` and `MonSetMode(G, cmd, 1)`. `WanderNearUnit` centres on `other` the
+  same way, and with a null `other` it is `MonAiWanderRing(2)` (18 cases, run whole to that function's `MonAiMove`).
+  `RunNearUnit` has no null test, takes mode 15, or mode 2 with the override words cleared when the unit has state 60
+  (40 cases), and that state test comes after the draws. (fn:sub_005DF400_MonAiWanderRingDirect@0x005DF400,
+  fn:sub_005DF530_MonAiWanderNearUnit@0x005DF530, fn:sub_005DF680_MonAiRunNearUnit@0x005DF680,
+  fn:sub_005DE200_MonAiWanderRing@0x005DE200, run:2026-11-16-sweep2-s1ne-p2)
+- [C] **`Toward(t, max, ring)` → `MonAiMoveToUnitDist(t, 2, max, ring)`** (B12) as written, to `MonSetMode`: the
+  signed `D < ring`, `|D − ring|` by `jns; neg`, the signed `min` with `max`, `s = max(dx + dy, n)`, the truncating
+  divisions and the round-up loop (no step 42 cases, one 45, two or more 17 in `movedist`; the loop's strictness
+  separated in 46), the signed axis signs, and `MonCmdInit` before `PathSetStopDist`. `MonAiMoveToUnitDist` with a
+  mode of 16 or more reaches `MonCmdInit`'s fatal entry (12 cases); with a mode the table leaves to MonStats2 the
+  block's `+0x15` is 100 or 101 by the `+0x104` bit (58 and 50 cases). The strictness of `D < ring`, `n > max` and
+  `s < n` is not separated: at equality both readings give the same point, so no case can tell them apart. 9 cases
+  were drawn again because a wrapped product made the round-up loop run past 100 000 steps (counted in `check.txt`).
+  (fn:sub_005DE6D0_MonAiWalkTowardUnit@0x005DE6D0, fn:sub_005DE4E0_MonAiMoveToUnitDist@0x005DE4E0,
+  run:2026-11-16-sweep2-s1ne-p2)
+- [C] **`MonAiUseSeqSkill(skill, target, x, y)`** (B4) to `MonSetMode`: returns 0 with nothing done when `skill < 0`
+  or `skill ≥` the Skills count, both signed (57 cases; controls 87, 96 and strictness 12). Otherwise
+  `MonCmdInit(U, 14)`, `UNIT_SetUsedSkill(U, SkillFindByOwner(U, skill, −1))` (the found node, or 0 when none: 6 and
+  57 cases), `PathSetStopDist(path, 1)`, the target and point into the command, and `MonSetMode(G, cmd, 0)`.
+  **Refinement:** the flag is 0, as in B3's `MonAiUseSkill`, not B5's 1. (fn:sub_005DE000_MonAiUseSeqSkill@0x005DE000,
+  run:2026-11-16-sweep2-s1ne-p2)
+- [C] **`AiParamsHead`** returns `AiCtl+0x20` of a monster with MonsterData and an AI control, else 0 (98 and 22).
+  **`AiParamsFind(unit, kind; makeHead)`** returns the first record of that kind **starting from the head's next
+  record and ending with the head itself**, and with a non-zero `makeHead` stores it as the head. **Correction to
+  machinery E4** ("the first record of that kind from the head"): the head is examined last; 7 cases have the kind at
+  the head and at another record, and return the other (control `head first`). With an empty list or no control it
+  returns 0. `AiParamsAlloc`, `Push` and `Pop` reach the pool (0x0058ECBD, 0x0058ED70) and were not run.
+  (fn:sub_0058EE80_AiParamsHead@0x0058EE80, fn:sub_0058EEF0_AiParamsFind@0x0058EEF0, 0x0058EF20,
+  run:2026-11-16-sweep2-s1ne-p2)
+- [C] **The notation's maps.** `RNG_Range` and `RNG_RangeB` give 0 with no step for a signed `n < 1`, else one step
+  and `low & (n − 1)` for a power of two or `low mod n` (unsigned `div`) otherwise; `RNG_RangePow2` steps and returns
+  `low & (n − 1)` with no test (120 cases each). The worked example's step (new low word 1 234 567, `mod 100` = 67)
+  runs in 22 of these cases, and in 4 `AiBloodLord` cases with `aip1` 50, which go to `Idle(aip4)` at 0x005E37CF with
+  the seed one step on (`check-bloodx.txt`). The inline `D100()` and `chance(K)` of the thinks are checked over the
+  kept run:2026-11-03-ai-cat-emu-9 outputs (`catcount.txt`): taking the draw as a signed remainder changes the
+  prediction in 553 cases, taking the compare with `aip` unsigned changes it in 85 (the `aip` cells there include −1
+  and −3), and the emulator matches none of them. (fn:RNG_Range@0x0045C390, fn:RNG_RangeB@0x0045C3E0,
+  fn:RNG_RangePow2@0x00472210, run:2026-11-16-sweep2-s1ne-p2, run:2026-11-03-ai-cat-emu-9)
+- [C] **Row 125's UseSkill** (machinery reimplementation note, 0x005E3799): in 46 `bloodx` cases with a negative i16
+  Skill1 and both chances taken, the call is `MonAiUseSkill(5, Skill1, t, 0, 0)` with Skill1 **sign-extended**
+  (`movsx`, 0x005E378C) and no sign test. (fn:sub_005E36F0_AiBloodLord@0x005E36F0, run:2026-11-16-sweep2-s1ne-p2)
+
 ## Data touched
 
 - tbl:MonStats.txt:AI (`+0x1E`), tbl:MonStats.txt:aidel (`+0x4F`), tbl:MonStats.txt:aidist (`+0x52`),

@@ -2069,3 +2069,68 @@ Plan 0066 Phase 1, batch S1m (`lane/n66m1`, reverser-static). No game, no Ghidra
     and 2 champion corpses are taken with `uniquesToo` 0.
 - **Not covered:** every path past `UnitQueueEvent`; `SUNIT_SetMode` with a mode change (the anim chain to `wsprintfA`);
   `UNIT_CancelEvents`' unlink path; `UNIT_GetSizeX` of an item; the think words that fill the callbacks' blocks.
+
+## run:2026-11-16-sweep2-s1ne-p2
+
+- **Question:** (plan 0066 Phase 1, batch S1ne part 2) Do the monsters/ai walkers, `MonAiUseSeqSkill`,
+  `AiParamsHead`/`Find` and the three RNG range functions map their declared image to their return or to the arguments
+  (and, for `MonSetMode`, the command block) of their observed boundary call as machinery B4, B7–B12, E4, F and the
+  Notation state them (at `b5999f5e`)? Do the inline `D100()` and `chance(K)` of the kept cat-emu-9 cases separate
+  the notation's unsigned remainder and signed compare? Does row 125 pass a negative Skill1 to `UseSkill` as it is?
+  Ruling R2 applies.
+- **Setup:** as [run:2026-11-16-sweep2-s1ne](#run2026-11-16-sweep2-s1ne): EmuBoundary (unchanged), project copy
+  `workspace/ghidra-n66ne`, heap 3 GB, each headless run inside `systemd-run --user --scope -p MemoryMax=4G`. No wine,
+  no slot. New tool `tools/ai_s1ne2_emu.py` (`f080a7ff…`). It imports `tools/ai_s1ne_emu.py` and `tools/ai_s1e_emu.py`
+  unchanged (their image, `W`, `E` and callee models) and draws from `random.Random("n66ne2-<family>")`: 25 families
+  × 120 cases = 3 000. Image constants read unwritten: `g_BitMask32`, the `UNIT_GetSizeX` jump table, and
+  `MonModeEveryFrame`'s mode table 0x006E23D0 (48 dwords, transcribed from `objdump -s` of `.rdata` into the tool).
+  Guards as part 1. Observe: `MonAiMove` 0x005DEB60 and `MonSetMode` 0x005A7C20. Each case dumps the 0x200 bytes
+  below the entry `ESP`, from which the checker takes the command block `MonSetMode`'s second argument points to.
+  The cases with no MonPathCtl declare 0x00–0x3F as case memory, as part 1. A second case file, `bloodx` (60 cases),
+  is `tools/ai_cat_emu9.py`'s row-125 case writer with the seed, the melee word, the `aip` block and Skill1 rewritten
+  (cases 0–3 the machinery worked example's seed `(0, 1 234 567)` with `aip1` 50; 8–59 both chances at 100, Skill1
+  mostly a negative i16), checked by that tool's own model and `matches`. `catcount` re-runs cat-emu-9's models over
+  its kept outputs (`workspace/logs/r52i/emu/*.out`, `tools/ai_cat_emu9.py` `70a14f85…`, unchanged) with the inline
+  draw taken as a signed remainder, and separately with the draw-against-`aip` compares taken unsigned.
+- **Procedure** (from the worktree root; `D=workspace/logs/n66ne/s1ne/run2`):
+  ```
+  python3 -I tools/ai_s1ne2_emu.py cases --dir $D
+  python3 -I tools/ai_s1ne2_emu.py bloodx-cases --dir $D
+  for f in s1ne2 bloodx; do
+    GHIDRA_PROJ_DIR=workspace/ghidra-n66ne GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -q -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/ai_s1ne2_emu.py check --dir $D > $D/check.txt
+  python3 -I tools/ai_s1ne2_emu.py bloodx-check --dir $D > $D/check-bloodx.txt
+  python3 -I tools/ai_s1ne2_emu.py catcount > $D/catcount.txt
+  python3 -I tools/ai_s1ne2_emu.py manifest --dir $D --write
+  ```
+- **Outputs:** `$D/manifest.sha256` (`72300317…`, 19 lines: `check.txt` `e4b67f9a…`, `check-bloodx.txt` `0a915314…`,
+  `catcount.txt` `93e9ced4…`, `s1ne2.out` `7f5cfddf…`, `s1ne2.cases` `55905d58…`, `bloodx.out` `515b9095…`,
+  `bloodx.cases` `74ab5b1f…`, the memory specs, the stderr logs, `tool.sha256` and the seven images). `sha256sum -c
+  manifest.sha256` passes from `$D`; `tool.sha256` (the two new-and-imported tools, `ai_s1e_emu.py`, `ai_cat_emu9.py`,
+  EmuBoundary and `ghidra.sh`) passes from the worktree root. `cases` and `bloodx-cases` regenerate their files byte
+  for byte. The run before the `t56` low-byte cases (all 3 000 matched) was overwritten by the kept run in place and
+  is not cited.
+- **Observed** (`check.txt`, `check-bloodx.txt`, `catcount.txt`):
+  ```
+  S1NE2 <25 families> cases=120 match=120 bad=0 passed=0                               (each)
+  obs: 2 311 (MonAiMove or MonSetMode, at the expected return address); ret 677; fatal 12 (movedist, mode >= 16)
+  unseparated: `stop 1..19` where only PathSetStopDist(path, 1) runs (both readings store 0);
+               `D<ring~ n>max~ s<n~` in toward and movedist (equal values give the same point)
+  S1NE2 traced unaccounted: 0;  redrawn: movedist 4, toward 5;  total cases=3000 match=3000 result=ok
+  BLOODX cases=60 match=60 worked_example_idle_after_one_step=4 useskill_negative_skill1=46 mode5_skill_sign_extended=46
+  CAT9 total unsigned_cmp_separating=85 passed=0 signed_draw_separating=553 passed=0
+  ```
+- **Conclusion:** [ai/0001 § 15](0001-machinery.md#15-plan-0066-batch-s1ne-part-2-the-walkers-monaiuseseqskill-the-parameter-list-and-the-notation-2026-11-16-lanen66ne):
+  - the `MonAiMove` and `MonSetMode` walkers of B7, `StepAway`, `StepAwayXY`, `T56`, the three ring walkers, `Toward`
+    and `MonAiUseSeqSkill` hold to their boundary, with refinements (the stop word's high bytes, `WanderRingDirect`
+    centred on the unit and going straight to `MonSetMode`, `WanderNearUnit`'s null-other `Ring(2)`, `RunNearUnit`'s
+    state-60 test after the draws, `UseSeqSkill`'s flag 0);
+  - `AiParamsHead` holds; `AiParamsFind` examines the head last (a correction to E4); Alloc, Push and Pop not run;
+  - the notation's `Range`, `RangeB`, `Pow2`, the unsigned `D100()` and the signed `chance(K)` compare, and the
+    worked example;
+  - row 125's UseSkill takes mode 5 and Skill1 sign-extended, with no sign test.
+- **Not covered:** `MonAiMove` and `MonSetMode` and everything after them; `AiParamsAlloc`/`Push`/`Pop`;
+  `AiParamsFind` on a list that is not circular; the target search, `MonAiInit`, `MonAiPreChecks`, `MonSpcWalkCheck`
+  and the hand maps (S1ne part 3).
