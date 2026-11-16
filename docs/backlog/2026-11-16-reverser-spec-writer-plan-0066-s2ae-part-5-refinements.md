@@ -21,7 +21,11 @@ anchors in
    **cleared** by a `TargetCorpse` skill, **kept** otherwise. Every branch past the `TargetableOnly` tests returns 1.
    "Cleared" is `UnitSetPathTargetUnit(unit, 0)`: the caster's path `+0x58` ← 0, and the fatal path for a caster not
    of type 0, 1 or 3. The code does not say what bit 1 means; the "dead" name should not survive unless another
-   finding gives it.
+   finding gives it. *(Tier A review, 2026-11-16: scope confirmed against 0x0056CCF0–0x0056CD43; the contradiction
+   is D2's clear rule only, its first two clauses stand with items 2 and 3's refinements. No finding gives the name:
+   skills/0003 § `TgtPlaceCheck`'s "dead" for `MonSkillTargetOk`, which requires the bit **set**, is marked there as
+   a name, and the table doc's copy is routed to the archivist. The spec's other uses of `+0xC4` (items/tc's bit
+   17) are not this bit.)*
 2. **D2, the `TargetableOnly` tests:** three, in order: `UnitsHostile(game, unit, target)`, then `SkillPetTest`
    (the row's `+7` & 2, and the target a monster whose owner record names type 0 and the caster's guid), then
    `SkillAllyTest` (a player caster, the row's `+7` & 4, a player target or a monster owned by a player, and equal

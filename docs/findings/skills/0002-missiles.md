@@ -1034,17 +1034,17 @@ Part 2 of the batch. The claims are maps of the named functions on declared inpu
   fn:SKILLS_GetSkillLevel@0x006442A0, run:2026-11-16-sweep2-s2ae2)
 - [C] *m47 (D6).* `sub_005A8730_CollideUnitFilter` (ESI candidate, EDI owner, EBX the Missiles record; game, missile;
   `ret 8`) returns 0 for a null candidate, or one whose `+0xC4` lacks bit 3 or bit 2 [`f_bit3` 1 555, `f_bit2` 1 568];
-  for a record with byte `+0x188` non-zero, a candidate in state 86 [`f_nexthit` 300, `f_st86` 744]; a candidate
-  `MISSDATA_IsLastHit` names [`f_lasthit` 1 431, `lh_match` 151]; and, **when the owner is not null** [`f_owner` 365],
+  for a record with byte `+0x188` non-zero, a candidate in state 86 [`f_nexthit` 261, `f_st86` 762]; a candidate
+  `MISSDATA_IsLastHit` names [`f_lasthit` 1 431, `lh_match` 173]; and, **when the owner is not null** [`f_owner` 365],
   a candidate that `sub_00554200_UnitsHostile(owner, candidate)` calls not hostile while byte `+0x187` is 0
-  [`f_hostile` 688, `f_friend` 650]; else 1. **Refinements:** with no owner the friend test is skipped; an owner that is
+  [`f_hostile` 743, `f_friend` 733]; else 1. **Refinements:** with no owner the friend test is skipped; an owner that is
   the candidate counts as not hostile [`h_same` 383]. `MISSDATA_IsLastHit(missile, candidate)` needs a type-3 missile
   whose Missiles row has bit 0 of `+4`, missile data at `+0x14`, and data `+0x18`/`+0x1C` equal to the candidate's
   type and `+0x0C`. `UnitsHostile` (on these inputs: monster owners whose `MonsterOwner` chain ends in 0, no type-3
   owner with `+0xC8` bit 10) gives, for two players, `PlayerPairFlags(owner, candidate, 8)`: the `+4` word of the first
   node of the owner's player-data `+0x38` list (next at `+0x10`) whose `+0` is the candidate's `+0x0C`, masked with 8,
   or 0 [`p_id` 16, `spec_any_flag` (any non-zero word) 5]; otherwise hostile unless `AlignSame02(owner, candidate)`
-  [`h_align` 608], which is 1 when both `UnitAlignGet` values are 0 or both 2. `UnitAlignGet` is 0 with no stat list,
+  [`h_align` 632], which is 1 when both `UnitAlignGet` values are 0 or both 2. `UnitAlignGet` is 0 with no stat list,
   2 for a type above 1 (unsigned), else stat 172 of the first list in the `+0x3C`, then `+0x40` chain (next at `+0x2C`)
   whose `+0x14` is 0x69, and 0 when there is none or the list's flag bit 31 is clear.
   (fn:sub_005A8730_CollideUnitFilter@0x005A8730, fn:MISSDATA_IsLastHit@0x0064A470,
@@ -1053,7 +1053,7 @@ Part 2 of the batch. The claims are maps of the named functions on declared inpu
 - [C] *m40, m41, m42, m46, m45 (the collide-type filters).* With ECX the candidate and EDX a context of four words
   (game, missile, owner, record), each returns 0 for a null context or record [`w_ctx` 134, 88, 219] or a null
   candidate, then: `sub_005A87F0_CollidePlayerOrAlly` passes a type-0 candidate, and a type-1 candidate whose
-  `UnitAlignGet` is 2, to the filter, any other 0 [`w_player` 431, `w_mon` 191, `w_align2` 147];
+  `UnitAlignGet` is 2, to the filter, any other 0 [`w_player` 431, `w_mon` 191, `w_align2` 162];
   `sub_005A87B0_CollideMonster` a type-1 candidate only [`w_mon` 337]; `sub_005A8850_CollideUnit` a signed type 0 or 1
   [`w_ge0` 271, `w_ge0~` 105, `w_le1` 415, `w_le1~` 96]; each returns the filter's answer as 0 or 1.
   `sub_005A8890_CollideMissile` (ECX only) returns 1 for a type-3 unit whose signed class lies in the Missiles count
@@ -1089,7 +1089,9 @@ Part 3 of the batch. The emulated claims are maps of the named functions on decl
   read only at 0x005AE370, loaded through at 0x005AE373 (the mask pushed to 0x0064D9B0); the only backward branch,
   0x005AE3BF, goes to 0x005AE361, after the write. The two frame addresses that leave the function are `[ebp-0x1C]`
   (to 0x00648F40, which writes one dword there: `static.txt` `pathlist`) and `[ebp-0x34]` (the filters' four-word
-  context, § 18). (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0, 0x005AE30B, 0x005AE355,
+  context, § 18). *Review 2026-11-16:* a dword scan of every section at every byte offset finds no other value
+  inside the table's 72 bytes: four in `.text` (the four operands), none in `.rdata`, `.data` or `.rsrc`.
+  (fn:sub_005AE1F0_MissileMoveCollide@0x005AE1F0, 0x005AE30B, 0x005AE355,
   data:g_MissileCollideTypes@0x0073C720, run:2026-11-16-sweep2-s2ae3)
 - [C] *m73 (G1 table, grim wards).* Hit function 27 (0x005ABA00) returns 1 and pops one argument (`mov eax, 1;
   ret 4`), whatever `ECX`, `EDX` and the argument hold [`spec_ret0` 300]. (0x005ABA00, run:2026-11-16-sweep2-s2ae3)
@@ -1371,7 +1373,7 @@ case (ADR-0021): what the callee does is past the claim.
   0x005C0B50 ← 0x005C35C0; `ApplyDamage` the free at 0x005C0CDD via `UNIT_DispatchEvent`; `UNIT_AddEvent` the
   allocation at 0x005C0AF2; `UnitSetStat` 0x0040B4B0 at 0x00624E73 when the list grows), so the remainders that lie
   there go to b (ruling R2), except handler 18's write, which a declared stat 6 keeps off the allocator (c-emu).
-- [C] *The open routes read (part 6 triage).* Each of the following was read in `static.txt` (objdump, the run's
+- [I] *The open routes read (part 6 triage).* Each of the following was read in `static.txt` (objdump, the run's
   revision) against `run5/sites.txt`; the class follows ruling R2 (ADR-0029) on the actual route (run:2026-11-16-sweep2-s2ae6):
   - do 146 (d182, d184, spec P2): the re-seed `RNG_SeedInit` at 0x005C8688 and the `RNG_Range(1 000 000)` at 0x005C8694
     come after the unconditional call 0x005C8654 → `0x005417D0`, which reaches `EventBlockNew` 0x00540BB0 (at 0x00540C56
@@ -1584,7 +1586,10 @@ MonStats image is loaded (the data table's `+0xA78` is 0). Bracketed counts are 
   0)` and `UnitAddStat(summon, 19, row[d + 3(x + 2)], 0)` follow, in that order, with the raw cells (the transposed
   layout, `spec_cells`, 4 011), and the function returns 1. The summon is declared at `+0x00` (the setter's player
   test) and `+0x5C` only and no MonStats image exists: no read of its class, its MonStats record or `noRatio` (0
-  unaccounted reads). (fn:sub_005C49E0_SummonSetLevel@0x005C49E0, 0x005C4A02–0x005C4A2E, 0x005C4A40–0x005C4AAE,
+  unaccounted reads). The function's own memory operands (objdump 0x005C49E0–0x005C4AEF, review 2026-11-16) are the
+  data table's `+0xB70`/`+0xB74`, the game's `+0x6A`, `+0x6D`, `+0x74` and the MonLvl row; its calls are
+  `STATS_GetUnitStat` on the owner, `UnitSetStat` and `UnitAddStat` (0x00625480, 0x00627260, 0x006272B0).
+  (fn:sub_005C49E0_SummonSetLevel@0x005C49E0, 0x005C4A02–0x005C4A2E, 0x005C4A40–0x005C4AAE,
   0x005C4AC6, 0x005C4ADF, run:2026-11-16-sweep2-s2ae9)
 - [C] *d129 (dispatch K 25), `sub_005C87A0_StatEv25CycloneArmor(unit, –, packet, skill, –)`, to its boundaries*
   (`h25`, 8 000 cases; 312 return 1, 2 409 return 0). A null unit or packet returns 0 [`u_nz` 5 677, `pk_nz` 5 647];

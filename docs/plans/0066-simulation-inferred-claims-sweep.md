@@ -3973,3 +3973,46 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (table checks).
 - **Review:** Tier B requested by
   [backlog](../backlog/2026-11-16-reverser-architect-plan-0066-s4e-tier-b-review.md).
+
+### 2026-11-16 — Phase 1, batch S2ae Tier A audit (architect, `lane/n66sa`): accept with fixes (6)
+
+- **Merge.** `main` `3e073e94` (S4e) merged first at `880e03f7`: this log kept both sides; inventory README § 1 (All,
+  By phase) recomputed from the 29 files (`tools/quests_s3c.py totals`, `bad=0`): a-logs 623, a-run 334, b 517, c 389,
+  c-emu 435, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 447, Phase 2 851.
+- **Reproduction.** All nine run manifests pass from their directories. `check` re-run from the committed tools for
+  `run`, `run4`, `run5`, `run8` and `run9`: byte-identical to the kept `check.txt`. The nine last lines sum to the
+  request's totals (107 900 cases, 1 024 stops, 912 controls, 96 unseparated). Every bracketed control count in
+  skills/0002 §§ 17–25 was compared by script with its run's `check.txt` (439 counts, `spec_*` "fails" counts
+  included): 432 matched on first pass; the 7 others (§ 18) were a development pass's (`dev5/`), fixed below.
+- **Sample (14 rows):** dispatch 36, 37, 47, 93, 142, 143, 182/184 (move); missiles 14, 27, 40–42, 47, 49 (move), 76.
+  `SKILLS_TargetCheck` read at 0x0056CCF0–0x0056CD43 (objdump): bit 1 clear → `UnitSetPathTargetUnit(unit, 0)`; set
+  and a type-1 unit in mode 12 → kept by `TargetCorpse`, else cleared; set otherwise → cleared by `TargetCorpse`, else
+  kept; `split.txt`'s 684/73/87/329/420 give 1 433 against D2. The contradiction is D2's clear rule only; routed with
+  scope noted in the part 5 entry. Moves: do 2's creation call 0x005AE469 precedes do 1 at 0x005AE475 (the claim is
+  "after a creation"); do 146's 0x005C8654 → 0x005417D0 → 0x005416B0 → 0x00540DF0 → 0x00540C30 → `EventBlockNew`
+  (0x00540C56) → 0x0040B430 (0x00540BC5), and no jump lands between 0x005C8659 and the re-seed.
+- **Fixes (6).** Miscount 1: m47's and m40's `f_nexthit`, `f_st86`, `lh_match`, `f_hostile`, `f_friend`, `h_align`
+  and `w_align2` counts were `dev5/`'s, now run2's (skills/0002 § 18). Overclaim 1: part 6's route triage (an objdump
+  reading checked against a walker over the same objdump) `[C]` → `[I]`, as part 1's routes bullet. Misread 1: dispatch
+  84's Route cell said a declared room; helper 3 needs only its `CorpsePickNear` call 0x005FD9DA as a boundary and
+  helper 4 has no pool or import. Omission 2: dispatch 127's and missiles 63's Route cells said their callees were not
+  read for allocation, which part 1's `routes.txt` reads (stated); the `+0xC4` bit 1 "dead" name in skills/0003
+  § `TgtPlaceCheck` (a test of the bit **set**, 0x005FD4C5–0x005FD4D0) marked, and the table doc's copy routed
+  ([backlog](../backlog/2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name.md)). Stale
+  cross-reference 1: skills/0003's two `SummonSetLevel` bullets and quirks/0001's `noRatio` line given § 25's raise.
+- **Added at review (no fault):** d143's absence given the function's own memory operands (objdump); the mask cells'
+  no-store given a dword scan of every section (four hits, the four `.text` operands).
+- **Rulings on the request's judgment calls.** (1) Accepted: declared inputs as recorded; the copy-path flag only
+  selects the CRT memmove path, whose copy runs whole; the getter's minimum stays under *Not covered*. (2) Accepted:
+  every composed claim was run in one emulation (`h18w`, `h26w`, `wearw`, `ssl`, `h25` call the handler with the setter
+  inside); no `[C]` joins two runs. (3) Sufficient for `[C]`: EmuBoundary traces every read outside the stack, the
+  spec and case memory, the summon is written at `+0x00` and `+0x5C` only, and the function's own operands name no
+  class field (now cited); the scope is `SummonSetLevel` itself. Same ruling for the mask cells (ADR-0015 (2)'s
+  reference check, the `lea`s followed, the section scan). (4) Accepted: the rows are written per row, so a wrong
+  index reads undeclared memory and shows as an unaccounted read, a structural check, not a probability. (5)
+  Accepted: a remainder that is not R2's stays `[I]` with its route; the R2 halves of rows 74, 111, 112, 144 are named
+  in the cells for H2a. (6) Accepted as filed. (7) Accepted: reproduction confirmed above. (8) Accepted: each sep-0
+  control is named in its run record (experiments.md), the findings' *Not covered* bullets give the families.
+- **Not settled rows (26):** every Route cell names a page, a calc pool, a room or a run; none lies wholly past an
+  allocating call (rows 84, 127 and m63 corrected above).
+- **Gate:** fast green (68 warnings, none from the fixes). The review request stays open for the merge.
