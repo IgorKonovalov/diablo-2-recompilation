@@ -396,10 +396,21 @@ waypoint the staging named).
   the logger was live in the other launches of the run (`kills-b`: 27 `XK0`). Where the death leaves `sub_0057CCB0_UnitKilled`
   before 0x0057E990 was not traced; the gate (0x005A4EF0) or the player branch (0x0057CD28) are the candidates.
   Routed to Phase 3: § 4 *victim-player* stays `[I]` with this observation beside it. (0x0057E990, 0x0057CD28, 0x005A4EF0, run:2026-11-15-sweep8-two-clients)
-- [I] **Not reached:** a dead credited player with a living member (0058b: the host, life 40, did not die in 120 teleport and 47
-  walking hops with its mercenary), and a far credited player (0058a, MP16's bound): no pair of the run is in the same level
-  beyond d² 6400 (`xpshare`: 23 + 17 pairs inside, 8 in another level). The mercenary kills, 48 with the member partied: n = 2
-  in 40, n = 1 in 8 (the member in another level), 0 mismatches of `xpshare` and `player.py check`. (run:2026-11-15-sweep8-two-clients)
+- [I] **Control for the player kill (part 2, `pk2`).** The same pair with a monster kill first: the hostile host killed 2 monsters
+  (`XK0` x 2, `ktype` 0, `XC0` x 2, `player.py check` reproduced both) and then Novaed MpNovaWeak, who died (mode 17): still no
+  `XK0` with `mtype` 0. The logger was live in that session, so the player's death does not reach 0x0057E990; the absence is
+  no logger miss. Still `[I]`: which test before 0x0057E990 stops it (the gate 0x005A4EF0 or the player branch 0x0057CD28) was
+  not traced. (0x0057E990, 0x0057CD28, 0x005A4EF0, run:2026-11-15-sweep8-two-clients)
+- [C] **A far member does not share (0058a, MP16's bound).** `kills-a` (host through the Act I waypoint to Cold Plains, its Rogue
+  killing, the joiner partied): 54 mercenary kills, n = 2 in 23, n = 1 in 31 (the other member beyond d² 6400 of the monster, the
+  credited player taking the whole award); 11 pairs where the killer's distance and the monster's would decide differently;
+  1 pair within 800 inside d² 6400 and 5 within 800 outside; `xpshare` and `player.py check` 0 mismatches.
+  (fn:sub_0057E7B0_XpCreditPlayer@0x0057E7B0, run:2026-11-15-sweep8-two-clients)
+- [I] **Not reached:** a dead credited player with a partied living member (0058b). The host (life 40) did not die in four
+  sessions (120 teleport hops, 47 walking hops, a melee pilot, 30-sub-tile hops) while its Rogue killed. A dev session where the
+  hostile joiner killed the host and the host's Rogue then killed 3 monsters beside the living joiner gave n = 1 "not partied"
+  (hostility leaves the party; a re-party with the dead host was refused in effect), 0 mismatches: the not-partied form of the
+  kill, not the partied one. (run:2026-11-15-sweep8-two-clients)
 
 ## Data touched
 

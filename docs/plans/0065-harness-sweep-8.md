@@ -462,3 +462,25 @@ with `mtype` 0. Readings: (i) `XK0` for the monster and none for the player: the
 `XpCreditPlayer`'s logged entry 0x0057E990 (player/0002 § 4 *victim-player* is then not run by a hostile player's kill); (ii) `XK0`
 for both: the part-1 absence was the logger not armed. Separating by the line counts; the monster's credit is checked by
 `player.py check` as in every kills session.
+
+### 2026-11-16 — Phase 2 part 2 (`lane/n65i`, slots 1 and 2): results and resume note
+
+Record: [run:2026-11-15-sweep8-two-clients](../findings/multiplayer/experiments.md#run2026-11-15-sweep8-two-clients), *Part 2* block; manifest 137 lines. `UFW-OK`
+before every launch and at the end; both slots idle, saves restored, no game, gdb or wait loop left. Mismatches in every check that had data: 0.
+
+| Row | Case | Result |
+|---|---|---|
+| 7 | 0058a, MP16 | met: 54 kills, n = 2 in 23, n = 1 in 31, 1 pair inside and 5 outside the 6400 bound, 0 mismatches (the near-bound band is thin) |
+| 10 | MP18 | shortfall confirmed: no `0x28` with the trade open (`0x19`, `0x1F`, `0x18` only); control without a trade: `0x28`, 1 insert |
+| 9 | 0058c control | monster kills gave `XK0` x 2, the joiner then died, still no player `XK0`: the logger was live, so the death does not reach 0x0057E990 (`[I]`, the stopping test not traced) |
+| 8 | 0058b | not reached with the partied reading: the host did not die in 4 sessions (teleport, walking, melee, 30-sub-tile hops); a hostile joiner killed it in a dev run and its Rogue then killed 3 monsters beside the living joiner (n = 1 not partied, 0 mismatches) |
+| 13 | MP27 a, b | not reached: Docks waypoint at (5159, 5049) found, the pilot cannot path to it (boardwalks) |
+| 17 | MP32, full | not reached: `pile.py` clicked 12 dead monsters' cells, 0 `GP0`; `two-gold.gdb` has no `KILL` line |
+
+**Resume note.** MP27 needs a path to the waypoint (a planner over the town's collision, or one owner-played walk giving the
+route as a list of clicks) and then `portal.sh` as written. MP32 needs gold drops: a drop of a gold pile logged with its cell (a
+`DROP`/item-position line in `two-gold.gdb`) in place of `pile.py`'s guess, or owner play. 0058b partied needs a death by a
+monster the Rogue cannot reach first (a unique with a ranged attack, for example in the Burial Grounds) or a way back into the party
+after a hostile kill. The Phase 3 re-tag may take MP18, 0058a and the `pk` control now.
+
+**Review request:** the existing [Tier B](../backlog/2026-11-16-reverser-architect-review-plan-0065-p2-two-clients.md), extended to part 2.
