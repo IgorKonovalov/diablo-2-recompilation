@@ -1563,3 +1563,57 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   list, but the kept rooms.gdb logs (run:2026-10-17-lifecycle) do, so a check over them is a-logs; it is retargeted there, to
   a later Phase 1 batch, not a session. Totals after the one move: a-logs 627, a-run 340, b 447, c 390, c-emu 494, d-2c 59,
   d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 511, Phase 2 787 (sim-frame.md and README tables updated).
+
+### 2026-11-16 — Phase 1, batch S3b (reverser-static, `lane/n66p`): done, 36 of 36 settled; S3c not started, resume note
+
+- **Done.** No game, no Ghidra. `main` is `19edd04f`, the lane's base (nothing to merge). New tool `tools/quests_s3b.py`
+  (`e8454b5a…`; stdlib, `static` through `tools/sweep2_s7a.py`'s objdump and r2 helpers): per-word kill-step and
+  service-step rules over 108 kept logs whose loggers source `tools/gdb/quests.py` (run:2026-10-16-quest-drops 53 + 7
+  owner-played, run:2026-10-17-sweep-quest-b6 16, run:2026-10-27-sweep-quest-items 14, run:2026-10-27-sweep-quest-npc
+  14, the four den host logs of run:2026-10-20-two-clients). A write's site is its return − 5; the game record's writes
+  go through `GameQuestSet`, attributed by the (word, bit) its 40 callers push. Run once kept under a 4 GB scope:
+  `workspace/logs/n66p/s3b/check-s3b.txt` (`81021927…`, 244 lines, `SUMMARY mismatches=0 checks=286 logs=108`),
+  `static-s3b.txt` (`905d610e…`), `totals-s3b.txt`, `manifest-s3b.sha256` (`9324e605…`) passing from that directory,
+  inputs `manifest-s3b-inputs.sha256` (108 lines) passing from `workspace/logs/`; development outputs in `dev/` with
+  `manifest-dev.sha256`. Records: [quests/experiments § Addendum S3b](../findings/quests/experiments.md#addendum-2026-11-16-plan-0066-batch-s3b-kill-and-service-steps-over-the-kept-questsgdb-logs-lanen66p),
+  [quests/0001 § 19](../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p).
+  Every row's *Route* cell carries its dated S3b note; README § 4's S3b row updated.
+- **Raised 10:** progression 5, 15, 64, 72, 101, 138, 142, 259, 284, 315.
+- **Raised in part 24**, remainders in the Route cells: 3 (e9 at a leave → a-run H3f), 50, 73, 120, 127, 166, 220 (the
+  other StepBits bits and the log-state choice → a-run H3a/H3b), 59 (Hell respec → b H3c), 66 (the creators' own seeds
+  → c), 69 (region and private list → b H3b), 89 (b15 and object 3 → b H3c), 117, 128, 167, 221, 294 (party → d-2c;
+  level passes → a-run H3b), 119, 131, 224 (the message with b13 clear, the first joiner's condition → a-run H3a), 250
+  (steps clear and item removal → b H3f), 273, 296, 303 (the gate before Baal opens the chamber → b H3b), 320 (classic
+  w26 and refusal → a-run H3b).
+- **Moved 2:** 252 a-logs → a-run (H3a; no write at the A4Q3 StepBits sites in any kept log), 309 a-logs → b (H3b; no
+  warp into 132 before the opening, no gate line).
+- **None contradicted.** Refinements for Phase 3 (Radament's near-credit sites, Andariel's level-37 pass writing a
+  credited killer again, two StepBits site owners) in backlog
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements.md).
+- **Symbols:** `sub_00544720_GameQuestSet` raised to `C` (518 logged writes, every one on the `QI1` game record, none
+  on a player record) in `re/symbols.csv` (evidence moved to quests/0001), quests/0001's Functions table (row added)
+  and items/0008's Functions table.
+- **Totals** at `19edd04f` (`totals-s3b.txt`, the 29 files' *Totals by class*): a-logs 625, a-run 341, b 448, c 390,
+  c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 509, Phase 2 789, blocked 328 (README § 1;
+  § 4: H3a 40, H3b 56).
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** progression whole: 37, 136, 409, 475, 586,
+  798, 803, 1366, 1463, 1586; split: 34, 320, 370, 424, 472, 478, 553, 696, 699, 700, 768, 769, 774, 930, 931, 1172,
+  1173, 1176, 1331, 1418, 1522, 1524, 1550, 1591.
+- **Judgment calls for the review:** (1) game-record writes attributed to a `GameQuestSet` caller by its unique (word,
+  bit) pair (rows 72, 101, 119) or by the event (rows 131, 224: only the death function runs at a death); (2) the
+  refused kills' words are the saves' as the run records give them, not logged words (rows 117, 167, 221, 294);
+  (3) rows 5, 15, 72, 138 raised whole on one or few cases where the logged order or site is the claim; (4) the
+  services 259 and 284 raised whole, 89 in part (its b15 clause); (5) rows 252 and 309 moved rather than left
+  "not raised", since the logs lack the line (R6); (6) `GameQuestSet` raised as a symbol on its logged record (rule 14's
+  scope: a role checked on the game's own writes, not a return).
+- **Review:** Tier B, requested by
+  [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s3b.md).
+- **Resume note (S3c, 51 rows, not started):** progression 1–2, 6, 14, 19–33, 35–38, 45, 68, 78, 104, 124, 126, 159,
+  175, 179, 229–230, 254, 302, 314, 316, 318–319, 321; travel 1, 21, 30–33, 36, 56, 78; README 3 (README § 4's S3c row).
+  Method: r2 `axt` and immediate scans with a second tool. Start from `tools/quests_s3b.py static`'s helpers
+  (`GameQuestSet`'s 40 callers with EDX and bit already read; `calls_of`, `reg_before`, `args`) and S3a's
+  `tools/quests_s3a.py static` (`g_QuestDescs` read); add a `tools/quests_s3c.py` with one section per family: event
+  slots and the record-call word immediates (words 7, 15, 23, 28, 32, 33, 41) over the 332 `SetState`, 46 `ClearState`
+  and 12 `ClearSteps` calls; `PlayerTickSet`; waypoint-record writers; act `+0x094` readers; dumps of `g_QuestDescs`,
+  the second table 0x0073188C and `g_ObjInitFns`; the full-data scans (DS1 objects 567/410, NPC 377 placement, Objects
+  Sync/FrameDelta, Levels.Waypoint) with a second parser. A fresh lane on `lane/n66p`.

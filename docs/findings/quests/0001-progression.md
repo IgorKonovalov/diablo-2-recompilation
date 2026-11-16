@@ -136,6 +136,7 @@ The core functions are below. The per-quest functions (about 530) are named in `
 | `0x0054BA90` | `sub_0054BA90_Pkt31NpcMessage` | packet `0x31` (9 bytes) | I |
 | `0x0054C9C0` | `sub_0054C9C0_Pkt58QuestSeen` | packet `0x58`: bit 12 of a word < 42 | I |
 | `0x00545780` | `QUESTS_RedispatchNpcTalk` | e0 again, then the game record is sent | I |
+| `0x00544720` | `sub_00544720_GameQuestSet` | sets (word EDX, pushed bit) on the game record (`QuestControl +0x0C`); 40 call sites | C (§ 19: 518 logged writes, each on the `QI1` game record) |
 | `0x00543E10` / `0x00543F10` | `QUESTS_TimersRun` / `QUESTS_TimerAdd` | quest timers (§ 5) | C (§ 17; the cadence and caller [§ 18](#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)) |
 | `0x00543F90` | `QUESTS_DefaultLogState` | default `+0xE8` | I |
 | `0x005435C0` | `QUESTS_UnitHookAdd` | adds a quest to a unit's `+0x74` list | I |
@@ -2379,6 +2380,79 @@ A new check over the 54 kept quest-state logs, no game ([experiments, S3a addend
   the `TownLevelLeave` store line), Kaelan's 0xBA, word 12's b2–b5, word 19's 0x251-with-b7 and 0x24D-with-b8-clear
   variants, word 21's b0 with b4, the progression raise (every save already at its maximum).
   (fn:sub_00592B10_A1Q4_FailPlayer@0x00592B10, run:2026-10-19-quests3)
+
+### 19. Plan 0066 batch S3b: kill-step and service-step rules over the kept quests.gdb logs (2026-11-16, `lane/n66p`)
+
+A new check over 108 kept logs of five runs, no game ([experiments, S3b addendum](experiments.md#addendum-2026-11-16-plan-0066-batch-s3b-kill-and-service-steps-over-the-kept-questsgdb-logs-lanen66p);
+`tools/quests_s3b.py`, outputs `check-s3b.txt` and `static-s3b.txt`). A logged write's site is its return − 5; `static`
+decodes every site named below with objdump and r2 and reads its pushed word and bit. Row by row in
+`docs/plans/0066-inventory/quests-progression.md`; the statements below are the ones Phase 3 takes into the spec.
+
+- [C] **The game record's writer.** The 2 092 game-record writes (record = the `QI1` game record) return to 0x0054475C
+  (518, inside `sub_00544720_GameQuestSet`: ECX game, EDX word, one pushed bit) or 0x0054633E (1 574, the join's b15
+  copies, `sub_00546270_QuestsPlayerJoin`); no `GameQuestSet` write reached a player record. Its 40 callers' EDX and
+  bit are read by r2 (`static-s3b.txt`). A logged game-record write is attributed to a caller by its (word, bit) when one caller holds the
+  pair, and otherwise by the event it follows. (fn:sub_00544720_GameQuestSet@0x00544720, run:2026-10-17-sweep-quest-b6)
+- [C] **Operate and event 7.** `OBJ_OperateDispatch` calls `g_ObjOperateFns[row +0x1B3]`
+  (0x005844FD `movzx edx, byte [eax+0x1B3]`, 0x00584504 `mov eax, [edx*4+0x732D18]`, 0x0058450E `call eax`; objdump and
+  r2 agree); 10 logged operates reached their slot's function (slots 12, 33, 39 ×2, 40, 41 ×2, 57, 58, 59). Event 7
+  came 19 times through 0x00586B19 (`call [ebx*4+0x6E19B0]`) into `QUESTS_ObjectEvent`, which called 0x00594630
+  (Wirt's body, 18) and 0x005B85E0 (object 367, 1). (data:g_ObjOperateFns@0x00732D18, fn:QUESTS_ObjectEvent@0x005449E0,
+  run:2026-10-27-sweep-quest-items)
+- [C] **`QUESTS_ListSetPending`** sets b13 then b1 on one record (0x0054565C, 0x00545665, back to back; old 0x10 →
+  0x2010 in den-a2's Den of Evil completion); its only caller is 0x00590387 (A1Q1's monster death). That completion
+  also wrote G w1 b13 just before, from 0x00590375, A1Q1_MonsterDeath's only `GameQuestSet` call.
+  (fn:QUESTS_ListSetPending@0x005455F0, fn:sub_00590260_A1Q1_MonsterDeath@0x00590260, run:2026-10-20-two-clients)
+- [C] **StepBits writes** keep D1's gate: 35 writes at the StepBits sites of seven functions (A1Q1 b4 ×8; A1Q6 b3 ×10,
+  b4 ×9; A2Q1 b4; A2Q6 b2; A3Q6 b9 ×4; A5Q6 b2 ×2), each on a player record whose old word had b0 and b1 clear. The
+  log-state choice of the bit is not separated (no quest-object state in these logs). The A2Q1 and A4Q3 sites lie in
+  `sub_00598910_A2Q1_NpcGate` and `sub_005B5EE0_A4Q3_NpcGate`. (fn:sub_0058FC90_A1Q1_StepBits@0x0058FC90,
+  run:2026-10-17-sweep-quest-b6)
+- [C] **The services.** Each imbue (19), socket (24) and personalisation (22) line is followed by b0 set then b1 cleared
+  on its word (3 at 0x005917A7/0x005917B1, 35 at 0x005877D7/0x005877E1, 38 at 0x0058BC16/0x0058BC20); the old word
+  had b1 set and b0 clear each time. (fn:sub_00591790_A1Q3_ImbueDone@0x00591790,
+  fn:sub_005877C0_A5Q1_SocketDone@0x005877C0, fn:sub_0058BC00_A5Q4_PersonalizeDone@0x0058BC00,
+  run:2026-10-27-sweep-quest-npc)
+- [C] **Baal's gold draw** is `lo + Range(qs, hi − lo)`: 1 500 + Range(qs, 1 500) = 2 178 on the logged seed, the seed
+  after equal to the logged one (the `hi − lo + 1` reading gives 2 668). (fn:RNG_RandLoHi@0x004BC500,
+  run:2026-10-17-sweep-quest-b6)
+- [C] **The quest seed moves only at a `QUESTS_GetSeed` fetch**: 388 observations (`QI1`, `QGS`, `QDI`, `QDX`, `BG0`,
+  `BGR`), 56 moves, each after a `QGS`, none elsewhere. [I] that the named creators draw their own seeds (no call-graph
+  walk). (fn:QUESTS_GetSeed@0x005438B0, run:2026-10-16-quest-drops)
+- [C] **Boss credits.** Andariel: in each of 7 credited kills `SetKilled` wrote b13, b1 twice, first with b0, b1 clear
+  (0x18, the killer, from 0x00596639), then with b1 already set (0x201A, the level-37 pass, the only other solo caller
+  0x00596302), so the level pass tests b0 and b15 and not b1; no write in the kills with b1 and b15 set (3345) or b0
+  set (3347, 3350, reported-r2). Radament: b13, b1, b5 at 0x00598F10/0x00598F1F/0x00598F29, in
+  `sub_00598E20_A2Q1_NearCredit` (the spec's 0x00598D96/A0/AA are `sub_00598D40_A2Q1_PartyCredit`'s; both triples
+  push (9, 13), (·, 1), (9, 5)). Duriel: b5 at 0x0059D0F0 with b0, b3, b4, b5 clear (3364); none with b0 set (3368) or
+  b5 set (3371). Mephisto: b13, b0, b11 at 0x005BC148/0x005BC152/0x005BC15C (3356, b0 clear); none with b0 set (3501).
+  Baal: b13, b0 at 0x0058DD38/0x0058DD42 (fresh-r2); none with b0 set (baal-done). The refused kills' words are
+  their saves' as the run records give them. The party passes are not reached (one player). (fn:sub_00596210_A1Q6_SetKilled@0x00596210, fn:sub_00598E20_A2Q1_NearCredit@0x00598E20,
+  fn:sub_0059D050_A2Q6_DurielDeath@0x0059D050, fn:sub_005BC140_A3Q6_SetDone@0x005BC140,
+  fn:sub_0058DD30_A5Q6_Credit@0x0058DD30, run:2026-10-16-quest-drops, run:2026-10-17-sweep-quest-b6)
+- [C] **Game-record b13 at the deaths and reports.** Warriv's report wrote G w6 b13 (the only (6, 13) caller,
+  0x00595D88) with the player's word at 0x201A (b13 set, b0 clear), then cleared b1 and set b0 (r3, r4). Mephisto's
+  death wrote G w22 b13 in both kills, also when the game bit was already set (3356 old 0x2000, 3501 old 0xA000): only
+  0x005BC9F0 of the two (22, 13) callers runs at a death. Radament's death wrote G w9 b13 after the credit. The cow
+  portal wrote G w4 b11 (the only (4, 11) caller, 0x0059423A) with the opener's w40 b0 set (3361, 3506).
+  (fn:sub_00595C60_A1Q6_NpcMessage@0x00595C60, fn:sub_005BC8B0_A3Q6_MephistoDeath@0x005BC8B0,
+  fn:CUBE_CowPortalOpen@0x00594140, run:2026-10-16-quest-drops)
+- [C] **Objects.** The staff placed wrote w10 b0 then b13 on the placer (3364; `StaffPlaced`'s one caller 0x0058541F).
+  The five Act II chest operates each took one `QGS`, then 5 to 9 gold piles, with no record write. The forge's
+  third strike (6) wrote w27 b13 then b1 (0x005B5D3C, 0x005B5D49; old 0x4), and no earlier `FOP` wrote word 27.
+  (fn:sub_0059DD80_A2Q6_StaffPlaced@0x0059DD80, fn:sub_00599DF0_A2Q2_CubeChest@0x00599DF0,
+  fn:sub_005B5C10_A4Q3_ForgeOperate@0x005B5C10, run:2026-10-27-sweep-quest-items, run:2026-10-16-quest-drops)
+- [C] **The quest TC reads come first.** In the 18 `B60` groups the `B6G` reads and `B6X` precede the boss's credit
+  writes (10 credited kills); in the 7 credited Andariel kills the read of b1 gave 0 and the credit then set b1.
+  (fn:MONSTER_DropItems@0x005A6600, run:2026-10-17-sweep-quest-b6)
+- [C] **Malah's `tr2 `** (`QUESTS_GiveItem` placed it) then w37 b8 at 0x005896F1, old 0x8002 (b1 set, b0 clear), in all
+  three difficulties. (fn:sub_00589580_A5Q3_NpcMessage@0x00589580, run:2026-10-27-sweep-quest-npc)
+- [C] **The Chamber portal**: an operate of object 563 then the player in level 132, in both Baal sessions. [I] the
+  gate before Baal opens it (no refused operate or warp logged). (fn:sub_0058E640_A5Q6_ChamberWarpBlocked@0x0058E640,
+  run:2026-10-17-sweep-quest-b6)
+- Not met in these logs (rows moved or kept as remainders): an e9 at a leave (3 leaves, no quest item carried; `QE9`
+  0); the forge's StepBits (0x005B6016/27/3D) and its `ClearSteps` (0x005B5D59; `quests.gdb` has no `QK` line); A1Q6
+  and A2Q1's b2, A5Q6's b3; a warp into 132 before the opening.
 
 ## Data touched
 
