@@ -2224,3 +2224,119 @@ compared with a `tools/` model. No game, no wine. The claims are in
 - **Not covered:** see skills/0002 § 25, *Not covered*; everything past the observed calls. **Conclusion:** bit-exact
   reproduction (evidence rule 4, ADR-0015) of the maps above; the claims and the rows they settle are in skills/0002
   § 25.
+
+## run:2026-11-16-sweep2-s2be2
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2be (`lane/n66sb`), part 2: do 6's
+per-unit callback 0x005DB150 to `STATE_ApplyTimed`, and `sub_005D4DB0_SkillPrgDo36NovaAtTarget` whole to
+`SkillNovaAtUnit` on Skills rows 44 and 48, under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021),
+compared with a `tools/` model; plus do 13's single return read with objdump over `.text` and with radare2. No game,
+no wine. The claims are in
+[skills/0003 § 19](0003-handlers.md#19-plan-0066-batch-s2be-part-2-do-13s-return-do-6s-per-unit-callback-and-prg-36-on-skills-rows-44-and-48-2026-11-16-lanen66sb).
+
+- **Question:** do the callback and prg 36 do what skills/catalogue H5's `after:` line and M5 (at `b5999f5e`) state
+  as inferred, up to the first call that leaves the claim? Does do 13 return 0 on every path (the catalogue's
+  reimplementation notes)?
+- **Setup:** `tools/skills_s2be2_emu.py` (sha256 `e5bb4844…`, stdlib, objdump and r2; imports
+  `tools/combat_s5e_emu.py`, `tools/skills_s2ae_emu.py` (the case, check and manifest machinery) and
+  `tools/skills_s2ae5_emu.py` (the `UNIT_GetTargetUnit` model and bucket layout), unchanged, in their module state
+  only), `re/ghidra_scripts/EmuBoundary.java` unchanged, project `workspace/ghidra-n66sb` (a copy of
+  `workspace/ghidra`, `import-symbols` run first; `-Xmx3G`, `MemoryMax=4G`). One kept launch of `tools/ghidra.sh
+  emuboundary`, 2 families (`cb43` 1 500, `p36` 5 000), seeds `random.Random("n66sb-s2be2-<family>")`.
+- **Memory spec** (`s2ae.mem`): a DataTables image at 0x21000000 (`dt.bin`: calc pool 0x21900000 of 0x40 bytes,
+  states 192, 64 Skills rows at 0x21300000, stats 512); the Skills image (`skills.bin`) and a Missiles image of 0x200
+  rows at 0x21800000 (`missiles.bin`, with 0x0096C794 and 0x0096C79C pointing at it), random from
+  `random.Random("n66sb-s2be2-tables")` except Skills rows 44, 48 and Missiles rows 90, 119, which carry the shipped
+  `.bin` bytes read from `workspace/merged` at case time. Each case writes only: `cb43` the context (0x20 bytes, `+0x0C`
+  the block) and the block (0x20 bytes); `p36` the caster, the target and a decoy unit (0x100 bytes each; type, guid,
+  mode, bucket link), the caster's path (0x70 bytes, `+0x58` the stored target, type and guid) and the bucket heads.
+  Guards: 0x00408090, 0x00408A60, 0x00681E09, 0x0040B4B0, 0x0040B430, 0x0040B480. Observed: `STATE_ApplyTimed`
+  0x0056E970, `SkillNovaAtUnit` 0x0056D400. At each, the run compares the registers the code sets, the stack arguments
+  and the return address (`cb43`: `ECX` = `ESP + 8` and the nine dwords there; `p36`: `ECX`, `EDX`, the five
+  arguments and the path's target words).
+- **Read set (ADR-0015 (2)):** every traced read falls in a declared constant range: `g_BitMask32` (0x005D3D1A
+  1 943) and GameFindUnit's bucket offsets (0x00552F9C 4 058). No traced write.
+- **Procedure** (worktree root; `D=workspace/logs/n66sb/s2be/run2`):
+  ```
+  python3 -I tools/skills_s2be2_emu.py cases --dir $D
+  GHIDRA_PROJ_DIR=workspace/ghidra-n66sb GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+      tools/ghidra.sh emuboundary $D/s2ae.cases $D/s2ae.mem > $D/s2ae.out 2> $D/ghidra.err
+  python3 -I tools/skills_s2be2_emu.py check --dir $D > $D/check.txt
+  python3 -I tools/skills_s2be2_emu.py rows > $D/rows.txt
+  python3 -I tools/skills_s2be2_emu.py static > $D/static.txt
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/skills_s2be2_emu.py tail > $D/tail.txt
+  python3 -I tools/skills_s2be2_emu.py manifest --dir $D --write
+  (cd $D && sha256sum -c manifest.sha256)
+  ```
+- **Outputs:** `check.txt` (`2030c929…`, last line `S2AE total cases=6500 mismatches=0 stops=0 controls=35
+  unseparated=5 controls_passed=0 unaccounted=0`), `rows.txt` (`b8547594…`, the outcome per case kind and the shipped
+  rows' bytes), `tail.txt` (`ec66e116…`, last line `TAIL verdict single-ret-after-xor`), `static.txt` (`dc526bbe…`,
+  249 lines), `s2ae.out` (`2ceb453c…`), `tool.sha256` (`63154aa7…`), listed in `manifest.sha256` (`0dc5df57…`, 12
+  lines), which passes from `$D`. The emulation ran on an earlier revision of the tool that differed in `tail` and
+  `rows` only. The committed revision reproduces `check.txt` byte for byte, and wrote `rows.txt` and `tail.txt`.
+  Development: one launch of 400 cases (`dev1/`, the same families) under
+  `workspace/logs/n66sb/s2be/manifest-dev-p2.sha256` (7 lines, passes from `workspace/logs/n66sb/s2be/`), not cited.
+- **Outcomes** (`check.txt`, `rows.txt`): `cb43` 1 500 at `STATE_ApplyTimed`; `p36` 1 808 at `SkillNovaAtUnit`
+  (row 44 735 with `m` 119 and `v` 24, row 48 688 with `m` 90 and `v` 24, 385 on random rows) and 3 192 returns of 0
+  (on rows 44 and 48: 587 refused by the target alone, 1 201 by `lvl ≤ 0`).
+- **Controls:** 35, 30 separating, each `passed` 0. Not separating (5): the charge-path tests `charge_flag`,
+  `cst_ge0`, `cst_ge0~` and `cstat_ge0~` (the declared rows keep the path closed) and `m_ge0~`. The spec-reading
+  controls: `spec_block_order` 1 500, `spec_unit_first` 1 500, `spec_caster_centre` 1 808, `spec_floor` 52.
+- **Not covered:** everything past the observed calls; the charge path of `SrvMissileByCharge` (0x006256B0); a calc
+  inside the pool; how an item cast reaches prg 36. **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015)
+  of the two maps above, and a two-tool read of do 13's return; the claims and the rows they settle are in skills/0003
+  § 19.
+
+## run:2026-11-16-sweep2-s2be3
+
+Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2be (`lane/n66sb`), part 3 (the
+closing part): do 140 on the catalogue's worked example, and do 137 with `STATE_Set` and `UnitMarkUpdated` run whole
+up to 0x00570590, under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021), compared with a `tools/`
+model. No game, no wine. The claims are in
+[skills/0003 § 20](0003-handlers.md#20-plan-0066-batch-s2be-part-3-closing-the-worked-example-of-do-140-and-do-137-past-state_set-2026-11-16-lanen66sb).
+
+- **Question:** does do 140 on the worked example's inputs give the spec's table (skills/catalogue *Worked example*
+  at `b5999f5e`)? Does do 137 reach 0x0064C040 and 0x00570590 after `STATE_Set` as the catalogue's Q4 `after:` line
+  states, and with what?
+- **Setup:** `tools/skills_s2be3_emu.py` (sha256 `d14b1781…`, stdlib; imports `tools/skills_catalogue_emu.py` (plan
+  0046's batch 8c worlds, models, `check9b` and `cmd_cases`/`cmd_check`) and `tools/rng.py`, unchanged, in their
+  module state only), `re/ghidra_scripts/EmuBoundary.java` unchanged, project `workspace/ghidra-n66sb` (symbols
+  imported in part 2; `-Xmx3G`, `MemoryMax=4G`). Two kept launches of `tools/ghidra.sh emuboundary`, one per family
+  (`tent140` 1 200, `d137` 1 500), seeds `random.Random("cat8c-<family>")`. Two earlier `d137` launches (a key error
+  in the generator fixed; then a revision with the state bit set in only 1 of 221 reaching cases, changed to half)
+  were overwritten by the kept one and are not cited.
+- **Memory spec** (`<family>.mem`): batch 8c's (`mem_8c`: the scratch DataTables at 0x12000000, Skills, MonStats,
+  MonStats2, ItemStatCost, the states count 190 and the set at `+0x150`), with, for `d137`, DataTables `+0xBC` →
+  0x12670000 (the States records; record 104's byte `+0x12` written per case), `STATE_Set` 0x00639DB0 no longer
+  observed and 0x00570590 observed. Each `d137` case also writes the target's 12 state words, its `+0xC4`, `+0xC8`,
+  `+0xE0`, and each room's `+0x1C`, `+0x2C` (→ a flag dword at the room's `+0xE0`) and `+0x34`; all of them are
+  dumped and compared. `tent140`'s first two cases are the worked example (W1 a room `(90, 190, 20 × 20)` holding
+  `(100, 199)`; W2 a room at `(5000, 5000)` and no near rooms).
+- **Read set (ADR-0015 (2)):** every traced read falls in a declared constant range: GameFindUnit's bucket offsets
+  0x006E10E0 and `g_BitMask32` 0x006CE268 (.rdata). `undeclared=0` for both families.
+- **Procedure** (worktree root; `D=workspace/logs/n66sb/s2be/run3`):
+  ```
+  python3 -I tools/skills_s2be3_emu.py cases tent140 d137 --dir $D
+  for f in tent140 d137; do
+    GHIDRA_PROJ_DIR=workspace/ghidra-n66sb GHIDRA_HEADLESS_MAXMEM=3G systemd-run --user --scope -p MemoryMax=4G \
+        tools/ghidra.sh emuboundary $D/$f.cases $D/$f.mem > $D/$f.out 2> $D/$f.err
+  done
+  python3 -I tools/skills_s2be3_emu.py check --dir $D > $D/check.txt
+  python3 -I tools/skills_s2be3_emu.py worked --dir $D > $D/worked.txt
+  python3 -I tools/skills_s2be3_emu.py manifest --dir $D --write
+  (cd $D && sha256sum -c manifest.sha256)
+  ```
+- **Outputs:** `check.txt` (`dde8acec…`, 16 lines: `tent140 cases=1200 match=1200 bad=0` and `d137 cases=1500
+  match=1500 bad=0`, both `undeclared=0 stopped=0`), `worked.txt` (`2ed96de9…`: the nine steps from `(1, 666)` and the
+  model's W1 and W2), `tool.sha256` (`d14b1781…`), listed with the `.cases`, `.mem`, `.json`, `.out` and `.err` files in
+  `manifest.sha256` (`3f8db4aa…`, 13 lines), which passes from `$D`.
+- **Outcomes:** `tent140` 433 at `SpawnAtPos` (from 0x005D2E07), 767 returns of 1, W1 and W2 among them as the
+  spec's table gives them; `d137` 221 at 0x00570590 (from 0x005D2793; 104 bit new, 86 bit already set, 31 no list;
+  70 no room and 33 refused by the room's `+0x34` bit 2 at the first `UnitMarkUpdated`; the other 118 cases make two
+  calls each, of which 89 link and 147 find the target marked), 1 279 returns of 0 (327 bad
+  id, 193 bad aurastate, 363 no target, 396 refused by 0x00645590).
+- **Controls:** 5, each failing (`tent140`: `n_mod4` 913, `xy_swap140` 433; `d137`: `old_inv` 157, `chg_nsw` 100,
+  `f34_any` 23); the site control fails every boundary case (433 and 221) with its return address changed.
+- **Not covered:** what follows `SpawnAtPos` and 0x00570590; 0x00625A70's clear path (`STATE_Set` is called with 1);
+  0x0063EFA0's Baal arm. **Conclusion:** bit-exact reproduction (evidence rule 4, ADR-0015) of the two maps above; the
+  claims and the rows they settle are in skills/0003 § 20.

@@ -1010,6 +1010,146 @@ logs one representative per family with no tier-A member and does not restate th
   logger does not record the do function that ran); Act 2 monsters of the 8a rows are absent; chained pairs are counted
   over the run, not per family. (run:2026-10-30-skills-catalogue)
 
+### 18. Plan 0066 batch S2be part 1: the catalogue's `after:` parts routed, re-seed callbacks from the kept runs (2026-11-16, `lane/n66sb`)
+
+Batch S2be holds the catalogue's (skills/0004–0018) `after:` lines: code past a plan 0046 observed boundary. Ruling R2
+of plan 0066's Phase 0 review admits such a row as an emulation only when the callee runs whole on a declared read set;
+a callee that allocates, spawns or walks rooms sends the row to the harness. This part reads the route of every row
+(`tools/skills_s2be_routes.py`, sha256 `49838ae1…`, read-only, objdump only): `sites` lists each of 84 roots' direct
+call sites with the callee's first pool path (allocator 0x0040B430/0x0040B4B0, free 0x0040B480, `EventBlockNew`
+0x00540BB0) and its room walkers (`SKILLS_ForUnitsInRange`, `DUNGEON_GetNearRooms`, `RoomAtSubtile`,
+`DUNGEON_GetCollMap`); `rows` names, per row, the gate call the claim lies after (or whose own work the claim is),
+and checks on the intra-procedural flow graph that no path from the entry reaches the claim's first instruction
+without crossing a gate. Outputs: `workspace/logs/n66sb/s2be/run/` (`sites.txt` `8e0f7b91…`, `rows.txt` `dd1e9ea8…`,
+`tool.sha256` `b0b4e63f…`, `manifest.sha256` `cefa49ea…`, 3 lines, passes from there).
+
+- [I] **45 rows lie past, or inside, an allocating, spawning or room-walking callee** (catalogue rows 13, 15, 17–19,
+  21–24, 27, 31, 32, 34, 38–41, 45–47, 50, 51, 55, 61–66, 68, 69, 71, 72, 76, 77, 79, 83–86, 88, 94, 95, 97, 106;
+  `rows.txt`, 61 `ROW` entries, the gates and claims in the inventory rows). The gates are `MissileCreate` and its
+  wrappers (→ `SUnitCreate`, pool 0x0040B430 at 0x005553BE), the spawns (`SpawnOwnedMonster`, `SpawnAtPos`,
+  `SpawnNearUnitNoBox`, 0x0058E920; `EventBlockNew` at 0x00540C56), `PathPlan` and the re-target 0x005A99E0 (the
+  rooms through `RoomAtSubtile`), `COMBAT_DeliverQueued` and `COMBAT_ResolveAndQueue` (0x0057CABE), `STATE_ApplyTimed`
+  and `STATLIST_Alloc` (0x0062520B), `STATLIST_FreeIfPlain` (free at 0x00626C20), `UnitSetOwner` (0x00624CC8),
+  `GroundDropCell` (0x0066A4C3), the unit searches (`SKILLS_ForUnitsInRange` 0x0056B7E0, `NearestUnitInRange`,
+  0x0065A950, `UnitListAround`), the cell tests (`COLL_CellTestAt`, 0x0056E450, `COLL_PatternTestBool`), the item-use
+  marks (`InvClearUseMarks` → `ClientQueuePacket`, 0x0053B2DD) and `UnitQueueEvent` (do 146, as dispatch 182 and 184).
+  Of the 61 entries, 15 have the claim inside the gate's callee; for 44 of the other 46 `CLAIM` checks no path
+  reaches the claim around its gates. The 2 others land on shared code: row 18's gone-chest path joins the `+0x2C`
+  store at 0x005AF3EB without the drop (the claim is the found-chest store, after it), and row 27's return at
+  0x005A9BE1 is shared with the early exits the plan 0046 run covered (the claim is the return after `AreaHitAt`). The reading is one tool's (objdump, the walker over the same
+  objdump), so the routing is `[I]`; it moves rows, it raises none. (`rows.txt`, `sites.txt`)
+- [C] **Catalogue 8 (B1), raised in part from the kept S2ae runs, no new run:** each of the three re-seed callbacks
+  re-seeds the unit in `ECX` at `+0x20` by `RNG_SeedInit` before any boundary: `0x005D4680` whole (`zz`, 0x005D4680's
+  `RNG_SeedInit(argument)` then its inline steps), `0x005D40F0` (`rfa`, the argument alone) and `0x005CD110` (`rro`,
+  path word `+0x10` plus the argument, then one step) to their `PathPlan` boundaries (skills/0002 § 20, § 21).
+  (fn:sub_005D4680_MissCbReseedZigzag@0x005D4680, fn:sub_005D40F0_MissCbReseedFromArg@0x005D40F0,
+  fn:sub_005CD110_MissCbReseedRoll@0x005CD110, run:2026-11-16-sweep2-s2ae4, run:2026-11-16-sweep2-s2ae5)
+- [I] The remainder of catalogue 8, that the callbacks run inside `MissileCreate` for prg 37, prg 143 and do 102 with
+  the parameter block's `+0x54`, lies after `SUnitCreate`'s allocation (0x0059FC75 → 0x0040B430 at 0x005553BE), as
+  missiles 75's remainder: H2a. (0x0059FC75)
+- **Left for part 2** (28 rows, the resume note in plan 0066's log): README 3, 11, 13 (as dispatch 135 and 32,
+  not settled in S2ae); catalogue 9, 16, 20, 26, 28–30, 33, 35, 37, 42, 43, 49, 56, 60, 70, 73, 78, 81, 89, 96, 104,
+  105, 107. Each has a part before its first allocating call that an emulation can reach (`sites.txt` names the
+  calls), and most an R2 remainder.
+
+### 19. Plan 0066 batch S2be part 2: do 13's return, do 6's per-unit callback and prg 36 on Skills rows 44 and 48 (2026-11-16, `lane/n66sb`)
+
+Two families under Ghidra's p-code emulator with a `tools/` model (`tools/skills_s2be2_emu.py`, ADR-0015, ADR-0021;
+6 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes, 35 controls, 30 separating, `passed` 0), and one
+two-tool read. Record: run:2026-11-16-sweep2-s2be2. Outputs `workspace/logs/n66sb/s2be/run2/`.
+
+- [C] **do 13 returns 0 on every path (catalogue 107, raised).** Its one `ret 0x8` (0x005DBE45) follows
+  `xor eax, eax` (0x005DBE3F) with `pop ebx`, `mov esp, ebp` and `pop ebp` between them, none of which writes `EAX`.
+  The function has 179 instructions and no indirect jump, and its 9 branch targets all lie inside it. 7 branches land
+  at 0x005DBE3D or 0x005DBE3E, before the `xor`. No direct branch or call among the 1 067 138 instructions of
+  0x00401000–0x006D0000 targets 0x005DBE40–0x005DBE45 (objdump). radare2's own analysis is the second tool: its block
+  list ends the function with the block 0x005DBE3E–0x005DBE48, entered from 0x005DBE3D by fall-through and from the
+  three jumps to 0x005DBE3E, and `axt` gives no reference to 0x005DBE3F–0x005DBE45. So no return skips the `xor`, and
+  the value cannot depend on a callee, the queue paths included: the row is whole, with no b remainder. (`tail.txt`,
+  fn:sub_005DBC60_SkillDo13Fend@0x005DBC60)
+- [C] **do 6's per-unit callback 0x005DB150 (catalogue 43, raised in part).** (do 6 is 0x005DB1C0, catalogue H5; its
+  `push 0x5DB150` at 0x005DB29B holds the only copy of the dword 0x005DB150 in the file, a byte scan.) With `ECX` the walker's context and
+  `EDX` the unit, it builds nine dwords on its frame and calls `STATE_ApplyTimed` (0x0056E970, from 0x005DB1A6) with
+  `ECX` pointing to them. The nine dwords are `{ctx+0x04, unit, b+0x00, b+0x04, b+0x08, b+0x10, b+0x14, b+0x0C, 0}`,
+  where `b` is the block at `ctx+0x0C`. In the spec's block terms `{id, lvl, auralencalc, auratargetstate, aurastat1,
+  aurastatcalc1}`, `STATE_ApplyTimed` receives `{ctx+4, unit, id, lvl, length, aurastat1, aurastatcalc1,
+  auratargetstate, 0}`: the state word moves behind the stat pair (control `spec_block_order`, the block copied in
+  the spec's order, separates all 1 500 cases and passes none). The block passed is the frame's own: `ECX` = `ESP + 8`
+  at the call in every case. (`check.txt`, 0x005DB150, 0x005DB1A6)
+- [I] The remainder of catalogue 43 lies past `STATE_ApplyTimed` (`STATLIST_Alloc`, pool 0x0040B430 at 0x0062520B),
+  as does the claim that `SKILLS_ForUnitsInRange` hands the callback each unit in range with the game at `ctx+4`.
+  The row keeps it, routed to b with H2c's recipe and not counted there, as catalogue 8's remainder sits with H2a.
+  The `return 1` after the call follows the boundary. (0x0056B7E0, 0x005DB1AB)
+- [C] **prg 36 on Skills rows 44 and 48 (catalogue 73, raised in part).** The run declares the two rows with their
+  shipped bytes: `+0x04` = 0 (the charge flag clear), `srvmissilea` `+0x48` = 119 (row 44) and 90 (row 48), `+0x138`
+  = −1. It declares Missiles rows 90 and 119 the same way: `Vel` 24, `VelLev` 0. In 1 423 cases with a stored target
+  that `UNIT_GetTargetUnit` keeps and `lvl > 0` (735 on row 44, 688 on row 48), prg 36 reaches
+  `SkillNovaAtUnit` (0x0056D400, from 0x005D4E53) with `ECX` the game, `EDX` the caster and the arguments
+  `(target, m, id, lvl, v)`: `m` = 119 for row 44 and 90 for row 48, and `v` = 24 (`MissileSpeedAtLevel` plus
+  `SKILLS_EvalCalc`, which returns 0 at its unsigned bounds test for the −1 calc). Without a target, prg 36 returns 0
+  with no call (587 cases where the target alone refuses: 285 on row 44, 302 on row 48). The nova's centre is the
+  target argument: control `spec_caster_centre` separates 1 808 cases and passes none. That `SkillNovaAtUnit` places
+  the ring at the target's position is skills/0014's `[C]` up to `MissileCreate` (run:2026-10-21-cat-emu-ass). Random
+  rows (the charge path closed by an out-of-range state or stat, calcs past the declared pool) and
+  `MissileSpeedAtLevel`'s truncating division (`spec_floor` 52) are compared too. (`check.txt`, `rows.txt`,
+  fn:sub_005D4DB0_SkillPrgDo36NovaAtTarget@0x005D4DB0, fn:sub_005D3CF0_SkillSrvMissileByCharge@0x005D3CF0,
+  fn:sub_00663270_MissileSpeedAtLevel@0x00663270, tbl:Skills.txt:srvmissilea, tbl:Missiles.txt:Vel)
+- [I] The remainder of catalogue 73 is that an item cast of rows 44 and 48 runs prg 36: `ItemEffect` 36 replaces
+  `srvdofunc` under the cast's effect flag (skills/0001 § 6) and supplies the target through `ITEMSKILL_Cast`. It
+  stays `[I]` on the route of catalogue 78 and 81. The charge path (`+0x04` bit 2 with a state and stat in range,
+  0x006256B0) is not run; the stock rows 44 and 48 do not take it. (0x005D3D1F)
+- **Not separated** (5 controls; `check.txt`): the charge-path tests `charge_flag`, `cst_ge0`, `cst_ge0~` and
+  `cstat_ge0~`, which the declared rows keep closed (both readings return `+0x48`), and `m_ge0~` (a class of 0 is
+  refused by `m > 0` before `MissileSpeedAtLevel`).
+- **Left for part 3** (24 rows): README 3, 11, 13; catalogue 9, 16, 20, 26, 28–30, 33, 35, 37, 42, 49, 56, 60, 70,
+  78, 81, 89, 96, 104, 105; routes in plan 0066's log.
+
+### 20. Plan 0066 batch S2be part 3 (closing): the worked example of do 140 and do 137 past `STATE_Set` (2026-11-16, `lane/n66sb`)
+
+Two families under Ghidra's p-code emulator with a `tools/` model (`tools/skills_s2be3_emu.py`, ADR-0015, ADR-0021),
+on plan 0046's batch 8c machinery (`tools/skills_catalogue_emu.py`, unchanged, used in its module state only): 2 700
+cases, 0 mismatches, 0 stops, 0 undeclared reads; 5 controls, each failing; every boundary case fails with its return
+address changed. Record: run:2026-11-16-sweep2-s2be3. Outputs `workspace/logs/n66sb/s2be/run3/`.
+
+- [C] **The catalogue's worked example is a recorded case (catalogue 104, raised).** do 140 (0x005D2C20) on a caster
+  with seed `(low 1, high 666)`, difficulty 2 (the game's byte `+0x6D`), class 0 whose MonStats base is 0 (so
+  `0x0063EFA0` takes its default arm), no path target and position `(100, 200)`. Case W1, one room holding
+  `(100, 199)`: `SpawnAtPos` (0x005B2F20) is called from 0x005D2E07 with `ECX` the game, `EDX` the room and
+  `(100, 199, 0, 1, −1, 0)`; the caster's seed is `(0x280687C4, 0x13ADFE65)`, three steps on; the remaining count at
+  `EBP − 0x14` is 4. Case W2, one room far off with no near rooms: do 140 returns 1 (`ret 8`) with the seed
+  `(0xE778FC3B, 0x49422C1A)`, nine steps on (`1 + 2n`, `n` = 4). Both match the spec's table, computed with
+  `tools/rng.py` (`worked.txt`), and the model of run:2026-10-21-cat-emu-8c, unchanged, over 1 198 more do 140 cases
+  with random seeds, difficulty, targets and rooms (433 spawns, 767 returns). Controls: `n_mod4` (913 failures),
+  `xy_swap140` (433). (`check.txt`, `worked.txt`, fn:sub_005D2C20_SkillDo140BaalTentacle@0x005D2C20)
+- [C] **do 137 past `STATE_Set` (catalogue 96, raised in part).** With `STATE_Set` (0x00639DB0) and
+  `sub_0064C040_UnitMarkUpdated` run whole instead of observed, do 137 (0x005D26F0), for a target that passes
+  0x00645590:
+  1. `STATE_Set(target, 104, 1)`: 104 is below the States count, so 0x00625A70 runs. On a target whose `+0x5C` list has
+     `+0x10` bit 31, it sets bit 104 of the words at the list's `+0x58`. If the bit was clear, it also sets the same bit
+     in the second half, at word `(count + 31) / 32 + 104 / 32` (word 9 for 190 states), and when States record 104's
+     byte `+0x12` has bit 0 (0x00452040: DataTables `+0xBC`, stride 0x3C), ORs 8 into the target's `+0xC8`. If the bit
+     was already set, nothing else changes.
+  2. `UnitMarkUpdated(target)` (from `STATE_Set`): the target's room (a monster: its path's `+0x1C`; none without a
+     path) is refused when absent or when its `+0x34` has bit 2 (0x0061AB60), and the target when its `+0xC4` has bit
+     0x2000. Otherwise the target's `+0xC4 |= 0x2000`, the room's `+0x2C` points at a dword set to 1
+     (0x00619F90), and the target is pushed on the list at the room's `+0x1C` (old head into the target's `+0xE0`).
+  3. do 137's own `UnitMarkUpdated(target)` (0x005D2778) then changes nothing: the bit is set or the room refuses.
+  4. `0x00570590` is called from 0x005D2793 with `ECX` the game, `EDX` the caster and `(caster, aurastate, id, lvl)`
+     (`aurastate` the Skills `+0x80` word, sign-extended).
+  1 500 cases, 221 at the call (104 with the bit new, 86 with it set, 31 with no list; 70 with no room and 33 refused
+  by the room flag at the first `UnitMarkUpdated`, the other 118 through both calls: 89 cases linked by the first and
+  29 already marked, so 147 of the 236 calls find the target marked; `check.txt` counts the last two per call). Controls: `old_inv` (157), `chg_nsw` (100, the changed word one
+  further), `f34_any` (23). (`check.txt`, fn:sub_005D26F0_SkillDo137FenrisRage@0x005D26F0, 0x00639DB0, 0x00625A70,
+  0x0064C040)
+- [I] The remainder of catalogue 96: do 128's overlay, do 133's end callback (the spawn from a dead unit), do 134's
+  elemental roll and area hit, and what 0x00570590 does. It stays with the row, routed to b with H2c's recipe and not
+  counted there (as catalogue 43's remainder).
+- **Not settled, stay `[I]`** (22 rows; the budget of the closing part): README 3, 11, 13; catalogue 9, 16, 20, 26,
+  28–30, 33, 35, 37, 42, 49, 56, 60, 70, 78, 81, 89, 105. Each row's Route cell in plan 0066's inventory names its
+  route (part 2's resume note): the small entries (16, 30, 28), the constant calc pool (49, 105, 60), the stat
+  setters whole (20, 26, 33, 29), a declared inventory page (37, 42, 56, 89, 9, 70, README 11), and the routes to
+  read first (35, 78, 81, 105's do 81, README 3 and 13).
+
 ## Kept outputs
 
 `workspace/logs/skills/` (manifest `p45h-manifest.sha256`, one path base; `sha256sum -c` from that directory):
@@ -1038,6 +1178,20 @@ over the five targets; the 18 + 18 + 3 + 2 + 1 sites as above).
 `workspace/logs/skills/` (plan 0046 Phase 2, manifest `2026-10-30-skills-catalogue-manifest.sha256` `dc673ebd…`, 81 files, `sha256sum -c` from
 that directory): the 12 logs, `…-check.txt` `2bd2b4fb…`, `…-families.txt` `97ad3388…`, `…-tally.txt` `6c22dc3a…`, `…-gaps.txt` `b30c38dd…`; the development logs
 under `dev-p46h-manifest.sha256`.
+
+`workspace/logs/n66sb/s2be/run/` (plan 0066 S2be part 1, manifest `manifest.sha256` `cefa49ea…`, 3 lines, `sha256sum
+-c` from that directory): `sites.txt` `8e0f7b91…` (`python3 -I tools/skills_s2be_routes.py sites`), `rows.txt`
+`dd1e9ea8…` (`… rows --depth 6`), `tool.sha256` `b0b4e63f…` (`tools/skills_s2be_routes.py` `49838ae1…`).
+
+`workspace/logs/n66sb/s2be/run2/` (plan 0066 S2be part 2, manifest `manifest.sha256` `0dc5df57…`, 12 lines,
+`sha256sum -c` from that directory): `check.txt` `2030c929…`, `rows.txt` `b8547594…`, `tail.txt` `ec66e116…`,
+`static.txt` `dc526bbe…`, `s2ae.out` `2ceb453c…`, `tool.sha256` `63154aa7…` (`tools/skills_s2be2_emu.py` `e5bb4844…`); the
+development launch under `workspace/logs/n66sb/s2be/manifest-dev-p2.sha256` (7 lines, passes from
+`workspace/logs/n66sb/s2be/`).
+
+`workspace/logs/n66sb/s2be/run3/` (plan 0066 S2be part 3, manifest `manifest.sha256` `3f8db4aa…`, 13 lines,
+`sha256sum -c` from that directory): `check.txt` `dde8acec…`, `worked.txt` `2ed96de9…`, the two families' `.cases`,
+`.mem`, `.json`, `.out` and `.err`, `tool.sha256` (`tools/skills_s2be3_emu.py` `d14b1781…`).
 
 ## Data touched
 
