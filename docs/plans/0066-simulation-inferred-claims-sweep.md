@@ -2533,3 +2533,60 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Next:** Tier B review of part 1 requested
   ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md));
   part 2 by a fresh lane on `lane/n66x`.
+
+### 2026-11-16 — Phase 1, batch S7e part 1 (reverser-static, `lane/n66u`): 11 of 63 settled (moved); resume note for part 2
+
+- **Done.** Branch from `main` `4508f8a2`. Stopped at the orchestrator's token budget, before any kept emulation run.
+  New tool `tools/sweep2_s7e_emu.py` (development revision `1d2acce0…`), four development launches on
+  `workspace/ghidra-n66u` (`-Xmx3G`, `MemoryMax=4G`), kept with `workspace/logs/n66u/s7e/manifest-dev.sha256` (33 lines)
+  and not cited. Record: [run:2026-11-16-sweep2-s7e](../findings/frame/experiments.md#run2026-11-16-sweep2-s7e).
+- **Rows settled: 11, all moved c-emu → b** (the route crosses a pool allocation or free whose block or effect the
+  claim uses; ADR-0021 covers nothing after it and R2 forbids a declared return; each call named in its row):
+  frame 12, 15, 30, 49, 58, 72, 74, 114, 122 → H7b; path-README 5, 18 → H7c.
+- **Totals** after merging `main` `2d5dfac5` (the 29 files' rows recounted): sim/frame b 22, c-emu 15; path/README b 13,
+  c-emu 14; all a-logs 623, a-run 334, b 485, c 390, c-emu 466, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626;
+  Phase 1 1 479, Phase 2 819.
+- **Resume note for part 2 (52 rows).**
+  - `ffn` (travel 19, 60) is ready: 24 development cases matched with `CollMap.h` declared. Run the kept 600 cases
+    (`cases --dir workspace/logs/n66u/s7e/run`), check, manifest; then update findings/quests/0002 line 694's
+    "(plan 0066 S3e, proposed)" and quests/travel's B1 scope bullet. Row 60's "the open fails" (the caller after the
+    return, 0x0056D218) is not covered by the search's run.
+  - `mevd`/`mevr` (frame 46, 47): fix the model (write each frozen unit's stat list, flag and bit word into the model's
+    `Mem` as well as the case lines), re-run development cases before the kept run.
+  - `qx` (frame 35, 37, 39 walk half, 43, 70, 121): the one mismatch and the traced writes below the control and at 0
+    show that a negative frame after the counter's wrap indexes outside its list's slot array; read 0x005416B0's index
+    and the model's `slot_head` for that case before the kept run. 39's new-block half and 121's same-frame half need
+    the allocator or a walk-time queue: route them b when settling.
+  - Not attempted (route reads first; each goes to b if its route crosses the pool, as above): frame 55–57
+    (`UnitFrameReset`'s callees, `UnitSetStat`), 64 (`ClientsRoomSync`: `AutosaveTick` returns at 0x00730FFC before the
+    clock), 65, 75 (`ActLevelsUnloadTick`), 115 (`UnitRoomUnlink`); path-README 4, 19, 20, 23, 25, 27–30, 52, 69, 71,
+    74, 75; path-search 1, 6, 8, 13, 16, 22, 23, 25, 32, 33; lifecycle 3, 9, 28, 47, 50, 60, 72–76.
+- **Review:** none yet; the Tier B request comes with part 2.
+
+### 2026-11-16 — Phase 1, batch S7e part 2 (reverser-static, `lane/n66u`): the other 52 settled; S7e done
+
+- **Done.** Branch at `ce490d94`, `main` `2d5dfac5` already merged (no new merge). Kept runs on `workspace/ghidra-n66u`
+  (Ghidra 12.1.2, `-Xmx3G`, `MemoryMax=4G`), outputs with manifests in `workspace/logs/n66u/s7e/run` (22), `path` (21),
+  `routes` (1); development `dev5`, `dev6` (`manifest-dev2.sha256`, 22). Tools: `tools/sweep2_s7e_emu.py` (`b89a4fa3…`;
+  `--families`, the `mevd`/`mevr` model fix, the null-tail and below-control handling in `qx`, the null cell array in
+  `ffn`), new `tools/sweep2_s7e_path.py` (`b70ebec2…`: `facing`, `mreset`, `wtick`, `wroll`) and
+  `tools/sweep2_s7e_routes.py` (`f2d7f39d…`). Record: [run:2026-11-16-sweep2-s7e](../findings/frame/experiments.md#run2026-11-16-sweep2-s7e), part 2.
+  Families: `ffn` 600 (4 left out of the claim), `qx` 400, `mevd` 500, `mevr` 300, `facing` 200, `mreset` 300, `wtick` 300, `wroll` 300; 0
+  mismatches; every control separates and passes 0.
+- **Rows (52):** raised 11 (travel 19; frame 37, 46, 70; path-README 4, 71; lifecycle 3, 72–75); raised in part 7
+  (travel 60; frame 35, 39, 43, 47; path-README 19; lifecycle 76); moved c-emu → b (H7b) 7 (frame 55, 56, 64, 65, 75;
+  lifecycle 28, 47: a callee whose return the claim needs allocates or frees through the pool, each call named in its
+  row); not settled 27, stay c-emu with a reason each (frame 57, 115, 121; path-README 20, 23, 25, 27–30, 52, 69, 74, 75;
+  path-search 1, 6, 8, 13, 16, 22, 23, 25, 32, 33; lifecycle 9, 50, 60). S7e whole: 63 rows, 18 moved to b (11 in part
+  1), 18 raised whole or in part, 27 not settled.
+- **New readings** (filed to spec-writer, [backlog](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s7e-refinements.md)):
+  at current frame −2 `EventQueueAt` raises a frame to −1 and takes a null tail, an access at address 0 (a fault in the
+  game, `[I]`); `COLL_RectTest` does not test the map's cell pointer (drlg/collision E4). Also travel's B1 gained a scope
+  bullet for sizes 0–4 and steps 1–5 (front matter and research map C 80), quests/0002's "(plan 0066 S3e, proposed)"
+  closed.
+- **Totals** (the 29 files' rows recounted after the moves; `main` `2d5dfac5`): sim/frame b 27, c-emu 10; drlg/lifecycle
+  b 9, c-emu 9; all a-logs 623, a-run 334, b 492, c 390, c-emu 459, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626;
+  Phase 1 1 472, Phase 2 826. H7b now 24 rows.
+- **For the owner:** none. The 27 not-settled statements could be a later static batch (no pool entry in 23 of them);
+  whether that is worth a batch is the architect's call.
+- **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s7e`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7e.md), covering S7e whole.
