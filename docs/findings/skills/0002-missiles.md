@@ -887,6 +887,10 @@ rows are the plan 0066 inventory files' Route cells "S2c 2026-11-16 (part 2)". T
   makes a Missiles row. `MISSILE_BuildDamage` reads all 23 of its stats from the missile; its closure has 16 functions,
   no indirect call and no item or owner function. `MissileCritRoll`'s only references are two calls in
   `MissileDamageBlock`, which `COMBAT_BuildDamage`'s closure does not reach.
+- **Remainder `[I]` of the two absence claims (architect check).** "No server reader" of `repeat` (dispatch 76, mask
+  0x006CE274) and of
+  `ExplosionMissile` (missiles 70, `check-s2c-p2.txt` M70, 0x004AD71C) rests on the function-type criterion above; a row passed as an argument to a function
+  that makes none is not excluded, so both rows are raised in part.
 - **Not settled:** dispatch 41 (the client's request sender is not located) and missiles 15 (`MissileCreate` reloads
   its block register and holds the flags in registers, which needs a data-flow read).
 - **Contradicted in part:** dispatch 57 and 193 (mode 14, above), and missiles 23's "five monster functions": the six
