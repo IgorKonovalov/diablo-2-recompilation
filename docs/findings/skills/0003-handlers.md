@@ -1052,6 +1052,57 @@ without crossing a gate. Outputs: `workspace/logs/n66sb/s2be/run/` (`sites.txt` 
   105, 107. Each has a part before its first allocating call that an emulation can reach (`sites.txt` names the
   calls), and most an R2 remainder.
 
+### 19. Plan 0066 batch S2be part 2: do 13's return, do 12's per-unit callback and prg 36 on Skills rows 44 and 48 (2026-11-16, `lane/n66sb`)
+
+Two families under Ghidra's p-code emulator with a `tools/` model (`tools/skills_s2be2_emu.py`, ADR-0015, ADR-0021;
+6 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes, 35 controls, 30 separating, `passed` 0), and one
+two-tool read. Record: run:2026-11-16-sweep2-s2be2. Outputs `workspace/logs/n66sb/s2be/run2/`.
+
+- [C] **do 13 returns 0 on every path (catalogue 107, raised).** Its one `ret 0x8` (0x005DBE45) follows
+  `xor eax, eax` (0x005DBE3F) with `pop ebx`, `mov esp, ebp` and `pop ebp` between them, none of which writes `EAX`.
+  The function has 179 instructions and no indirect jump, and its 9 branch targets all lie inside it. 7 branches land
+  at 0x005DBE3D or 0x005DBE3E, before the `xor`. No direct branch or call among the 1 067 138 instructions of
+  0x00401000–0x006D0000 targets 0x005DBE40–0x005DBE45 (objdump). radare2's own analysis is the second tool: its block
+  list ends the function with the block 0x005DBE3E–0x005DBE48, entered from 0x005DBE3D by fall-through and from the
+  three jumps to 0x005DBE3E, and `axt` gives no reference to 0x005DBE3F–0x005DBE45. So no return skips the `xor`, and
+  the value cannot depend on a callee, the queue paths included: the row is whole, with no b remainder. (`tail.txt`,
+  fn:sub_005DBC60_SkillDo13Fend@0x005DBC60)
+- [C] **do 12's per-unit callback 0x005DB150 (catalogue 43, raised in part).** With `ECX` the walker's context and
+  `EDX` the unit, it builds nine dwords on its frame and calls `STATE_ApplyTimed` (0x0056E970, from 0x005DB1A6) with
+  `ECX` pointing to them. The nine dwords are `{ctx+0x04, unit, b+0x00, b+0x04, b+0x08, b+0x10, b+0x14, b+0x0C, 0}`,
+  where `b` is the block at `ctx+0x0C`. In the spec's block terms `{id, lvl, auralencalc, auratargetstate, aurastat1,
+  aurastatcalc1}`, `STATE_ApplyTimed` receives `{ctx+4, unit, id, lvl, length, aurastat1, aurastatcalc1,
+  auratargetstate, 0}`: the state word moves behind the stat pair (control `spec_block_order`, the block copied in
+  the spec's order, separates all 1 500 cases and passes none). The block passed is the frame's own: `ECX` = `ESP + 8`
+  at the call in every case. (`check.txt`, 0x005DB150, 0x005DB1A6)
+- [I] The remainder of catalogue 43 lies past `STATE_ApplyTimed` (`STATLIST_Alloc`, pool 0x0040B430 at 0x0062520B),
+  as does the claim that `SKILLS_ForUnitsInRange` hands the callback each unit in range with the game at `ctx+4`.
+  The row keeps it, routed to b with H2c's recipe and not counted there, as catalogue 8's remainder sits with H2a.
+  The `return 1` after the call follows the boundary. (0x0056B7E0, 0x005DB1AB)
+- [C] **prg 36 on Skills rows 44 and 48 (catalogue 73, raised in part).** The run declares the two rows with their
+  shipped bytes: `+0x04` = 0 (the charge flag clear), `srvmissilea` `+0x48` = 119 (row 44) and 90 (row 48), `+0x138`
+  = −1. It declares Missiles rows 90 and 119 the same way: `Vel` 24, `VelLev` 0. In 1 423 cases with a stored target
+  that `UNIT_GetTargetUnit` keeps and `lvl > 0` (735 on row 44, 688 on row 48), prg 36 reaches
+  `SkillNovaAtUnit` (0x0056D400, from 0x005D4E53) with `ECX` the game, `EDX` the caster and the arguments
+  `(target, m, id, lvl, v)`: `m` = 119 for row 44 and 90 for row 48, and `v` = 24 (`MissileSpeedAtLevel` plus
+  `SKILLS_EvalCalc`, which returns 0 at its unsigned bounds test for the −1 calc). Without a target, prg 36 returns 0
+  with no call (587 cases where the target alone refuses: 285 on row 44, 302 on row 48). The nova's centre is the
+  target argument: control `spec_caster_centre` separates 1 808 cases and passes none. That `SkillNovaAtUnit` places
+  the ring at the target's position is skills/0014's `[C]` up to `MissileCreate` (run:2026-10-21-cat-emu-ass). Random
+  rows (the charge path closed by an out-of-range state or stat, calcs past the declared pool) and
+  `MissileSpeedAtLevel`'s truncating division (`spec_floor` 52) are compared too. (`check.txt`, `rows.txt`,
+  fn:sub_005D4DB0_SkillPrgDo36NovaAtTarget@0x005D4DB0, fn:sub_005D3CF0_SkillSrvMissileByCharge@0x005D3CF0,
+  fn:sub_00663270_MissileSpeedAtLevel@0x00663270, tbl:Skills.txt:srvmissilea, tbl:Missiles.txt:Vel)
+- [I] The remainder of catalogue 73 is that an item cast of rows 44 and 48 runs prg 36: `ItemEffect` 36 replaces
+  `srvdofunc` under the cast's effect flag (skills/0001 § 6) and supplies the target through `ITEMSKILL_Cast`. It
+  stays `[I]` on the route of catalogue 78 and 81. The charge path (`+0x04` bit 2 with a state and stat in range,
+  0x006256B0) is not run; the stock rows 44 and 48 do not take it. (0x005D3D1F)
+- **Not separated** (5 controls; `check.txt`): the charge-path tests `charge_flag`, `cst_ge0`, `cst_ge0~` and
+  `cstat_ge0~`, which the declared rows keep closed (both readings return `+0x48`), and `m_ge0~` (a class of 0 is
+  refused by `m > 0` before `MissileSpeedAtLevel`).
+- **Left for part 3** (24 rows): README 3, 11, 13; catalogue 9, 16, 20, 26, 28–30, 33, 35, 37, 42, 49, 56, 60, 70,
+  78, 81, 89, 96, 104, 105; routes in plan 0066's log.
+
 ## Kept outputs
 
 `workspace/logs/skills/` (manifest `p45h-manifest.sha256`, one path base; `sha256sum -c` from that directory):
@@ -1084,6 +1135,12 @@ under `dev-p46h-manifest.sha256`.
 `workspace/logs/n66sb/s2be/run/` (plan 0066 S2be part 1, manifest `manifest.sha256` `cefa49ea…`, 3 lines, `sha256sum
 -c` from that directory): `sites.txt` `8e0f7b91…` (`python3 -I tools/skills_s2be_routes.py sites`), `rows.txt`
 `dd1e9ea8…` (`… rows --depth 6`), `tool.sha256` `b0b4e63f…` (`tools/skills_s2be_routes.py` `49838ae1…`).
+
+`workspace/logs/n66sb/s2be/run2/` (plan 0066 S2be part 2, manifest `manifest.sha256` `0dc5df57…`, 12 lines,
+`sha256sum -c` from that directory): `check.txt` `2030c929…`, `rows.txt` `b8547594…`, `tail.txt` `ec66e116…`,
+`static.txt` `dc526bbe…`, `s2ae.out` `2ceb453c…`, `tool.sha256` `63154aa7…` (`tools/skills_s2be2_emu.py` `e5bb4844…`); the
+development launch under `workspace/logs/n66sb/s2be/manifest-dev-p2.sha256` (7 lines, passes from
+`workspace/logs/n66sb/s2be/`).
 
 ## Data touched
 

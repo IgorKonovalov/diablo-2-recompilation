@@ -4076,3 +4076,65 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
     3's `ItemTargetCorpse` reaches the pool at 0x0065A943; `SKILLS_SrvDo` → b), 105's do 81 (its per-unit callback
     0x0056C110 reaches the pool), README 3 and 13 (as dispatch 135's remainder).
 - **Review:** none yet; the Tier B request comes when S2be is whole.
+
+### 2026-11-16 — Phase 1, batch S2be part 2 (reverser-static, `lane/n66sb`): 3 more settled (do 13's return, do 12's callback, prg 36 on rows 44 and 48); resume note for part 3
+
+- **Done.** Merged `main` `c6c85ae8` (only the site builder, `tools/gate.py` and `tools/tc_anim.py` changed; no
+  inventory file). Totals from the 29 files' *Totals by class* (`tools/quests_s3c.py totals`, `bad=0`) are unchanged
+  from part 1. New tool `tools/skills_s2be2_emu.py` (`e5bb4844…`). It reuses S2ae part 1's case, check and manifest
+  machinery and part 5's `UNIT_GetTargetUnit` model in its module state only. One kept `tools/ghidra.sh emuboundary`
+  launch on `workspace/ghidra-n66sb` (a fresh copy of `workspace/ghidra`, `import-symbols` first; `-Xmx3G`,
+  `MemoryMax=4G`) after one development launch (`dev1/`, `workspace/logs/n66sb/s2be/manifest-dev-p2.sha256`, not
+  cited). Two families (`cb43`, `p36`): 6 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 35
+  controls, 30 separating, `passed` 0. A `tail` read of do 13 with objdump over `.text` and radare2. Record:
+  [run:2026-11-16-sweep2-s2be2](../findings/skills/experiments.md#run2026-11-16-sweep2-s2be2);
+  `workspace/logs/n66sb/s2be/run2/` (`check.txt` `2030c929…`, `rows.txt` `b8547594…`, `tail.txt` `ec66e116…`,
+  `static.txt` `dc526bbe…`, `manifest.sha256` `0dc5df57…`, 12 lines, passes from there). Claims:
+  [skills/0003 § 19](../findings/skills/0003-handlers.md#19-plan-0066-batch-s2be-part-2-do-13s-return-do-12s-per-unit-callback-and-prg-36-on-skills-rows-44-and-48-2026-11-16-lanen66sb).
+- **Rows (3).** Raised: catalogue 107. do 13's one `ret` follows `xor eax, eax` with no `EAX` write between, and no
+  branch in `.text` lands between them (objdump, with radare2 as the second tool), so the return is 0 on every path,
+  queue paths included; no remainder. Raised in part: catalogue 43 (the callback's nine-dword block to
+  `STATE_ApplyTimed`, with the state word behind the stat pair; the per-unit walk and what `STATE_ApplyTimed` does →
+  b with H2c's recipe, not counted there, as catalogue 8's remainder sits with H2a), catalogue 73 (prg 36 on the
+  shipped rows 44 and 48 calls `SkillNovaAtUnit` with the target and `m` 119 or 90, and returns 0 without a target;
+  that an item cast runs it stays `[I]` on the route of 78 and 81). None moved, none contradicted.
+- **Refinements** (Phase 3's): H5's callback block order (`{game, unit, id, lvl, length, aurastat1, aurastatcalc1,
+  auratargetstate, 0}`); M5's speed argument (`v` = 24 for both rows: `Vel` 24, `VelLev` 0, calc −1). Both are in
+  skills/0003 § 19. The spec-writer picks them up with the batch's Tier B review; this part files no backlog entry.
+- **Symbols:** none raised (an emulation over a declared image and a static read, review-fixes 14).
+- **Totals** unchanged (no class move): a-logs 623, a-run 334, b 562, c 389, c-emu 390, d-2c 59, d-owner 68, d-edit
+  23, d-none 178 = 2 626. Inventory README § 4's S2be row updated; skills-catalogue rows 43, 73 and 107 annotated.
+- **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text:** the catalogue's reimplementation note
+  "do 13 returns 0 on every path"; H5's `after:` line, in part; M5, in part.
+- **Judgment calls for the review:** (1) row 107's `[C]` rests on two disassemblers (objdump's whole-`.text` branch
+  scan, radare2's own block list and references), as S2c raised the calling-convention rows, and on no emulation.
+  The claim is about the instructions between the `xor` and the `ret`, which no callee can reach. (2) row 73's
+  Skills and Missiles rows carry the shipped bytes, read at case time (S1e ruling 3, as S2ae part 8's ItemStatCost
+  rows); the random rows keep the charge path closed, and the 5 controls that do not separate are those tests. (3)
+  row 43's remainder sits with the row and is routed to b, not moved, as part 1 did for catalogue 8. (4) The
+  emulation ran before `rows` and `tail` took their final form; `check.txt` reproduces on the committed revision.
+- **Resume note for part 3 (a fresh lane on `lane/n66sb`; `workspace/ghidra-n66sb` stays, symbols imported).**
+  Left: 24 rows (README 3, 11, 13; catalogue 9, 16, 20, 26, 28–30, 33, 35, 37, 42, 49, 56, 60, 70, 78, 81, 89, 96,
+  104, 105). `tools/skills_s2be2_emu.py` is the template: new families plug into S2ae part 1's machinery the same way.
+  Groups, cheapest first:
+  - **Small, no page:** 16 (mdo 13 0x005AEDA0 to `SpawnOwnedMonster` 0x005AEED5: `UnitGetOwner`, the MISSDATA
+    getters, `SKILLS_GetRecord`, `SkillSummonClass` 0x0056E620 (7 functions, no pool), `GameFindUnit`, the sub-x/y
+    getters; plan 0046's batch 9a builders in `tools/skills_catalogue_emu.py`); 30 (mhit 7 0x005A9FB0: `SkillPetTest`
+    and `SkillAllyTest` whole from S2ae part 5's `pet`/`ally` models and `gen_tc` world, then `MONSTATS_IsUndead`
+    0x0063E990 and `IsDemon` 0x0063E940 on a MonStats image; the refused-ally return at 0x005AA112–0x005AA172); 104
+    (do 140 0x005D2C20 on seed `(1, 666)`, difficulty 2, the default arm, base `(100, 200)`: plan 0046's `move_8c`
+    world and `tent_model`, two cases (a room at try 1, no room in all tries) plus the batch's random ones, to
+    `SpawnAtPos` 0x005D2E07 or the return); 96 (do 137 past `STATE_Set` 0x005D2772: `STATE_Set` and
+    `UnitMarkUpdated` 0x0064C040 whole, the latter with `UnitGetRoom` 0x00620BB0, `RoomFlag4` 0x0061AB60 and
+    `RoomUpdatedList` 0x00619F90 on a declared room (`+0x34`, `+0x2C`, `+0x1C`; no pool), to 0x00570590 at
+    0x005D2793; do 128, 133 and 134 → b).
+  - **Not in part 1's groups:** 28 (mhit 24 0x005A9BF0 and mhit 44 0x005A9E10 past `MISSILE_BuildDamage` 0x005A89A0
+    (17 functions, no pool; the S4e/rbd model) to `AreaHitAt` 0x0056BAD0: the OR's and the pushed radius
+    (`push ebx` at 0x005A9D59); the returns after `AreaHitAt` → b, as row 27).
+  - **A constant calc pool** (`put_skill_calcs` of `tools/skills_catalogue_emu.py`): 49 and 105's do 55 (to
+    `SKILLS_ForUnitsInRange` 0x005C5089), 60 (do 69 to `NpcDropCreate` 0x005D8274).
+  - **The stat setters whole** (S2ae part 8's `unit_set_stat`, `put_world`): 20, 26, 33, 29 (as part 1's note).
+  - **A declared inventory page** (`InvPageGet` 0x0063ADD0): 37, 42, 56, 89, 9, 70, README 11 (as part 1's note).
+  - **Routes to read first:** 35, 78, 81 (73's remainder rides on them), 105's do 81, README 3 and 13 (as part 1's
+    note).
+- **Review:** none yet; the Tier B request comes when S2be is whole.
