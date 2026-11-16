@@ -514,6 +514,7 @@ each cluster's re-tag.
 | skills (`lane/n66sk`) | [skills/README](skills-README.md) | 25 | 4 | 4 | 1 | 16 | C 26 / I 25 / L 1 | C 36 / I 22 / L 1 |
 | skills (`lane/n66sk`) | [skills/missiles](skills-missiles.md) | 99 | 40 | 35 | 2 | 22 | C 53 / I 99 / L 8 | C 125 / I 60 / L 6 |
 | skills (`lane/n66sk`) | [skills/catalogue](skills-catalogue.md) | 108 | 15 | 16 | 2 | 75 | C 257 / I 109 / L 7 | C 290 / I 94 / L 7 |
+| skills (`lane/n66sk`) | [skills/dispatch](skills-dispatch.md) | 195 | 48 | 74 | 6 | 67 | C 79 / I 205 / L 10 | C 204 / I 173 / L 10 |
 
 A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
 `[C]` count rises by more than the `[I]` count falls.

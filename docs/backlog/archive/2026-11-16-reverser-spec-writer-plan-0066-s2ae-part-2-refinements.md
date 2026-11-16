@@ -2,15 +2,17 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/skills/0002-missiles.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): item 1 in [skills/dispatch](../../specs/skills/dispatch.md) C4 (the level is base plus C8's bonus, clamped, then max(lvl − 1, 0)) and D3; items 2–4 in skills/missiles D6 and the type-1 filter (part 1)."
 ---
 
 Plan 0066 batch S2ae part 2 (`lane/n66sa`, run:2026-11-16-sweep2-s2ae2) raised skills/dispatch C4 (rows 36, 37) and
 D3 (row 49), and skills/missiles D6 (row 47) and the collide-type filter cells (rows 40–42, 45, 46), with these
 refinements for Phase 3 to carry when the skills cluster is re-tagged (claims and anchors in
-[skills/0002 § 18](../findings/skills/0002-missiles.md#18-plan-0066-batch-s2ae-part-2-the-mana-checks-and-the-collide-filters-emulated-2026-11-16-lanen66sa)):
+[skills/0002 § 18](../../findings/skills/0002-missiles.md#18-plan-0066-batch-s2ae-part-2-the-mana-checks-and-the-collide-filters-emulated-2026-11-16-lanen66sa)):
 
 1. **C4 / D3, the level:** `lvl` is the entry's base plus `SkillLevelBonus` (the bonus's terms are listed in § 18:
    state 134 + 2, stat 127, own-class stats 83 and 188, stat 97 capped at 3 for the own class and for a non-player
@@ -26,5 +28,5 @@ refinements for Phase 3 to carry when the skills cluster is re-tagged (claims an
 Not blocking. The mask cells of the type table stay as tagged (S2ae part 3).
 
 *2026-11-16 (reverser, `lane/n66sa`, S2ae part 3):* the mask cells were raised after all (the two `lea`s carry no
-store; [skills/0002 § 19](../findings/skills/0002-missiles.md#19-plan-0066-batch-s2ae-part-3-the-mask-uses-read-calldofunc-hit-27-and-unique-mod-29-emulated-2026-11-16-lanen66sa)); part 3's refinements are in
-[`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements`](archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements.md).
+store; [skills/0002 § 19](../../findings/skills/0002-missiles.md#19-plan-0066-batch-s2ae-part-3-the-mask-uses-read-calldofunc-hit-27-and-unique-mod-29-emulated-2026-11-16-lanen66sa)); part 3's refinements are in
+[`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements`](2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements.md).
