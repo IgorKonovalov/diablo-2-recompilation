@@ -765,6 +765,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/n69g` review | 0069 P4 | architect-review | 170 126 | 53 | 7 | — | gave accept with fixes (Tier A) | audit of lane/n69g: 8: overclaim 3, misread 1, omission 2, wrong anchor 1, bookkeeping 1; no reject-grade miss (row 27's one-point formula raise is the check-level risk; 5th Tier B after the n66p audit; count restarts) |
 | 2026-11-16 | `lane/n66t` | 0066 P1 S5e | reverser-static | 865 566 | 291 | 55 | ghidra-n66t | accept with fixes | 6: stale cross-reference 3, overclaim 1, misread 1, omission 1 (three parts: 272 730/82/15 + 317 700/102/22 + 275 136/107/18) |
 | 2026-11-16 | `lane/n66t` check | 0066 P1 S5e | architect-check | 147 578 | 32 | 3 | — | gave accept with fixes (Tier B) | 6: stale cross-reference 3, overclaim 1, misread 1, omission 1 (1st Tier B after the n69g audit) |
+| 2026-11-16 | `lane/n66v` | 0066 P3 anim | spec-writer | 400 229 | 124 | 23 | — | accept with fixes | 3: overclaim 2, misread 1 |
+| 2026-11-16 | `lane/n66v` review | 0066 P3 anim | architect-review | 165 143 | 68 | 6 | — | gave accept with fixes (Tier A) | 3: overclaim 2, misread 1; spec promotion, outside the Tier B audit count; cluster pattern ruled |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
