@@ -4016,3 +4016,40 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Not settled rows (26):** every Route cell names a page, a calc pool, a room or a run; none lies wholly past an
   allocating call (rows 84, 127 and m63 corrected above).
 - **Gate:** fast green (68 warnings, none from the fixes). The review request stays open for the merge.
+
+### 2026-11-16 — Phase 1, batch S1m (reverser-static, `lane/n66m1`): done, 40 of 40 rows settled or routed
+
+- **Done.** Branch from `main` `845aa88f`. No game, no Ghidra, no slot. New tool `tools/ai_s1m.py` (sections `logs`,
+  `tables`, `gaps`, `totals`; the image and table readers of `tools/ai_s1fo.py` and `tools/quests_s3c.py`) over the 38
+  logs of S1a (21 rev 4, 17 rev 6), the 31 logs of run:2026-11-03-ai for the command-byte and seed-pair checks, and the
+  six gap walks of run:2026-11-04-h1's review. Record:
+  [run:2026-11-16-sweep2-s1m](../findings/ai/experiments.md#run2026-11-16-sweep2-s1m); kept output
+  `workspace/logs/n66m1/s1m/check-s1m.txt` (74 check lines, `S1m total bad=0`), `manifest-s1m.sha256` passing from
+  `workspace/logs/n66m1/s1m`; development in `dev/`. Every row's *Route* cell carries its dated note; README § 4's S1m
+  row updated. One shared pass with S1a's tool was not needed: `ai_resume_flip.py`'s kept census for row 20 is cited, and
+  the new observable is the next AID's control word.
+- **Result (40 rows).** Raised 10: machinery 2, 7, 21, 49, 59, 69, 114; README 9, 45, 51. Raised in part 27, the
+  remainder named in each Route cell: machinery 3, 4, 23, 25, 26, 34, 47, 55, 58, 63, 67, 71, 84, 107, 113; README 7, 10,
+  11, 13, 14, 18, 19, 22, 27, 32, 36, 47. Not settled 2: machinery 53 (no state-2 decision; route c-emu), 68 (no row-20
+  head record of another kind; route the plan 0069 tour logs or b). Moved 1: machinery 110 a-logs → d-edit (`aip3` is
+  100 in all 18 stock Mummy cells, so the failed draw needs edited data). S1m holds 39 statements now.
+- **Surprises.** (1) Row 20 meets H1: 0x005F283F, the site no call can see, is told apart by the next AID's `+0x14` (59
+  cleared, 11 kept), so T20c and H4 change (corrections item 3). (2) Nine AI helpers call `MonSetMode` themselves besides
+  the table's five commands (item 1). (3) 75 A1/A2 commands move the unit seed inside `MonSetMode` with no skill start
+  logged (item 2). (4) States 10 and 11 occur in the Countess launches with no curse cast (item 4).
+- **Corrections** to Phase 3 through
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections.md)
+  (five items). No contradiction filed: each item is a refinement or a remainder.
+- **Symbols:** none raised or added.
+- **Totals** (the kept check's `totals` line, against this branch's base `main` `845aa88f`): a-logs 622, a-run 334,
+  b 517, c 389, c-emu 435, d-2c 59, d-owner 68, d-edit 24, d-none 178 = 2 626. Inventory README § 1 updated.
+- **Judgment calls for the review:** (1) README 10, 11 and 14 raised in part on other lanes' kept checks (S7a, S7b, S7f,
+  frame/0004), as their Route cells name, with no new pass of the frame corpus; (2) machinery 69 (T20c, "stays a
+  reading") filed raised as rewritten, since the reason it gives no longer holds; (3) the `Idle`/`Delay` rows raised in
+  part with the 68 early next events reported and not counted against `Idle`'s own queueing (another queue can come
+  earlier); (4) machinery 55 raised in part with the 75 unattributed moves named, not filed contradicted, because § F
+  cites anim/timing § N and skills/dispatch § P, whose reach of the A1/A2 start is not read here; (5) machinery 58 and 63
+  raised in part only for `<` against `≤` (no equal pair counted), every arm of row 2 taken; (6) README 32 on the first
+  logged decision, which is not the allocation.
+- **Next:** Tier B review requested
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1m`](../backlog/2026-11-16-reverser-architect-review-plan-0066-s1m.md)).
