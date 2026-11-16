@@ -2572,7 +2572,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   skills cluster raises them ([entry](../backlog/2026-11-16-spec-writer-spec-writer-plan-0066-skills-dispatch-notes-2-and-7.md));
   the quirks class table, stale since the anim re-tag (377 / 161 against 383 / 155), now reads 396 / 142. Research-map
   rows of combat (rewritten whole), player/party and quirks updated. wiki/combat and wiki/characters carry W4; a refresh
-  entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-combat-refresh-after-plan-0066-combat-re.md)).
+  entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-combat-refresh-after-plan-0066-combat-re.md)).
 - **Judgment calls for the review:** (1) README 20 and 24, filed raised by S5a as re-tags of skills/missiles, are
   split: skills/missiles E1 and F1 keep the missile's `arPct`, `AlwaysExplode` and the seven pairs' order `[I]`, and
   "the order differs" rests on damage step 3's mastery place, still `[I]` (review-fixes 1); (2) README 21 and 22 split:

@@ -3,7 +3,7 @@ based_on:
   - docs/specs/player/README.md 2026-11-03
   - docs/specs/player/creation.md 2026-11-10
   - docs/specs/hirelings/README.md 2026-11-10
-  - docs/specs/player/party.md 2026-11-10
+  - docs/specs/player/party.md 2026-11-16
   - docs/specs/save/d2s.md 2026-11-10
 ---
 
@@ -332,8 +332,8 @@ flowchart TD
   experience and its own level, cut to 86/256 unless it is the killer. Other members' mercenaries get nothing (read from
   the code, with the owner credit for mercenary kills seen in play). The kill experience and the death loss are on the
   sections above; the death loss reads no party.
-- **Draws.** The credit and the share make no random draw; this is read from the code by following the direct calls
-  only.
+- **Draws.** The credit and the share make no random draw by their direct calls: two independent code tools agree
+  that none of the 467 functions those calls reach draws. Calls through pointers were not followed.
 
 ### What the number of players changes
 
@@ -347,7 +347,7 @@ from the code.
 | a monster's hit points and experience | the count at its creation, kept in the monster | 50 % more per player beyond the first, never recomputed afterwards | seen in play |
 | a monster's stored player count | at creation: the count for a monster whose alignment value is 0, 1 for any other | feeds the rows below; a hireling gets 1 and no bonus | seen in play |
 | crushing blow | the stored count | the divisor grows with it | seen in play |
-| a monster's damage | the stored count | expansion, Nightmare and Hell only: a share of 1/16 per player beyond the first, up to eight | read from the code |
+| a monster's damage | the stored count | expansion, Nightmare and Hell only: a share of 1/16 per player beyond the first, up to eight | seen in play (the share 2/16 at three players, 7/16 at eight, none in Normal) |
 | no-drop chance of a treasure class | the count now, and the party count now | the count is taken as the party plus half of the players outside it, then scaled | seen in play, for two players |
 | the cap on that count | the stored count of a monster source; an object source has none | the count cannot exceed it; the cap never acted in a logged drop | read from the code (no cap on an object source: seen in play) |
 | experience share | the party list and positions; no player count | the rules above | read from the code |
@@ -357,7 +357,8 @@ Things the number does not change: group size, minions and density do not scale 
 `/players` 1, 3 and 8). Changing `/players` in a running game changes nothing for monsters already made, which kept their
 stats over 13 changes (seen in play); monsters made later and later drops take the new count (read from the code). Four
 boss and corrupt-rogue decision functions compute the count again when they think but read only the difficulty from the
-result, so a changed `/players` has no effect there (read from the code).
+result, so a changed `/players` has no effect there. Two independent code tools agree on this: these four functions
+and monster creation are the only direct callers of that count, and the four read only its difficulty.
 
 What is not known: a player's award from a player in play, a live case of a far hireling's kill in a party, and how the
 party gold split behaves in a game ([player/party § Open questions](../specs/player/party.md#open-questions)).
