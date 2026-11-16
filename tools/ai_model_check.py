@@ -74,6 +74,12 @@ them in `dec["r7"]`): R54 (`AiNearestPlayer`'s (p, f, type)), R32 (the type, for
 `run_bonus`), R78 and R79 (`arrow.region`), R118 and R119 (the `StatListFindFlag` result); each falls back to its fork on a
 rev 6 log. `UnitSetEvent`'s `Unit+0xC4 |= 0x400` is also made by R54's step 2 (behind the fork `2.setevent`) and R58's step 3
 (the Phase 1c review item).
+
+Revision 7 (plan 0069 rev 8 logger, `lane/n69h`): the rev 8 words as inputs, each falling back to its fork (or, for the compare
+words, the AID line's `dist` and `aip(4)`) on a rev 7 log: `R118.cmp` and `R119.cmp` ([dist, aip(4)] read at the range compare, so
+the model compares what the code compares), `R120.hasskill1/2/3` (MonHasSkill's result), `owner.mode` (R56, already read by the
+model), `R48.act` and `R48.quest21`. The decision's `R118.ctl` word ([armed, mode, n]) marks the perturbation control; the
+checker's output does not change on it (tools/ai_r118_probe.py groups by it).
 """
 import os
 import sys
@@ -1133,7 +1139,16 @@ def m_r114(r):
 def m_r118(r):
     """R118 Succubus. `StatListFindFlag` (0x00625760) is not a boundary: its result is the rev 7 word `R118.flag0x20` (EAX at
     0x005E1E34), else it forks (revision 6)."""
-    if (not known(r, "1.flag0x20", "R118.flag0x20", lambda w: w != 0) and r.less("1.dist<aip(4)", r.dist, r.aip(4)) and r.chance("1.chance(3)", 3)):
+    cmpw = r7(r, "R118.cmp")                    # revision 7 of the checker: the two words of `cmp [ebp-0xC], eax` (0x005E1E45)
+    d, a4 = (r.dist, r.aip(4)) if cmpw is None else (cmpw[0], cmpw[1])
+    ctl = r7(r, "R118.ctl")
+    if r7(r, "R118.flag0x20") is None and ctl is not None and ctl[0] & 2:
+        # the compare word's breakpoint (0x005E1E45) was armed: the code reaches it only when the flag test fell through, so its
+        # presence means flag 0 and its absence flag != 0 (the jne at 0x005E1E36 to 0x005E1FBE)
+        flag_set = r.br("1.flag0x20", cmpw is None)
+    else:
+        flag_set = known(r, "1.flag0x20", "R118.flag0x20", lambda w: w != 0)
+    if (not flag_set and r.less("1.dist<aip(4)", d, a4) and r.chance("1.chance(3)", 3)):
         if r.less("1.0<Skill1", 0, r.skill[0]) and not r.less(
                 "1.tlife<aip(7)", s32(r.call("1.tlife", "UnitLifePct", u=r.t).eax), r.aip(7)):
             use_skill(r, "1.useskill1", 1, r.t)
@@ -2088,8 +2103,11 @@ def m_r117(r):
 def m_r119(r):
     """R119 SuccubusWitch. `StatListFindFlag(t, 0x20)` is not a boundary here (0x005E2157): its result is the rev 7 word
     `R119.flag0x20` (EAX at 0x005E215C), else it forks (revision 6)."""
-    dist = r.dist
-    if (r.br("1.t", r.t != 0) and not known(r, "1.flag0x20", "R119.flag0x20", lambda w: w != 0) and r.less("1.dist<aip(4)", dist, r.aip(4))
+    dist, a4 = r.dist, r.aip(4)
+    cmpw = r7(r, "R119.cmp")                    # revision 7 of the checker: the words of `cmp [ebp-8], eax` (0x005E216D)
+    if cmpw is not None:
+        dist, a4 = cmpw[0], cmpw[1]
+    if (r.br("1.t", r.t != 0) and not known(r, "1.flag0x20", "R119.flag0x20", lambda w: w != 0) and r.less("1.dist<aip(4)", dist, a4)
             and r.chance("1.chance(3)", 3)):
         if (r.br("1.Skill1>0", r.skill[0] > 0)
                 and not r.less("1.lifeT<aip(7)", s32(r.call("1.lifet", "UnitLifePct", u=r.t).eax), r.aip(7))):
@@ -2157,7 +2175,7 @@ def m_r120(r):
     modelled (a draw of it would show at the next compared seed). `MonHasSkill` (0x005DD2D0) is not a boundary: it forks."""
     wnz, w = overseer_stored(r)
     if (r.br("3.Skill1>=0", r.skill[0] >= 0) and r.br("3.St3or19", r.call("3.st3or19", "St3or19", U=r.U).eax)
-            and r.less("3.v14<T", r.v[0x14], s32(r.T)) and r.br("3.w", wnz) and r.unknown("3.hasskill1")):
+            and r.less("3.v14<T", r.v[0x14], s32(r.T)) and r.br("3.w", wnz) and known(r, "3.hasskill1", "R120.hasskill1", lambda w: w != 0)):
         use_skill(r, "3.useskill1", 1, w)
         r.store("set v14=T + aip(1)", 0x14, r.T + r.aip(1))
         return
@@ -2167,11 +2185,11 @@ def m_r120(r):
     ret = r.call("5.search", "UnitSearch", cb=0x005E26D0, kind=1, blk={0: {0: 576, 1: 400, 2: 50, 3: 0, 4: 0, 5: 0}})
     weak, whip, count = ret.out(0, 3), ret.out(0, 4), ret.out(0, 5)
     if (r.br("6.Skill2>=0", r.skill[1] >= 0) and r.br("6.weak", weak != 0) and r.chance("6.chance(2)", 2)
-            and r.unknown("6.hasskill2")):
+            and known(r, "6.hasskill2", "R120.hasskill2", lambda w: w != 0)):
         use_skill(r, "6.useskill2", 2, weak)
         return
     if (r.br("7.Skill3!=0", r.skill[2] != 0) and r.br("7.whip", whip != 0) and r.chance("7.chance(3)", 3)
-            and r.br("7.align!=2", r.call("7.align", "UnitAlignGet", u=r.U).eax != 2) and r.unknown("7.hasskill3")):
+            and r.br("7.align!=2", r.call("7.align", "UnitAlignGet", u=r.U).eax != 2) and known(r, "7.hasskill3", "R120.hasskill3", lambda w: w != 0)):
         use_skill(r, "7.useskill3", 3, whip)
         return
     if r.br("8.count", count != 0):
@@ -2979,9 +2997,9 @@ def m_r48(r):
         if r.br("3.p", p != 0) and r.br("3.p.type=0", ptype0):
             room = r.call("3.room", "UnitGetRoom", u=r.U).eax
             r.call("3.level", "RoomGetLevelId", room=room)
-            if r.unknown("3.act=2"):
+            if known(r, "3.act=2", "R48.act", lambda w: w == 2):         # rev 8 words R48.act, R48.quest21; else forks
                 r.call("3.pdata", "UnitGetPlayerData", s1=p)
-                if r.unknown("3.quest21"):
+                if known(r, "3.quest21", "R48.quest21", lambda w: w != 0):
                     r.call("3.ovr", "Ovr", type=0, param=run, byte=0)
                     if r.br("3.stepped", r.call("3.stepaway", "StepAwayXY", t=r.t, n=8, f=1).eax):
                         return
