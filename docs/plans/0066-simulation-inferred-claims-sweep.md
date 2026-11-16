@@ -2498,7 +2498,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Front matter:** combat/README C 43 / I 43 / L 5 → **C 75 / I 27 / L 5**; combat/to-hit C 39 / I 33 / L 5 →
   **C 66 / I 16 / L 4**; combat/damage C 34 / I 35 / L 5 → **C 56 / I 8 / L 4**; combat/reductions C 46 / I 25 / L 5 →
   **C 58 / I 5 / L 4**; combat/delivery C 81 / I 67 / L 4 → **C 114 / I 42 / L 4**; player/party C 46 / I 30 / L 3 →
-  **C 47 / I 29 / L 3** (row 12 only); the five combat specs together C 243 / I 199 / L 24 → C 369 / I 98 / L 21 (the
+  **C 47 / I 29 / L 3** (row 12 only); the five combat specs together C 243 / I 203 / L 24 → C 369 / I 98 / L 21 (the
   `[L]`s fall with stale open questions closed). Quirks C 388 / I 159 → **C 401 / I 146**.
 - **Rows (228):** `[C]` whole 99 (README 16, to-hit 16, damage 25, reductions 18, delivery 23, party 1); split 45 (16,
   8, 7, 0, 14, 0); corrected to the finding 8 (README 29 and 42, to-hit 14, damage 7, reductions 16 and 18, delivery 14
@@ -2544,6 +2544,50 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Gate:** fast green (77 warnings; new: W4 on wiki/combat and wiki/characters, which the refresh entry answers);
   `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
 - **Review:** Tier A, [request](../backlog/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-combat-cluster.md).
+
+### 2026-11-16 — Phase 3 combat cluster review (architect, Tier A, `lane/n66y`): accept with fixes (4)
+
+- **Checked.** `main` (`72f003c8`) merged first (keep-both on this log). The six inventory files' *Phase 3* lines
+  partition their rows exactly (README 43, to-hit 33, damage 34, reductions 25, delivery 67, party 26; a script over the
+  lists, no row twice or missing, each bucket's count equal to its list); § 6's six rows carry the same counts and their
+  "after" equals each front matter. The 8 corrected statements read against combat/0001 §§ 20–22 and the S5e entry's
+  items 1–15: delivery E3 (`x·4`, the draw at `c` = 0, the bullet's chance dropped per item 14 (a)), damage step 6 (the
+  replace; the run's `[C]` scoped to the zero field per 14 (b)), to-hit B1's `d ≤ 0` line (§ 21, the old line-200 bullet
+  kept per 14 (c)), reductions B2's sanctuary inside `r ≥ 1`, delivery E1's 0x100000 cap (94 / 59 cases) and the peek on
+  the seed itself, damage step 1 (`UnitAlignGet`, stat 120 added, 121/122 positive), README note 5's non-zero 141:
+  each says what the finding says. Also sampled: README B4 and its rows 14, 20–25; to-hit A6, A7, C2, C3 (correction 12,
+  refinements 2 and 4); damage rows 6, 7, 12, 16; delivery rows 6, 22 and the A2 and B1 bullets of judgment call 9 (the
+  A2 counts 9 159, 410 + 28 + 81 and 11 128 match `workspace/logs/n66j/check-combat.txt` lines 242–246); party row 12.
+  Thirteen `fn:`/`data:` anchors resolve in `re/symbols.csv`. No `[L]` outside *Open questions*. The one changed Mermaid
+  line (the peek) agrees with its text. The promotion re-check read the §§ 19–22 raises the cluster imports: each names
+  its emulation run or two tools, and the anchors cover what the sentences say, with the scopes below.
+- **Fixes (4).** *Overclaim (2):* README B4's `w ← owner's weapon (a player's, or a monster's when it has one)` sat
+  under the block's new `[C]`; S5fe took the weapon as an input and `MissileDamageBlock`'s weapon branch is not settled
+  (row 14's remainder), so the line carries `[I]` (README C 75 / I 28 / L 5; inventory line, § 6 and the research-map
+  row follow; the five specs now C 369 / I 99 / L 21). README note 5 and Q139 stated the mastery step's "value above 0"
+  unscoped; § 22 holds it with no used skill (0x00645720's throwable path not reached): both now say so.
+  *Stale cross-reference (1):* delivery § B's sequence diagram drew freeze's draw "if chance > 0", which the corrected
+  E3 contradicts (the draw is taken whenever stat 134 > 0, also at `c` = 0); the diagram line now says stat 134.
+  *Miscount (1):* the lane entry's "before" sum of the five specs was I 199; it is I 203 (43 + 33 + 35 + 25 + 67),
+  corrected in place.
+- **Judgment calls.** (1) README 20 and 24 split, the missile's `arPct`, `AlwaysExplode`, pair order and "the order
+  differs" `[I]`: accepted. (2) README 21 and 22 split, B4's field test, the stat-141 store and the used-skill mastery
+  path `[I]`: accepted (with the `w` line added above). (3) README 25 split along the S5fe check's ruling: accepted.
+  (4) README 4 counted split: accepted. (5) Damage 16 and delivery 6 split under review-fixes 8: accepted, each `[C]`
+  half is another row's raise. (6) Damage 17 whole: accepted, S5e's damage 8 is the formula's emulation. (7) Rows raised
+  with a correction counted whole when their statement held, *corrected* when the finding contradicted it, README 29
+  *corrected* while still `[I]`: accepted; the *corrected* bucket records a text change, not a tag. (8) Delivery 22
+  split, owner redirect and `+0xC8` bit 10 `[I]`: accepted. (9) The A2 order bullet and the B1 prologue bullet as new
+  `[C]` text: accepted, both checked against their outputs. (10) skills/missiles C2 against README B4: **leave it for
+  the skills cluster.** skills/missiles rows 28 and 29 are routed to S2ae, not yet run; rule (c) keeps a row waiting on
+  its batch, and an edit of skills/missiles here would put a re-tag outside this cluster's inventory lines. When S2ae
+  runs, its brief takes combat/0001 § 22 (run:2026-11-16-sweep2-s5fe) as the evidence for rows 28 and 29 (the same
+  function and the same steps; no second emulation needed), and the skills cluster raises C2 to match. Until then a wiki
+  page follows README B4, which carries the raise (spec-writer review-fixes 1, the `lane/s38s` scope).
+- **Gate:** fast green (77 warnings, the W4s on wiki/combat, wiki/characters and wiki/quirks that the lane's refresh
+  entry answers); `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
+- **Verdict: accept with fixes (4)**: overclaim 2, stale cross-reference 1, miscount 1. The review request stays open
+  for the merge.
 
 ### 2026-11-16 — Phase 1, batch S7e part 1 (reverser-static, `lane/n66u`): 11 of 63 settled (moved); resume note for part 2
 

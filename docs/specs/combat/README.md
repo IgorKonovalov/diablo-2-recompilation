@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
-tags: {C: 75, I: 27, L: 5}
+tags: {C: 75, I: 28, L: 5}
 updated: 2026-11-16
 ---
 
@@ -341,7 +341,7 @@ B4. MissileCreate(params) → missile:                                  [C] (fn:
         src ← Skills[skill].SrcDam;  srcMiss ← 0
         if row.SrcDamage = 0xFF: src ← 0                               ; −1 cancels the weapon share
       if src ≠ 0:
-        w ← owner's weapon (a player's, or a monster's when it has one), else none
+        w ← owner's weapon (a player's, or a monster's when it has one), else none   ; [I] which weapon is passed: the S5fe emulation took it as an input (fn:sub_0064B860_MissileDamageBlock@0x0064B860, skills/missiles C1)
         crit ← CritChain(owner, w)                                     ; draws on owner.seed
       else if srcMiss ≠ 0 and params.source:                          ; [I] the branch's field test (fn:sub_0064B860_MissileDamageBlock@0x0064B860, skills/missiles C1)
         crit ← CritChain(params.source, none)                          ; draws on the source's seed
@@ -559,8 +559,8 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   337 even when it is 0 (B4): in the run, one step per creation of a row that takes weapon damage and none for any
   other row ([skills/missiles](../skills/missiles.md#reimplementation-notes) note 3, C2). [C]
   (fn:sub_0064A850_MissileCritRoll@0x0064A850, run:2026-10-25-skills) Its deadly-strike step needs a
-  **non-zero** stat 141 (a negative one steps the seed and cannot succeed), its mastery step a value above 0 (the value
-  is a maximum starting at 0). [C] (0x0064A864–0x0064A890, 0x0064A8A5–0x0064A8AE, run:2026-11-16-sweep2-s5fe: 565 cases
+  **non-zero** stat 141 (a negative one steps the seed and cannot succeed), its mastery step, with no used skill, a value above 0
+  (the value is a maximum starting at 0). [C] (0x0064A864–0x0064A890, 0x0064A8A5–0x0064A8AE, run:2026-11-16-sweep2-s5fe: 565 cases
   with a negative stat 141 and a second step)
 - **A monster attack and its `MonAttackStats` are two moments.** The `El` draws happen when the attack mode starts,
   the to-hit and build at the hit frame, with the monster's AI drawing in between. [C]

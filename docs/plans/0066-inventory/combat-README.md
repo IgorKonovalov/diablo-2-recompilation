@@ -3,7 +3,7 @@
 - **Spec:** [combat/README](../../specs/combat/README.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 43; the *Count* column sums to 43.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
-- **Phase 3 (`lane/n66y`, 2026-11-16): re-tagged.** The spec's front matter is now C 75 / I 27 / L 5 (it was C 43 / I
+- **Phase 3 (`lane/n66y`, 2026-11-16): re-tagged.** The spec's front matter is now C 75 / I 28 / L 5 (it was C 43 / I
   43 / L 5 at `main` `858b7eea`). Statement `[C]` whole: rows 1–3, 8, 11–13, 17–19, 23, 26, 34, 37–39 (16). Split, the
   `[C]` half and the remainder `[I]` as the *Route* cell names: 4, 5, 9, 14, 15, 20–22, 24, 25, 27, 30, 32, 35, 40, 41
   (16). Corrected to the finding: row 42 (stat 141 non-zero, S5fe correction 1) and row 29 (`UnitMsgA3`'s writes, S5fe

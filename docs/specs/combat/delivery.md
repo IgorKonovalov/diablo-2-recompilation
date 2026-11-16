@@ -300,7 +300,7 @@ sequenceDiagram
   participant A as attacker seed
   participant D as defender seed
   Note over A,D: COMBAT_ApplyDamage, in order
-  A->>A: event handlers newest first: open wounds Range(100), crushing blow Range(100), freeze Range(100), each if chance > 0
+  A->>A: event handlers newest first: open wounds Range(100), crushing blow Range(100) if chance > 0, freeze Range(100) if stat 134 > 0
   A->>A: leech overlay Range(2) if life and mana gains both run
   A->>A: stun Range(100) if the defender is special (flag 0x08) and stun length > 0
   D->>D: cold shatter Range(100) if cold length > 0 and coldeffect ≠ 0
