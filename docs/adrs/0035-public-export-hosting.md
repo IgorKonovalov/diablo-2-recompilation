@@ -1,7 +1,7 @@
 # ADR-0035 — The public export's hosting: a separate repository under the owner's GitHub account, a Starlight site on GitHub Pages (amends 0009)
 
 > **Status:** accepted (owner, 2026-11-16, with plan 0070's answers: "1 b / 2 keep / 3 github pages, similar to
-> @../Ritmolux/ documentation / 4 yes / 5 go as recommended"; on the account: "My account, like Ritmolux")
+> @../Ritmolux/ documentation / 4 yes / 5 go as recommended"; on the account: "My account, like Ritmolux"); amended by [ADR-0036](0036-schematic-illustrations-in-the-export.md) (the cut may hold marked schematic illustrations, served as static files)
 > **Date:** 2026-11-16
 > **Related plan(s):** [0070-redacted-public-export](../plans/0070-redacted-public-export.md)
 
