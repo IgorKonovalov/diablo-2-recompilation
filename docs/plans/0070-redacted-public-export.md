@@ -1,6 +1,6 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** in progress: Phase 1 done 2026-11-16; re-cut 2026-11-16 for three later owner decisions (simplification,
+> **Status:** in progress: Phase 1 done 2026-11-16; Phase 4 done 2026-11-17; re-cut 2026-11-16 for three later owner decisions (simplification,
 > schematic illustrations per ADR-0036, the cheapest residue option); approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
 > 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
@@ -300,7 +300,7 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
 - **Outputs:** `workspace/export-repo/` (never in git); the file list and the pinned versions in this plan's log.
 - **Done when:** `tools/export_check.py --repo workspace/export-repo/` is green; the workflow has the two jobs, the
   build on pull requests, the deploy from `main` only, and `cancel-in-progress: false`; the footer component matches
-  the footer word for word. Tier B check; Phase 6 reads every file.
+  the footer word for word. Tier B check; Phase 6 reads every file. **Done 2026-11-17.**
 
 ### Phase 5 — The export-only pages
 - **Owner skill:** spec-writer
@@ -575,3 +575,31 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   input:** the simplifier will drop every sentence holding a seed or a game-math value in hex (randomness.md's worked
   example, 17 lines), as X1 is written ("any other hex of 6 digits or more"). Whether such values may pass by a
   manifest line is a design question for the architect before Phase 6, not a check change. Next: Phases 2b, 3.
+- 2026-11-17 — **Phase 4 reviewed: accept with fixes (3); Phase 4 done** (architect, Opus with Tier B scope, every
+  file of `workspace/export-repo/` read, lane/x70r). Held: `site/package.json` pins astro 7.3.1, @astrojs/starlight
+  0.42.0, rehype-mermaid 3.0.0 and playwright 1.63.0 exactly, the owner's other site's versions; no lockfile and no
+  `node_modules/`. The workflow has `build` on every push, pull request and manual run and `deploy` gated on
+  `refs/heads/main` with `pages: write` and `id-token: write`; `concurrency` group `pages`, `cancel-in-progress:
+  false`; `SITE_BASE` set once from the repository's name and seen by the build and the link check; only `actions/*`
+  (checkout, setup-node, cache, upload-pages-artifact, deploy-pages). `Footer.astro` matches the plan's footer word
+  for word with the date from `cut.json`, and is registered in the config. `LICENSE` is the CC BY 4.0 legal code
+  (all eight sections and the closing notice; no reference copy offline to hash against). The README says nothing of
+  where game files come from, implies no affiliation (it carries the disclaimer), and names no game file or tool of
+  ours; the only identity is the owner's GitHub account in the config's host and repository link (ADR-0035).
+  **Fixes, made in `workspace/export-repo/`** (category: tools correctness; originals kept in the review's scratch):
+  (1) `site/astro.config.mjs`, the empty-page hook: it took the text from the content container to `</main>`, which
+  holds Starlight's pagination and our footer, so no page could ever read empty and a Mermaid fence that does not
+  parse (Astro stores the entry without HTML; rehype-mermaid's throw does not stop the build) would publish a title
+  over nothing; it also failed every page without the container. It now fails a page whose container closes on
+  itself and skips a page without one, as the other site's hook does. (2) `site/scripts/check-site-links.mjs`:
+  Starlight writes each page's canonical link as an absolute URL on the site's own host
+  (`https://igorkonovalov.github.io/<base>/…`; seen in the other site's build), which the allowlist failed, so the
+  first CI build would have been red on every page; a link on the own host is now resolved as an internal link under
+  the base (a missing page or another base still fails). (3) The same script: a relative link climbing above the
+  site root now fails instead of resolving against files outside `dist/`. Smoke test on a scratch `dist/` at base
+  `/proj/`: canonical links, absolute and relative illustration GIFs and a step-through page pass; a missing own-host
+  page, another base on the own host, an above-root link, an outside host and a missing GIF fail (5 of 5).
+  **`python3 -I tools/export_check.py --repo workspace/export-repo/`** from the main checkout after the fixes: 0
+  failures, 0 warnings, exit 0; this closes the done-when item the lane left open. Noted for later phases: the
+  config needs `site/src/cut.json` (Phase 3's builder writes it, with `groups`); X7's `github.com/IgorKonovalov`
+  allowance is narrowed to the export repository at Phase 7 (Phase 2 review, ruling 6). Fixes count: tools 3.
