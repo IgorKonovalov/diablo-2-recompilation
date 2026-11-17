@@ -112,6 +112,61 @@ def main():
     ok(all(r.count("|") == 3 for r in rows), f"anchor-only column dropped ({rows})")
     rows = eb.redact_table(["| a | b |", "|---|---|", "| x | fn:X@0x0045C370 |", "| y | plain words |"])
     ok(len(rows[0].split("|")) == 4, "a column with prose cells stays")
+    # anchor rewrite (Phase 9 prerequisite)
+    rt = eb.rewrite_text
+    ok(rt("It calls fn:Foo@0x0045ABCD twice.") == "It calls `Foo` twice.", "fn:Name@0x becomes `Name`")
+    ok(rt("It calls `fn:Foo@0x0045ABCD` twice.") == "It calls `Foo` twice.", "an anchor already in backticks is not doubled")
+    ok(rt("Reads data:g_Table@0x0070A000 and tbl:Skills.txt:minmana, fmt:DT1 and tbl:Levels.") ==
+       "Reads `g_Table` and `Skills.txt:minmana`, `DT1` and `Levels`.", "data:, tbl:, fmt: anchors, with a column")
+    ok(rt("It calls fn:sub_00456789_Foo@0x00456789 here.") == "It calls here.", "a sub_ name is removed whole")
+    ok(rt("The data:DAT_00556F60@0x00556F60 cell.") == "The cell.", "a DAT_ name is removed whole")
+    ok(rt("The fn:Cafe00Bad@0x0045ABCD call.") == "The call.", "a name holding a hex run of 6+ digits is removed")
+    ok(rt("The field struct:Unit+0x20 holds it.") == "The field holds it.", "a struct: token is removed")
+    ok(rt("The field `struct:Unit+0x20` holds it.") == "The field holds it.", "a backticked struct: token is removed")
+    ok(rt("Seen in run:2026-10-11-rng-emu and src:arreat-summit.") == "Seen in.", "run: and src: ids removed, dangling and goes")
+    ok(rt("Listed A, items/0012-slug#x, B.") == "Listed A, B." and rt("Read items/0012 now.") == "Read now.",
+       "a finding id is removed")
+    ok(rt("It holds (items/0012, run:2026-10-11-a) here.") == "It holds here.", "an emptied parenthetical goes")
+    ok(rt("It holds (see run:2026-10-11-a) here.") == "It holds here.", "a parenthetical left with only 'see' goes")
+    ok(rt("Checked at run:2026-10-11-a.") == "Checked.", "a dangling 'at' goes")
+    ok(rt("Listed A, run:2026-10-11-a, B.") == "Listed A, B.", "an emptied list slot leaves no doubled comma")
+    ok(rt("Read [the finding](../findings/rng/0001.md) first.") == "Read first.", "a link into findings/ goes whole")
+    ok(rt("Read [the page](a.md) and [fn:Foo@0x0045ABCD](b.md).") == "Read [the page](a.md) and [`Foo`](b.md).",
+       "other links stay, their labels are rewritten")
+    ok(rt("Plain text, no anchors (a, b).") == "Plain text, no anchors (a, b).", "an unchanged unit is unchanged")
+    ok("X1" in eb.unit_fails(rt("The call at 0x00456789 and fn:Foo@0x0045ABCD."), ec.Allow()),
+       "a unit that still carries a 6+ hex after the rewrite still fails (and is dropped)")
+    # spec citations
+    ok(rt("as in drlg/maze.md § 3 here") == "as in maze.md § 3 here", "folder + .md with a section is reduced to the file name")
+    ok(rt("as in `drlg/maze.md` § 3 here") == "as in `maze.md` § 3 here", "a backticked citation keeps its backticks")
+    ok(rt("as in maze.md § 3 here") == "as in maze.md § 3 here", "file.md § X passes")
+    ok(rt("as in drlg/maze and rng/seeds") == "as in drlg/maze and rng/seeds", "bare subsystem names pass")
+    ok(rt("Details: spec drlg/README.md.") == "Details:.", "a folder path .md with no section is removed, 'spec' too")
+    ok(rt("Details (README.md) here.") == "Details here.", "a README name with no section is removed")
+    ok(rt("Details in README.md § 2 here.") == "Details in README.md § 2 here.", "README.md § X passes")
+    ok(rt("Details [x](../specs/drlg/maze.md) here.") == "Details [x](../specs/drlg/maze.md) here.", "a link target is not a citation")
+    # rows and cells
+    ok(eb.rewrite_row("| a | fn:Foo@0x0045ABCD | 2 |") == "| a | `Foo` | 2 |", "a row: anchor cell rewritten")
+    ok(eb.rewrite_row("| a | run:2026-10-11-a | 2 |") == "| a | — | 2 |", "an emptied cell becomes an em dash")
+    ok(eb.rewrite_row("| a | b |") == "| a | b |", "an unchanged row is unchanged")
+    pg = eb.Page({"path": "p.md", "route": "p", "order": 1})
+    blks = eb.parse_blocks(("## H\n\nIt calls fn:Foo@0x0045ABCD. src:abc-def.\n\n- item struct:U+0x4\n- run:2026-10-11-a\n\n"
+                            "| n | v |\n|---|---|\n| x | run:2026-10-11-a |\n| y | fn:Bar@0x0045ABCD |\n| z | plain |\n").split("\n"))
+    red = eb.redact(pg, blks)
+    txt = "\n".join("\n".join(b["lines"]) for b in red)
+    ok("It calls `Foo`." in txt and "src" not in txt and "src" not in txt and "- item" in txt and "(run" not in txt
+       and "| x | — |" in txt and "| y | `Bar` |" in txt, f"redact: units rewritten, an emptied sentence and item dropped ({txt!r})")
+    ok(len(pg.rewrites) == 5 and pg.rewrites[0][0] == "H" and pg.rewrites[0][1].startswith("It calls fn:Foo"),
+       f"every rewrite is recorded with its heading, before and after ({len(pg.rewrites)})")
+    ok(any(d[1] == "empty" for d in pg.drops), "a unit left with no words is a drop")
+    tmpo = tempfile.mkdtemp(prefix="export_rep_")
+    try:
+        eb.write_report(tmpo, [(pg, red)], "2026-11-17")
+        rl = [x for x in open(os.path.join(tmpo, "report.txt"), encoding="utf-8").read().split("\n") if x.startswith("REWRITE")]
+        ok(len(rl) == 5 and all(len(x.split("\t")) == 5 for x in rl) and rl[0].split("\t")[1:3] == ["p.md", "H"],
+           f"REWRITE report line: REWRITE, page, heading, before, after, tab-separated ({rl[:1]})")
+    finally:
+        shutil.rmtree(tmpo, ignore_errors=True)
     # path refusal and no network
     for bad in ("/tmp/x", os.path.join(eb.REPO, "docs"), os.path.join(eb.WS, "site"), os.path.join(eb.WS, "exports")):
         try:

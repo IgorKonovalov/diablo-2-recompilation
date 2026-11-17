@@ -18,10 +18,17 @@ Per page, in this order:
   1. redactor    front matter; *Open questions* sections; evidence parentheticals made only of anchors, run ids,
                  addresses and finding links; anchor-only table columns; the address column of pseudocode lines;
                  `sub_XXXXXXXX_` prefixes.
+     anchor rewrite  inside any unit (sentence, list item, table cell, heading, caption sentence) before the simplifier
+                 sees it: `fn:Name@0x...`, `data:`, `tbl:`, `fmt:` anchors become `Name` when the name is clean (no hex
+                 run of 6+ digits, no `sub_`, no `DAT_`, nothing X1-X5 would fail), else the token goes; `struct:`
+                 tokens, `run:` ids, finding ids, links into findings/ and `src:` ids go; a spec citation with a folder
+                 (`drlg/maze.md § 3`) is reduced to `maze.md § 3` or removed; what the removal leaves (empty cell,
+                 empty list or parenthetical, a dangling "at"/"see"/"per") is cleaned. A unit left with no words is
+                 dropped. Every rewrite is a REWRITE report line (tab-separated: page, heading, before, after).
   2. simplifier  runs export_check's text rules (X1-X5, X9, with the hex allowance) on each unit (a sentence of a
                  paragraph, a list item, a table row, a fenced block) and drops a unit that fails; a unit with an
                  `[L]` tag goes too. A section goes when its heading fails or nothing is left under it. It never
-                 rewrites a word of a unit it keeps. Every drop is a report line: page, heading, rule, text.
+                 rewrites a word of a unit it keeps (the anchor rewrite above ran first). Every drop is a report line: page, heading, rule, text.
   3. link rewriter  a link to a page of the manifest becomes a link to its route, relative to the linking page
                  (the heading anchor kept when the heading is still there); a link to a page an `alias` line of
                  the manifest names goes to that line's page; any other link keeps its text and loses its target.
@@ -220,11 +227,119 @@ def drop_evidence_parens(text):
 RE_SEE_PATHS = re.compile(r"(?:(?<=\s)|^)See\s+(?:\[[^\]\s]*/[^\]]*\]\([^)]*\)\s*(?:,\s*|and\s+)?)+\.")
 
 
-def redact_text(text):
+def redact_text(text, rw=None, sub=True):
+    """Evidence parentheticals and "See <path link>." sentences go; `rw` (the anchor rewrite) runs next, then the
+    `sub_XXXXXXXX_` prefixes go (after it, so `fn:sub_..._x` is removed whole, not turned into `x`)."""
     t = drop_evidence_parens(text)
     if RE_SEE_PATHS.search(t):
         t = re.sub(r"[ \t]+$", "", RE_SEE_PATHS.sub("", t), flags=re.M)
-    return RE_SUB.sub("", t)
+    if rw:
+        t = rw(t)
+    return RE_SUB.sub("", t) if sub else t
+
+
+# ---------------------------------------------------------------- anchor rewrite (Phase 9 prerequisite)
+
+SENT = "\x00"           # marks where a token was removed, so the clean-up touches only what the removal left
+_NAME = r"[A-Za-z0-9_](?:[\w.:]*\w)?"
+_OPEN = r"(?:(?<![\w`/])(`)|(?<![\w`/]))"
+RE_ANCHOR = re.compile(_OPEN + r"(?:fn|data|tbl|fmt):(" + _NAME + r")(?:@0x[0-9A-Fa-f]+)?(?(1)`)")
+RE_REMOVE = re.compile(_OPEN + r"(?:struct:[A-Za-z0-9_]+(?:\+0x[0-9A-Fa-f]+|\.\w+)*|run:[\w.-]*\w|src:[\w.-]*\w"
+                       r"|[a-z]+/\d{4}(?!\d)(?:-[\w-]*\w)?(?:\.md)?(?:#[\w-]+)?)(?(1)`)")
+# a spec citation with a folder: `drlg/maze.md § 3` -> `maze.md § 3`; without a section it goes (with a "spec" before it)
+RE_CITE = re.compile(r"(?<![\w/.:~-])(?:\bspec\s+)?(`)?(?:\.\./|\./)*(?:[\w.-]+/)+([\w.-]+\.md)(?(1)`)", re.I)
+RE_README = re.compile(r"(?<![\w/.:~-])(?:\bspec\s+)?(`)?README\.md(?(1)`)(?!\s*§)")
+RE_DANGLE = re.compile(r"(?i)\b(?:at|see|per|and|or)\b[\s,;:]*\x00(?=\s*(?:[.,;:)\]|]|$))", re.M)
+RE_EMPTY_PAREN = re.compile(r"(?i)\((?=[^()]*\x00)(?:\b(?:at|see|per|and|or)\b|[\s,;:\x00])*\)")
+
+
+def clean_name(name):
+    if "sub_" in name or "DAT_" in name or re.search(r"[0-9A-Fa-f]{6,}", name):
+        return False
+    return not ec.text_rules("`" + name + "`")
+
+
+def _anchor(m):
+    return "`" + m.group(2) + "`" if clean_name(m.group(2)) else SENT
+
+
+def _cite(m):
+    if re.match(r"\s*§", m.string[m.end():]):
+        bt = "`" if m.group(1) else ""
+        return bt + m.group(2) + bt
+    return SENT
+
+
+def _rw_plain(s):
+    s = RE_ANCHOR.sub(_anchor, s)
+    s = RE_REMOVE.sub(SENT, s)
+    s = RE_CITE.sub(_cite, s)
+    return RE_README.sub(SENT, s)
+
+
+def _del_sent(m):
+    s = m.string
+    b = s[m.start() - 1] if m.start() > 0 else ""
+    a = s[m.end()] if m.end() < len(s) else ""
+    if m.group(0) == SENT or b in "(\n" or a in ")]\n.,;:!?":
+        return ""
+    return " "
+
+
+def sent_cleanup(t):
+    """What a removed token leaves behind: runs of separators, empty or dangling parentheticals, "see"/"at"/"per"
+    before nothing, doubled spaces. Touches only the text next to a removal mark."""
+    if SENT not in t:
+        return t
+    for _ in range(3):
+        t = re.sub(r"\x00(?:\s*(?:[,;]|\b(?:and|or)\b)\s*\x00)+", SENT, t)
+        t = re.sub(r"\x00(?:[ \t]*\x00)+", SENT, t)
+        t = RE_EMPTY_PAREN.sub(SENT, t)
+        t = RE_DANGLE.sub(SENT, t)
+    t = re.sub(r"[,;]\s*\x00(?=\s*[,;])", "", t)
+    t = re.sub(r"\s*[,;]\s*\x00(?=\s*(?:[.)\]:]|$))", "", t, flags=re.M)
+    t = re.sub(r"\(\s*\x00\s*[,;]\s*", "(", t)
+    t = re.sub(r"[ \t]*\x00[ \t]*", _del_sent, t)
+    return re.sub(r"[ \t]+$", "", t, flags=re.M)
+
+
+def rewrite_text(text):
+    """The anchor rewrite over one unit's text (links: a link into findings/ goes whole, the target of any other
+    stays, its label is rewritten)."""
+    out, last = [], 0
+    for m in RE_LINK.finditer(text):
+        out.append(_rw_plain(text[last:m.start()]))
+        if "findings/" in m.group(2):
+            out.append(SENT)
+        else:
+            lab = _rw_plain(m.group(1))
+            if lab.replace(SENT, "").strip():
+                out.append(text[m.start():m.start(1)] + lab + text[m.end(1):m.end()])
+            else:
+                out.append(SENT)
+        last = m.end()
+    out.append(_rw_plain(text[last:]))
+    return sent_cleanup("".join(out))
+
+
+def rewrite_row(line):
+    """A table row, cell by cell: a cell the rewrite empties becomes an em dash."""
+    if RE_SEP.match(line):
+        return line
+    cells, changed = split_row(line), False
+    new = []
+    for c in cells:
+        r = rewrite_text(c.strip())
+        if r != c.strip():
+            changed = True
+            if not re.sub(r"[\s,;:.\-]", "", r.replace("`", "")):
+                r = "—"
+        new.append(r if r != c.strip() else c.strip())
+    return "| " + " | ".join(new) + " |" if changed else line
+
+
+def has_words(t):
+    return bool(re.search(r"[A-Za-z]", re.sub(r"\[[CIL]\]", "", t)))
 
 
 def is_evidence_cell(cell):
@@ -275,6 +390,7 @@ class Page:
         self.path, self.route = spec["path"], spec["route"]
         self.title = ""
         self.drops = []          # (heading, rules, kind, text)
+        self.rewrites = []       # (heading, before, after): units the anchor rewrite changed
         self.units = 0           # units seen: sentences, items, rows, quotes, fences, captions
         self.dropped = 0         # units dropped (children of a dropped item included)
         self.headings = set()
@@ -476,6 +592,13 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
     root_abs = f"/illustrations/{d['id']}/{gif}"      # root-absolute: the site's rehype step prefixes its base
     cap = []
     for s in split_sentences(d["caption"]):
+        r0 = RE_SUB.sub("", rewrite_text(s))
+        if r0 != s:
+            note_rewrite(page, heading, s, r0)
+            if not has_words(r0):
+                note_empty(page, heading, "caption sentence", s)
+                continue
+            s = r0
         page.units += 1
         r = unit_fails(s, allow, pins=allow.pins.get(page.path, {}))
         if r:
@@ -524,9 +647,42 @@ def render_blocks(blocks):
     return "\n".join("\n".join(b["lines"]) for b in blocks).rstrip("\n") + "\n"
 
 
+def _flat(t, n=160):
+    return " ".join(t.split())[:n]
+
+
+def note_rewrite(pg, heading, before, after):
+    pg.rewrites.append((heading, _flat(before), _flat(after)))
+
+
+def note_empty(pg, heading, kind, before):
+    """A unit the rewrite left with no words: dropped, and counted like any other drop."""
+    pg.units += 1
+    pg.dropped += 1
+    pg.drops.append((heading, "empty", kind, _flat(before, 200)))
+
+
+def rewrite_sentences(pg, heading, text, kind="sentence"):
+    """Per sentence: the anchor rewrite and the `sub_` strip. -> the text, or None when nothing changed."""
+    sents = split_sentences(text)
+    new, changed = [], False
+    for s in sents:
+        r = RE_SUB.sub("", rewrite_text(s))
+        if r == RE_SUB.sub("", s):
+            new.append(s)
+            continue
+        changed = True
+        note_rewrite(pg, heading, s, r)
+        if has_words(r):
+            new.append(r)
+        else:
+            note_empty(pg, heading, kind, s)
+    return " ".join(new) if changed else None
+
+
 def redact(pg, blocks):
     """The redactor's pass over a page's blocks. Illustration fences pass through for the illustration step."""
-    red, skip_level = [], None
+    red, skip_level, heading = [], None, ""
     for b in blocks:
         k = b["kind"]
         if k == "heading":
@@ -537,7 +693,15 @@ def redact(pg, blocks):
                 skip_level = b["level"]
                 pg.drops.append((b["text"], "open-questions", "section", b["text"][:120]))
                 continue
-            t = redact_text(b["text"])
+            t0 = redact_text(b["text"])
+            t = redact_text(b["text"], rw=rewrite_text)
+            if t != t0:
+                note_rewrite(pg, heading, b["text"], t)
+                if not has_words(t):
+                    note_empty(pg, heading, "section", b["text"])
+                    skip_level = b["level"]
+                    continue
+            heading = t
             b = dict(b, text=t, lines=["#" * b["level"] + " " + t])
         elif skip_level is not None:
             continue
@@ -547,9 +711,42 @@ def redact(pg, blocks):
                 ls = [ls[0]] + [RE_ADDR_COL.sub(r"\1", x) for x in ls[1:-1]] + ls[-1:]
             b = dict(b, lines=[RE_SUB.sub("", x) for x in ls])
         elif k == "table":
-            b = dict(b, lines=[redact_text(x) for x in redact_table(b["lines"])])
-        elif k in ("para", "item", "quote"):
-            b = dict(b, lines=redact_text("\n".join(b["lines"])).split("\n"))
+            rows = redact_table(b["lines"])
+            lines = []
+            for i, ln in enumerate(rows):
+                pre = redact_text(ln, sub=False)
+                r = RE_SUB.sub("", rewrite_row(pre)) if i != 1 else RE_SUB.sub("", pre)
+                if i >= 2 and r != RE_SUB.sub("", pre):
+                    note_rewrite(pg, heading, b["lines"][i], r)
+                    if all(c.strip() in ("", "—") for c in split_row(r)):
+                        note_empty(pg, heading, "row", b["lines"][i])
+                        continue
+                elif i == 0 and r != RE_SUB.sub("", pre):
+                    note_rewrite(pg, heading, b["lines"][i], r)
+                lines.append(r)
+            if len(lines) <= 2:
+                continue
+            b = dict(b, lines=lines)
+        elif k == "para":
+            x = "\n".join(b["lines"])
+            pre = redact_text(x, sub=False)
+            new = rewrite_sentences(pg, heading, " ".join(l.strip() for l in pre.split("\n")))
+            if new is None:
+                b = dict(b, lines=redact_text(x).split("\n"))
+            elif not new.strip():
+                continue
+            else:
+                b = dict(b, lines=[new])
+        elif k in ("item", "quote"):
+            x = "\n".join(b["lines"])
+            t0, t = redact_text(x), redact_text(x, rw=rewrite_text)
+            if t != t0:
+                note_rewrite(pg, heading, x, t)
+                body = RE_ITEM.sub("", t.split("\n")[0], count=1) + " ".join(t.split("\n")[1:])
+                if not has_words(body.lstrip("> ")):
+                    note_empty(pg, heading, k, x)
+                    continue
+            b = dict(b, lines=t.split("\n"))
         red.append(b)
     return red
 
@@ -620,10 +817,13 @@ def write_report(out, pages, date):
             for x in r.split(","):
                 rule_n[x] = rule_n.get(x, 0) + 1
             lines.append(f"DROP {pg.path} | {h or '-'} | {r} | {kind} | {t}")
+        for h, before, after in pg.rewrites:
+            lines.append("\t".join(("REWRITE", pg.path, h or "-", before.replace("\t", " "), after.replace("\t", " "))))
         rows.append((pg.path, pg.units, pg.dropped, len(pg.drops), kept is None))
     with open(os.path.join(out, "report.txt"), "w", encoding="utf-8") as f:
         f.write(f"export_build report, cut {date}\n")
         f.write("drops per rule: " + ", ".join(f"{k} {v}" for k, v in sorted(rule_n.items())) + "\n")
+        f.write(f"rewrites: {sum(len(pg.rewrites) for pg, _ in pages)}\n")
         f.write("page | units | units dropped | share | report lines\n")
         for p, u, d, nl, gone in rows:
             f.write(f"{p} | {u} | {d} | {100.0 * d / u if u else 0:.1f}% | {nl}{' | PAGE DROPPED' if gone else ''}\n")
@@ -650,7 +850,8 @@ def main(argv=None):
     pages = build(a.out, a.manifest, os.path.realpath(a.root), a.date, allow, not a.no_illustrations)
     gone = sum(1 for _, k in pages if k is None)
     print(f"export_build: {len(pages) - gone} pages written ({gone} dropped), "
-          f"{sum(len(p.drops) for p, _ in pages)} report lines, into {safe_out(a.out)}")
+          f"{sum(len(p.drops) + len(p.rewrites) for p, _ in pages)} report lines "
+          f"({sum(len(p.rewrites) for p, _ in pages)} rewrites), into {safe_out(a.out)}")
     return 0
 
 

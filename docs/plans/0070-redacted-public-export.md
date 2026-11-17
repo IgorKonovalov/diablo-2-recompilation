@@ -1038,3 +1038,41 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   the read, applied before the push: the schematic maze marks its entry and exit on the warp rooms (lane/x70w) and the
   main column is 60rem wide (`site/src/styles/site.css`). Next, on the owner's word: the second cut (Phases 9 and 10),
   whose prerequisite is the anchor rewrite noted at the Phase 3 review.
+- 2026-11-17, archivist, lane/x70a (anchor rewrite, Phase 9 prerequisite). `tools/export_build.py` now rewrites
+  anchors inside a unit (a sentence, a list item or quote, a table cell, a heading, a caption sentence) before the
+  simplifier's drop test, as ruling (a) asks. `fn:`, `data:`, `tbl:` (with `.Column`/`:column`) and `fmt:` anchors, with
+  or without `@0x…`, become `` `Name` `` when the name holds no hex run of 6+ digits, no `sub_`, no `DAT_` and nothing
+  X1 to X5 would fail (it asks `text_rules`), else the whole token goes; an anchor already in backticks is not
+  doubled. Removed whole: `struct:` tokens, `run:` and `src:` ids, finding ids (`items/0012`, with a slug, `#fragment`
+  or `.md`) and links whose target holds `findings/` (label and all); the `sub_XXXXXXXX_` strip now runs after the
+  rewrite, so `fn:sub_…_x` is removed, not turned into `x`. Clean-up works only next to a removal mark: an emptied cell
+  becomes `—`, doubled list separators, empty or separator-only parentheticals, and "at", "see", "per" (also "and",
+  "or") left before nothing go, and the spaces around the gap are closed. A unit left with no letters is dropped as a
+  new rule `empty` (counted as a drop). Spec citations: `folder/file.md § X` becomes `file.md § X`, a folder path
+  `.md` without a section (with a "spec" before it) is removed, and so is a bare `README.md` without a section; link
+  targets are never touched. The citation rule was not ambiguous in the specs sampled, so both halves are in; the
+  check is unchanged. Every rewritten unit is a report line `REWRITE<TAB>page<TAB>heading<TAB>before<TAB>after`
+  (160 characters each), and the report header gains `rewrites: N`. Tests: `test_export_build` 74 checks (was 41), 0
+  failed; `test_export_check` 125, `test_anim_schematic` OK. **Cut 1** rebuilt: 25 pages, check 0 failures, 330
+  warnings as before; the pages read the same except one rewrite (the wiki monster-ai bullet on the Uber forced cases
+  lost its link to a finding, whose label "G1, G2, G3 and G5" went with it); 1 REWRITE line. **Trial** (every spec
+  with status `reviewed`: 65, groups `s-<folder path>` so that `monsters/` and `monsters/ai/` READMEs do not collide:
+  20 groups; manifest and per-spec table in scratch, output in `workspace/export-trial-x70a/`, built with
+  `--no-illustrations`): 90 pages, 19266 units, 4414 dropped; of the 65 specs 14120 units, **4408 dropped (31.2%)**
+  (was 44.4%). Drops per rule: X1 3869, X3 901, X2 508, X5 214, X9 95, open-questions 63 sections, `parent` 16,
+  `empty` 10; by kind (specs): 1636 list items, 1625 table rows, 705 fenced blocks, 417 sentences, 71 sections, 5
+  tables. 2913 REWRITE lines. The check on the trial: **14 failures, all X6** (tables of 21 to 136 body rows the
+  manifest does not name: drlg/maze 23 (line 314), drlg/outdoor 21 (68), items/properties 25 (224), items/vendors 36
+  (334), monsters/ai README 23 (297), monsters/special 32 (178), quirks 26 (64), 73 (134), 136 (212), 94 (353), 22
+  (476), 25 (505), 30 (541), 59 (598)), 814 warnings, no X1 to X5, X7 to X11. **48 of 65 specs are above 25%, 2 above
+  50%**: rng/seeds 59%, drlg/lifecycle 53% (then save/d2s 46, monsters/ai/machinery 44, monsters/pool 44, anim/movement
+  43, drlg/README 43, items/inventory 43, skills/catalogue 42, path/search 41, path/README 40, monsters/spawn 40,
+  drlg/room-tiles 40, skills/missiles 39, quests/travel 39, stats/aggregate 39, drlg/warps 37, items/quest-drops 37,
+  quests/progression 36, then 34% to 25%: combat/delivery, rng/README, sim/frame, items/affixes, objects/README,
+  items/cube, drlg/preset, monsters/ai README, combat/damage, combat/README, player/creation, stats/README, items/tc,
+  items/economy, anim/timing, drlg/maze, items/uniques-sets, items/sockets-runewords, monsters/special, items/use,
+  skills/dispatch, monsters/ai/catalogue, drlg/collision, items/properties, items/vendors, chain/README,
+  combat/reductions, drlg/outdoor, data/excel). What still drops is outside the rewrite: bare addresses and `+0x`
+  offsets in prose, "plan NNNN" and ADR references (X3), and `[C] (0x…)` evidence lists in pseudocode fences (705
+  fenced blocks). One reading flaw: a sentence whose removed link was its subject reads "takes 's reading" (a
+  finding link inside a quotation); not handled. Next: the architect's Tier B check.
