@@ -49,6 +49,7 @@ import png  # noqa: E402
 
 from anim_common import FONT, encode_gif, lzw_decode, lzw_encode, safe_out, text, wrap  # noqa: E402,F401
 import anim_common  # noqa: E402
+import schematic_kit  # noqa: E402
 
 
 # ---------------------------------------------------------------- model trace
@@ -580,16 +581,10 @@ def build_schematic(root, level, seed):
     all_links = steps[-1]["links"]
 
     def box(cv, x, y, w, h, col):
-        for yy in range(max(y, 0), min(y + h, CH)):
-            a, b = max(x, 0), min(x + w, CW)
-            if a < b:
-                cv[yy * CW + a:yy * CW + b] = bytes([col]) * (b - a)
+        schematic_kit.fill_rect(cv, CW, CH, x, y, w, h, col)
 
     def outline(cv, x, y, w, h, col, t=2):
-        box(cv, x, y, w, t, col)
-        box(cv, x, y + h - t, w, t, col)
-        box(cv, x, y, t, h, col)
-        box(cv, x + w - t, y, t, h, col)
+        schematic_kit.outline_rect(cv, CW, CH, x, y, w, h, col, t)
 
     def px(rc):
         return ox + (rc[0] - x0) * ms, oy + (rc[1] - y0) * ms, rc[2] * ms, rc[3] * ms

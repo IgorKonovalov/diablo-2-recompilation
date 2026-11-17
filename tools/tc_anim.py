@@ -57,6 +57,7 @@ if HERE not in sys.path:
 
 import affixes  # noqa: E402
 import anim_common  # noqa: E402
+import schematic_kit  # noqa: E402
 import excel_bin  # noqa: E402
 import items_chain  # noqa: E402
 import png  # noqa: E402
@@ -299,7 +300,7 @@ def resolve(M, root_tc, ilvl, seed, mx=0, nonodrop=False, party=1, players=1, ca
                         info["n"] = n
                         if n > 1:
                             nd = tc.nodrop_scaled(nd, total, n, bits)
-                        info["nd"] = nd
+                        info["nd"] = f["nds"] = nd         # f["nds"]: the scaled NoDrop the stack row shows
                     rng_n = total if nonodrop else total + nd
                     roll, lo, hi = rng.rng_range(lo, hi, rng_n & M32)
                     picks += 1
@@ -561,16 +562,10 @@ class Canvas:
         return self.cv
 
     def rect(self, x, y, w, h, col):
-        for yy in range(max(0, y), min(self.H, y + h)):
-            a, b = max(0, x), min(self.W, x + w)
-            if a < b:
-                self.cv[yy * self.W + a:yy * self.W + b] = bytes([col]) * (b - a)
+        schematic_kit.fill_rect(self.cv, self.W, self.H, x, y, w, h, col)
 
     def frame_rect(self, x, y, w, h, col, t=1):
-        self.rect(x, y, w, t, col)
-        self.rect(x, y + h - t, w, t, col)
-        self.rect(x, y, t, h, col)
-        self.rect(x + w - t, y, t, h, col)
+        schematic_kit.outline_rect(self.cv, self.W, self.H, x, y, w, h, col, t)
 
     def text(self, x, y, s, col, sc=2, bold=False):
         anim_common.text(self.cv, self.W, self.H, x, y, s, col, sc)
@@ -635,7 +630,7 @@ class Anim:
             f = frames[k]
             t = T.tcs[f["tc"]]
             out.append(dict(name=t["name"], left=f["left"], picks=abs(t["picks"]), neg=t["picks"] < 0,
-                            nd=t["nodrop"], total=t["texp"]))
+                            nd=t["nodrop"], nds=f.get("nds"), total=t["texp"]))
         return out
 
     def logline(self, s):
@@ -1038,8 +1033,11 @@ def draw(cv, A, st, k, total):
         col = C["txt"] if d == v["cur"] else C["dim"]
         if d == v["cur"]:
             cv.rect(12, y - 2, 620, 20, C["cur"])
-        s = "%s%s  %s%d/%d  ND %d  T %d" % ("  " * d, f["name"][:22].upper(), "FIXED " if f["neg"] else "PICKS ",
-                                             f["left"], f["picks"], f["nd"], f["total"])
+        nds = f.get("nds")           # a scaled NoDrop that differs from the table's (more than one player) shows as ND a>b
+        s = "%s%s  %s%d/%d  ND %s  T %d" % ("  " * d, f["name"][:22].upper(), "FIXED " if f["neg"] else "PICKS ",
+                                             f["left"], f["picks"],
+                                             "%d>%d" % (f["nd"], nds) if nds is not None and nds != f["nd"] else f["nd"],
+                                             f["total"])
         cv.text(16, y, s[:50], col)
         y += 20
         if y > 230:
