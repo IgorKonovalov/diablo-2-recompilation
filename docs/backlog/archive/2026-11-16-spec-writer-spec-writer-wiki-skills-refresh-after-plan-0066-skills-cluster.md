@@ -2,12 +2,12 @@
 from: spec-writer
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/done/0066-simulation-inferred-claims-sweep.md
-  - ../specs/README.md
-  - ../wiki/skills.md
-resolution: ""
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../specs/README.md
+  - ../../wiki/skills.md
+resolution: "Refreshed in lane/fuw: [wiki/skills](../../wiki/skills.md) states the packet table and request counter, dual-wield alternation, the logged code-0 paths, checks 7 to 10 under emulation, the start's logged path and the target test (bit 1 and TargetCorpse, no dead target), the once-per-mode flag and mode 14's clear, the monster's absent request check, slow's stat 67 = −v, the handlers run under emulation, the summon level's clamps and noRatio, Impale's wrapped break test, the at-a-point creators and MissileCreate to its allocation; based_on bumped."
 ---
 
 Plan 0066 Phase 3, the skills cluster (`lane/n66sk`, parts 1 and 2), updated skills/README, skills/missiles,

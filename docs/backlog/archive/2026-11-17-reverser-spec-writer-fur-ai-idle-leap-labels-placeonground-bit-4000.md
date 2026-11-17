@@ -2,28 +2,28 @@
 from: reverser
 to: spec-writer
 date: 2026-11-17
-status: open
+status: done
 context:
-  - ../findings/ai/0001-machinery.md
-  - ../findings/skills/0012-barbarian.md
-  - ../findings/path/0004-per-event-reproduction.md
-  - ../findings/drlg/0009-room-lifecycle.md
-  - ../findings/combat/0001-formulas.md
-resolution: ""
+  - ../../findings/ai/0001-machinery.md
+  - ../../findings/skills/0012-barbarian.md
+  - ../../findings/path/0004-per-event-reproduction.md
+  - ../../findings/drlg/0009-room-lifecycle.md
+  - ../../findings/combat/0001-formulas.md
+resolution: "Applied in lane/fuw: [monsters/ai C2, C3, C2b, C2c](../../specs/monsters/ai/README.md#c-when-the-next-ai-event-comes) take the n == 0 → 1 rule at [I], the n ≤ 0 open question replaced by the frame-below-T [L]; the Leap or Leap Attack flight in [path/README](../../specs/path/README.md), [path/search F](../../specs/path/search.md), [drlg/collision](../../specs/drlg/collision.md) and wiki/pathing; [drlg/lifecycle](../../specs/drlg/lifecycle.md) 12 calls in 10 functions; [combat/to-hit C1](../../specs/combat/to-hit.md#c-the-hit-test-and-the-defence-rolls) names the three 0x4000 writers and the 491 + 46 split, Outputs and combat/README name the soft hit, the open question struck."
 ---
 
 `lane/fur` (2026-11-17) settled three plan 0066 follow-ups statically. The spec statements below change. Line numbers
 are at `29a750ca`. Not blocking.
 
-1. **monsters/ai/README C2, C3** ([ai/0001 § 17](../findings/ai/0001-machinery.md#17-monaiidle-and-monaidelay-at-n--0-2026-11-17-lanefur), `[I]`):
+1. **monsters/ai/README C2, C3** ([ai/0001 § 17](../../findings/ai/0001-machinery.md#17-monaiidle-and-monaidelay-at-n--0-2026-11-17-lanefur), `[I]`):
    - L205 `queue kind 2 at T + max(n, 1)` and L207 the same → `T + (n == 0 ? 1 : n)`, as C4. A negative `n` is kept,
      and the frame is a 32-bit add.
    - C2b (L218–219): replace "the older reading … neither helper was emulated" with the reading (`[I]`, the idiom at
      0x005DE087–0x005DE094 and 0x005DE0F4–0x005DE101). L596's "C2b holds the form at n ≤ 0" follows.
    - *Open questions* L649–650: drop. If you want it, add instead "what `UnitQueueEvent` does with a frame below `T`"
      (ai/0001 *Open questions*).
-2. **Leap labels** ([skills/0012 § 7](../findings/skills/0012-barbarian.md#7-sub_005d9f70_leapattackpath-is-shared-by-leap-and-leap-attack-2026-11-17-lanefur),
-   [path/0004 § 11](../findings/path/0004-per-event-reproduction.md#11-leap-or-leap-attack-at-0x005da00c-2026-11-17-lanefur), `[I]`):
+2. **Leap labels** ([skills/0012 § 7](../../findings/skills/0012-barbarian.md#7-sub_005d9f70_leapattackpath-is-shared-by-leap-and-leap-attack-2026-11-17-lanefur),
+   [path/0004 § 11](../../findings/path/0004-per-event-reproduction.md#11-leap-or-leap-attack-at-0x005da00c-2026-11-17-lanefur), `[I]`):
    `sub_005D9F70_LeapAttackPath` is called from do 77 (Leap) and do 78 (Leap Attack) only, so 0x005D9F9C and 0x005DA00C
    are "Leap or Leap Attack".
    - path/README L124 row "Leap, the flight": the cell "(the player row, which the finding calls Leap Attack's;
@@ -31,9 +31,9 @@ are at `29a750ca`. Not blocking.
      The anchor can add fn:sub_005DA7E0_SkillDo78LeapAttack beside `SkillSt40Leap`.
    - path/search L322 F "the player's own Leap" → "the player's own Leap or Leap Attack".
    - drlg/collision L777 "Leap's flight sets the path mask to 0 (0x005D9F9C)" → "the flight of Leap or Leap Attack".
-3. **drlg/lifecycle L157** ([drlg/0009 § 16](../findings/drlg/0009-room-lifecycle.md#16-itemplaceongrounds-callers-recounted-12-calls-in-10-functions-2026-11-17-lanefur), `[C]`):
+3. **drlg/lifecycle L157** ([drlg/0009 § 16](../../findings/drlg/0009-room-lifecycle.md#16-itemplaceongrounds-callers-recounted-12-calls-in-10-functions-2026-11-17-lanefur), `[C]`):
    "12 direct calls in 11 functions" → "in 10 functions" (`NPC_MenuAction` holds three; the 11 was a padding-heuristic count).
-4. **combat/to-hit C1 and Outputs** ([combat/0001 § 23](../findings/combat/0001-formulas.md#23-result-bit-0x4000-its-three-writers-on-the-missile-path-and-the-537-logged-ones-2026-11-17-lanefur),
+4. **combat/to-hit C1 and Outputs** ([combat/0001 § 23](../../findings/combat/0001-formulas.md#23-result-bit-0x4000-its-three-writers-on-the-missile-path-and-the-537-logged-ones-2026-11-17-lanefur),
    run:2026-11-17-fur-bit4000):
    - L284–287 C1 `0x4000`: name the three writers. (1) Damage function 3 (as now). (2) `MISSILE_ApplyDamage` 0x005AD7C5:
      on a hit, unless the defender is in state 54, Missiles `GetHit` → `0x4`, else `SoftHit` → `0x4000` `[I]`.

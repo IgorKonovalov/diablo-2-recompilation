@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/sim/frame.md 2026-11-16
+  - docs/specs/sim/frame.md 2026-11-17
 ---
 
 # The server frame
@@ -438,6 +438,7 @@ Seen in a window:
 - **The stamp a packet reads is the frame before the one it acts in.**
 - **The wanderer tick runs on every room of a walked act,** so a frame that creates one room steps every room seed of its act once.
 - **The AI has two entries,** so its draws can come at a mode-end event's place in the frame.
+- **The new-rooms flag is cleared after the walk.** A room created during its own act's walk waits for the act's next walk, as the three of the windows' 4 such rooms with a later walk did; do not re-walk.
 
 Checked by a second reading:
 - **Do not reset the hit class counter per game.** Its one store is the increment.
@@ -448,7 +449,6 @@ Emulated, the code's map:
 - A slot holds records of later multiples of 64: a walk passes over them and keeps them.
 
 Read from the code:
-- **The new-rooms flag is cleared after the walk.** A room created during its own act's walk waits; do not re-walk.
 - **The act clock pass refreshes every client's player on any act's change,** and only the packet goes to that act's clients.
 
 ## What is not known yet

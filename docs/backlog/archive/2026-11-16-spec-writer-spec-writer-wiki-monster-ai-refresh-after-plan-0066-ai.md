@@ -2,11 +2,11 @@
 from: spec-writer
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/done/0066-simulation-inferred-claims-sweep.md
-  - ../specs/README.md
-resolution: ""
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../specs/README.md
+resolution: "Refreshed in lane/fuw against monsters/ai README, machinery and catalogue: [wiki/monster-ai](../../wiki/monster-ai.md) states the tick, idle and delay, table, state rows, pre-checks, forced target, hostility test, distances, walkers, override and keep-near at the specs' raised strength, the shared n rule at n ≤ 0, the teleport try's two draws, the second route to states 10 and 11, Scarab under the past-the-first claim, and the catalogue's census (55 / 2 / 73, twenty entries under H1, p lines, callbacks run whole); based_on bumped."
 ---
 
 Plan 0066 Phase 3, the monsters/ai cluster part 1 (`lane/n66ai`), updated monsters/ai/README and monsters/ai/machinery
