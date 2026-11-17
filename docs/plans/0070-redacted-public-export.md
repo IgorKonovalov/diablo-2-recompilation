@@ -1721,3 +1721,30 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   gate green. **For the spec-writer:** place the eight blocks as their Place lines say; rows 7 and 8 keep `seed: none`;
   the wiki's own schedule flowchart (animation, "The schedule") says "step k, on game frame T + k", which reads as a
   per-frame scan where E1 is one call at the mode start; worth the same rewording when the block goes in.
+- 2026-11-17, spec-writer, lane/x11s (Phase 11 batch 1 placed; the rng widget placed). **Blocks** (from
+  `workspace/phase11/blocks-batch1.md`, as their Place lines say): row 1 `rng-seed-12345`, wiki/randomness, end of
+  "The generator: eight bytes and one multiplication"; row 2 `rng-seed-tree-c0ffee`, wiki/randomness, end of "Rooms:
+  one draw each, then a restart", and the same block as `rng-seed-tree-c0ffee-build` in wiki/seed-to-world, end of "B.
+  Acts and levels"; row 3 `items-tc-andariel-hell-8players`, wiki/items, end of "More players, fewer empty picks"; row 4
+  `drlg-maze-level47`, wiki/levels, "Maze levels", after the level 36 block; row 5 `items-quality-lsd-mf200`,
+  wiki/items, "The quality roll and magic find", before the magic find paragraph; row 6
+  `monsters-special-zombie1-hell`, wiki/monsters, "Champions and uniques", before "Pack members and preset champions";
+  row 7 `anim-schedule-cast-fcr20` (`seed: none`), wiki/animation, "The schedule", before "An every-frame monster
+  instead"; row 8 `frame-tick-passes` (`seed: none`), wiki/server-frame, "The tick and its passes", after the
+  flowchart. Captions as reviewed, three typographic changes only, to match the page and the caption beside them:
+  row 3's `1 + (8 - 1) / 2` and row 4's `rooms / 5 + 1` written with `−` and `÷` as the items page and the level 36
+  caption write them, row 5's `c - 1` as `c − 1`. **Widget:** `rng-stepper` (widget `rng`) in wiki/randomness § A
+  worked example, after "Step 1 in full"; fallback `rng-seed-12345` (picture, its first frame, built earlier on the
+  same page), not the text table, as ADR-0037 prefers; the caption says what the reader types (seed, range, draws 1–12,
+  or an illustrative preset), what the table computes (Init, each Range(n): result, low and high after, in hex; n
+  below 1 no draw) and what the fallback picture is. **Animation:** wiki/animation "The schedule": the paragraph and the
+  flowchart now say one call at the mode start on frame `T` walks the steps ahead and queues step k's events due on
+  `T + k`, and the end due one frame after the last step (timing § E1), in place of "step k, on game frame T + k".
+  **Local site:** `site_build.py` renders a `widget` fence as a plain code block (no break);
+  [backlog](../backlog/2026-11-17-spec-writer-archivist-local-site-widget-block-fallback.md) to the archivist. **Cut:**
+  `export_build.py --out workspace/export-x11s`: 71 pages, 0 dropped, eleven illustration folders, the widget folder
+  `site/public/widgets/rng-stepper/` (`widget.js`, `widget.json`, `widget.list.json`, `fallback.png`); no caption
+  sentence of the new blocks dropped (the report's only wiki drops on these pages are two older X9 text sentences);
+  `export_check workspace/export-x11s --repo workspace/export-repo/` 0 failures, 864 warnings (the x11b review cut's
+  count); the folder was removed. Gate green (E21 included). Left: wiki/animation's W4 (timing and movement updated
+  2026-11-17 by plan 0066's follow-ups) is older than this lane and stays for a refresh.

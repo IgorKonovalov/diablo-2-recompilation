@@ -76,16 +76,18 @@ depending on the weapon, and every other class at 0 ([timing § D](../specs/anim
 
 ## The schedule: when events fall
 
-For a scheduled mode the server walks the animation in steps. Frame fields are in 8.8 fixed point: the record has `F`
-frames, so the length is `256 F`; the rate `r` is added per step; and on step `k` the server queues a frame event for
-every event byte the position has passed ([timing § E](../specs/anim/timing.md#e-the-schedule)).
+For a scheduled mode the server walks the whole animation ahead in steps, in one call when the mode starts on game
+frame `T`. Frame fields are in 8.8 fixed point: the record has `F` frames, so the length is `256 F`; the rate `r` is
+added per step; step `k` stands for game frame `T + k`, and for it the call queues a frame event, due on `T + k`, for
+every event byte the position has passed. The queued events then fire as they fall due
+([timing § E](../specs/anim/timing.md#e-the-schedule)).
 
 ```mermaid
 flowchart TD
-  s0["start frame S, rate r, length 256 F"] --> loop{"256 S + k r < 256 F ?"}
-  loop -->|yes| ev["step k, on game frame T + k:<br/>queue events for the bytes passed"]
+  s0["mode start on game frame T:<br/>start frame S, rate r, length 256 F"] --> loop{"256 S + k r < 256 F ?"}
+  loop -->|yes| ev["step k: queue events for the bytes passed,<br/>due on game frame T + k"]
   ev --> loop
-  loop -->|no| fin["the end, one frame after the last step"]
+  loop -->|no| fin["queue the end, due one frame after the last step"]
 ```
 
 What follows from it:
@@ -103,6 +105,21 @@ What follows from it:
   the code; no logged case reaches it.
 - A frozen monster loses its scheduled events, its mode end among them; they are dropped when they fall due (read
   from the code; no frozen case is logged).
+
+```illustration
+id: anim-schedule-cast-fcr20
+tool: timing_anim.py
+args: --mode cast --stat 20 --frames 14 --speed 256 --start 0 --event 7
+seed: none
+illustrates: ../specs/anim/timing.md#e-the-schedule ../specs/anim/timing.md#j-the-rate-unit_animsetrate
+caption: A scheduled mode, drawn on a toy record with the numbers of the spec's worked example for a Sorceress cast:
+  14 animation frames, speed 256, start frame 0, an event on frame 7, and a faster cast rate of 20. The rate comes
+  from the speed bonus, 120 × 20 ÷ (120 + 20) = 17, then X = min(100 + 17, 175) = 117 and r = 256 × 117 ÷ 100 = 299
+  (timing § J). When the mode starts, one call walks the steps ahead: step k stands for game frame T + k, adds r to
+  the animation position, kept in 1/256 of a frame, and queues the frame events of the frames the position has
+  passed. The event on frame 7 is queued for T + 6 and the end for T + n, n = max(2, ⌈256 (F − S) ÷ r⌉) = 12 (§ E). Not shown: the every-frame advance of monsters,
+  the reschedules of skills, the attack rate and a real record's data.
+```
 
 An every-frame monster instead adds the rate to its frame position each game frame and takes the event byte of every
 frame it passes ([timing § F](../specs/anim/timing.md#f-the-per-frame-advance-every-frame-monsters)). That advance
