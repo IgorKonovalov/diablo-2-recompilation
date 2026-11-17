@@ -45,3 +45,11 @@ drops a block whose tool has none. Its simplifier drops any sentence, list item,
 fails the check's text rules, and logs each drop (plan 0070, decision 6). A wiki page's *What is not known
 yet* section is kept: it states unknowns in words, holds no lead tag and no source id, and leaving it out would present
 the page as complete.
+
+## The hex allowlist
+
+[`allow-hex.txt`](allow-hex.txt) (architect-owned, a reason on every line) names the game-math hex values that pass
+the check's X1 and X3: named constants and illustrative seeds by value, and worked-example sections by page and
+heading. A value in the code image's range, a `sub_` or `DAT_` name and a `+0x` offset never pass. The draw values in a
+schematic illustration folder's calculation panels pass by a scoped rule in the check, not by this file (plan 0070,
+owner decision 2026-11-17).
