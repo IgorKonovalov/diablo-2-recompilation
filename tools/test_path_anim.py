@@ -111,6 +111,8 @@ class Path(unittest.TestCase):
         self.assertEqual(it2, 94)
         out = TK.run("path_anim.py", ARGS["spiral"], "pa-sp")
         self.assertIn("iteration 94", " ".join(texts(out)))
+        self.assertNotRegex(" ".join(texts(out)), r"sin\(\d+\)")             # a table index, not radians (review of lane/x12d)
+        self.assertIn("sine at 208 of 512", " ".join(texts(out)))
 
     def test_no_label_uses_x_for_times_and_no_text_is_clipped_or_cut(self):
         with open(os.path.join(HERE, "path_anim.py"), encoding="utf-8") as fh:
@@ -158,6 +160,7 @@ class Move(unittest.TestCase):
             st = TK.steps(out)
             self.assertEqual(len(st), 1 + frames + 1)
             self.assertIn("ceil(%d / %d) = %d frames" % (65536 * 3, steps_[0], frames), " ".join(st[0]["calc"]))
+            self.assertIn("the same call runs PathStop", " ".join(st[-1]["calc"]))   # movement B1: no later call (review of lane/x12d)
 
     def test_closed_form_for_other_distances_and_bad_arguments(self):
         for v in (1536, 2304, 4096, 1000):

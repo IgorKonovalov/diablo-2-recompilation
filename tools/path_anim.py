@@ -16,10 +16,11 @@ spiral read no grid, so they cross the wall. --theme: dark or light palette valu
 export builder and changes nothing. DIR defaults to workspace/render/anim/path-<mode>-schematic/ and must stay under
 workspace/. Outputs: frame-NNN.png, path.gif, index.html, steps.json, schematic.json (ADR-0036).
 
-The search mode follows search L1 to L3 for type 0 with the toy's numbers (the ctx's near-target stop is off: refresh 0;
-the unit's room is the target's room); the walk is tools/rng.py's step with search I's add table; the spiral is search
+The search mode follows search L1 to L3 for type 0 with the toy's numbers (refresh 0, so L3 step 20 never stops the walk;
+a point target with no unit gives refresh 1, doubled 2, and h < 2 only at the target, so the result is the same; the unit's
+room is the target's room); the walk is tools/rng.py's step with search I's add table; the spiral is search
 J with the sine table computed here from sin (the table is within 1.8e-07 of it; the toy shows the cells, not the table).
-tools/test_schematic_kit.py compares the search with the emulation model of tools/path_emu2.py (its Search class, run on
+tools/test_path_anim.py compares the search with the emulation model of tools/path_emu2.py (its Search class, run on
 the same toy room with the tables of the spec) and the walk with the formula of search I. Times are frames, none is shown.
 Not shown: type 16's draws, the rectangle's rule for two rooms, a real room's collision masks, the list's later use by the
 unit. Stdlib only.
@@ -358,9 +359,10 @@ def build(mode, b1c, limit, seed, theme):
             for c, v in st.items():
                 if v == 1:
                     fills[c] = ("qd_rare", "bad")
-                elif c not in (START,):
-                    fills[c] = ("room", "edge")
-                    labels[c] = (str(v), "txt")
+                else:
+                    if c != START:
+                        fills[c] = ("room", "edge")
+                    labels[c] = (str(v), "txt")           # the start's own g, beside its S
             found = p["chain"] is not None
             if found:
                 for c in p["chain"][1:]:
@@ -368,9 +370,12 @@ def build(mode, b1c, limit, seed, theme):
             header("PASS %d, BOUND %d: %s" % (i + 1, p["bound"], "THE TARGET IS REACHED" if found else "NO ROUTE UNDER THE BOUND"))
             grid(fills, labels)
             seen = sum(1 for v in st.values() if v != 1)
-            blk = sum(1 for v in st.values() if v == 1)
+            blk = sum(1 for c, v in st.items() if v == 1 and not blocked(c, set()))
+            off = sum(1 for c, v in st.items() if v == 1 and blocked(c, set()))
             panel([("BOUND %d" % p["bound"], "acc", True), "TRIES IN THIS PASS: %d" % p["tries"],
-                   "NODES USED: %d OF 900" % p["nodes"], "CELLS WITH A G: %d" % seen, "CELLS MARKED BLOCKED: %d" % blk, "",
+                   "NODES USED: %d OF 900" % p["nodes"], "CELLS WITH A G: %d" % seen,
+                   "CELLS MARKED BLOCKED: %d" % blk + (", AND %d" % off if off else ""),
+                   ("  PAST THE ROOM'S EDGE" if off else ""),
                    (("TARGET REACHED" if found else "EVERY TRY EXHAUSTED"), "good" if found else "bad", True)])
             if found:
                 under(["NUMBERS: THE LEAST G WRITTEN IN EACH CELL. GREEN CELLS: THE ROUTE.",
@@ -434,9 +439,7 @@ def build(mode, b1c, limit, seed, theme):
             put("Step %d of %d: the draw gives low word %d, which AND 31 is %d, so add is %d and the direction is %s."
                 % (kk + 1, n, lo, lo & 31, add, DIR_NAME[dr].lower()),
                 "Step %d: add %d, direction %s, point %d is (%d, %d)." % (kk + 1, add, DIR_NAME[dr].lower(), kk, cur[0], cur[1]),
-                ["search I: v = %d * %d + %d; new low = %d, new high = %d." % (rng.MULT, lo if kk == 0 else log[kk - 1][1],
-                                                                                666 if kk == 0 else log[kk - 1][2], lo, hi)
-                 if False else "search I: draw %d on the seed gives low word %d (seed {%08x:%08x})." % (kk + 1, lo, lo, hi),
+                ["search I: draw %d on the seed gives low word %d (seed {%08x:%08x})." % (kk + 1, lo, lo, hi),
                  "search I: add[%d] = %d; dir = (%d + %d) & 7 = %d." % (lo & 31, add, d0, add, dr),
                  "search I: points[%d] = (%d, %d); cur = cur + 2 * step[%d] = (%d, %d)." % (kk, cur[0], cur[1], dr, nxt[0], nxt[1])])
         header("THE WALK ENDED: %d POINTS" % (n + 1))
@@ -463,9 +466,9 @@ def build(mode, b1c, limit, seed, theme):
     x, y = cxy(O)
     k.outline(x, y, CS + 1, CS + 1, "acc", 3)
     k.text_c(x + CS // 2 + 1, y + (CS - 14) // 2 + 1, "P", "acc", 2, True)
-    panel([("THE POSITION P (%d,%d)" % O, "acc", True), "R GROWS BY 9600 A TURN STEP,", "THE ANGLE BY 16 OF 512",
+    panel([("THE POSITION P (%d,%d)" % O, "acc", True), "R GROWS BY 9600 EACH ITERATION,", "THE ANGLE BY 16 OF 512",
            "A POINT IS KEPT WHEN THE CELL", "CHANGES", "", "NO DRAW, NO GRID READ"])
-    under(["EACH ITERATION: R = R + 9600 AND ANGLE = ANGLE + 16.",
+    under(["EACH ITERATION: R = R + 9600 AND ANGLE = ANGLE + 16, OF 512 A TURN.",
            "X = SIN(ANGLE + 128) * R AND Y = SIN(ANGLE) * R, TRUNCATED TOWARD ZERO,",
            "ARE ADDED TO THE POSITION, IN 1/65536 OF A SUBTILE."])
     put("The spiral of type 14 around the position P: no draw and no grid. Each iteration grows the radius by 9600 (in 1/65536 "
@@ -500,7 +503,7 @@ def build(mode, b1c, limit, seed, theme):
         k.outline(x, y, CS + 1, CS + 1, "acc", 3)
         k.text_c(x + CS // 2 + 1, y + (CS - 14) // 2 + 1, "P", "acc", 2, True)
         panel([("R = %d * 9600 = %d" % (it, r_), "txt", True), "ANGLE = %d * 16 = %d" % (it, a_),
-               "X = SIN(%d) * R = %d" % ((a_ + 0x80) & 0x1FF, X), "Y = SIN(%d) * R = %d" % (a_ & 0x1FF, Y),
+               "X = SIN(%d OF 512) * R = %d" % ((a_ + 0x80) & 0x1FF, X), "Y = SIN(%d OF 512) * R = %d" % (a_ & 0x1FF, Y),
                "CELL (%d,%d); LAST KEPT (%d,%d)" % (cell[0], cell[1], last[0], last[1]),
                ("KEPT AS POINT %d" % (nkept + 1) if keep else "THE SAME CELL: NOT KEPT", "good" if keep else "dim", True)],
               dy=26)
@@ -511,8 +514,8 @@ def build(mode, b1c, limit, seed, theme):
             ", a new cell, so the point is kept" if keep else ", the last kept cell, so nothing is kept"),
             "Iteration %d: the offset (%d, %d) reaches cell (%d, %d)%s." % (it, X, Y, cell[0], cell[1],
                                                                           ", which is kept" if keep else ", not kept"),
-            ["search J: R = %d, a = %d, X = trunc(sin(%d) * %d) = %d, Y = trunc(sin(%d) * %d) = %d." % (
-                r_, a_, a_ + 0x80, r_, X, a_, r_, Y),
+            ["search J: R = %d, a = %d, X = trunc(sine at %d of 512 * %d) = %d, Y = trunc(sine at %d of 512 * %d) = %d." % (
+                r_, a_, (a_ + 0x80) & 0x1FF, r_, X, a_ & 0x1FF, r_, Y),
              "search J step 8: x >> 16 or y >> 16 %s the last kept cell." % ("differs from" if keep else "equals")])
 
     one_iteration(1, 0)

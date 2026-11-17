@@ -226,6 +226,19 @@ def main():
         os.makedirs(tmp + "/c")
         rc, out, _ = Env(tmp + "/c").go()
         ok(rc == 0 and "7 astro cache: none present" in out, "no cache present: said so")
+        # never outside the target's site/: a linked node_modules or a linked .astro is left alone
+        os.makedirs(tmp + "/d")
+        e4 = Env(tmp + "/d")
+        outside = os.path.join(tmp, "elsewhere")
+        put(os.path.join(outside, "nm", ".astro", "data-store.json"), "{}")
+        put(os.path.join(outside, "own", "keep.json"), "{}")
+        nm = os.path.join(e4.t, "site", "node_modules")
+        sh("rm", "-rf", nm)
+        os.symlink(os.path.join(outside, "nm"), nm)
+        os.symlink(os.path.join(outside, "own"), os.path.join(e4.t, "site", ".astro"))
+        ok(ep.clear_astro_cache(os.path.join(e4.t, "site")) == [], "linked caches: nothing removed")
+        ok(os.path.exists(os.path.join(outside, "nm", ".astro", "data-store.json"))
+           and os.path.exists(os.path.join(outside, "own", "keep.json")), "linked caches: the files outside are kept")
     print(f"TEST export_publish: {checks} checks, {len(failed)} failed")
     return 1 if failed else 0
 

@@ -162,11 +162,16 @@ def clear_astro_cache(site):
     """Remove Astro's content cache before a build: it re-renders only entries whose text changed, so a changed rehype step or
     config would otherwise publish stale HTML for the pages whose text did not. Both places the cache lives; -> the ones removed."""
     gone = []
+    top = os.path.realpath(site)
     for rel in (os.path.join("node_modules", ".astro"), ".astro"):
         d = os.path.join(site, rel)
-        if os.path.isdir(d):
-            shutil.rmtree(d)
-            gone.append(rel)
+        if not os.path.isdir(d) or os.path.islink(d):
+            continue
+        real = os.path.realpath(d)
+        if os.path.dirname(real) not in (top, os.path.join(top, "node_modules")):
+            continue                     # a linked node_modules: its cache lies outside the target's site/, left alone
+        shutil.rmtree(real)
+        gone.append(rel)
     return gone
 
 

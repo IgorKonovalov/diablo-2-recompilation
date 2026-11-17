@@ -1843,3 +1843,48 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   E19 (`site_build.py check`) parses widget blocks; new `tools/test_site_build.py` (5); both backlog entries closed.
   Tests green: `test_path_anim`, `test_schematic_kit` (29), `test_export_build` (154), `test_export_check` (191),
   `test_export_publish`, `test_site_build`; gate green.
+- 2026-11-17, architect, review of lane/x12d (Opus, Tier A): **accept with fixes**, 8: misread 1, omission 2, other 5.
+  Checked: frames viewed in both themes (search 0, 1, 3, 4, 5; walk 2, 7; spiral 2, 5; runeword 0, 2, 4, 5, 6, 7; move
+  0, 3, 8, 9), each number against the specs: search § A3 (h0 = 2 × 11 + 0 = 22), § L2 (bounds 22, 27, 32 under b1C 33;
+  the loop's `first < last`), § L3 (the first descent 4 steps right to the wall; the pass 3 route's g values 2, 5, 8,
+  11, 14, …, 32 and f = 32 at the target; the store kept across passes, step 10's "lower g blocks"), Reduce (five
+  points, start excluded); § I (draw 2: low `7C66376B` & 31 = 11, add 1, direction 1; points (4, 2), (6, 4)); § J
+  (iteration 5: sine at 208 and 80 of 512 × 48000 = 26667, 39910, cell (8, 5); 94 iterations, 26 of 77 inside the room);
+  sockets § D1–D4 (quality and quest tests, n ≠ s on inserts 1–2, 41 complete rows ahead, the Equiv chain, D3 with no
+  etype); movement § B1, B3 (s = 24576, ⌈196608 ÷ 24576⌉ = 8, the snap on frame 8). **Rulings on the lane's doubts.**
+  (1) No open set: § L has none; the frames say "depth first … no open list" and the caption says depth first: right.
+  (2) `path_anim.search` as a traced restatement: kept, `values: computed` kept. A refactor onto `path_emu2.Search` is
+  not small (its run returns totals only; the frames need each pass's store and the first descent, which would mean
+  instrumenting the reverser's checked emulator); the copy is tied by test over four rooms (tries, passes, nodes,
+  points), so it is our model and "computed by our model" is true. The 64 turn entries and 25 octant cells copied in the
+  tool are listed values of `docs/tables/PathDirTables.md` (ADR-0031 allows them listed; the spec's § L3 already prints
+  the turn rows) and no frame or step text prints a table row; the walk's addend table is § I step 1's rule.
+  (3) The near-target stop: the toy runs refresh 0; a point target with no unit gives refresh 1, doubled 2, and h < 2
+  only at the target, so the result is the game's for such a call; the caption now says that (fix 7). (4) No library
+  name in public text (the step texts said "sin(144)", which read as radians): now "sine at 144 of 512" (fix 4).
+  (5) `shld`/`shie` in frames: acceptable; the spec uses type codes (`shie`, `weap`, `blun`) and the page has no other
+  name; the 33 rune names in the tool are names only, no table values (ADR-0009 risk 3 not touched). **Fixes:**
+  (1) misread: `move_anim.py`'s end frame said "the next call snaps … and ends the move"; § B1 runs `PathStop` in the
+  same call once the last point is reached (B5: the arrival follows in the step's frame): the frame, the caption and
+  the step text say so, and a test. (2) omission: the search's pass frames counted 10 blocked cells where 8 are drawn
+  (two lie past the room's edge) and left the start's own g (4) out: "8, and 2 past the room's edge", the start's g
+  beside its S. (3) omission: `export_publish.clear_astro_cache` followed a linked `site/node_modules` out of the
+  target's `site/` (`rmtree` of the link's `.astro`) and raised on a linked `site/.astro`: both are skipped now (no
+  link, real path's parent must be `site/` or `site/node_modules/`), two checks in `test_export_publish` (44).
+  (4) other: the spiral's "SIN(208)" in frames and "sin(144)" in step texts read as radians: "SIN(208 OF 512)", "sine
+  at 144 of 512", and a test. (5) other: "R grows by 9600 a turn step" → "each iteration"; the 512 of a turn and
+  "toward zero" kept in the strip. (6) other: dead `… if False else` in the walk's step text removed; the docstring
+  named `test_schematic_kit` for the model test (it is `test_path_anim`) and now records the refresh reasoning.
+  **Blocks** (`workspace/phase11/blocks-batch2.md`, corrected there): (7) other: row 15's "sets the near-target stop
+  off" now gives why the stop changes nothing for this toy (doubt 3); (8) other: row 20's "takes the item type shld"
+  → "allows". Place lines checked against the pages (pathing's three sections, items-other-paths after the flowchart,
+  animation's "The step"): right. **Cut:** the five blocks placed in the lane's wiki pages for one build (restored
+  after), `export_build.py --out workspace/export-x12d-review`: 71 pages, 0 dropped, the five illustration folders;
+  `export_check` 0 failures, 864 warnings (the previous cut's count); no DROP or REWRITE on the three pages; every
+  caption sentence of the five blocks present in the cut; the folder removed. **Backlog fixes:** the cache clear (fix 3
+  above) and `site_build.py`'s widget fallback (no `<script>` in the body, tested; E19 parses widget blocks, rejects a
+  repeated id, an unknown widget folder, a fallback that is no illustration id and a dead anchor; the repository's docs
+  pass): right. Tests green: `test_path_anim` (16), `test_site_build` (5), `test_export_publish` (44),
+  `test_schematic_kit` (29), `test_export_build` (154), `test_export_check` (191), `test_anim_schematic` (5); gate
+  green. Ledger: verdict accept with fixes, 8 (misread 1, omission 2, other 5). **For the spec-writer:** place the five
+  blocks as their Place lines say; row 21 caption could add that the path stops in the same frame (the frames say so).

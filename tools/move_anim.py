@@ -147,12 +147,13 @@ def build(v, dist, theme):
     header("THE END: %d FRAMES" % n)
     strip(fr[-1]["x"], trail)
     text([("THE UNIT IS AT THE CENTRE OF SUBTILE %d" % dist, "txt", True), "NO POINT IS LEFT: THE PATH STOPS",
-          "THE NEXT CALL SNAPS TO THE SUBTILE CENTRE AND ENDS THE MOVE",
+          "IN THE SAME CALL, ON FRAME %d: SNAP TO THE CENTRE, MOVE ENDS" % n,
           ("%d FRAMES = CEIL(65536 * %d / %d)" % (n, dist, sx), "acc", True)], dy=26)
     put("The unit stands on the point after %d frames, the ceiling of 65536 * %d / %d; with no point left the path stops "
-        "(movement B3, B5)." % (n, dist, sx), "The unit has reached the point after %d frames." % n,
+        "in that same frame (movement B1, B3, B5)." % (n, dist, sx), "The unit has reached the point after %d frames." % n,
         ["movement B3: ceil(65536 * %d / %d) = %d frames." % (dist, sx, n),
-         "movement B5: with no point left PathStop snaps to the subtile centre and the step returns 2."])
+         "movement B1, B5: with no point left the same call runs PathStop, which snaps to the subtile centre; the step "
+         "returns 2."])
     return frames, caps, k.pal, fr
 
 
