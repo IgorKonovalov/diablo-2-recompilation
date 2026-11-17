@@ -70,7 +70,8 @@ REPO = os.path.normpath(os.path.join(HERE, ".."))
 DOCS = os.path.join(REPO, "docs")
 WS = os.path.join(REPO, "workspace")
 ILLUS_TIMEOUT = 600
-SCHEMATIC_TOOLS = ("maze_anim.py", "tc_anim.py", "rng_anim.py", "seedtree_anim.py")
+SCHEMATIC_TOOLS = ("maze_anim.py", "tc_anim.py", "rng_anim.py", "seedtree_anim.py", "quality_anim.py", "special_anim.py",
+                   "timing_anim.py", "frame_anim.py")
 ILLUS_KEYS = ("id", "tool", "args", "seed", "illustrates", "caption")
 WIDGET_KEYS = ("id", "widget", "illustrates", "caption", "fallback")
 WIDGETS_SRC = os.path.join(HERE, "widgets")        # tools/widgets/<name>/: the reviewed sources (tests override)
@@ -799,8 +800,8 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
     base = f"{up}illustrations/{d['id']}/"
     root_abs = f"/illustrations/{d['id']}/{gif}"      # root-absolute: the site's rehype step prefixes its base
     cap = caption_sentences(page, heading, d["caption"], allow)
-    cap.append("Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed "
-               "in the game.")
+    cap.append(("No seed is drawn on. " if d["seed"].strip() == "none" else "Seed: illustrative, an input of our own. ")
+               + "Every value shown is computed by our model, not observed in the game.")   # seed: none, a generator with no draw
     blank = {"kind": "blank", "lines": [""]}
     return [{"kind": "para", "lines": [f"![Animation: {d['id']}]({root_abs})"], "illus": True}, blank,
             {"kind": "para", "lines": [f"[Step through {d['id']}]({base}index.html)"], "illus": True}, blank,

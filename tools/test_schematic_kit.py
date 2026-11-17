@@ -270,5 +270,211 @@ class Blocks(unittest.TestCase):
                          {9, 12, 14})     # level 47: Prev E and the dock (maze.md F2 AddFixed) and the Next special's new room
 
 
+# ---------------------------------------------------------------- batch 1 part 2: rows 5-8 (lane x11b)
+def calc_text(out):
+    return [c for s in steps(out) for c in s["calc"]]
+
+
+def same_both_themes(case, tool, args, name):
+    a, b = run(tool, args, name + "-a"), run(tool, args, name + "-b")
+    case.assertEqual(hashes(a), hashes(b))
+    case.assertEqual(export_check.verify_illustration(a, identity=())[0], [])
+    lt = run(tool, args + ["--theme", "light"], name + "-light")
+    case.assertEqual(export_check.verify_illustration(lt, identity=())[0], [])
+    with open(os.path.join(lt, "frame-001.png"), "rb") as fh:
+        data = fh.read()
+    case.assertEqual(data[data.index(b"PLTE") + 4:][:768], K.palette("light")[1])
+    return a
+
+
+@unittest.skipUnless(os.path.isdir(DATA), "no workspace/merged (game data)")
+class Quality(unittest.TestCase):
+    ARGS = ["lsd", "28", "0xc0ffee", "--mf", "200"]
+
+    def test_numbers_equal_the_model(self):
+        import quality
+        out = same_both_themes(self, "quality_anim.py", self.ARGS, "ql")
+        T = quality.Tables(os.path.join(DATA, "data", "global", "excel"))
+        codes = {bytes(r[0x80:0x84]).decode("latin-1").strip(): i for i, r in reversed(list(enumerate(T.items)))}
+        tr = []
+        code, seed_out, why, nd, ri = quality.roll(T, codes["lsd"], 28, [0, 0, 0, 0, 0, 0], (0xC0FFEE, 666), 200, trace=tr)
+        st = steps(out)
+        self.assertEqual(len(st), 2 + len(tr))
+        for i, (name, c, x, won) in enumerate(tr):
+            txt = " ".join(st[1 + i]["calc"])
+            self.assertIn("draw RangeB(c = %d)" % c, txt)
+            self.assertIn("x = new low mod %d = %d" % (c, x), txt)
+            self.assertIn("x = %d %s 128" % (x, "<" if won else ">="), txt)
+            self.assertIn(name, st[1 + i]["text"])
+        self.assertIn("result code = %d" % code, st[-1]["calc"][0])
+        self.assertIn("draws = %d" % nd, st[-1]["calc"][0])
+        self.assertIn("{%08x:%08x}" % seed_out, st[-1]["calc"][1])
+        self.assertEqual(code, 4)                                   # magic, after unique, set and rare are lost
+
+    def test_magic_find_factor_is_the_models(self):
+        import quality
+        out = run("quality_anim.py", self.ARGS, "ql-f")
+        txt = " ".join(calc_text(out))
+        for k, name in ((250, "unique"), (500, "set"), (600, "rare")):
+            self.assertIn("Diminish(300, %d) = %d" % (k, quality.diminish(300, k)), txt)
+        self.assertIn("m100 = 300 (no diminishing) = 300", txt)
+
+    def test_early_return_and_bad_arguments(self):
+        import quality_anim
+        self.assertEqual(quality_anim.main([DATA, "nosuch", "28", "1"]), 2)
+        self.assertEqual(quality_anim.main([DATA, "lsd", "28", "1", "--ratio", "1,2,3"]), 2)
+        self.assertEqual(quality_anim.main([DATA]), 2)
+
+
+@unittest.skipUnless(os.path.isdir(DATA), "no workspace/merged (game data)")
+class Special(unittest.TestCase):
+    def test_unique_picks_equal_the_model(self):
+        import monspecial
+        out = same_both_themes(self, "special_anim.py", ["zombie1", "0xc0ffee", "--difficulty", "hell"], "sp")
+        d = monspecial.Data(os.path.join(DATA, "data", "global", "excel"))
+        mods = [0] * 9
+        s = monspecial.Seed((0xC0FFEE, 666))
+        o = d.mods_roll(s, mods, 2, 1, 5, 1)
+        st = steps(out)
+        self.assertFalse(o["champion"])
+        self.assertEqual(len(st), 3 + len(o["picks"]) + 1)
+        self.assertIn("Range(unit.seed, 100) = %d" % o["r100"], " ".join(st[1]["calc"]))
+        for i, p in enumerate(o["picks"]):
+            txt = " ".join(st[3 + i]["calc"])
+            self.assertIn("total = %d; x = Range(unit.seed, %d) = %d; seed = {%08x:%08x}" % (
+                p["total"], p["total"], p["x"], p["us"][0], p["us"][1]), txt)
+            self.assertIn("%d candidates" % len(p["cands"]), st[3 + i]["text"])
+            self.assertIn("row %d," % p["res"], txt)
+        self.assertIn("steps of the unit seed = %d" % (2 + len(o["picks"])), " ".join(st[-1]["calc"]))
+        self.assertIn("{%08x:%08x}" % s.t(), " ".join(st[-1]["calc"]))
+
+    def test_champion_branch_and_no_weight_table(self):
+        import monspecial
+        out = run("special_anim.py", ["zombie1", "4", "--difficulty", "nightmare"], "sp-c")
+        self.assertEqual(export_check.verify_illustration(out, identity=())[0], [])
+        st = steps(out)
+        self.assertEqual(len(st), 4)                                 # inputs, champion draw, one pick, the list
+        self.assertIn("champion (flag 0x04)", " ".join(st[1]["calc"]))
+        # special.md D's per-mod table stays out of the export (Phase 9): a frame names the winner's weight, never a table
+        for o in (out, run("special_anim.py", ["zombie1", "0xc0ffee", "--difficulty", "hell"], "sp-w")):
+            for stp in steps(o):
+                weights = [c for c in stp["calc"] if "weight" in c.lower()]
+                self.assertLessEqual(len(weights), 2, stp["text"])
+        d = monspecial.Data(os.path.join(DATA, "data", "global", "excel"))
+        o = d.mods_roll(monspecial.Seed((4, 666)), [0] * 9, 1, 1, 5, 1)
+        self.assertTrue(o["champion"])
+
+    def test_bad_arguments(self):
+        import special_anim
+        self.assertEqual(special_anim.main([DATA, "nosuch", "4"]), 2)
+        self.assertEqual(special_anim.main([DATA, "zombie1", "4", "--difficulty", "3"]), 2)
+
+
+class Timing(unittest.TestCase):
+    def test_worked_example_and_model(self):
+        import anim
+        import anim_rates
+        out = same_both_themes(self, "timing_anim.py", [], "tm")
+        st = steps(out)
+        r = anim_rates.rate_cast(256, anim_rates.bonus(2, 20))
+        self.assertEqual(r, 299)                                      # timing.md worked example 1: FCR 20 -> r = 299
+        q = anim.schedule(0, 0, r, 14 << 8, lambda f: 1 if f == 7 else 0)
+        self.assertEqual(q, [(0, 6, 1, 0), (1, 12, 0, 0)])             # the do at T + 6, the end at T + 12 (n = 12)
+        self.assertIn("r = speed * X / 100 = 256 * 117 / 100 = 299", " ".join(st[0]["calc"]))
+        self.assertTrue(all(s["text"].startswith("Step %d, for game frame T + %d" % (i, i)) for i, s in enumerate(st[1:-1], 1)))
+        self.assertEqual(len(st), 1 + 11 + 1)                          # N = 11 scan steps
+        self.assertIn("UnitQueueEvent(kind 0, frame T + 6, a 1, b 0)", " ".join(st[6]["calc"]))
+        self.assertIn("kind 1 at T + 12", " ".join(st[-1]["calc"]))
+        for i in range(1, 12):
+            self.assertIn("= %d < L = 3584" % (i * 299), " ".join(st[i]["calc"]))
+
+    def test_other_rate_branch_and_bad_arguments(self):
+        import anim
+        import anim_rates
+        out = run("timing_anim.py", ["--mode", "gethit", "--stat", "7", "--frames", "5", "--event", "2"], "tm-g")
+        self.assertEqual(export_check.verify_illustration(out, identity=())[0], [])
+        r = anim_rates.rate_gethit(256, anim_rates.bonus(1, 7))
+        self.assertEqual(r, 143)                                       # worked example 2: FHR 7 -> r = 143, n = 9
+        self.assertIn("kind 1 at T + 9", " ".join(calc_text(out)))
+        self.assertEqual(anim.schedule(0, 0, r, 5 << 8, lambda f: 0)[-1], (1, 9, 0, 0))
+        import timing_anim
+        self.assertEqual(timing_anim.main([DATA, "--mode", "attack"]), 2)
+        self.assertEqual(timing_anim.main([DATA, "--frames", "1"]), 2)
+
+
+class Frame(unittest.TestCase):
+    def test_pass_list_equals_the_spec_listing(self):
+        import frame_anim
+        with open(os.path.join(ROOT, "docs", "specs", "sim", "frame.md"), encoding="utf-8") as fh:
+            spec = fh.read()
+        b1 = spec[spec.index("B1. GameTick(game):"):spec.index("Rank 21 is everything")]
+        d1 = spec[spec.index("D1. GameRunUnitEvents(game):"):spec.index("D2. Each runner")]
+        ranks = {int(m.group(1)): m.group(2) for m in re.finditer(r"^\s+(\d+)\s+(?:if [^:]*: )?(?:for [^:]*: if [^:]*: )?(\w+)", b1, re.M)}
+        for rank, name, *_ in frame_anim.PASSES:
+            self.assertEqual(ranks[rank], name, rank)
+        self.assertEqual([p[0] for p in frame_anim.PASSES], [1, 2, 3, 14, 15, 16, 17, 18, 19, 20])
+        d_ranks = {int(m.group(1)): m.group(2) for m in re.finditer(r"^\s+(\d+)\s+(\w+)", d1, re.M)}
+        for rank, runner, _ut, mode in frame_anim.WALKS:
+            self.assertEqual(d_ranks[rank], runner, rank)
+        self.assertEqual([w[0] for w in frame_anim.WALKS], list(range(4, 14)))
+        self.assertEqual([w[3] for w in frame_anim.WALKS], [0, 1] * 5)          # every-frame walk, then the slot walk
+        for p in re.findall(r"if frame % (\d+) = 0", b1):
+            self.assertIn(int(p), [x[3] for x in frame_anim.PASSES])
+
+    def test_outputs_and_periodic_passes(self):
+        out = same_both_themes(self, "frame_anim.py", [], "fr")
+        st = steps(out)
+        self.assertEqual(len(st), 18)
+        txt = " ".join(calc_text(out))
+        self.assertIn("1320 % 20 = 0", txt)
+        self.assertIn("curSlot = game.frame % 64 = 1320 % 64 = 40", txt)
+        sk = run("frame_anim.py", ["--frame", "1321"], "fr-s")
+        t2 = " ".join(calc_text(sk))
+        self.assertNotIn("1321 % 20 = 0", t2)
+        self.assertIn("runs when frame % 12 = 0 (1321 % 12 = 1)", t2)
+        self.assertTrue(any("skipped at counter 1321" in s["text"] for s in steps(sk)))
+        import frame_anim
+        self.assertEqual(frame_anim.main([DATA, "--frame", "0"]), 2)
+
+
+class Labels(unittest.TestCase):
+    """Review of lane/x11b: in the upper-case font a multiplication written X reads as the variable X or the draw X."""
+    def test_no_x_for_times_in_frame_text(self):
+        for tool in ("quality_anim.py", "timing_anim.py", "special_anim.py", "frame_anim.py"):
+            with open(os.path.join(HERE, tool), encoding="utf-8") as fh:
+                src = fh.read()
+            self.assertEqual(re.findall(r"(?:%d|[0-9)]) [Xx] |[A-Z] X [A-Z] /| [Xx] (?:%d|[0-9(])", src), [], tool)
+
+    def test_frame_names_and_tags(self):
+        import frame_anim
+        self.assertEqual(frame_anim.spaced("QUESTS_TimersRun"), "QUESTS TIMERS RUN")
+        self.assertEqual(frame_anim.spaced("GameRunUnitEvents"), "GAME RUN UNIT EVENTS")
+        self.assertTrue(all(len(lab) <= 12 for _r, lab, _f in frame_anim.ROWS))   # clear of DONE and SKIP
+        sure = {p[0]: p[7] for p in frame_anim.PASSES}
+        self.assertIn("seeds inferred", sure[3])                       # frame J rank 3: [I] the seeds
+        with open(os.path.join(HERE, "frame_anim.py"), encoding="utf-8") as fh:
+            self.assertNotIn(" MS\"", fh.read())                     # time in frames (ADR-0014), no host-loop period
+
+
+class Captions(unittest.TestCase):
+    def test_no_caption_is_cut(self):
+        import frame_anim
+        import quality_anim
+        import special_anim
+        import timing_anim
+        K.CAPTION_CUT.clear()
+        frame_anim.build(1320, "dark")
+        frame_anim.build(1321, "light")
+        timing_anim.build("cast", 20, 14, 256, 0, 7, "dark")
+        timing_anim.build("gethit", 0, 5, 256, 0, 2, "light")
+        if os.path.isdir(DATA):
+            import quality
+            T = quality.Tables(os.path.join(DATA, "data", "global", "excel"))
+            quality_anim.build(T, quality_anim.code_index(T), "lsd", 28, [0, 0, 0, 0], 0xC0FFEE, 200, "dark")
+            for diff, seed in ((2, 0xC0FFEE), (1, 4), (0, 4)):
+                special_anim.build(DATA, "zombie1", diff, 1, seed, "dark")
+        self.assertEqual(K.CAPTION_CUT, [])
+
+
 if __name__ == "__main__":
     unittest.main()
