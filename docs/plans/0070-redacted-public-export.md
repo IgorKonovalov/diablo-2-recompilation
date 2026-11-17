@@ -395,6 +395,75 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   game tables (ADR-0031, ADR-0009 risk 3); the ADR states what a widget may contain and the check rule that verifies it;
   (3) pre-rendered schematic animations under ADR-0036 need no new rule and go first, in archivist tool lanes; (4) each
   batch is reviewed on Opus and enters the next cut.
+- **Steps (architect, 2026-11-17).** (1) and (2) are written: the candidates below, and
+  [ADR-0037](../adrs/0037-scripted-widgets-in-the-export.md) (proposed). Then, once the owner accepts both:
+  (3a) one archivist lane builds the schematic kit (row 0) and batch 1's new generators; the spec-writer places each
+  ```` ```illustration ```` block with its caption in the wiki or spec page; one Opus Tier A review per lane pair.
+  (3b) batch 2 likewise, in two or three lanes. (4a) one archivist lane adds X13 and E21 (ADR-0037) to the check and
+  the gate, `tools/test_widgets.py` and the builder's ```` ```widget ```` block, and prepares the export repository's
+  host step, styles and CSP under `workspace/export-repo/` for the owner (Tier A: a safety device). (4b) batches 3 and
+  4, a few widgets per lane. Each batch enters the next cut and its redaction review, which opens every new picture
+  and widget. A generator reads the user's own files at cut time, as ADR-0034 and ADR-0036 allow (tables, and image
+  constants as `maze_anim.py` already does through `maze_replay.py`); only what a frame shows reaches the export, and
+  it passes the check. A widget's data never comes from them (ADR-0037).
+- **Candidates (architect, 2026-11-17; awaiting the owner).** Kind: **P** a pre-rendered schematic animation (GIF,
+  frames, step-through page; ADR-0036, no new rule), **S** a static schematic picture (one marked frame from a P
+  tool), **W** a scripted widget (ADR-0037; its fallback is the P row named, or a short table). Routes are the second
+  cut's. Inputs name the spec sections the captions restate and the illustrative values; a seed is one of
+  `allow-hex.txt`'s illustrative seeds or a new line there. Tools are the archivist's, in `tools/` (a widget in
+  `tools/widgets/<name>/`); "over X" names the model the generator drives. Effort is an estimate: S about a
+  lane-hour, M half a lane, L a lane. Batch order is priority; within a batch, row order.
+
+  | # | Page (route), section | Shows | Kind | Inputs | Tool | Effort | Batch |
+  |---|---|---|---|---|---|---|---|
+  | 0 | (all P rows) | The schematic kit: boxes, a cell grid, bars, a number tape, a legend, a palette with light and dark values | — | ADR-0036's palette and 5×7 font | `anim_common.py` | M | 1 |
+  | 1 | foundations/randomness, The generator | One seed's two words, the multiply-and-add, the draw and its `mod n`, eight draws in a row | P | randomness § The generator, § A worked example; seed 12345 | new `rng_anim.py` over `rng.py` | S | 1 |
+  | 2 | foundations/randomness, Two roots to Rooms; running/seed-to-world, The build | The seed tree: game seed, act seeds, level seeds (a sum), room seeds (one draw each) | P | randomness § From the map seed to § Rooms; spec-chain § 1; seed 0xC0FFEE | new `seedtree_anim.py` over `drlg.py` | M | 1 |
+  | 3 | items/items, More players, fewer empty picks | The same drop with one player and with eight: NoDrop shrinking, pick by pick | P | tc § E; the existing block's monster and seed, `--players 8` | `tc_anim.py` (new block only) | S | 1 |
+  | 4 | world/levels, Maze levels | A second maze, another level of the maze list, for a different start shape and theme count | P | maze § B–E, § H; seed 0xC0FFEE | `maze_anim.py` (new block only) | S | 1 |
+  | 5 | spec-items/quality, Test order and § D–E; items/items, The quality roll | The quality ladder: unique, set, rare, magic, superior, normal, low; each test's chance, its draw, magic find's diminished term | P | quality § C–E; the ratio row the page shows; ilvl, mlvl, MF illustrative | new `quality_anim.py` over `quality.py` | M | 1 |
+  | 6 | world/monsters, Champions and uniques; spec-monsters/special § A–D | Champion or unique, then the weighted mod picks with their exclusions and per-mod draws | P | special § A, § B, § D; illustrative seed and class | new `special_anim.py` over `monspecial.py roll` | S | 1 |
+  | 7 | running/animation, The schedule; spec-anim/timing § E, F, J | The frame counter advancing at a rate, the event frames, the action frame | P | timing § E, § F, § J; an illustrative frame count and rate | new `timing_anim.py` over `anim.py` | S | 1 |
+  | 8 | running/server-frame, The tick and its passes; spec-sim/frame § B–D, J | One tick pass by pass, and which seeds each pass draws on | P | frame § B–D, § J (the spec's pass list, no log) | new `frame_anim.py` | S | 1 |
+  | 9 | world/monsters, Groups and minions, Placement; spec-monsters/special § E, F | A pack placed on a schematic room: the leader's spot, each member's spot, refused cells | P | special § E–F; collision's spawn predicates; illustrative seed | new `pack_anim.py` over `monspawn.py`, `collision.py` | L | 2 |
+  | 10 | world/monsters, Which monsters a level can have; spec-monsters/pool § A–C | The region seed and the pool pick, class by class | P | pool § A–C; an illustrative level | new `pool_anim.py` over `monspawn.py` | M | 2 |
+  | 11 | world/levels, Laying out the act; spec-drlg/warps § B, C | The act link builder placing level rectangles, with its retries | P | warps § B–C; seed 0xC0FFEE | new `links_anim.py` over `drlg.py` | M | 2 |
+  | 12 | world/levels, Outdoor levels; spec-drlg/outdoor § B–G | Outdoor stitching: the cell grid, the outline, the presets, the seams and the border pass | P | outdoor § B–G (one act); seed 0xC0FFEE | new `outdoor_anim.py` over `drlg.py` | L | 2 |
+  | 13 | world/levels, What a preset places; spec-drlg/preset § 2, 3 | A preset's units, each keep or drop roll in turn | P | preset § 2–3; an illustrative preset and seed | new `preset_anim.py` over `drlg.py` | M | 2 |
+  | 14 | spec-drlg/warps § E, F | Two levels' warp points and how they pair | S | warps § E–F | `links_anim.py` (one frame) | S | 2 |
+  | 15 | running/pathing, The plan, step by step; spec-path/search § L | The search on a toy grid: the open set, each expansion, the path | P | search § A, § L; a hand-drawn toy grid | new `path_anim.py` over `path.py` | M | 2 |
+  | 16 | spec-path/search § I, J | The random walk and the spiral on the same toy grid | P | search § I–J; illustrative seed | `path_anim.py` | S | 2 |
+  | 17 | characters/combat, Draw order and chaining | One melee hit: the to-hit, block, damage and delivery draws in order | P | to-hit § A–C, damage § A–B, delivery § A–B; toy attacker and defender | new `combat_anim.py` over `combat.py` | M | 2 |
+  | 18 | characters/characters, Hirelings: the hire list; spec-hirelings § D, E | A hire list rolled entry by entry | P | hirelings § B, § D–E; illustrative seed | new `hire_anim.py` over `hirelings.py list` | M | 2 |
+  | 19 | spec-items/affixes § B, C | One affix pick: the candidates filtered by alvl, type and group, then the weighted pick (20 rows at most on a frame) | P | affixes § B–C; illustrative ilvl and base | new `affix_anim.py` over `affixes.py` | M | 2 |
+  | 20 | spec-items/sockets-runewords § D | The runeword match: socket order against a recipe | P | sockets § D–E; one recipe the page names | new `runeword_anim.py` over `sockets.py` | S | 2 |
+  | 21 | spec-anim/movement § B | A moving unit's per-frame step on subtiles | P | movement § A–B; illustrative speed | new `move_anim.py` over `anim.py` | S | 2 |
+  | 22 | foundations/randomness, The generator | Type a seed and a count, see each draw (fallback: row 1) | W | as row 1; the multiplier from `allow-hex.txt` | `widgets/rng`, twin `rng.py` | S | 3 |
+  | 23 | characters/combat, Will it hit; spec-combat/to-hit § A | Chance to hit from attack rating, defence and levels, with its clamp | W | to-hit § A; toy inputs | `widgets/tohit`, twin `combat.py` | S | 3 |
+  | 24 | characters/combat, Building the damage, Reductions; spec-combat/damage § A–B, reductions § A | The damage built and reduced, step by step (fallback: row 17) | W | damage § A–B, reductions § A; a toy weapon | `widgets/damage`, twin `combat.py` | M | 3 |
+  | 25 | running/animation, Breakpoints; spec-anim/timing § J, K | Frames per action from a frame count and a rate; the breakpoints (fallback: row 7) | W | timing § J–K; toy inputs | `widgets/breakpoints`, twin `anim.py` | S | 3 |
+  | 26 | world/monsters, Stats at creation; spec-monsters/stats § A | A monster stat scaled by level and difficulty | W | stats § A; a toy row | `widgets/monstat`, twin `monstats.py` | S | 3 |
+  | 27 | characters/characters, The mercenary's stats per level; spec-hirelings § G | A mercenary's stats at any level | W | hirelings § G; a toy row | `widgets/merc`, twin `hirelings.py` | S | 3 |
+  | 28 | spec-items/quality § C–D | The quality chances for an ilvl, qlvl and magic find (fallback: row 5) | W | quality § B–D; the ratio row the page shows | `widgets/quality`, twin `quality.py` | S | 3 |
+  | 29 | characters/saves, The checksum | The checksum step by step over hand-typed toy bytes | W | saves § The checksum | `widgets/checksum`, twin `d2s.py` | S | 3 |
+  | 30 | foundations/randomness, Two roots to Rooms | Type a game seed, expand the seed tree (fallback: row 2) | W | as row 2 | `widgets/seedtree`, twin `drlg.py` | M | 3 |
+  | 31 | running/pathing; spec-path/search § L | Draw walls on a toy grid, watch the search (fallback: row 15) | W | as row 15 | `widgets/path`, twin `path.py` | L | 3 |
+  | 32 | spec-data/calc § B, D | A toy formula evaluated step by step | W | calc § B, § D | `widgets/calc`, twin `calc.py` | M | 4 |
+  | 33 | items/inventory, Where an item can go | Toy items placed in a toy grid by the placement rule | W | inventory § Where an item can go | `widgets/grid`, twin `inventory.py` | M | 4 |
+  | 34 | items/economy, Prices; spec-items/economy § A–C | A toy item's price, term by term | W | economy § A–C | `widgets/price`, twin `economy.py` | M | 4 |
+  | 35 | running/quests, A few quests, bit by bit; spec-quests/progression § A, D | A quest word's bits as events arrive | S | progression § A, § D; one quest the page walks | new `quest_anim.py` over `quests.py` | M | 4 |
+  | 36 | items/items-other-paths, The Horadric Cube; spec-items/cube § A, B, M | A recipe matched and its output built, with its draws | P | cube § A–B, § M; one recipe the page names | new `cube_anim.py` over `cube.py vector` | M | 4 |
+  | 37 | world/levels, The collision grid; world/monsters, Placement | The four spawn tests on a toy room's subtiles | P | the levels and monsters sections; a toy room | new `collision_anim.py` over `collision.py` | M | 4 |
+  | 38 | world/objects, The eight slots, Finding a spot | A room's object slots, the member pick, the spot search | P | objects § The eight slots, § Finding a spot; seed 0xC0FFEE | new `objects_anim.py` over `objects.py` | M | 4 |
+  | 39 | spec-skills/missiles § D, E | A missile's per-frame step and its hit | P | missiles § B, § D–E; a toy missile | new `missile_anim.py` over `skills.py` | M | 4 |
+  | 40 | characters/stats-and-states, Regeneration | The regeneration accumulator over frames | W | stats-and-states § Regeneration; toy inputs | `widgets/regen`, twin `stats.py` | S | 4 |
+
+  40 candidates and the kit: 24 P, 2 S (rows 14, 35), 14 W. Batch 1 is the kit and rows 1 to 8 (rows 3 and 4 are new
+  blocks on existing tools); batch 2, rows 9 to 21 (13); batch 3, rows 22 to 31, the first 10 widgets; batch 4,
+  rows 32 to 40 (9). A model named "over X" is the archivist's to confirm when the lane starts; one that needs a run
+  log to drive it gets a small entry point from the spec's inputs, or the row moves later. Left out on purpose:
+  experience per level (a table, not a rule), any save or item-bit editor (ADR-0037: no game-file input), the AI
+  state machine (Mermaid already draws it).
 - **Done when:** the candidate list and the widget ADR are accepted by the owner, and the first batch is served.
 
 ## Cost estimate
@@ -1352,3 +1421,13 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   Fix: a failure after the copy (npm, site build, link check) left the target dirty with no hint, and the next run
   refused it; those messages now print the commands that restore the target (`reset`, `checkout`, `clean -fd`, which
   keeps the ignored `node_modules` and `dist`). Tests 35, 0 failed. Ledger: accept with fixes, 1 fix: omission 1.
+- 2026-11-17, architect, lane/x70i (Phase 11 candidates and the widget ADR). Phase 11 steps (1) and (2) written, both
+  **awaiting the owner's acceptance**. The candidate list (Phase 11, *Candidates*): 40 rows and the schematic kit, 24
+  pre-rendered animations, 2 static pictures and 14 scripted widgets, in four batches; batch 1 is the kit, six new
+  generators (the RNG steps, the seed tree, the quality ladder, the special-monster roll, the frame timeline, the
+  server tick) and two new blocks on `tc_anim.py` and `maze_anim.py`, all under ADR-0036 with no new rule.
+  [ADR-0037](../adrs/0037-scripted-widgets-in-the-export.md) (proposed): a widget is a hand-written, self-contained
+  JavaScript module kept and tested in `tools/widgets/`, reading only a hand-written JSON of rules and at most 20
+  `toy` or `page` rows, copied into the cut beside a fallback picture and loaded by one generic host step and a CSP
+  `<meta>` in the export repository; a new check rule X13 and gate rule E21 (parity with the Python twin under node).
+  No tool or widget is written in this lane.
