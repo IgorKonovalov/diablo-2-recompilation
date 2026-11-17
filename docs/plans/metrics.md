@@ -824,6 +824,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-17 | lane/n66ai2 | 0066 P3 ai p2 review | architect | 82 601 | 17 | 3 | — | accept w/ fixes (Sonnet, budget) | 1 |
 | 2026-11-17 | lane/n66close | 0066 close | architect | 88 525 | 38 | 7 | — | inline check (orchestrator) | 0 |
 | 2026-11-17 | lane/fua | 0066 follow-ups | archivist | 83 113 | 35 | 4 | — | inline check (orchestrator) | 0 |
+| 2026-11-17 | lane/fur | 0066 follow-ups | reverser-static | 181 319 | 108 | 14 | — | accept (Sonnet) | 0 |
+| 2026-11-17 | lane/fur review | 0066 follow-ups | architect | 64 780 | 11 | 2 | — | accept (Sonnet) | 0 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
