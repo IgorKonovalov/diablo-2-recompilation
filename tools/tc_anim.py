@@ -412,7 +412,7 @@ def find_source(M, name, diff, kind, mlvl):
             mlvl = max(1, lvl_default)
             notes.append("monster level %d = MonStats Level column of the difficulty (tc.md B1: ilvl = the monster's "
                          "stat 12); the game takes Levels.MonLvl*Ex for non-boss monsters in expansion Nightmare/Hell: "
-                         "not modelled here (--mlvl overrides)" % mlvl)
+                         "not modelled here" % mlvl)
         if rec[0x9E] and col(3):
             notes.append("quest TC (TreasureClass4, tc.md B6) needs the killer's quest state: not modelled here")
         return dict(label="%s%s" % (M.su[su][0] if su is not None else M.mon_ids[cls],
@@ -424,7 +424,7 @@ def find_source(M, name, diff, kind, mlvl):
         raise SystemExit("no MonStats Id, Superuniques name or TreasureClassEx name %r" % name)
     if mlvl is None:
         mlvl = 50
-        notes.append("item level 50: input default (--mlvl); a TC named directly has no source monster")
+        notes.append("item level 50: an input default; a TC named directly has no source monster")
     return dict(label=T.tcs[idx]["name"], base=idx, why="named directly, no monster (tc.md Entry points)", gate=False,
                 ilvl=mlvl, notes=notes, kind="tc", monster=False)
 
@@ -1177,7 +1177,7 @@ def cmd_render(argv):
     with open(os.path.join(out, "tc.gif"), "wb") as fh:
         fh.write(anim_common.encode_gif(gf, gw, gh, p, delays, anim_common.MARKER if schematic else None))
     if schematic:
-        anim_common.write_schematic_json(out, "tc_anim", targs,
+        anim_common.write_schematic_json(out, targs,
                                          ["tc.gif", "index.html", "steps.json"] + ["frame-%03d.png" % i for i in range(n)])
     print("%d frames -> %s" % (n, out))
     return 0

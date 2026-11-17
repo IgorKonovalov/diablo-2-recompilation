@@ -16,6 +16,6 @@ flowchart LR
 1. n: i32 ← tbl.Picks
 2. r: u32 ← RNG.Range(n)
 
-![Maze, schematic](../illustrations/maze/maze.gif)
+![Maze, schematic](/illustrations/maze/maze.gif)
 
 [Step through](../illustrations/maze/index.html)

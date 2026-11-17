@@ -461,6 +461,7 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
     page.dropped -= 1
     up = "../" * len(page.route.split("/")) if page.route != "index" else ""
     base = f"{up}illustrations/{d['id']}/"
+    root_abs = f"/illustrations/{d['id']}/{gif}"      # root-absolute: the site's rehype step prefixes its base
     cap = []
     for s in split_sentences(d["caption"]):
         page.units += 1
@@ -473,7 +474,7 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
     cap.append("Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed "
                "in the game.")
     blank = {"kind": "blank", "lines": [""]}
-    return [{"kind": "para", "lines": [f"[Animation: {d['id']} (GIF)]({base}{gif})"]}, blank,
+    return [{"kind": "para", "lines": [f"![Animation: {d['id']}]({root_abs})"]}, blank,
             {"kind": "para", "lines": [f"[Step through {d['id']}]({base}index.html)"]}, blank,
             {"kind": "para", "lines": [" ".join(cap)]}]
 

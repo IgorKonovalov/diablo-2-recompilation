@@ -1,10 +1,10 @@
 {
- "marker": "d2recon-schematic/1",
+ "marker": "schematic-only/1",
  "files": {
-  "index.html": "958c9b41d1166d582e5023de2a289c9b6f2882628c4fe1b9486ae11f6ff54f91",
-  "steps.json": "a4a2b38ca41cf500d503833bca68216f121cb3b8d077ea430e18bc8ace3ab591",
-  "maze.gif": "59460fb4735f227b7a74aa2e9fbc735748e72fa2639b336bff929d3ae2ff6c9d",
-  "frames/f1.png": "b4c0c1a0f673442affdec8d45479c38380479cdfcaec08e4eab3fbbab174d951",
+  "index.html": "1aeab387d0a389e09f0f10a79354ed2390ca0c7df458646d9c41d0897a986399",
+  "steps.json": "b2e093bc8b7326c06929461497b4fd71445a92b1a03d3f14fec25c8d126a2769",
+  "maze.gif": "b49d2905a4b366194b4bb90eab8e66d554f6d29c3a3a9e9648337199924f0f60",
+  "frames/f1.png": "19f5e1dfef1c89e1c7e72f4ac6dea93605201524b9d15f2fd37ff9f9cc6e4abe",
   "frames/f2.png": "4c4b6a3be1314ab86138bef4314dde022e600960d8689a2c8f8631802d20dab6"
  }
 }
