@@ -2161,3 +2161,64 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   substitution reads stiffly in a few places ("the 325 of the recorded run and the 40 of the recorded run"); vendors'
   Baal-chain item and d2s's "the other callers" and summary-lines sentences still drop (`broken`, 82, 80 and 29 words);
   monsters/ai/catalogue R142a still says "the finding's". Gate green.
+- 2026-11-17, architect, Tier A review of lane/x13a and the redaction review of its specs (Opus). Verdict **accept
+  with fixes (7: misread 1, omission 3, wrong anchor 1, other 2)**. *Tier A.* (1) No claim changed: per spec the
+  multisets of tags, `run:`/`src:`/`fn:` tokens and finding links are equal before and after but for collapsed
+  duplicate `run:` ids (stats/README) and merged links (monsters/ai/catalogue's dated corrections, now one Evidence
+  bullet); every removed address is a named call target (132 pairs matched to `re/symbols.csv` by script), a value
+  written as bits or decimal (rechecked: `0x2001002` bits 1, 12, 25; `0x4020000` bits 17, 26; `0x80000001` bits 31,
+  0; `0x00080000` bit 19; `0x01020304` 16 909 060) or a mermaid label; no tag moved. One anchor lost: inventory C1's
+  `ItemSkillQtyAdd` (0x0055C270) kept its name and lost its address; `fn:` restored (wrong anchor). Moved evidence
+  sits in each spec's new first Evidence bullet. Gate green. (2) **Ruling on method words:** "the recorded run",
+  "read from the code" and "logged" stay, as plain words (decision 8; the export's tags page explains both levels in
+  these words). But one phrase for every run misleads: it named emulations "recorded" and made two runs in one
+  sentence read as one (vendors G1's "325 … and the 40 of the recorded run", D3–D4, inventory's two pairs, states'
+  shrine counts). Each of the 70 is now the run's own name (the first and second vendors runs, the two-client run,
+  the stats run, the first and second shortfalls runs, the ground, inventory and use emulations, the lock scan, the
+  save play run, …), the id kept after it (misread). (3) Status columns: accepted. The status is each spec's front
+  matter and its research-map row (gate E15); no gate rule or link reads the columns, and none is left in any
+  overview README. (4) The cut rewrites "### The ADR-0014 boundary" to "### The boundary" and "(the boundary
+  section, ADR-0014)" to "(the boundary section)"; the five links to `#the-adr-0014-boundary` lose their label in
+  the cut as before (their label holds the ADR). Accepted. (5) conformance/README stays out: agreed (a guide to our
+  checker and trace set; a page on what a case holds would be the golden-trace format's). (6) skills/catalogue:
+  18 names checked by hand against `re/symbols.csv` (`ReviveTargetTest`, `MonTestN`, `TauntTargetTest`,
+  `NearestByFilter`, `MonAiDelay`, `SkillDo09Frenzy`, `SkillDo70DoubleSwing`, `SpawnClassByBase`,
+  `ItemTargetRandomPoint`, `CorpsePickNear`, the five `MissCbReseed*`, `SkillSt21Revive`, `MonCorpseTestDead`,
+  `AttractTargetTest`, `UnitAlignGet`, `ConversionTest`, `UnitMarkUpdated`), all right. *Fixes in the specs*
+  (omission): units the lane reworked that still dropped or lost words: vendors' Baal chain (unnamed call
+  targets as subjects; now described, `ClientRemove` and `TownPlayerRemove` named), use's request `0x61` row, the
+  Purpose sentences of use and inventory ("Scope is [ADR-0025]:"), save/d2s's other-callers bullet (a run id nested in
+  a parenthetical breaks "run"), its `level` header row (`STATS_GetUnitStat`), its worked example's first sentence
+  (the paths split into their own sentence), the read flow's legacy reader (`ReadSaveLegacy`), the `unk_2c`
+  accessors, skills/catalogue A1 (a finding range after "of") and C0 (`jmp MissileMoveCollide`), inventory's
+  inventory-record row (magic 16 909 060); a removal inside a code span the builder keeps silently: states B3's "only
+  `0x005BEE15` lies", C2's `call 0x005C0B50` and the cold and freeze callbacks, monsters/ai/catalogue R50's
+  `jmp [eax*4 + g_AiMephistoStateJumps]` and `AiUnitSearch(G, U, &blk, AiMephistoPickCb, 1)` (the cut showed the call
+  with four arguments), use H5's `→` range; other: inventory F3's "; The code holds", R142a's "the finding's".
+  *Redaction review.* Cut `workspace/export-x13a-review` from the lane with the ten specs added (routes
+  spec-items/vendors, use, inventory; spec-combat/overview; new groups spec-stats 20 (overview, aggregate, states)
+  and spec-save 26 (d2s); spec-skills/catalogue; spec-monster-ai/catalogue; no route collision): 81 pages, 0
+  dropped; specs words dropped 16.4 %; `export_check … --repo workspace/export-repo/`: **0 failures**, 1010 warnings
+  (X12, as before). Added, words dropped and blocks kept: items/vendors 9.2 % 12/12, items/use 14.5 % 11/11,
+  items/inventory 12.9 % 18/18, combat/README 19.5 % 8/8, stats/README 13.7 % 1/1, stats/aggregate 9.0 % 10/10,
+  stats/states 13.6 % 9/9, save/d2s 13.2 % 35/36 (its reproduce command drops), skills/catalogue 10.0 % 21/21,
+  monsters/ai/catalogue 15.7 % 131/148. Every drop line of the ten read (evidence bullets, Open questions, the
+  vendors gambling list, the d2s survey-summary sentence, which describes our tool's output); the 17 catalogue
+  blocks that drop hold unnamed call targets in their code part (X1), and their rows read as rows without a block (no
+  dangling reference); naming them is part B's work. Read whole as a reader: stats/states, items/use (its golem and
+  request sections), skills/catalogue §§ A–B. Left out: none of the ten. *X6:* named `save/d2s.md 315` (the header's
+  fields, a file layout), `save/d2s.md 1253` (the worked example's item bit fields) and `skills/catalogue.md 151` (our
+  step table of every draw by seed); vendors 658 stays out (item-table content). *allow-hex:* `0BADF00D` (a value
+  written by hand into the pass-through field, an illustrative input); pins `00800010` and `800000` on save/d2s
+  (the worked example's stored flags, bits 4 and 23, and bit 23 itself in I1's line and the example), `006E9C81` on
+  combat/README (the low word after step 3 of example 1, recomputed: `0109323f:20d5284f` steps to
+  `0be642ca:006e9c81`). The existing `Worked example` sections already covered skills/catalogue's seeds and the d2s
+  checksum. *Hand grep of the whole cut:* `sub_`, `DAT_`, `FUN_`, `findings/`, `ADR-`, plan numbers, `.py`, `.log`,
+  `.claude`, Ghidra, harness, objdump, debugger, the repository name, `/home`: 0; `run:` ids 0; image addresses 2,
+  both the pinned flag values of save/d2s; `fn:`/`src:` 4, all code text (`src: boss`, `hitfn:`). Manifest and
+  `reviewed-pages.txt` updated (2026-11-17). *Found for the builder* (backlog
+  [2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column](../backlog/2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column.md)):
+  an image-range value removed from inside a code span leaves a changed formula or seed in units the builder keeps,
+  on published pages too (drlg/README and maze seed words, drlg/outdoor's four `[ + …]` reads, items/affixes and
+  economy seed words, items/properties, monsters/stats `hp ≥` …); and an Inputs table whose cells are all `tbl:`
+  anchors loses its name column (15 published specs). The export-readiness entry stays open for part B.

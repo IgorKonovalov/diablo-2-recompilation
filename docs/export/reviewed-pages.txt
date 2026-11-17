@@ -74,3 +74,15 @@ specs/quests/progression.md
 specs/quests/travel.md
 specs/chain/README.md
 specs/quirks/README.md
+#
+# Review of lane/x13a (export readiness part A), 2026-11-17:
+specs/items/vendors.md
+specs/items/use.md
+specs/items/inventory.md
+specs/monsters/ai/catalogue.md
+specs/combat/README.md
+specs/stats/README.md
+specs/stats/aggregate.md
+specs/stats/states.md
+specs/skills/catalogue.md
+specs/save/d2s.md
