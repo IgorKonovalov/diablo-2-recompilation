@@ -227,7 +227,7 @@ B1. MissileCreate(game, p) → missile:                                [I] (fn:s
   unique-mod byte, then calls all nine, a later 0 not stopping it). Mod 29's function acts only when bit 3 of the
   monster data's byte `+0x16` is set, the missile is type 3 with an owner, its class lies in the Missiles count, the
   row's `+5` bit 4 is clear and the owner is not already marked (`+0x16` bit `0x80`), and sets that mark. It makes a
-  local seed `Init(0x53454953)`, overwrites its high word with the owner's unit id and draws nothing from it before the
+  local seed `Init(1397049683)`, overwrites its high word with the owner's unit id and draws nothing from it before the
   first creation; the point is the owner's revalidated path target, else the missile's path position; `(dx, dy)` are
   the signs of owner − point, zeroed for classes 0x3F–0x42; the first side missile is `SkillMissileCreate(owner, skill,
   lvl, 0, 0, x0 − dy, y0 + dx, 0)` with the missile's skill and level. [C] (fn:sub_005A4270_UModEventRun@0x005A4270,

@@ -888,7 +888,7 @@ I3. WriteFull (extended item, save flag set):                    [C] (fn:ITEMS_W
       else if ItemIsType(4) (gold): 1 bit (stat 14 ≥ 0x1000), then stat 14 in 12 bits, or 32 when the bit is set; no SaveAdd   [I] (0x00630C2F–0x00630C44)
       if stackable (0x006289F0): stat 70 (quantity), a fixed 9 bits, no SaveAdd   [C] (0x006289F0, note I3)
       if f bit 11 (socketed): base stat 194 in SaveBits[194] bits, no SaveAdd    [C] (0x0062BE00, run:2026-10-15-socket-saves)
-      if q = 5 (set): 5 bits, bit i set when the item holds the stat list of the i-th set state in the table at 0x006E90B8   [C] (fn:ITEMS_WriteFull@0x0062FFF0, note I3)
+      if q = 5 (set): 5 bits, bit i set when the item holds the stat list of the i-th set state of the set-state table (0x006E90B8)   [C] (fn:ITEMS_WriteFull@0x0062FFF0, note I3)
       property lists (§ J): the main list (state 0, flag 0x40), then each set list whose bit is set,
       then, if f bit 26, the runeword list (state 171)                           [C] (fn:ITEMS_WriteFull@0x0062FFF0, note I3)
 ```
@@ -959,7 +959,7 @@ I4. Quality fields, written only when the item is identified (f bit 4) or the sa
   armour, weapon and stackable fields of 3 saved props-forced items and 269 starting items equal their logged stats
   (`Save Add` and `Save Bits` applied); the sockets of 24 socketed items come back; the one set item of the corpus
   has bits `0b11` and exactly two set lists, and the reader takes the lists in one loop over the five bits with the
-  same body for each (`1 << i` tested, state word `i`, 4 bytes a word, of the table at 0x006E90B8, 165–169,
+  same body for each (`1 << i` tested, state word `i` of the set-state table (0x006E90B8), 4 bytes a word: 165–169,
   0x0062D8D4–0x0062D8F0); the runeword list is that loop's extra pass with state 171 when the runeword flag is set (0x0062D8BB–0x0062D8CF); 7 unidentified
   items carry their quality fields. Prefix and suffix ids by data over every magic, rare and crafted item with a main
   list (85 items, 127 ids) with failing counterfactuals, and the writer's `cmp`/`jle`/`sub` read in the code.

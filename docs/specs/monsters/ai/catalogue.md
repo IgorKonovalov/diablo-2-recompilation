@@ -4165,7 +4165,7 @@ No `aip` slot read. `R3` is `AiCtlParamGet(3)`; each quest call below is a pair 
 AiNpcOutOfTownInit (0x005E77A0), called first on every event:              [I] (0x005E77A0, 0x005E7880)
   if R3's two words are 0:
     (R3.x, R3.y) ← (X + 3, Y + 3)
-    if the first test (0x005944B0, 0x0058A940) = 0: its partner (0x005944F0, 0x0058A980);  UnitSetStat(U, 6, 0, 0);  SetMode(12, X, Y)
+    if the first test (0x005944B0, 0x0058A940) = 0: call its partner (0x005944F0, 0x0058A980);  UnitSetStat(U, 6, 0, 0);  SetMode(12, X, Y)
     R3+0x14 ← 1;  R3+0x18 ← 0;  Idle(1);  returns 1
   returns 0
 
