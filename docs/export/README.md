@@ -10,6 +10,11 @@ only by being named in [`manifest.txt`](manifest.txt), and only through `tools/e
 redaction review (plan 0070 § Review). The export-only pages (`index.md`, `reading-the-tags.md`, `about.md`):
 spec-writer, reviewed like a wiki page.
 
+**Publishing a cut** ([ADR-0038](../adrs/0038-one-command-publish-of-the-export.md)). `tools/export_publish.py`
+rebuilds the cut, checks it, copies it into the export repository's checkout, builds and link-checks the site and
+commits; the owner's run with `--push` publishes it. It refuses a manifest page that
+[`reviewed-pages.txt`](reviewed-pages.txt) (architect) does not list; a page is added there only in a redaction review.
+
 ## The manifest's format
 
 One entry per line, fields separated by whitespace; `#` starts a comment, blank lines are ignored.

@@ -1,6 +1,6 @@
 # ADR index
 
-Next free number: **0037**
+Next free number: **0039** (0037 is reserved for plan 0070 Phase 11's widget ADR, in flight)
 
 | # | Title | Status |
 |---|---|---|
@@ -38,5 +38,6 @@ Next free number: **0037**
 | [0032](0032-clean-room-implementation-test.md) | A clean-room implementation test of the specs: a lane outside the four skills implements a slice from the specs alone, its code stays in `workspace/`, its gap ledger enters git | accepted (owner, 2026-11-10) |
 | [0033](0033-scope-player-trade.md) | Scope: the player-to-player trade, row `items/trade` (amends 0025) | accepted (owner, 2026-11-10) |
 | [0034](0034-local-documentation-site.md) | A local-only documentation site, built by the user from their own game files and our scripts, with animated illustrations (amends 0012, 0030) | accepted (owner, 2026-11-16; export illustrations: amended by 0036) |
-| [0035](0035-public-export-hosting.md) | The public export's hosting: a separate repository under the owner's GitHub account, a Starlight site on GitHub Pages (amends 0009) | accepted (owner, 2026-11-16, with plan 0070; illustrations in the export: amended by 0036) |
+| [0035](0035-public-export-hosting.md) | The public export's hosting: a separate repository under the owner's GitHub account, a Starlight site on GitHub Pages (amends 0009) | accepted (owner, 2026-11-16, with plan 0070; illustrations in the export: amended by 0036; copying a cut: amended by 0038) |
 | [0036](0036-schematic-illustrations-in-the-export.md) | Schematic illustrations in the public export: our own drawings may leave the machine, game art never (amends 0034, 0035) | accepted (owner, 2026-11-16) |
+| [0038](0038-one-command-publish-of-the-export.md) | One-command publish of the export: a script copies each cut, the owner's run pushes it (amends 0035) | accepted (owner, 2026-11-17) |
