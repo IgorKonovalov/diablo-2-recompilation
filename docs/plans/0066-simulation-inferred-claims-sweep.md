@@ -455,7 +455,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   3593 block). (3) `AiLifePct` is `UnitLifePct` behind `ECX` (lines 58, 4689 and quirks Q515). (4) Mephisto's pick takes its first
   draw only after a find (line 2697). (5) `AiWoundedNearCb`'s ties replace and "not dying" is 0 for players (line 687). (6)
   `AiShadowSkillRoll` draws 0, 1 or 3 times and never reads `melee` (line 2031). Dated notes in ai/0002, 0003, 0006,
-  0008, 0011 and 0012 (rule 20); the spec copies routed by [backlog](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md).
+  0008, 0011 and 0012 (rule 20); the spec copies routed by [backlog](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md).
 - **Symbols:** none raised. The run is an ADR-0015/0021 emulation over a declared image, which confirms maps, not names
   (review-fixes rule 14).
 - **Totals** recomputed from the 29 inventory files against `main` `389cb19d` (merged at `0f30ab21`): a-logs 674, a-run
@@ -2505,7 +2505,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Observed for part 2:** MonStats `Skill8` is also set on 709 `uberbaal`, so catalogue R51a's "only on `diabloclone` and
   `uberdiablo`" holds for Diablo's block's records only (row 422).
 - **Contradictions** go to Phase 3 through
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md);
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md);
   dated notes in ai/0002 (line 379's list) and ai/0003 (line 557's absence), rule 20.
 - **Symbols:** none raised or added. No logged return is compared (review-fixes 14).
 - **Totals** after merging `main` `858b7eea` (the kept check's `totals` line, from the 29 files' *Totals by class*):
@@ -2805,7 +2805,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and 356 raised, 518 contradicted in part; part 2 above). S1o: 28 rows, 24 settled (13 raised, 9 raised in part, 2
   contradicted whole or in part), 4 not settled.
 - **Corrections** to Phase 3 through the part 1 entry
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md)
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md)
   (items 4 and 5 added); dated notes in ai/0005 § 2.8 (the store count) and ai/0001 § 9 (the draws), rule 20.
 - **Symbols:** none raised or added (no logged return compared).
 - **Totals** after merging `main` `72f003c8` (the kept check's `totals` line): a-logs 623, a-run 334, b 507, c 390,
@@ -4705,7 +4705,50 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   rows come from S1a, S1b, S1c, S1d, S1e, S1f (each row's Route cell) and plan 0069 Phase 4 (H1a–H1d, H1g, H1h: 22 raised,
   41 in part); about 104 rows have no verdict (H1e deferred, H1p, H1r, d-owner, d-none) and stay kept. Block lines carry one
   `[I]` for the whole think: add a `[C]` bullet per block naming the logged decisions (the S1b ruling, "Block and `a` lines").
-  Entries to apply and close with it: S1e corrections ([entry](../backlog/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md),
+  Entries to apply and close with it: S1e corrections ([entry](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md),
   six catalogue statements), S1f-p1 items 2–4 (row 518's four `AiLifePct` callers and one map; R51a's `Skill8` scope with
   `uberbaal`; R71a's eleven stores). Then: quirks entries citing catalogue notes, the catalogue research-map clause, § 6's
   catalogue row, the wiki refresh entry above, the gate `--full`, and the review request.
+
+### 2026-11-17 — Phase 3, the monsters/ai cluster re-tagged, part 2 (spec-writer, `lane/n66ai2`): the catalogue
+
+- **Done.** Branch from `main` `c0f6a2a6`. No game, no Ghidra, no slot, no subagent. Sources: each inventory row's *Route*
+  cell (S1a, S1b, S1c, S1d, S1e, S1f parts 1–2, plan 0069 Phase 4's H1a–H1d, H1g, H1h), the two corrections entries, and
+  the anchors run:2026-11-04-ai-r5 (S1a, S1b addenda), run:2026-11-04-r72 (S1c, S1d), run:2026-11-15-sweep2-s1e,
+  run:2026-11-16-sweep2-s1f, run:2026-11-16-ai-tour-3 (the plan 0069 Phase 4 addendum).
+- **Front matter:** monsters/ai/catalogue C 344 / I 520 / L 18 → **C 521 / I 510 / L 18**. Outside the inventory: quirks
+  C 425 / I 122 → **C 426 / I 121** (class 9 43 / 29 → 44 / 28, total 420 / 118 → 421 / 117: Q515 `[C]`, reworded to the
+  one map); monsters/ai/README's tags unchanged, its H1 table gains 17 rows and state 11's subset.
+- **Rows (520 by count, 518 rows):** `[C]` whole 62; split 112 (111 rows); corrected to the finding 8 (rows 3, 171, 229, 288,
+  385, 420, 422, 518); kept `[I]` 338 (337 rows). The lists are the inventory file's new *Phase 3* line (a script checks it
+  partitions the file); inventory README § 6 has the row. The corrections entries for S1e (all six) and S1f-p1 (items 2–4)
+  are applied and closed.
+- **Judgment calls for the review:** (1) A block row raised in part keeps its block's one `[I]`, and the entry gets one
+  `p` line, `[C]` **Logged paths of the block**, naming the arms and stores the model compared, with the model's `k.test`
+  labels (the S1b ruling); 50 such lines, a convention bullet under *How to read an entry* (`[I]`, like its neighbours).
+  Row 12's block, raised whole by S1b, carries `[C]` on its header. (2) The `l` lines the H1 batches raised read "First
+  boundary: N decisions of the 84 logs, F fork-free, compared at the first call", without R43l's outcome count, which the
+  addendum does not give; R10r is `[C]` for this think in Normal by the plan 0069 Phase 4 model, not under H1. (3) The 17
+  `r` lines raised read "Under sentence H1" and are added to README H1's table (with state 11's 66 fork-free decisions,
+  S11r split), the H1 bullet anchored to run:2026-11-16-ai-tour-3 too; the catalogue's `r` bullet now names the twenty.
+  (4) Prose splits put the logged half first as `[C]` and keep the reading under `[I]` with its remainder (R3a, R5a, R8a,
+  R63a, R65a, R65e and the like) rather than rewording it. (5) Callback bullets (R8b, R18a, R23b, R49b, R65c, R71b, R74b,
+  R85b, R106b, R113b, R120b, R121a) are `[C]` on the emulated callback, with the think's block words (121, 2 500, 75, the
+  492 guard) moved under `[I]`. (6) Corrected counts the eight rows whose Route says correction, contradicted or "the count
+  corrected" (row 171); row 72's refinement is counted split. Rows 420 and 288 are `[C]` whole after S1f; 3, 171, 229, 385,
+  422 split; 518 `[C]`. (7) *Open questions*: rows 78 and 79's `+0x2D4` writer (S1f part 2's operand scan) and row 85's
+  searcher (taken once in emulation) struck; `L` stays 18, both clauses shared their bullets. (8) The census bullets
+  (inventory rows 7, 8) stay `[I]`, their counts refreshed (55 / 2 / 73 by the greps they name). (9) Q484 and Q485 stay `[I]`,
+  their notes split.
+- **Not done:** the wiki/monster-ai refresh, by the owner's budget; its entry is annotated with what part 2 adds and stays
+  open for one refresh against all three specs.
+- **Review:** requested, Tier B on Sonnet only, by the owner's budget decision
+  ([entry](../backlog/archive/2026-11-17-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-catalogue.md)).
+
+### 2026-11-17 — Phase 3, monsters/ai catalogue part 2: architect Tier B review (Sonnet, `lane/n66ai2`)
+
+- **Verdict: accept with fixes (1).** Fix: R114a's "set on every event" (a `[C]` clause over 243 fork-free decisions of one think) now reads "set at the start of the think" (review-fixes rule 10; category tag-strength 1).
+- **Checked.** The inventory *Phase 3* line partitions rows 1-518 exactly (script: 62 / 111 / 8 / 337 rows, 518 distinct, no gap or overlap; counts 62 / 112 / 8 / 338 by the stated row counts). Every `[L]` (18) sits under *Open questions*. Sampled against Route cells and run anchors: rows 1, 3, 7, 8, 13, 17, 18, 44, 72, 80, 81, 84, 85, 170, 171, 335-337, 420, 518 (R1p, R3a/p, R12p, R25p, R51p, R71a, one-life-reader bullet): counts, arms and corrections match; the kept R25 state 4 row stays `[I]`. Gate full GREEN.
+- **Rulings on the 8 judgment calls (plus the 9th):** (1) `p` lines for block rows: accept, `[C]` p line and `[I]` convention bullet; row 12's header `[C]` accepted. (2) `l` lines without R43l's outcome count: accept, the addendum does not give it; R10r's Normal-only scope is stated. (3) 17 `r` lines under H1 and the twenty-entry count: accept. (4) Prose splits, logged half `[C]` first: accept. (5) Callback bullets `[C]` with block words under `[I]`: accept. (6) Eight corrected rows, row 72 counted split: accept, consistent with its Route ("refinement"). (7) Striking rows 78/79 and 85 clauses with L staying 18: accept, both clauses shared bullets (count verified 18). (8) Census bullets stay `[I]`: accept. (9) Q484/Q485 stay `[I]`: accept.
+- **Not done by design:** wiki/monster-ai refresh stays open. Request closed.
+

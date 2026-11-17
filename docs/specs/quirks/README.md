@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 425, I: 122, L: 3}
-updated: 2026-11-16
+tags: {C: 426, I: 121, L: 3}
+updated: 2026-11-17
 ---
 
 # Quirks: the behaviour a faithful reimplementation must keep
@@ -69,8 +69,8 @@ flowchart LR
 | [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 116 | 19 |
 | [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 18 | 10 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 23 | 17 | 6 |
-| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 43 | 29 |
-| **Total** | 538 | 420 | 118 |
+| [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 44 | 28 |
+| **Total** | 538 | 421 | 117 |
 
 ### 1. Arithmetic width and sign
 
@@ -641,7 +641,7 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q512 | A belt scroll used on an item does not shift its column, every other belt use does, and a used belt scroll on a target not in a grid is removed unused. | [I] | 0x00561F60, 0x005621F4 | [items/use](../items/use.md#reimplementation-notes) n5 |
 | Q513 | Packet `0x61` consumes the cursor item whatever `ItemUse` returned. | [I] | 0x0054D3FD, 0x0054D406 | [items/use](../items/use.md#reimplementation-notes) n6 |
 | Q514 | Do not refuse on a use handler's "3" at the drain: the return is discarded. | [C] | 0x0053F459, the return read by neither frame (plan 0066 S4b) | [items/use](../items/use.md#reimplementation-notes) n7 |
-| Q515 | Two life readers: AI row 11 calls `UnitLifePct`, rows 4, 8 and 15 `AiLifePct`; keep them apart. | [I] | fn:sub_00621F20_UnitLifePct@0x00621F20, fn:sub_005DD280_AiLifePct@0x005DD280 | [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) n3 |
+| Q515 | One life reader: `AiLifePct` is `push ecx; call UnitLifePct; ret`, one map with two calling conventions; AI rows 4, 8, 15 and 122 call it as `AiLifePct`, row 11 as `UnitLifePct`. | [C] | fn:sub_00621F20_UnitLifePct@0x00621F20, fn:sub_005DD280_AiLifePct@0x005DD280 | [monsters/ai/catalogue](../monsters/ai/catalogue.md#reimplementation-notes) n3 |
 | Q516 | AI row 21's `Idle` does not return: the walk runs in the same event. | [I] | 0x005F29D7, 0x005F29E6 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n2 |
 | Q517 | A leader's stack block carries four words the code does not write, and row 30 reads `+0x0C/+0x10` of a kind-1 head record for its `GameFindUnit`. | [I] | 0x005F04AA, 0x005F04D5, 0x005F53E0 | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n5 |
 | Q518 | AI row 34's override type 1 plans type 7, so `Ovr(1, …)` is no type-1 request. | [C] | fn:sub_005DE190_MonAiPathOverride@0x005DE190, run:2026-11-16-sweep2-s1m | [monsters/ai/machinery](../monsters/ai/machinery.md#reimplementation-notes) n6 |

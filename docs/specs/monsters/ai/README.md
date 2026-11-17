@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, anim/timing, anim/movement, skills/dispatch, monsters/stats, path/overview, path/search, drlg/collision]
 consumed_by: [monsters/ai/machinery, skills/dispatch, monsters/stats, monsters/spawn, hirelings, drlg/lifecycle, path/overview, sim/frame]
 tags: {C: 78, I: 45, L: 10}
-updated: 2026-11-16
+updated: 2026-11-17
 ---
 
 # Monster AI: the tick, the AI state, the event kinds and their seeds
@@ -522,7 +522,7 @@ forks. A model that forks on unknowns cannot fail there, so the number of calls 
   raises no role, no symbol and no reading of a catalogue finding, and the other side of a one-way branch is not
   compared. It assumes that an opaque callee changes no known memory but `Unit+0xC4` and its pointer arguments, and known
   words exclude synthetic stack and path pointers. (run:2026-11-04-ai-resume, run:2026-11-04-ai-resume-flip,
-  run:2026-11-04-ai-r5, run:2026-11-04-r72, 0x005B186F)
+  run:2026-11-04-ai-r5, run:2026-11-04-r72, run:2026-11-16-ai-tour-3, 0x005B186F)
 
   | Row | Think | Decisions under the sentence | Calls past the first | Two-way sites failing alone | Logs | Narrowness |
   |---:|---|---:|---:|---|---|---|
@@ -540,6 +540,24 @@ forks. A model that forks on unknowns cannot fail there, so the number of calls 
   | 34 | Andariel | 51 (9 and 42) | 2 | 5 of 5 | rev 4 and rev 6 | two calls past the first in all |
   | 44 | Duriel | 309 | 310 | 3 of 3 | rev 6, owner-played | Normal, record 211; 1 decision not melee, the one case on that side of 0x005F6814 |
   | 10, state 13 | `AiSt13` | 160 | 988 | 7 of 7 | rev 6, owner-played | H1b's three given words; Normal, the player as target, one preset file |
+  | 3 | Zombie | 136 | 381 | 4 of 4 | rev 4 | batch S1a |
+  | 4 | Bighead | 353 (342 and 11) | 740 | 7 of 7 | rev 4 and rev 6 | batch S1a |
+  | 5 | BloodHawk | 271 of 272 | 251 | 6 of 6 | rev 4 and rev 6 | batch S1a; 1 stopped |
+  | 15 | SandMaggot | 107 (62 and 45) | 167 | 9 of 9 | rev 4 and rev 6 | batch S1a; the think only, not the alt |
+  | 52 | FrogDemon | 400 | 406 | 1 of 1 | rev 4 | batch S1a; one two-way site |
+  | 63 | GargoyleTrap | 54 | 147 | 10 of 10 | rev 4 | batch S1a; calls past the first in 49 |
+  | 65 | FetishShaman | 89 (27 and 62) | 370 | 5 of 5 | rev 4 and rev 6 | batch S1a |
+  | 68 | VileMother | 79 | 259 | 6 of 6 | rev 4 | batch S1a |
+  | 96 | FetishBlowgun | 117 of 118 | 264 | 10 of 10 | rev 4 and rev 6 | batch S1a; 1 stopped |
+  | rows 37 and 64, state 12 | `AiSt12` | 56 | 230 | 3 of 3 | rev 4 | batch S1a |
+  | rows 12 and 64, state 11 | `AiSt11` | 66 of 134 | 66 | 1 of 1 in the 66 | rev 4 and rev 6 | batch S1a; the 66 fork-free only |
+  | 7 | Brute | 131 | 212 | 3 of 3 | the 84 logs | plan 0069 Phase 4; calls past the first in 106 |
+  | 26 | Arach | 75 | 145 | 7 of 7 | the 84 logs | plan 0069 Phase 4 |
+  | 49 | ZakarumPriest | 99 | 385 | 12 of 12 | the 84 logs | plan 0069 Phase 4 |
+  | 71 | Regurgitator | 126 of 129 | 161 | 12 of 12 | the 84 logs | plan 0069 Phase 4; the 126 only |
+  | 95 | PantherJavelin | 192 | 219 | 9 of 9 | the 84 logs | plan 0069 Phase 4 |
+  | 114 | ReanimatedHorde | 243 | 221 | 8 of 8 | the 84 logs | plan 0069 Phase 4; calls past the first in 221 |
+  | 124 | FrozenHorror | 135 | 406 | 6 of 6 | the 84 logs | plan 0069 Phase 4 |
 
 - H1b. [C] **State 13's row, three given words.** For that row alone the "logged inputs" include three words the stock model does not load: the list's count at `AiCtl+0x38`, 4, the points of LvlPrest `Def` 159's `File1` path; DataTables `+0xA78`, the logged `ms` minus class × 0x1A8, which is the logger's own read of that word; DataTables `+0xBA0`, 357, the records of skills.bin. They are not unknown: the model does not fork on them, and wrong ones fail, a count of 3 in 6 decisions, a count of 5 in 138, a Skills count of 321 or below in 21. A Skills count above 321 cannot fail, so only that bound is tested. The list's points stay unknown in this census; [S13e](catalogue.md#s13-state-row-13-fnsub_005e5c50_aist130x005e5c50) compares them with the file. Without the words the census has 1 of 160 with no fork. (run:2026-11-04-r72, 0x005E5B93, 0x005E5BC8, 0x005E5BE0)
 - H2. [C] **What the resumed 0 tests.** On the rev 6 batch 6 438 decisions are resumed with 0 mismatches and 86 stopped
