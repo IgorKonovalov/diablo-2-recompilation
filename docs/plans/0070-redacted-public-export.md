@@ -1892,3 +1892,33 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `test_export_build` (154), `test_export_check` (191); gate green. **For the spec-writer:** place the three blocks as
   their Place lines say (row 13: after the "Which seed." paragraph); row 14 keeps `seed: none` and `values: restated`;
   the captions name levels in words, which X12 warns on (not a failure).
+- 2026-11-17, archivist, lane/x12c (Phase 11 batch 2: row 12). One generator on the kit, `tools/outdoor_anim.py`
+  (`<root> 0xc0ffee [--diff D] [--theme dark|light]`; `--schematic` accepted; in `SCHEMATIC_TOOLS` and
+  `test_export_build`'s tuple assertion, one line each). It animates the Burial Grounds (level 17, Act I), the one
+  outdoor level of the wiki's list whose generator is only the seam mark, the border pass and one preset, so every
+  draw of the window shows (9). 11 frames: the cell grid (rectangle, 5 * 6 cells, the level seed at the window start,
+  the neighbour on the border list); the outline ring with its extra vertex; the seam mark (cell bit 0x1, warp-slot
+  flag 0x10 << slot); one frame per ring segment of the border pass (edge piece, its first-use draw, file indexes, the
+  seam opening, the corner or the edge piece again at a straight turn); the corner flood; the preset (piece 108 at
+  cell (1, 1)); the final cell bits. **The model** is `drlg.Act`, `drlg.act_links` and `drlg.Outdoor` run as they are:
+  the instance's `place`, `ring_build`, `seam_mark`, `border_build` and `corner_flood` are wrapped for the run (removed
+  after, tested) to record each placement with the grids before and after and the draws it made; the tool computes
+  nothing but the grouping of the recorded placements by ring segment (asserted to account for every border placement).
+  The level seed is `Seed(A.base + 17)`, the spec's `Init(base + id)`; for map seed 3103, normal, the run is the spec's
+  worked example 1 to the word (nine draws, `0x40601` at (1, 5), grid0 `0x40` on cells (0..2, 5), seed out
+  `28B0827C:60189741`). No refactor of the model. Only level 17 is offered: Act II's seam pairs, the special areas and
+  Act I's wilderness levels (thousands of draws, rivers, roads) have no single readable run; Act III has no border
+  pass. **Tests:** new `tools/test_outdoor_anim.py` (11): determinism, both themes and four seeds under
+  `verify_illustration` (allow-hex), clip and cut empty over six runs, no tool word or section sign in the step texts,
+  the recorded run equals a plain run of the model for six seeds and difficulties (grids, seed, draws, no wrapper
+  left), the segment grouping, worked example 1, step texts against the model, no art decoder imported (the model's own
+  `ds1` import aside), bad arguments. Green with `test_schematic_kit` (29), `test_anim_schematic`, `test_export_build`
+  (154), `test_export_check` (191); gate green. **Frames viewed** (dark and light): 0, 1, 2, 3, 6, 7, 8, 9, 10. Fixed
+  after looking: the section sign is not in the 5x7 font (it printed "?"): left out of frame captions; the opening's
+  "OPEN" label over the index; the corner and preset fills told apart; "D108" at scale 1; a straight turn at the seam
+  vertex was labelled a corner (the spec's E3: the edge piece again). **Block:** "Outdoor (x12c)" in
+  `workspace/phase11/blocks-batch2.md` (`drlg-outdoor-burial-grounds-c0ffee`, `values` computed, Place: `levels.md`
+  "Outdoor levels", after the bullet list); the caption passes `export_build.caption_sentences` with no drop.
+  **Doubts:** (1) the "cell (C, R)" labels and D/I letters are in the frames' key, not the caption. (2) A second level
+  (Valley of Snakes, seam pairs and a special area) would add Act II's pair; not built. (3) The neighbour box is drawn
+  at its true offset and clipped; for other seeds the neighbour can lie on another side and is clipped to the free area.
