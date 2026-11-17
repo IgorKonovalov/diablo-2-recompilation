@@ -1,6 +1,6 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2 to 7 done 2026-11-17 (the first cut served at https://igorkonovalov.github.io/arpg-1-14d-notes/); Phase 9 done 2026-11-17 (the second cut: 46 reviewed specs; next: Phase 10, the owner's read and push); re-cut 2026-11-16 for three later owner decisions (simplification,
+> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2 to 7 done 2026-11-17 (the first cut served at https://igorkonovalov.github.io/arpg-1-14d-notes/); Phase 9 done 2026-11-17 (the second cut: 46 reviewed specs; built on branch `cut-2026-11-17b` of the export repository, waiting on Phase 10, the owner's read and push; then Phase 11); re-cut 2026-11-16 for three later owner decisions (simplification,
 > schematic illustrations per ADR-0036, the cheapest residue option); approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
 > 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
@@ -384,6 +384,18 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
 - **What:** the owner reads the second cut, copies `workspace/export/site/src/` and `site/public/` over the export
   repository's, and pushes through a pull request; the merge deploys.
 - **Done when:** the owner says so.
+
+### Phase 11 — More illustrations and interactive elements (owner, 2026-11-17)
+- **Owner skill:** architect, then archivist (tools) and spec-writer (captions); added at the owner's request
+  ("as much animations and interactive elements as possible"), after the second cut, in the order the owner approved.
+- **What:** (1) the architect lists candidates, one per page where a picture earns its place (seed to world, the RNG
+  steps, pack and minion placement, the affix pick, the path search, room stitching), each with its tool, its inputs
+  and what it may show; (2) an ADR on scripted widgets in the export: today the check fails raw HTML and the export
+  repository ships no script of ours, and a widget may compute only from rules and short illustrative rows, never from
+  game tables (ADR-0031, ADR-0009 risk 3); the ADR states what a widget may contain and the check rule that verifies it;
+  (3) pre-rendered schematic animations under ADR-0036 need no new rule and go first, in archivist tool lanes; (4) each
+  batch is reviewed on Opus and enters the next cut.
+- **Done when:** the candidate list and the widget ADR are accepted by the owner, and the first batch is served.
 
 ## Cost estimate
 
@@ -1314,3 +1326,15 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
     sidebar's new groups come from `cut.json` (no change to `astro.config.mjs` expected; the build and link check run
     in CI). The four wiki units above drop from the served pages until the spec-writer rewords them; publishing before
     that loses them.
+- 2026-11-17 — **Second cut built** (orchestrator). On `main` after the x70p9 merge: `export_build.py` 71 pages (0
+  dropped), 3882 report lines (3184 rewrites); `export_check.py workspace/export --repo workspace/export-repo/` **0
+  failures**, 863 warnings (X12). In the export repository (outside this one; its project files unchanged): branch
+  `cut-2026-11-17b` from `origin/main` (PR 1's merge), the cut's `site/src/content/docs/`, `site/public/illustrations/`
+  and `site/src/cut.json` copied over; `SITE_BASE=/arpg-1-14d-notes/ npm run build` passes (74 pages);
+  `check-site-links.mjs dist`: 7790 links in 74 pages, all resolve. One commit, 67 files. Ledger rows for x70a, x70b2,
+  their reviews and x70p9 are in. Points for the owner's read (Phase 10): items/quality carries the whole six-row
+  ItemRatio table with its values (under the 20-row rule; ADR-0031's "short illustrative rows" read narrowly would cut
+  it); about 25 sentences on 13 spec pages name our own records without a tie ("queued for the archivist", a review
+  date, `reviewed` status columns); register names such as "EAX at entry"; the four wiki units the new X9 words drop.
+  All four are in the spec-writer's backlog entry for the next cut. Phase 11 (animations and interactive elements) is
+  added above, at the owner's request.
