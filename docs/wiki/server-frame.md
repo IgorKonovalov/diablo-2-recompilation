@@ -88,6 +88,7 @@ id: frame-tick-passes
 tool: frame_anim.py
 args: --frame 1320
 seed: none
+values: restated
 illustrates: ../specs/sim/frame.md#b-gametick ../specs/sim/frame.md#c-the-message-drain
   ../specs/sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners
   ../specs/sim/frame.md#j-draws-per-pass-and-the-shared-seeds

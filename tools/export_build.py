@@ -73,6 +73,7 @@ ILLUS_TIMEOUT = 600
 SCHEMATIC_TOOLS = ("maze_anim.py", "tc_anim.py", "rng_anim.py", "seedtree_anim.py", "quality_anim.py", "special_anim.py",
                    "timing_anim.py", "frame_anim.py")
 ILLUS_KEYS = ("id", "tool", "args", "seed", "illustrates", "caption")
+ILLUS_VALUES = ("computed", "restated")   # optional `values:` key, default computed (review of lane/x11s)
 WIDGET_KEYS = ("id", "widget", "illustrates", "caption", "fallback")
 WIDGETS_SRC = os.path.join(HERE, "widgets")        # tools/widgets/<name>/: the reviewed sources (tests override)
 
@@ -729,6 +730,8 @@ def parse_illustration(text):
         err.append("bad id")
     if d.get("tool") and not re.fullmatch(r"[A-Za-z0-9_]+\.py", d["tool"]):
         err.append("bad tool")
+    if d.setdefault("values", "computed") not in ILLUS_VALUES:
+        err.append("bad values")
     return d, "; ".join(err)
 
 
@@ -800,8 +803,11 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
     base = f"{up}illustrations/{d['id']}/"
     root_abs = f"/illustrations/{d['id']}/{gif}"      # root-absolute: the site's rehype step prefixes its base
     cap = caption_sentences(page, heading, d["caption"], allow)
-    cap.append(("No seed is drawn on. " if d["seed"].strip() == "none" else "Seed: illustrative, an input of our own. ")
-               + "Every value shown is computed by our model, not observed in the game.")   # seed: none, a generator with no draw
+    # seed: none, a generator with no draw; values: restated, frames that restate a spec's list with no model behind
+    # them (only a few computed tests), where "computed by our model" would overclaim (review of lane/x11s)
+    cap.append(("The picture takes no seed. " if d["seed"].strip() == "none" else "Seed: illustrative, an input of our own. ")
+               + ("Every value shown is computed by our model, not observed in the game." if d["values"] == "computed"
+                  else "The picture restates the spec; nothing shown is observed in the game."))
     blank = {"kind": "blank", "lines": [""]}
     return [{"kind": "para", "lines": [f"![Animation: {d['id']}]({root_abs})"], "illus": True}, blank,
             {"kind": "para", "lines": [f"[Step through {d['id']}]({base}index.html)"], "illus": True}, blank,

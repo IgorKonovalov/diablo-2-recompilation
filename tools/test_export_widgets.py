@@ -292,7 +292,7 @@ def cut_tests(tmp):
 def repo_tests(tmp):
     repo = os.path.join(tmp, "repo")
     put(os.path.join(repo, "site", "src", "components", "Footer.astro"), "<p>" + ec.FOOTER.replace("{cut.date}", "{cut.date}") + "</p>")
-    cfg = "components: { Footer: './src/components/Footer.astro' },\n"
+    cfg = "components: { Footer: './src/components/Footer.astro' },\n" + ec.WIDGET_BASE_STEP + "\n"
     put(os.path.join(repo, "site", "astro.config.mjs"), cfg)
     base = ec.check_repo(repo, ())
     ok(not [x for x in base if x[0] == "X13"], "repo: no host and no widgets in the cut: no X13")
@@ -305,6 +305,9 @@ def repo_tests(tmp):
     ok(not [x for x in ec.check_repo(repo, ()) if x[0] == "X13"], "repo: the host step and the CSP word for word pass")
     put(os.path.join(repo, "site", "astro.config.mjs"), cfg + csp.replace("connect-src 'none'", "connect-src 'self'"))
     ok(any("Content-Security" in x[3] for x in ec.check_repo(repo, ()) if x[0] == "X13"), "repo: a changed CSP fails")
+    put(os.path.join(repo, "site", "astro.config.mjs"), cfg.replace(ec.WIDGET_BASE_STEP, "") + csp)
+    ok(any("/widgets/" in x[3] for x in ec.check_repo(repo, ()) if x[0] == "X13"),
+       "repo: a base step that leaves /widgets/ fallback pictures unprefixed fails (review of lane/x11s)")
     put(os.path.join(repo, "site", "astro.config.mjs"), cfg + csp)
     for bad in ("const p = '/widgets/other/x.js';", "const r = await fetch(u);", "const m = await import(u);", "eval(s);",
                 "const p = '/widgets/' + id + '/widget.js';"):

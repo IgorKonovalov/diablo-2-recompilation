@@ -291,8 +291,8 @@ caption: The generator to try by hand. The reader types a seed (an unsigned 32-b
   low word to the seed and the high word to 666, and each Range(n) draw in turn with its result and the low and high
   words after it, in hex. A draw steps the seed once and returns the new low word mod n; a range below 1 returns 0
   and leaves the seed alone (RNG core § Algorithm). With the seed 12345 and the range 100 the first draw is step 1 of
-  the worked example above. Without JavaScript the picture shows the first frame of the generator's animation on the
-  same seed, from the section on the generator.
+  the worked example above. The picture is the first frame of the generator's animation on the same seed, from the
+  section on the generator; without JavaScript it stands in for the table.
 fallback: rng-seed-12345
 ```
 

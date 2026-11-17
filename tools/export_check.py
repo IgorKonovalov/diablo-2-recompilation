@@ -73,6 +73,7 @@ HOST_FILE = "site/src/rehype-widgets.mjs"
 # its WebAssembly in its worker), `base-uri 'none'`. Pagefind's worker comes from the site (`worker-src 'self'`) and
 # its requests follow the worker's own policy, not the page's: never set `worker-src 'none'` (search stops). A widget
 # cannot start a worker: `Worker` and `Blob` are not on the allowlist, and a blob: worker is refused by script-src.
+WIDGET_BASE_STEP = r"/^\/(illustrations|widgets)\//.test(n.properties.src)"   # astro.config.mjs's base step
 CSP_POLICY = ("default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
               "font-src 'self'; connect-src 'none'; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; "
               "form-action 'none'; base-uri 'none'")
@@ -1252,6 +1253,10 @@ def check_repo(repo, identity=None, need_host=False):
         cfg = open(cp0, encoding="utf-8").read() if os.path.isfile(cp0) else ""
         if "Content-Security-Policy" not in cfg or CSP_POLICY not in norm_ws(cfg.replace("\n", " ")):
             fails.append(("X13", "site/astro.config.mjs", 0, "the Content-Security-Policy meta is missing or not word for word"))
+        # a widget's fallback picture is a root-absolute /widgets/<id>/fallback.png, as a GIF is /illustrations/...: the
+        # base step must prefix both (review of lane/x11s: the first picture fallback 404'd under the site's base)
+        if WIDGET_BASE_STEP not in cfg:
+            fails.append(("X13", "site/astro.config.mjs", 0, "the base step does not prefix /widgets/ image sources"))
     if os.path.isfile(hp):
         host = open(hp, encoding="utf-8").read()
         # the one script it adds, and the one link shape it acts on (the lane/x11w review: the path scan alone let
