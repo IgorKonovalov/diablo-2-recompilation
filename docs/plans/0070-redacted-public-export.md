@@ -1,6 +1,6 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2 to 7 done 2026-11-17 (the first cut served at https://igorkonovalov.github.io/arpg-1-14d-notes/); Phase 9 done 2026-11-17 (the second cut: 46 reviewed specs; built on branch `cut-2026-11-17b` of the export repository, waiting on Phase 10, the owner's read and push; then Phase 11); re-cut 2026-11-16 for three later owner decisions (simplification,
+> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2 to 7 done 2026-11-17 (the first cut served at https://igorkonovalov.github.io/arpg-1-14d-notes/); Phase 9 done 2026-11-17 (the second cut: 46 reviewed specs; served 2026-11-17, Phase 10 done; Phase 11 in progress); re-cut 2026-11-16 for three later owner decisions (simplification,
 > schematic illustrations per ADR-0036, the cheapest residue option); approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
 > 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
@@ -1437,3 +1437,8 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   most 20 per array, and gate E21 needing node (skipped with a warning without it). Next: batch 1 (archivist lane, then
   a spec-writer lane for blocks and captions) and, in parallel, the widget groundwork of ADR-0037 (check X13, gate E21,
   the builder's widget block, the export repository's host step), each reviewed on Opus.
+- 2026-11-17 — **Phase 10 done: the second cut is served.** The owner ran `tools/export_publish.py --push` in their own
+  terminal (ADR-0038's first real run): 71 manifest pages listed, check 0 failures (863 warnings), 11 project files and
+  the cut copied, site build and link check green (7790 links in 74 pages), commit `docs: cut 2026-11-17` on the export
+  repository's `main`, pushed; the Pages run passed, and `spec-items/tc/` and `spec-monsters/overview/` answer 200. The
+  branch `cut-2026-11-17b` is superseded (same tree) and can be deleted.
