@@ -130,7 +130,7 @@ owners. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-15-o
 | `COLL_WHTest` results at the seven object call sites and at the gold piles | modelled, [drlg/collision § E6](../drlg/collision.md#e-collisiontest-by-size) | 0 = free; predicted on the room grids (the activation stamp, the object marks below, the logged monster and gold-item marks): 5767 placer calls and 92 gold-pile calls, 4816 blocked and 1043 free, 0 mismatches | [drlg/collision](../drlg/collision.md#inputs-and-oracles) | [C] (fn:COLL_WHTest@0x0064D800, run:2026-10-15-objects, [objects/0001 § 14](../../findings/objects/0001-object-population.md#14-the-position-tests-and-the-object-marks-on-the-grid-model-plan-0027-phase-2-2026-10-15)) |
 | object marks in the collision grid | modelled, § G and [drlg/collision § F](../drlg/collision.md#f-unit-marks) | the mark each created object makes (G1, G4): all 1847 predicted (1835 inside a window, matched with their CM lines; 12 under preset monsters, compared inside the monster's seed oracle); 742 creations with `HasCollision` 0 in their mode made none, as predicted; 433 creations of the revisit restore are applied without a line to compare | `drlg/collision` | [C] (fn:UNIT_CollMarkRect@0x00620A70, fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects) |
 | preset monsters of the presets window | modelled (plan 0048 Phase 1; a seed oracle in this spec's run) | `PresetUnitDispatch` of type 1 (the class case, the MonPlace fixed rows, the objects under catapults 432 and 433), and the superunique and MonPlace spawns, through the monsters chain ([chain § Algorithm](../chain/README.md#algorithm) D2); MonPlace rows 5, 10 and 11 stay seed oracles | [monsters/spawn](../monsters/spawn.md), [monsters/special](../monsters/special.md), [chain](../chain/README.md) | [C] (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_0054E490_PresetClassSpawn@0x0054E490, run:2026-10-15-objects, [chain/0002 § 4](../../findings/chain/0002-retirements.md#4-oracle-16-the-preset-monsters-of-the-presets-window)) |
-| monster and quest `InitFn`s | seed oracle, but `InitFn` 46 | `InitFn` 46 is modelled now (§ H row 46) ([chain/0002 § 5, plan 0048 Phase 1](../../findings/chain/0002-retirements.md#5-oracle-17-initfn-46-city-of-the-damned)); 47, 54, 55, 62, 66, 68, 69, Zoo 79, pseudo-object 582, and 18, 19, 25, 43, 49, 50, 52, 60 and 71 ([objects/0001 § Plan 0038 batch S4b row 25](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16)) stay seed oracles; in the H5b objects run (run:2026-10-19-h5b-objects) 66 and 71 each made one monster creation and no `O` draw, 47 and 25 neither (§ H) | monsters, quests | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects, run:2026-10-21-chain2, run:2026-10-19-h5b-objects) |
+| monster and quest `InitFn`s | seed oracle, but `InitFn` 46 | `InitFn` 46 is modelled now (§ H row 46) ([chain/0002 § 5, plan 0048 Phase 1](../../findings/chain/0002-retirements.md#5-oracle-17-initfn-46-city-of-the-damned)); 47, 54, 55, 62, 66, 68, 69, Zoo 79, pseudo-object 582, and 18, 19, 25, 43, 49, 50, 52, 60 and 71 ([objects/0001 § Plan 0038 batch S4b row 25](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16)) stay seed oracles; in the second objects run (run:2026-10-19-h5b-objects) 66 and 71 each made one monster creation and no `O` draw, 47 and 25 neither (§ H) | monsters, quests | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects, run:2026-10-21-chain2, run:2026-10-19-h5b-objects) |
 | state `InitFn`s | value oracle | the mode or `interact` value that `InitFn`s without draws set from game state (4, 6, 8, 9, 12, 14, 16, 17, 22, 26 in the run); the unit-seed draw of the mode change is predicted | game state | [C] (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects) |
 | `TC_ResolveDrops` | seed oracle in the run; modelled by [items/tc](../items/tc.md), chained since plan 0048 Phase 1 | draws the dropping object's **unit seed**; it left the object-region seed alone in all 59 calls. In the chain the object's unit seed after the drop is the resolver's exit seed and the game seed after it is two steps per item ([chain/0002 § 10](../../findings/chain/0002-retirements.md#10-oracle-6-an-objects-drop)) | `items/tc` | [C] (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects) |
 | gold drop of `InitFn` 28 | modelled (plan 0048 Phase 1; a seed oracle in the run) | one item per drop: two game-seed steps, the item's unit seed, its `0x200` mark, no object-region draw (71 of 71); the spot read from the code and predicted for 69 of 71 ([chain/0002 § 9](../../findings/chain/0002-retirements.md#9-oracle-7-the-gold-piles-items)) | items | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:sub_00559300_DropGoldPile@0x00559300, run:2026-10-15-objects) |
@@ -140,7 +140,7 @@ owners. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-15-o
 | trap effects, types 1 to 7 | modelled up to the effect (K2) | `g_ObjTrapFns[t]`, run by object event 4: the function chosen (the level remap included) and the seeds around it; the trap monsters of types 1–4 and 6 are seed oracles that leave `O` unchanged (6 events), and the two `fire` creations of `OBJTRAP_ObjectCreate` (types 5, 7) are predicted with the game seed after them (4 events). What the effect then does is game simulation | game simulation | [C] (fn:OBJ_TrapEvent@0x005817A0, fn:OBJTRAP_ObjectCreate@0x00582380, fn:sub_00582420_TrapMonsterAt@0x00582420, run:2026-10-19-h5b-objects) |
 | trap effects, types 8 and 9 | not reached | `OBJTRAP_MonsterSpawn`'s draw and spawns (K2): no container of type 8 was operated below level 75 | game simulation | [I] (fn:OBJTRAP_MonsterSpawn@0x005822F0) |
 | room and game seeds at each revisit re-creation | logged | the monster and item restores that run before the objects (§ B5) are specified in [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore), not in this spec's model; the object re-creations' own draws are this spec's | `drlg/lifecycle` | [I] (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40) |
-| populate windows inside an operate | — | a portal-like operate handler that activates a room runs that room's window (§ B) inside the operate; those draws are the window's. Not reached: the 19 operates of the Arcane Sanctuary's pads (`OperateFn` 27) in the H5b objects run (run:2026-10-19-h5b-objects) activated no room before their exit | this spec | [I] (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0) |
+| populate windows inside an operate | — | a portal-like operate handler that activates a room runs that room's window (§ B) inside the operate; those draws are the window's. Not reached: the 19 operates of the Arcane Sanctuary's pads (`OperateFn` 27) in the second objects run (run:2026-10-19-h5b-objects) activated no room before their exit | this spec | [I] (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0) |
 
 ## Algorithm
 
@@ -327,7 +327,7 @@ C2. ThemeRoll(game, room, L, themes) → i32:                       [C] (fn:OBJ_
   1 an empty room, 2 a barrel grid, 4 an item grid, 5 and 6 bookshelf or weapon-rack rows. (tbl:Levels.txt:Themes,
   data:g_ObjThemeFns@0x00731E68, run:2026-10-15-objects)
 - C2. [C] **Theme 3 is drawn and does not run.** `g_ObjThemeFns` holds 8-byte `{enabled, fn}` entries: themes 1, 2, 4,
-  5 and 6 are enabled, 0 and 3 are `{0, 0}`. In the H5b objects run (run:2026-10-19-h5b-objects) 4 rolls (Catacombs Level 3, `Themes` 60)
+  5 and 6 are enabled, 0 and 3 are `{0, 0}`. In the second objects run (run:2026-10-19-h5b-objects) 4 rolls (Catacombs Level 3, `Themes` 60)
   drew theme 3, below the count 4; nothing ran, and every draw after each matched with no theme run.
   (fn:OBJ_RoomThemeRoll@0x00552400, data:g_ObjThemeFns@0x00731E68, tbl:Levels.txt:Themes, run:2026-10-19-h5b-objects)
 
@@ -457,7 +457,7 @@ E1. Clusters(class, DENSITY):                                     [C] (fn:OBJPOP
   called with, and never reloads it. So `sx`, `sy` in the first object's two draws, its padded test and every
   follower test (`PosTestTight` or `PosTestPadded` per the table) are the member's `SizeX`, `SizeY`; the class drawn
   from the list only goes to `SUnitCreate`. A follower after a `Casket` (79, 4 × 6) in a group whose member is class
-  1 (5 × 3) is tested with 5 × 3. In the H5b objects run (run:2026-10-19-h5b-objects) 32 follower walks came after a created class whose
+  1 (5 × 3) is tested with 5 × 3. In the second objects run (run:2026-10-19-h5b-objects) 32 follower walks came after a created class whose
   size differs from the member's (79 is 4 × 6; 53 and 1 are 5 × 3; Catacombs Levels 2–4), and every follower test's
   logged box is the member's size plus the list's margin, which the created class's size would not give.
   (fn:OBJPOP_Clusters@0x00550C20, 0x00550C37, 0x0055103E, fn:OBJECTS_GetRecord@0x00640E90, fn:OBJ_PosTestPadded@0x00550220,
@@ -657,7 +657,7 @@ G4. SUnitPathCreate(unit), after ServerInit:                      [C] (fn:sub_00
 - G4. [C] Every object mark of the objects run (run:2026-10-15-objects) is predicted this way (*Inputs and oracles*), by mask `0x400`
   1813, `0x404` 13, `0x806` 7 and `0x8000` 2. (fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects)
 - G4. [C] **A door with neither `BlocksVis` nor `BlockMissile` marks `0x400`:** 60 marks of classes 13 and 14 (`IsDoor`
-  1, `BlocksVis` 0, `BlockMissile` 0) matched their `CM` lines in the H5b objects run (run:2026-10-19-h5b-objects), and the logs of
+  1, `BlocksVis` 0, `BlockMissile` 0) matched their `CM` lines in the second objects run (run:2026-10-19-h5b-objects), and the logs of
   the objects run (run:2026-10-15-objects) held 13 more. **An object with `HasCollision` set and a zero size makes no mark:** class 523
   (0 × 0) in Harrogath's DS1 and the fissure 399 in the City of the Damned were created in mode 0 inside a logged window
   with no `CM` line after either. (fn:UNIT_GetCollMask@0x006209D0, fn:sub_00554850_SUnitPathCreate@0x00554850,
@@ -677,7 +677,7 @@ G4. SUnitPathCreate(unit), after ServerInit:                      [C] (fn:sub_00
 ### H. Draws at creation, per `InitFn`
 
 A callee scan of all 76 distinct `InitFn` handlers to depth 3 found draws only in the rows below. A full-depth walk of
-the 80 slots (the decoded instructions, plan 0038 S4b) finds every listed handler drawing and nine more that create monsters, `InitFn`
+the 80 slots (the decoded instructions) finds every listed handler drawing and nine more that create monsters, `InitFn`
 18 and 19 (`jerhyn`), 25 (`gidbinn`), 43 (`darkwanderer`), 49, 50, 52, 60 (`compellingorb`) and 71: these draw as
 monster spawns (room and game seeds) when their condition holds. Every draw of the rows is on the object-region seed
 `O` unless the row says otherwise. [I] (data:g_ObjInitFns@0x00731BC0, fn:sub_005B2F20_SpawnAtPos@0x005B2F20,
@@ -899,7 +899,7 @@ J3. ObjectChestDrop(object, player, q):                           [C] the drop's
   (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects,
   [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
 - J4. [C] The other handlers that draw `O` themselves do so as follows. The operates behind it: 37 urns, jars and baskets, 11 barrels and 1
-  casket in the objects run; 58 caskets, 1 bookshelf, 9 trapped souls and 1 evil urn in the H5b objects run; so rows
+  casket in the objects run; 58 caskets, 1 bookshelf, 9 trapped souls and 1 evil urn in the second objects run; so rows
   26, 48 and 68 are confirmed on the branch each operate took and inferred on the other (run:2026-10-15-objects,
   run:2026-10-19-h5b-objects):
 

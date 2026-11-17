@@ -376,8 +376,9 @@ count of 0 to 1, so `Range(local, 1)` returns 0 and row 0 is used. Stock data re
 ### D. Per-mod draws
 
 One row per MonUMod row. Each row's pick weights (`cpick` and `upick` per difficulty), `xfer`, `fPick`, `exclude1`
-and `enabled` are MonUMod's own values, listed in [MonUMod § Pick weights per difficulty](../../tables/MonUMod.md#pick-weights-per-difficulty)
-and its *Columns*. "Flag 1" is the special itself and "flag 0" a member of
+and `enabled` are MonUMod's own values, read from the table: the table doc's *Columns* define them, and its
+[§ Pick weights per difficulty](../../tables/MonUMod.md#pick-weights-per-difficulty) sums up the stock weights, `xfer`,
+`fPick` and `exclude1` of the pick mods. "Flag 1" is the special itself and "flag 0" a member of
 its group. No handler draws on the room or game seed. The effect column only names what [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects) specifies.
 
 | Row | Mod | Server handler | Draws, flag 1 | Flag 0 | Effect (named) | Tag |
@@ -416,7 +417,7 @@ its group. No handler draws on the room or game seed. The effect column only nam
 | 41 | `always_run_ai` | fn:sub_005A1330_UModAlwaysRunAi@0x005A1330 | none on the three seeds (AI event, not reached) | runs | AI timer | [I] (fn:sub_005A1330_UModAlwaysRunAi@0x005A1330) |
 
 - [C] A `[C]` row is a mod that was in some logged special's list (or always run), with its handler calls seed-asserted:
-  in run:2026-10-14-mon-special, and for rows 10, 12, 13, 34 and 35 in the later runs named in their rows. The `[I]` rows
+  in the special-monsters run (run:2026-10-14-mon-special), and for rows 10, 12, 13, 34 and 35 in the later runs named in their rows. The `[I]` rows
   (and the `[I]` parts of the split rows) were never in a logged list. For those the "none" rests on the static call
   graph: no LCG step and no RNG call in the stat handlers, the single step of `rndname`, the local draw of `aura`, and RNG
   only deep inside the skill and AI callees of `teleport`, `aura` and `always_run_ai`. (run:2026-10-14-mon-special,
@@ -638,7 +639,7 @@ H2. MonPlace case 3, a champion at the point:                      [C] (0x0054E8
   [monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20))
 - [I] **Every MonPlace row, from the switch.** The MonPlace branch switches on `index − 2` with the bound `0x1E`
   (0x0054E76F–0x0054E782). Rows 0, 1 and 33–36 fail the bound, and rows 6, 7, 9, 12–16 and 19–21 have byte-table entry 8;
-  both go to 0x0054EAFE, which returns 0 with no call. **These rows place nothing in `PresetMonSpawn`**:
+  both go to an exit that returns 0 with no call (0x0054EAFE). **These rows place nothing in `PresetMonSpawn`**:
   `place_nothing`, `place_npc_pack`, the river monsters, `place_amphibian`, the nests, the talking and dumb guards,
   `place_maggot`, `place_maggotegg`, `place_mosquitonest` and `place_group25` to `place_group100`. A `place_group25`–`75`
   unit that the DRLG preset pass keeps on its room-seed draw ([drlg/preset § 3](../drlg/preset.md#3-the-keepdrop-rolls))
@@ -770,13 +771,13 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
   | 243 `diablo`, `diabloclone` | 22; `uberdiablo` (705): 22, 8, 6 | quest hook 23 | [C] the first call only: `diablo` and `diabloclone` mod 22, class 705 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 256 `izual` | 22; `uberizual` (706): 6, 18 | quest hook 22 | [C] the first call only: `izual` mod 22, class 706 mod 6 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 544 `baalcrab` | 22; `uberbaal` (709): 22, 18, 8, 6 | quest hook 36 | [C] the first call only: `baalcrab` and class 570 quest hook 36, class 709 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 267 `bloodraven` | 12, 22 | quest hook 2; `0x00639DB0(unit, 0x76, 1)` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 267 `bloodraven` | 12, 22 | quest hook 2; `STATE_Set(unit, 0x76, 1)` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, fn:STATE_Set@0x00639DB0) |
   | 284 `maggotqueen1`..`5` | 23, 22 | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 292 `firegolem` | 31 (flag 0) | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 366 `compellingorb` | 22 | quest hook 19, unit flag `0x20000` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 402 `smith` | 22 | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 526 `nihlathakboss` | 22 | quest hook 34 | [C] the mod (run:2026-10-21-sweep-monsters-a); [I] the hook (0x005B2002) |
-  | 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); `0x005B1C50`, the gear call (540); `0x005447A0` (175) | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); the gear call (540); an unnamed call (175) | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, 0x005B1C50 for 540, 0x005447A0 for 175) |
 
 - [C] **The first call of `MonPostCreateBoss`, for six `BaseId`s.** For `BaseId`s 156, 211, 242, 243, 256 and 544, the table's rows above: by class, the first `ModAppendApply(game, unit, mod, 1)` or `QUESTS_HookMonster` is the one each row names, so `mephisto` and `baalcrab` reach their quest hook before their mod 22, and `duriel` its hook 13 first. Each case ends at that first callee (ADR-0021). This covers neither the callee, nor the later mods (704 → 22, 30, 17, 8, 6; 705 → 22, 8, 6; 709 → 22, 18, 8, 6, which stay `[I]`), nor reach: a p-code run says nothing about whether a unit of an uber class exists. (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber,
   [ai/0016 § 6](../../findings/ai/0016-uber-event.md#6-what-the-classes-do-get))
@@ -907,14 +908,13 @@ sequenceDiagram
 
 ## Worked example
 
-Every value below is from the logs of run:2026-10-14-mon-special. The draws were re-derived with `tools/rng.py` from the
-seeds named and each one matches the log; `python3 -I tools/monspawn.py check <log>` reproduces the whole log with 0
-mismatches. Seeds are `low:high` in hex. A "step" is one `Step` of the named seed.
+Every value below is from the logs of the special-monsters run (run:2026-10-14-mon-special). The draws were re-derived
+from the seeds named and each one matches the log, and the model reproduces the whole log with 0 mismatches. Seeds are `low:high` in hex. A "step" is one `Step` of the named seed.
 
 ### Example 1: a champion pack (expansion nightmare)
 
-Source: `workspace/logs/monspecial-s6-2106-nightmare.log`, line 3700 (`-seed 2106`, expansion nightmare, level 112 Arreat
-Plateau). A random boss of class 620 `blunderbore6` (`NameStr` `Mauler`, no `minion1`), unit id 9. Its unit seed after
+The session of game seed 2106, expansion nightmare, level 112 Arreat
+Plateau. A random boss of class 620 `blunderbore6` (`NameStr` `Mauler`, no `minion1`), unit id 9. Its unit seed after
 `SUnitCreate` (input) is `2F323723:44E307EC`; it has no mods.
 
 | # | Draw | Seed after | Result |
@@ -938,7 +938,7 @@ is made. The live special count went from 0 to 3.
 
 ### Example 2: a unique group (expansion nightmare)
 
-Source: the same log, line 9960. A random boss of class 620 `blunderbore6`, unit id 97, in the same level. Unit seed after
+The same session. A random boss of class 620 `blunderbore6`, unit id 97, in the same level. Unit seed after
 `SUnitCreate` (input) `4E0156CB:21241A4D`, no mods.
 
 | # | Draw | Seed after | Result |
@@ -966,7 +966,7 @@ docs).
 
 ### Example 3: a superunique (expansion hell)
 
-Source: `workspace/logs/monspecial-s11-2111-hell.log`, line 3855 (`-seed 2111`, expansion hell, level 4 Stony Field).
+The session of game seed 2111, expansion hell, level 4 Stony Field.
 Rakanishu, record 3: class 20 `fallen2`, `Mod1` 17, `Mod2` 6, `Mod3` 0, `MinGrp` = `MaxGrp` = 8, `AutoPos` 0, `Stacks` 0,
 not yet placed. The exact placement at the preset point (5099, 5219) costs 3 room draws (room `39E33144:354998C5` →
 `824B6B7C:26EFD6FB`) and one game step. The unit seed after `SUnitCreate` (input) is `552E1840:49D16526`.
@@ -984,7 +984,7 @@ The client shows the record's `Name`; no client draw.
 
 ### Example 4: a name with an appellation
 
-Source: `workspace/logs/monspecial-s11-2111-hell.log`, line 6512. A unique of class 53, unit id 48, server name seed
+The same session as example 3. A unique of class 53, unit id 48, server name seed
 54871 (`0xD657`). The client keeps 87 (`0x57`).
 
 | # | Client draw on `Init(87)` = `00000057:0000029A` | Seed after | Result |
@@ -1036,6 +1036,10 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 
 ## Evidence
 
+- How the worked examples were checked: each draw re-derived with `tools/rng.py`; `python3 -I tools/monspawn.py check
+  <log>` reproduces each log with 0 mismatches. Example 1 is `workspace/logs/monspecial-s6-2106-nightmare.log` line 3700,
+  example 2 the same log's line 9960, example 3 `workspace/logs/monspecial-s11-2111-hell.log` line 3855, example 4 the
+  same log's line 6512 (run:2026-10-14-mon-special).
 - [findings/monsters/0003-special-monsters.md](../../findings/monsters/0003-special-monsters.md): §§ 1–8 (the reading),
   § 10 (the reproduction), *Leads used* (the Phase 1b cross-check: 37 verdicts, the three contradicted claims).
 - [findings/monsters/experiments.md § run:2026-10-14-mon-special](../../findings/monsters/experiments.md#run2026-10-14-mon-special):

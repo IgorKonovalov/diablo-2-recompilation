@@ -608,7 +608,7 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 ## Reimplementation notes
 
 - [C] **The AI has two entries, the queue and a mode end.** At a mode end it runs inside that mode-end event, so its draws
-  come at that event's place in the frame, not at the kind-2 record's: S7b counts the AI's draws by event kind, 447 in
+  come at that event's place in the frame, not at the kind-2 record's: the two frame runs count the AI's draws by event kind, 447 in
   monsters' kind-0 events and 992 in kind-2 ([sim/frame n8](../../sim/frame.md#reimplementation-notes), run:2026-11-04-frame2,
   run:2026-11-04-frame3, [frame/0007 § S7b](../../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o)). [I] Those mode-end entries are the nine call sites of B5, each skipped while the
   unit is frozen and alive. The per-unit order on a shared seed is [sim/frame § D and § E](../../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners)'s.

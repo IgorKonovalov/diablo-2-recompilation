@@ -24,14 +24,14 @@ creation, monster spawning and the DRLG room-type code is left to those specs. P
 | When | Function | Tag |
 |---|---|---|
 | Game created | fn:GAME_InitSeeds@0x0052C280 | [C] |
-| `-seed N` on the command line, or `D2.ini` | fn:sub_0044D860_ApplySeedOption@0x0044D860 → fn:GAME_SetSeedOverride@0x0052C320 | [C] |
-| Act created, server copy | fn:sub_0053AC70_ActCreate@0x0053AC70 → fn:DUNGEON_ActCreate@0x006194A0 → fn:DRLG_ActCreate@0x00642DA0 | [C] |
-| Act created, client copy | client message handler 3 fn:sub_0045C8E0_PktLoadAct@0x0045C8E0 → fn:sub_0044E100_ClientActLoad@0x0044E100 → fn:DUNGEON_ActCreate@0x006194A0 | [C] |
+| `-seed N` on the command line, or `D2.ini` | `ApplySeedOption` → `GAME_SetSeedOverride` (fn:sub_0044D860_ApplySeedOption@0x0044D860, fn:GAME_SetSeedOverride@0x0052C320) | [C] |
+| Act created, server copy | `ActCreate` → `DUNGEON_ActCreate` → `DRLG_ActCreate` (fn:sub_0053AC70_ActCreate@0x0053AC70, fn:DUNGEON_ActCreate@0x006194A0, fn:DRLG_ActCreate@0x00642DA0) | [C] |
+| Act created, client copy | client message handler 3 `PktLoadAct` → `ClientActLoad` → `DUNGEON_ActCreate` (fn:sub_0045C8E0_PktLoadAct@0x0045C8E0, fn:sub_0044E100_ClientActLoad@0x0044E100, fn:DUNGEON_ActCreate@0x006194A0) | [C] |
 | Level created | fn:DRLG_LevelCreate@0x00642AE0, from `DRLG_ActCreate` or one of six get-or-create callers | [C] |
 | DRLG room created | fn:DRLG_RoomCreate@0x0066B3E0 | [C] |
-| Room activated | fn:sub_0061B190_RoomActivateA@0x0061B190 or fn:sub_0061B730_RoomActivateB@0x0061B730 → fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40 → fn:DRLG_RoomActivate@0x006422A0 → fn:DUNGEON_RoomCreate@0x00619890 | [C] |
-| Server unit created (every type but players) | fn:sub_00555230_SUnitCreate@0x00555230 → fn:sub_00552DF0_UnitSeedInit@0x00552DF0 | [C] |
-| Client unit created | fn:sub_00465FD0_UnitInit@0x00465FD0, fn:sub_00466200_UnitInitB@0x00466200 | [C] |
+| Room activated | `RoomActivateA` or `RoomActivateB` → `DrlgRoomReseed` → `DRLG_RoomActivate` → `DUNGEON_RoomCreate` (fn:sub_0061B190_RoomActivateA@0x0061B190, fn:sub_0061B730_RoomActivateB@0x0061B730, fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, fn:DRLG_RoomActivate@0x006422A0, fn:DUNGEON_RoomCreate@0x00619890) | [C] |
+| Server unit created (every type but players) | `SUnitCreate` → `UnitSeedInit` (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00552DF0_UnitSeedInit@0x00552DF0) | [C] |
+| Client unit created | `UnitInit`, `UnitInitB` (fn:sub_00465FD0_UnitInit@0x00465FD0, fn:sub_00466200_UnitInitB@0x00466200) | [C] |
 
 ## Inputs
 
@@ -303,12 +303,11 @@ Step notes:
    the reader loads it as one dword. A `-seed` value wider than 16 bits arrives intact (`34844169` →
    `+0x7C` = 34844169). [C] (fn:sub_004058A0_ConfigParseCmdLine@0x004058A0,
    fn:sub_00405450_ConfigLoadIni@0x00405450, run:2026-10-11-seed-tree) On the command line, a
-   negative value never arrives: the parser copies a switch's text only up to the next `-`
-   (`0x00405784`), so `-seed -2147483648` (and `-seed -1`) leaves the text empty, `atol` gives 0,
+   negative value never arrives: the parser copies a switch's text only up to the next `-`, so `-seed -2147483648` (and `-seed -1`) leaves the text empty, `atol` gives 0,
    step 2 applies nothing, and the game takes the clock path. A value of 2³¹ or more saturates at
    `0x7FFFFFFF`. So the seeds reproducible from the command line are `1`…`0x7FFFFFFF`, and no seed of
    `0x80000000` or above reaches step 1 that way. [C] (fn:sub_004058A0_ConfigParseCmdLine@0x004058A0,
-   0x00405710, fn:GAME_InitSeeds@0x0052C280, run:2026-10-16-sweep-roomk, sessions s9 and s10;
+   0x00405710, 0x00405784, fn:GAME_InitSeeds@0x0052C280, run:2026-10-16-sweep-roomk, sessions s9 and s10;
    [rng/0002 § Plan 0038 batch H5c](../../findings/rng/0002-seed-tree.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)) This corrects the earlier reading that a seed ≥ 2³¹ could be given as its negative
    decimal, which the run contradicted. What the `D2.ini` route stores for such values is open (*Open
    questions*).
@@ -326,7 +325,7 @@ Step notes:
    only to later consumers of the act seed, never to level seeds.
    Server copy: `sub_0053AC70_ActCreate` passes `game+0x7C`. Client copy: `sub_0044E100_ClientActLoad`
    gets the map seed from the 12-byte message 3 (act `u8 +1`, map seed `u32 +2`) and stores the act
-   in `0x007A0634`. On game entry both are created, server first, with seed N. [C]
+   in a client global (0x007A0634). On game entry both are created, server first, with seed N. [C]
    (fn:sub_0045C8E0_PktLoadAct@0x0045C8E0, data:g_ClientPktHandlers@0x007114D0, run:2026-10-11-seed-tree-p1)
    The two copies have identical DRLG seed trees up to room activation (step 6). [C] (run:2026-10-11-seed-tree,
    run:2026-10-11-seed-tree-p1)
@@ -338,7 +337,7 @@ Step notes:
    `LevelAddRef` 5 (fn:sub_00642BB0_LevelEnsure@0x00642BB0, fn:sub_00643060_LevelUnloadCheck@0x00643060,
    fn:sub_00642F70_LevelAddRef@0x00642F70, run:2026-10-16-sweep-roomk, [rng/0002 § Plan 0038 batch H5c](../../findings/rng/0002-seed-tree.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)). [I] for the
    other three, which no run reached (fn:sub_00642BE0_LevelRoomCount@0x00642BE0,
-   fn:sub_00642C30_RoomFromCoords@0x00642C30, fn:sub_00642D10_LevelSetPosition@0x00642D10)
+   fn:sub_00642C30_RoomFromCoords@0x00642C30, fn:sub_00642D10_LevelSetPosition@0x00642D10).
 5. Each DRLG room takes exactly one draw from its level's seed, so the order in which a level's
    rooms are created matters (3102 room creations in the seed-tree run). [C] (fn:DRLG_RoomCreate@0x0066B3E0,
    run:2026-10-11-seed-tree)
@@ -353,8 +352,9 @@ Step notes:
    [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16), addendum)
 6. The active-room seed is `Init(Step^(k+1)(Init(R[+0x04])).low)`. It doesn't depend on any draw
    made on the room seed between creation and activation, because 6a restarts it from `+0x04`, but
-   it does depend on k. Observed in that run: k = 50–376 over 157 activations. [C]
-   (run:2026-10-11-seed-tree-p1) k is the number of room-seed draws of the `LvlSub` substitutions (type 1
+   it does depend on k. Observed in the second seed-tree run: k = 50–376 over 157 activations. [C]
+   (run:2026-10-11-seed-tree-p1)
+   k is the number of room-seed draws of the `LvlSub` substitutions (type 1
    only) and of the tile picks whose candidates have a positive rarity sum, plus `Orient89Unit`'s rare `Range(3)`
    draws (room-tiles step 11); it
    is defined in [drlg/room-tiles § k](../drlg/room-tiles.md#k), which predicts it for all 520
@@ -404,7 +404,7 @@ Step notes:
    and re-seeding paths), each passing its own pointer plus `0xD0`, and the type-0 (player) server units
    of the runs got their seed from `game+0xD0` through them. [C] (0x0053254E, 0x005338D8, 0x00569F53,
    0x0056A95E, 0x0057F7E5, run:2026-10-11-seed-tree-p1, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
-   The two player loads of the H1a session took their seed through `PlayerUnitInit`'s call, whose pointer
+   The two player loads of the save-load sweep took their seed through `PlayerUnitInit`'s call, whose pointer
    is the game (`lea edx, [ebx + 0xD0]` with `EBX` the game, then the call). [C]
    (fn:sub_00569F20_PlayerUnitInit@0x00569F20, 0x00569F4B, 0x00569F53, run:2026-10-27-sweep-d2s-load, [rng/0002 § Plan 0038 batch S1b row 11](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
    The other four callers logged no line in that session, so
@@ -521,7 +521,7 @@ separate objects.
 - **Seeds that are not gameplay seeds.** All 103 initialiser call sites (76 functions) are classified by call shape.
   Besides the tree above, they are: the client automap's global seed `init(0)` (`AutomapTxtLoad`, drawn only by the
   automap cell pick); two title-screen globals from `RNG_EntropySeed`; and local stack seeds in client/server pairs
-  (constant `0x53454953`, a unit base stat, or other values). None of these feeds the act, level, room, unit or item
+  (the constant 1397049683, whose four bytes spell `SEIS` high byte first, a unit base stat, or other values). None of these feeds the act, level, room, unit or item
   seeds. The sites that re-seed a unit's `+0x20` or another object's seed lie in the skill and missile code
   (*Skill and missile re-seeds* below). [I] (fn:RNG_SeedInitOne@0x00650E30, fn:RNG_SeedInit@0x00650E40,
   fn:sub_0061FCF0_AutomapTxtLoad@0x0061FCF0, [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#the-other-initialiser-sites))
@@ -530,7 +530,7 @@ separate objects.
   it at most four times for the missile's pierce count; it reads and writes no game, unit or missile seed. So it is a
   classified initialiser site, not a re-seed. [I] (fn:sub_0059F940_MissilePierceCount@0x0059F940, fn:RNG_SeedInit@0x00650E40,
   [skills/0002 § 3](../../findings/skills/0002-missiles.md#3-the-damage-the-missile-carries),
-  [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#the-other-initialiser-sites) for the client/server pair)
+  [rng/0002 § Plan 0039 batch P1a, the client/server pair](../../findings/rng/0002-seed-tree.md#the-other-initialiser-sites))
 
 - **Skill and missile re-seeds.** The server sites of the skill and missile code re-seed a **missile's** seed or a
   local stack seed, with one exception among the reached sites, Armageddon:
@@ -594,7 +594,7 @@ separate objects.
   function does not re-seed. [I] (0x005C8299, 0x005C8354–0x005C835C, fn:sub_00644560_UnitSkillSet18@0x00644560,
   fn:sub_005C8520_SkillDo146Armageddon@0x005C8520, 0x005C8647–0x005C8779,
   [skills/0013 § 5](../../findings/skills/0013-druid.md#5-the-periodic-states-do-table-entries-145-and-146),
-  [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites) dated note)
+  [skills/0003 § 9, dated note](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
 
 ## Evidence
 

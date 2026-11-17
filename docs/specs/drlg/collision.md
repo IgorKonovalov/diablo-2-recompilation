@@ -110,7 +110,7 @@ line of sight read the same grid. They are named here, not specified.
 
 ### Inputs and oracles
 
-The reproduction (run:2026-10-14-collision) works at boundary B, which the architect ruled at plan 0017 Phase 1. The
+The reproduction (run:2026-10-14-collision) works at boundary B (plan 0017 Phase 1). The
 tile half of the grid is modelled at activation and compared cell for cell. The marks made inside the population pass
 and the predicates are modelled on a grid snapshot taken at pass entry. The rest comes from the log as a boundary input
 ([ADR-0004](../../adrs/0004-boundary-oracles-in-reproduction.md)). A reimplementation supplies each row from its
@@ -423,11 +423,11 @@ E6. WHTest(hint, x, y, w, h, mask) → u16:                         [C] (fn:COLL
   path) on the grid model, 4816 blocked and 1043 free, 0 mismatches. (fn:COLL_WHTest@0x0064D800, fn:COLL_RectTest@0x0064CEB0,
   fn:COLL_CellTestNb@0x0064CA50, run:2026-10-15-objects)
 - [C] **A rectangle test with a footprint cell in no room reachable from the hint returns `0x27` unmasked** through `WHTest`
-  too: a rectangle result with `(r & 0x27) = 0x27` and bits outside the mask. run:2026-10-15-objects held 514 of them (sites
-  `0x005504B3`, `0x0055062D`, `0x00550B89`, `0x0055029E`, levels 3–125) and run:2026-10-19-h5b-objects 734 more, all predicted
+  too: a rectangle result with `(r & 0x27) = 0x27` and bits outside the mask. The objects run held 514 of them, at four call sites in
+  levels 3–125, and the second objects run 734 more, all predicted
   by the piece logic of E4: the first piece's room by `RoomAtSubtile` from the hint, the right and bottom pieces from that room.
-  (fn:COLL_RectTest@0x0064CEB0, fn:COLL_RectSplit@0x0064CDF0, fn:COLL_WHTest@0x0064D800, run:2026-10-15-objects,
-  run:2026-10-19-h5b-objects, [drlg/0005 § Plan 0038 batch H5b](../../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects))
+  (fn:COLL_RectTest@0x0064CEB0, fn:COLL_RectSplit@0x0064CDF0, fn:COLL_WHTest@0x0064D800, 0x005504B3, 0x0055062D, 0x00550B89,
+  0x0055029E, run:2026-10-15-objects, run:2026-10-19-h5b-objects, [drlg/0005 § Plan 0038 batch H5b](../../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects))
 - [I] Movement uses a second numbering, the pattern (path `+0x48`): `COLL_PatternTest` tests pattern 0 as one cell, 1, 3 and 5 as
   the plus, 2 and 4 as the 3×3 square, and returns `0xFFFF` for any other. `COLL_PatternTestBool` is its boolean form.
   (fn:COLL_PatternTest@0x0064D870, fn:COLL_PatternTestBool@0x0064D910)
@@ -1150,7 +1150,7 @@ Rows 5151 … 5153 equal row 5150. The dumped grid matches the model cell for ce
 
 ### 2. A contested placement
 
-The population pass of this room starts with its `SN` line. The snapshot equals the activation grid here, except for one object
+At the start of this room's population pass the snapshot equals the activation grid here, except for one object
 the presets and objects window marked (`0x400` at (5164, 5147)). The room's logic record is a single box with id 1, rectangle
 (1032, 1024)–(1040, 1032), so the bounds are x 5160 … 5199 and y 5120 … 5159. The snapshot near list of the room is the five rooms
 above plus the right neighbour at (1040, 1024), and no room in it holds a subtile with y ≥ 5160.
@@ -1191,8 +1191,8 @@ passes (5178, 5160), both outside. Member 1 now stands at (5178, 5158): cells (5
 | (5178, 5157) | `1000` | the lower cell (5178, 5158) `1100` |
 | (5178, 5156) | `0000` | the lower cell (5178, 5157) is `0100`, and `0100 & 3C01 = 0` → created, room seed `A389B7EA:00A49AD5` |
 
-Member 2 is placed with one cell of member 1's footprint inside its own footprint. Only member 1's `1000` centre blocked it. This
-is the R2 case of the logging plan, and the run had 67 such acceptances. The spawn spec's worked example in
+Member 2 is placed with one cell of member 1's footprint inside its own footprint. Only member 1's `1000` centre blocked it. Such
+an acceptance, a footprint overlapping a placed member's, is one the run was set up to catch: it had 67 of them. The spawn spec's worked example in
 [monsters/spawn](../monsters/spawn.md#worked-example) has the same shape: there (15559, 5615) = 39 = `0x27` and (15558, 5615) =
 4096 = `0x1000`. Its log carries no snapshot, so it is not reproduced here.
 

@@ -838,8 +838,8 @@ stateDiagram-v2
   released --> built: re-activation, same +0x04, DT1 list and DS1 kept
 ```
 
-A built room can be released while its level stays loaded, and activated again later. Run:2026-10-16-sweep-roomk
-logged 1516 releases, compared field by field, and 235 re-activations ([drlg/0002 § Plan 0038 batch H5c](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
+A built room can be released while its level stays loaded, and activated again later. The room-k sweep
+logged 1516 releases, compared field by field, and 235 re-activations (run:2026-10-16-sweep-roomk, [drlg/0002 § Plan 0038 batch H5c](../../findings/drlg/0002-room-build-draws.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)).
 
 - [C] `sub_0066F1A0_RoomTilesRelease` is called through the wrapper `RoomReleaseWrap` (from `ActiveRoomFree`)
   for a built room; the wrapper first writes `R[+0x60]` ← the active room's flags bit 0. Every call, built room or

@@ -138,7 +138,7 @@ A5.   if buf = NULL: the header read faults (access violation), no test, no eng 
 
 Step notes:
 
-- A1. Each of the 18 H3b calls made with the count at 0 (three per run) loads, by `FILE_LoadWhole` and in this order,
+- A1. Each of the 18 calls of the data-load sweep made with the count at 0 (three per run) loads, by `FILE_LoadWhole` and in this order,
   `data\local\font\LATIN\default.map`, then `data\local\lng\ENG\string.tbl`, `patchstring.tbl` and
   `expansionstring.tbl` (the expansion argument is 1, `d2exp.mpq` being present), returns 1 and leaves the count at 1
   with the three buffers the loads returned; every logged text is the model's UTF-16 conversion of its node. [C]
@@ -331,7 +331,7 @@ Step notes:
   `ClientFormatArgs(out, STRTABLE_GetByIndex(1718), name1Text, name2Text, NULL)`; string 1718 is the key `RareFormat`.
   The formatter copies its NULL-terminated arguments into 400-byte slots in order, so `%0` is `name1`'s text and `%1`
   `name2`'s; `MagicFormat` (1714, `%0 %1 %2`) is called the same way with the prefix text, the base name and the suffix
-  text. [C] for the format line's index: the H3b hovers used string 1718. (run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
+  text. [C] for the format line's index: the data-load sweep's hovers used string 1718. (run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
   [I] for the rest. (0x0048C89A–0x0048C8BC, 0x0048BEB2–0x0048BED8, 0x0048CDCB–0x0048CDF7,
   fn:sub_0048C060_ClientItemNameBuild@0x0048C060, fn:sub_0048BE80_ClientFormatArgs@0x0048BE80,
   [data/0003 § Plan 0039 batch P1b](../../findings/data/0003-string-tables.md#plan-0039-batch-p1b-2026-10-17))
@@ -436,7 +436,7 @@ F1. KeyToIndex(cell key) → u16:                                               
 - [C] The language code comes from the first byte of `data\local\use` (I1 of [data/excel § I](excel.md#i-string-table-keys)).
   The shipped files hold 0x00 (`ENG`) in the MPQ copy and in the loose `Use` and `Use_eng`; the loose `Use_rus` holds
   0x0B (`RUS`) and is read only when copied over `Use` with `-direct`, as the install's Russian launcher script does.
-  In every H3b run the first `LNG_GetLanguageIndex` call reads `use` once and returns its first byte: `00` gives 0 and
+  In every run of the data-load sweep the first `LNG_GetLanguageIndex` call reads `use` once and returns its first byte: `00` gives 0 and
   the tables load from `lng\ENG\`, the copied `Use_rus` gives 11, and the cached byte holds the value for every later
   call. No shipped file selects `pol`, `por` or any other language. (fn:LNG_GetLanguageIndex@0x00525150,
   fn:LNG_GetLanguageCode@0x00525260, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load), [data/0003 § Language](../../findings/data/0003-string-tables.md#language),
