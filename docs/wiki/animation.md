@@ -355,8 +355,9 @@ caption: A unit with path speed 1536, a player's walk in the worked example, and
   along an axis. Each game frame the step is (D × S) >> 12 with S = (speed × 1024) >> 6 and D = 4096 on the axis row,
   here 24576 in 1/65536 of a subtile. The unit starts at the centre of subtile 0, position 32768. On the eighth frame
   the distance left is not more than the step, so the step becomes the distance left and the unit lands on the point;
-  the frames taken are the ceiling of 65536 × 3 ÷ 24576, which is 8 (movement § B1, B3). With no point left, the path stops in that same frame (§ B5). Not shown: the collision
-  walk, the diagonal rows and replans. The run and knockback speeds, 2304 and 4096, give 6 and 3 frames the same way.
+  the frames taken are the ceiling of 65536 × 3 ÷ 24576, which is 8 (movement § B1, B3). With no point left, the path
+  stops in that same frame (§ B5). Not shown: the collision walk, the diagonal rows and replans. The run and knockback
+  speeds, 2304 and 4096, give 6 and 3 frames the same way.
 ```
 
 When the step enters a new subtile the collision walk tests each subtile it crosses (the test itself is the collision

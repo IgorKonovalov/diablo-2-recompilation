@@ -2201,3 +2201,47 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   new sentences present in the cut; `export_check workspace/export-x12s --repo workspace/export-repo/` 0 failures, 877
   warnings (864 at the x12e review, the x12a captions' X12 level names among the new); the folder was removed. Gate
   green (E19 parses the blocks); wiki/animation's W4 stays as the x11s lane left it.
+- 2026-11-17, architect, review of lane/x12s (Opus, Tier A) and **the redaction review of the cut it makes** (Phase 11
+  batch 2's 14 pictures). **Tier A: accept with fixes**, 3: misread 1, bookkeeping splice 1, other 1. Checked: all 14
+  placements against their Place lines (row 13 after the "**Which seed.**" paragraph, as the x12a review ruled: right)
+  and in the flow of each page; captions against their specs, spot-checked on movement B1, B3 (S = 24576, 8 frames),
+  B5 (`PathStop`, the arrival in the step's frame: the added sentence is true), pool C2 (`min(NumMon, 13, count)`),
+  spawn F2's group size, search J (`r += 0x2580`, `a += 16`, 77 points), warps F1 and its worked example (k = 3, the
+  fallback to slot 0; rank slot 3 without a room, slot 6), preset § 3 (R = 2087073643, R mod 3 = 1, dropped), the
+  runeword frames (40 rows differ at rune 1, one at rune 2, record 41) and the combat frames (draws 68, 87, 503, 40, 0,
+  90, 50): all true. The combat sentence is true to delivery B3 at its tag; "logged" stays: the exported combat page
+  keeps the word 25 times, and its introduction names the logs as its method, so the export does not drop it (no DROP
+  on any touched page but three older X9 sentences on items and characters). **Fixes:** (1) misread: the combat
+  sentence said "their order is the attacker's own order of registration"; newest first runs them in the reverse of it:
+  now "which of the two runs first depends on the order in which the attacker's handlers were registered; for the
+  logged characters open wounds ran first". (2) other: on wiki/pathing the random walk's and the spiral's captions said
+  "the same toy room", but their sections come before "The search: types 0 and 16", which introduces the room: the walk's
+  caption now describes the room ("16 by 9 subtiles with a wall that has a gap, the room the search below uses") and
+  the spiral's "same" points back to it. (3) bookkeeping splice: row 21's added sentence left a 180-character caption
+  line: rewrapped.
+  **Redaction review: pass; this cut's new pictures may be published** (`tools/export_publish.py --push`, the owner's).
+  Cut (lane head plus the fixes): `export_build.py --out workspace/export-x12s-review`, 71 pages, 0 dropped, 25
+  illustration folders (the 14 new) and the widget folder; `export_check … --repo workspace/export-repo/` **0
+  failures, 877 warnings**. The 13 new warnings are all X12 on the four DRLG captions' level names (links 5: Rogue
+  Encampment, Burial Grounds, Cold Plains, Black Marsh, "Moo Farm"; outdoor 2; preset 2: Lut Gholein, Lut Gholein's;
+  warps 4: Cold Plains, Cave Level twice each), the class the levels page's prose already raises (x12a ruling); none
+  matters. Every caption sentence and the three fixed texts are present in the cut. **Pictures opened** (dark, the
+  cut's only theme: no block passes `--theme`): first, middle and last frame of all 14 (links 0, 9, 17; outdoor 0, 5,
+  10; preset 0, 2, 3; warps 0, 1, 2; pack 0, 7, 13; pool 0, 4, 7; search 0, 3, 5; walk 0, 4, 7; spiral 0, 3, 5;
+  runeword 0, 4, 7; move 0, 5, 9; combat 0, 4, 8; hire 0, 11, 22; affix 0, 3, 6) and affix 4 (the weights: five ids
+  with weights, the rest one hatched block); the step-through `index.html` and `steps.json` of all 14 scanned for
+  image addresses, `sub_`/`fn:`/`run:` tokens, tool, method and path words: none (the only hex values are flags,
+  masks, cell bits and the struct offset `+0x28`, which the exported search spec states; combat's "as the logged
+  characters did" is the page's own wording). No game art, no repository paths, no table dumps (pool: four
+  candidates and three rarities; hire: ten entries' names, ids, levels and prices; affix: filter counts, five ids, one
+  winner's name; pack: one row's MinGrp/MaxGrp); every number checked matches its caption. **Real site build** in a
+  scratch copy of the export checkout (the cut and `workspace/export-repo/` copied over, the Astro caches removed):
+  `SITE_BASE=/arpg-1-14d-notes/ npm run build` 72 pages; `check-site-links.mjs dist` 7 838 links in 97 pages, all
+  resolve. **Chromium headless** (Playwright, served under the base): levels, monsters, pathing, items,
+  items-other-paths, animation, combat, characters and randomness in dark and light at 1280 px and dark at 375 px:
+  the CSP meta on each, no console error or warning, no failed request, every GIF loads (21 on the eight touched
+  pages, 2 and the fallback on randomness), no page wider than its viewport at 375 px; the rng widget shows
+  `015B2E77` for 12345 and `6AC6935F` for seed 1; the 14 step-through pages load at 375 px with their picture and no
+  overflow (the one 404 is the browser's own `/favicon.ico` probe at the server root). **Manifest:**
+  `docs/export/reviewed-pages.txt` unchanged (no new page). Scratch builds and copies deleted. Gate green. Ledger:
+  verdict accept with fixes, 3 (misread 1, bookkeeping splice 1, other 1).

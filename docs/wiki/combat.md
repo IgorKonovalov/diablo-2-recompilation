@@ -440,8 +440,9 @@ sequenceDiagram
   M->>M: chill
 ```
 
-On a hit, open wounds and crushing blow run newest registered first, so their order is the attacker's own order of
-registration; the logged characters ran open wounds first ([delivery § B](../specs/combat/delivery.md#b-delivery-combat_applydamage)).
+On a hit, open wounds and crushing blow run newest registered first, so which of the two runs first depends on the
+order in which the attacker's handlers were registered; for the logged characters open wounds ran first
+([delivery § B](../specs/combat/delivery.md#b-delivery-combat_applydamage)).
 
 ```illustration
 id: combat-melee-hit-toy

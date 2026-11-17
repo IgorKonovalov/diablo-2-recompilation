@@ -293,8 +293,9 @@ tool: path_anim.py
 args: --mode walk --limit 12 --seed 0xc0ffee
 seed: illustrative
 illustrates: ../specs/path/search.md#i-the-random-walk-type-10
-caption: The random walk of type 10 on the same toy room, from the start (2, 4), with the path's limit 12 and the seed
-  12648430 started with Init: 12 ÷ 2 = 6 draws and 7 points. The first direction toward the target is found once, and
+caption: The random walk of type 10 on a toy room of 16 by 9 subtiles with a wall that has a gap, the room the search
+  below uses, from the start (2, 4), with the path's limit 12 and the seed 12648430 started with Init: 12 ÷ 2 = 6
+  draws and 7 points. The first direction toward the target is found once, and
   it is to the right. Each draw steps the seed once; the direction of the move is the first direction plus an addend
   read from a 32-value table by the new low word AND 31, which gives a straight step chance 10 in 32 and each side
   11 in 32. The point written is the position before the move, and the position then moves 2 subtiles (search § I).
