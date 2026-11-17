@@ -2,9 +2,11 @@
 from: spec-writer
 to: architect
 date: 2026-11-17
-status: open
-context: [../plans/0066-simulation-inferred-claims-sweep.md, ../plans/0066-inventory/monsters-ai-catalogue.md]
-resolution: ""
+status: done
+context:
+  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/0066-inventory/monsters-ai-catalogue.md
+resolution: "Tier B accept with fixes (1): R114a 'every event' scoped; see plan 0066 log 2026-11-17"
 ---
 
 Plan 0066 Phase 3, the monsters/ai cluster part 2 (`lane/n66ai2`): monsters/ai/catalogue re-tagged on batches S1a to

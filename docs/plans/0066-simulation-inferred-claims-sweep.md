@@ -4743,4 +4743,12 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
 - **Not done:** the wiki/monster-ai refresh, by the owner's budget; its entry is annotated with what part 2 adds and stays
   open for one refresh against all three specs.
 - **Review:** requested, Tier B on Sonnet only, by the owner's budget decision
-  ([entry](../backlog/2026-11-17-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-catalogue.md)).
+  ([entry](../backlog/archive/2026-11-17-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-catalogue.md)).
+
+### 2026-11-17 — Phase 3, monsters/ai catalogue part 2: architect Tier B review (Sonnet, `lane/n66ai2`)
+
+- **Verdict: accept with fixes (1).** Fix: R114a's "set on every event" (a `[C]` clause over 243 fork-free decisions of one think) now reads "set at the start of the think" (review-fixes rule 10; category tag-strength 1).
+- **Checked.** The inventory *Phase 3* line partitions rows 1-518 exactly (script: 62 / 111 / 8 / 337 rows, 518 distinct, no gap or overlap; counts 62 / 112 / 8 / 338 by the stated row counts). Every `[L]` (18) sits under *Open questions*. Sampled against Route cells and run anchors: rows 1, 3, 7, 8, 13, 17, 18, 44, 72, 80, 81, 84, 85, 170, 171, 335-337, 420, 518 (R1p, R3a/p, R12p, R25p, R51p, R71a, one-life-reader bullet): counts, arms and corrections match; the kept R25 state 4 row stays `[I]`. Gate full GREEN.
+- **Rulings on the 8 judgment calls (plus the 9th):** (1) `p` lines for block rows: accept, `[C]` p line and `[I]` convention bullet; row 12's header `[C]` accepted. (2) `l` lines without R43l's outcome count: accept, the addendum does not give it; R10r's Normal-only scope is stated. (3) 17 `r` lines under H1 and the twenty-entry count: accept. (4) Prose splits, logged half `[C]` first: accept. (5) Callback bullets `[C]` with block words under `[I]`: accept. (6) Eight corrected rows, row 72 counted split: accept, consistent with its Route ("refinement"). (7) Striking rows 78/79 and 85 clauses with L staying 18: accept, both clauses shared bullets (count verified 18). (8) Census bullets stay `[I]`: accept. (9) Q484/Q485 stay `[I]`: accept.
+- **Not done by design:** wiki/monster-ai refresh stays open. Request closed.
+
