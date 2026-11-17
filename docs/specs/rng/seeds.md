@@ -46,7 +46,7 @@ creation, monster spawning and the DRLG room-type code is left to those specs. P
 
 Owner names are ours, taken from the source path each allocation passes to the allocator
 (`Drlg.cpp`, `Dungeon.cpp`, `DrlgRoom.cpp`, `SUnit.cpp`, `CUnit.cpp`). Offsets are byte offsets into
-the owner. No struct in `re/types/` exists yet.
+the owner. No struct header for them is recovered yet.
 
 | Seed / value | Type | Owner offset | Source |
 |---|---|---|---|
@@ -238,7 +238,7 @@ flowchart TD
 4. CreateLevel(act, levelId: u32) → level:                        [C] (fn:DRLG_LevelCreate@0x00642AE0, 0x00642B50, run:2026-10-11-seed-tree)
      Init(level.seed, (u32) (act.levelSeedBase + levelId))        ; a u32 sum that wraps, NOT a draw
      dispatch on Levels[levelId].DrlgType:                        [C] (fn:DRLG_LevelCreate@0x00642AE0, tbl:Levels.txt:DrlgType, run:2026-10-12-drlg-gen)
-       1 → 0x00673B10 (maze), 2 → 0x00667430 (preset), 3 → 0x00675320 (outdoors)
+       1 → MazeLevelCreate, 2 → PresetLevelCreate, 3 → OutdoorLevelCreate      ; (0x00673B10, 0x00667430, 0x00675320)
      rooms come later, after LevelInit re-seeds the level with the same value:
      see drlg/overview (../drlg/README.md) steps 1–2
 
@@ -247,8 +247,8 @@ flowchart TD
      Init(room.seed, level.seed.low)
      Step(room.seed)                                              ; room draw#1
      room[+0x04] ← room.seed.low
-     dispatch on type: 1 → 0x0067D6D0, 2 → 0x00666630, else none [C] (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0, fn:sub_00666630_PresetRoomAlloc@0x00666630, 0x0066B479–0x0066B4A8, run:2026-10-11-seed-tree)
-                                                                  ; allocation only, no draw: an objdump closure
+     dispatch on type: 1 → OutRoomAlloc, 2 → PresetRoomAlloc, else none [C] (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0, fn:sub_00666630_PresetRoomAlloc@0x00666630, 0x0066B479–0x0066B4A8, run:2026-10-11-seed-tree)
+                                                                  ; allocation only, no draw: a call-graph closure
                                                                   ; with no drawing function, 876 type-1 and
                                                                   ; 3552 type-2 rooms (rng/0002 § Plan 0038 batch S1b);
                                                                   ; its 532 indirect calls: 359 import table, 115
@@ -257,8 +257,8 @@ flowchart TD
 6. ActivateRoom(act, R: DRLG room) → activeRoom or none:          [C] (fn:sub_0061B190_RoomActivateA@0x0061B190, fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-11-seed-tree-p1)
    6a. Init(R.seed, R[+0x04])                                     [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, run:2026-10-11-seed-tree-p1)
                                                                   ; re-seed: earlier room-seed draws are discarded
-   6b. room-type code for R[+0x48] (1 → 0x0067D2D0, 0x0067D710;  [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70, run:2026-10-11-seed-tree-p1)
-       2 → 0x006667D0, 0x00666AC0); sets R[+0x28] |= 0x100000
+   6b. room-type code for R[+0x48] (1 → OutRoomGridPrepare,      [C] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40, fn:sub_0066EE70_DrlgRoomTypeInit@0x0066EE70, run:2026-10-11-seed-tree-p1)
+       OutRoomTilesBuild; 2 → PresetRoomGridPrepare, PresetRoomTilesBuild); sets R[+0x28] |= 0x100000   ; (0x0067D2D0, 0x0067D710, 0x006667D0, 0x00666AC0)
        Step(R.seed) k times                                       ; k: drlg/room-tiles § k (../drlg/room-tiles.md#k)
    6c. DRLG_RoomActivate(act, R):                                 [C] (fn:DRLG_RoomActivate@0x006422A0, fn:DUNGEON_RoomCreate@0x00619890, run:2026-10-11-seed-tree-p1)
          T ← R[+0x54]                                             ; RoomTile record
@@ -301,7 +301,7 @@ Step notes:
    determinism takes the override branch. [C] (fn:RNG_EntropySeed@0x00650DE0, run:2026-10-11-seed-tree-p1)
 2. `config+0x21A` is a 4-byte signed integer slot: the next option's slot starts at `+0x21E`, and
    the reader loads it as one dword. A `-seed` value wider than 16 bits arrives intact (`34844169` →
-   `+0x7C = 0x0213AE09`). [C] (fn:sub_004058A0_ConfigParseCmdLine@0x004058A0,
+   `+0x7C` = 34844169). [C] (fn:sub_004058A0_ConfigParseCmdLine@0x004058A0,
    fn:sub_00405450_ConfigLoadIni@0x00405450, run:2026-10-11-seed-tree) On the command line, a
    negative value never arrives: the parser copies a switch's text only up to the next `-`
    (`0x00405784`), so `-seed -2147483648` (and `-seed -1`) leaves the text empty, `atol` gives 0,
@@ -340,16 +340,17 @@ Step notes:
    other three, which no run reached (fn:sub_00642BE0_LevelRoomCount@0x00642BE0,
    fn:sub_00642C30_RoomFromCoords@0x00642C30, fn:sub_00642D10_LevelSetPosition@0x00642D10)
 5. Each DRLG room takes exactly one draw from its level's seed, so the order in which a level's
-   rooms are created matters. [C] (fn:DRLG_RoomCreate@0x0066B3E0, run:2026-10-11-seed-tree, 3102 room creations)
-   The type dispatch after the room draw draws nothing: the objdump closure under the two allocators (422 functions)
+   rooms are created matters (3102 room creations in the seed-tree run). [C] (fn:DRLG_RoomCreate@0x0066B3E0,
+   run:2026-10-11-seed-tree)
+   The type dispatch after the room draw draws nothing: the call-graph closure under the two allocators (422 functions)
    holds no drawing function. Its 532 indirect calls split as 359 through the import table, 115 through a register
-   whose nearest earlier write is a load from the import table, and 58 left, all under the pool allocator
-   0x0040B430 (file and line arguments, fatal on failure), which is passed no seed pointer; 0 are unresolved. That
-   residue is the closure's stated limit. [C] (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0,
+   whose nearest earlier write is a load from the import table, and 58 left, all under a pool allocator
+   (file and line arguments, fatal on failure), which is passed no seed pointer; 0 are unresolved. That
+   residue is the closure's stated limit. [C] (fn:sub_0067D6D0_OutRoomAlloc@0x0067D6D0, 0x0040B430,
    fn:sub_00666630_PresetRoomAlloc@0x00666630, run:2026-10-11-seed-tree, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
-   `tools/sweep_s1b.py seeds` counts the logged activation re-seeds whose seed is the room's creation seed: 132 of 132
+   Of the logged activation re-seeds, those whose seed is the room's creation seed are 132 of 132
    type-2 re-seeds and 0 of 25 type-1. [I] (fn:sub_0066EE40_DrlgRoomReseed@0x0066EE40,
-   [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16), tool addendum)
+   [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16), addendum)
 6. The active-room seed is `Init(Step^(k+1)(Init(R[+0x04])).low)`. It doesn't depend on any draw
    made on the room seed between creation and activation, because 6a restarts it from `+0x04`, but
    it does depend on k. Observed in that run: k = 50–376 over 157 activations. [C]
@@ -367,20 +368,20 @@ Step notes:
    `sub_0061B730_RoomActivateB` runs 6a–6c only while `R[+0x28]` bit `0x100000` is clear, the bit 6b
    sets. [C] (fn:sub_0061B730_RoomActivateB@0x0061B730, run:2026-10-11-seed-tree-p1) `flags` bit 0
    marks the active room as already populated: the population pass runs only for rooms whose bit 0
-   is clear. [C] (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C9, run:2026-10-16-sweep-roomk:
-   2072 room-driver tests with bit 0 set, none followed by a pass; each of the 558 passes followed a test
-   with bit 0 clear; [rng/0002 § Plan 0038 batch H5c](../../findings/rng/0002-seed-tree.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)) In the earlier runs every
+   is clear: in the room-k sweep, 2072 room-driver tests with bit 0 set were followed by no pass, and each of the 558
+   passes followed a test with bit 0 clear. [C] (fn:sub_0052D160_NewRoomsUpdate@0x0052D160, 0x0052D1C9,
+   run:2026-10-16-sweep-roomk, [rng/0002 § Plan 0038 batch H5c](../../findings/rng/0002-seed-tree.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)) In the earlier runs every
    server-act room got `flags` 0 and every client-act room got 4. [C] (run:2026-10-11-seed-tree-p1)
    **`R[+0x28]` bit `0x40000` marks a room of the client act copy.** Its only writer is `DRLG_RoomCreate`, when the
    level's `+0x04` has bit `0x10`; `DRLG_LevelCreate` sets that bit when the act's `+0x8C` bit 0 is set, and
    `DUNGEON_ActCreate` passes 1 there for the client copy and 0 for the server copy. Second source: the flags rule held
-   on all 2071 activations of run:2026-10-16-sweep-roomk (1332 with flags 4). [C] (0x0066B47C, 0x00642B3D, 0x006194F5,
+   on all 2071 activations of the room-k sweep (1332 with flags 4). [C] (0x0066B47C, 0x00642B3D, 0x006194F5,
    fn:DRLG_RoomCreate@0x0066B3E0, fn:DRLG_LevelCreate@0x00642AE0, fn:DUNGEON_ActCreate@0x006194A0,
    run:2026-10-16-sweep-roomk, [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16))
    **`R[+0x60]` bit 0 is the "already populated" bit kept across a release.** It is 0 at creation;
    `RoomReleaseWrap` stores the released active room's `flags` bit 0 there, and `LevelRoomStateRestore` ORs it back
    from the array `LevelUnload` saved. So a room populated, released (or unloaded) and activated again comes back with
-   `flags` 1 and is not populated a second time. Second source: run:2026-10-16-sweep-roomk (1516 releases all through
+   `flags` 1 and is not populated a second time. Second source: the room-k sweep (1516 releases all through
    the wrapper with `+0x60` = the active room's bit 0; 25 restores setting the bit on 90 rooms). [C] (0x0066B419,
    0x0066B4D7, 0x006423C0, fn:sub_0066B4C0_RoomReleaseWrap@0x0066B4C0, fn:sub_00642390_LevelRoomStateRestore@0x00642390,
    run:2026-10-16-sweep-roomk, [rng/0002 § Plan 0039 batch P1a](../../findings/rng/0002-seed-tree.md#plan-0039-batch-p1a-2026-10-16))
@@ -394,21 +395,21 @@ Step notes:
    The pass draws its class picks, type roll and every position from the active-room seed, and its density
    rolls, the `sparsePopulate` roll and one step per creation from the game seed
    ([monsters/spawn](../monsters/spawn.md)). [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90,
-   fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn) The `0x005BDFF0` room-seed step it
+   fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn) The `ARoomSeedStep` room-seed step it
    contains is on the type-1 branch, which never runs: the pass maps type 1 to 2. [C]
    (fn:sub_005BDFF0_ARoomSeedStep@0x005BDFF0, 0x0054EE0B, run:2026-10-13-mon-spawn)
-7a. **Server units, monsters included, seed from the game seed `+0xD0`, not from a room.** [C]
-   (run:2026-10-11-seed-tree-p1: 114 server unit seeds, parent always `game+0xD0`, type 1 units among them)
+7a. **Server units, monsters included, seed from the game seed `+0xD0`, not from a room.** In the second seed-tree run 114 server unit seeds had the parent `game+0xD0` every time,
+   type 1 units among them. [C] (run:2026-10-11-seed-tree-p1)
    `SUnitCreate` skips the call for type 0. `UnitSeedInit` has five other callers (player creation
    and re-seeding paths), each passing its own pointer plus `0xD0`, and the type-0 (player) server units
    of the runs got their seed from `game+0xD0` through them. [C] (0x0053254E, 0x005338D8, 0x00569F53,
-   0x0056A95E, 0x0057F7E5; objdump pins and a raw caller scan, run:2026-10-11-seed-tree-p1, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
+   0x0056A95E, 0x0057F7E5, run:2026-10-11-seed-tree-p1, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
    The two player loads of the H1a session took their seed through `PlayerUnitInit`'s call, whose pointer
-   is the game (`lea edx, [ebx + 0xD0]` at 0x00569F4B with `EBX` the game; the call at 0x00569F53). [C]
-   (fn:sub_00569F20_PlayerUnitInit@0x00569F20, 0x00569F4B, run:2026-10-27-sweep-d2s-load, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16), row 11)
-   The other four (0x0053254E, 0x005338D8, 0x0056A95E, 0x0057F7E5) logged no line in that session, so
+   is the game (`lea edx, [ebx + 0xD0]` with `EBX` the game, then the call). [C]
+   (fn:sub_00569F20_PlayerUnitInit@0x00569F20, 0x00569F4B, 0x00569F53, run:2026-10-27-sweep-d2s-load, [rng/0002 § Plan 0038 batch S1b row 11](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
+   The other four callers logged no line in that session, so
    whether they run, and that the pointer each of them adds `0xD0` to is the game, are not
-   established. [I] (fn:sub_00552DF0_UnitSeedInit@0x00552DF0) At runtime the player's seed is the 5th game-seed draw from `Init(N)`, and the starting
+   established. [I] (fn:sub_00552DF0_UnitSeedInit@0x00552DF0, 0x0053254E, 0x005338D8, 0x0056A95E, 0x0057F7E5) At runtime the player's seed is the 5th game-seed draw from `Init(N)`, and the starting
    items follow at draws 6, 8, 10…, two draws each. [C] (run:2026-10-11-seed-tree-p1) Other consumers
    of the game seed draw in between, so a unit's seed depends on the full call order of every
    game-seed consumer. Draw 1 from `Init(N)` is the monster-region build: `sub_00547D20_MonRegionsInit`
@@ -449,18 +450,18 @@ Step notes:
    arguments tested are (x, y). A client unit created at (0, 0) makes no room lookup, gets no room
    draw and keeps `{1, 666}`: 252 such units, against 24 565 that looked their room up. [C]
    (fn:sub_00465FD0_UnitInit@0x00465FD0, run:2026-10-16-sweep-roomk, [rng/0002 § Plan 0038 batch H5c](../../findings/rng/0002-seed-tree.md#plan-0038-batch-h5c-run2026-10-16-sweep-roomk)) The room lookup
-   `0x00465420` takes them as a position, returns no room for (0, 0), and its error message names them
+   `ClientRoomAt` takes them as a position, returns no room for (0, 0), and its error message names them
    `nX`, `nY`; the caller never asks it for (0, 0), so that return is not observed. [I]
    (fn:sub_00465420_ClientRoomAt@0x00465420) Type 4 does nothing that draws before the room draw: the
-   objdump closure under `ItemDataAlloc` and `ItemDataSeedInitOne` holds no drawing function, only the
+   call-graph closure under `ItemDataAlloc` and `ItemDataSeedInitOne` holds no drawing function, only the
    one initialiser. [C] (fn:sub_00627C90_ItemDataAlloc@0x00627C90,
    fn:sub_00627DC0_ItemDataSeedInitOne@0x00627DC0, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16)) It is
    the closure of step 5's allocators, with the same split of its indirect calls (step 5 note). Type 1 (monsters) never goes through
-   `0x00465FD0` from the client creator `0x00466730`, which sends type 1 to `ClientMonCreate` and every
-   other type to `UnitInit`; the 739 logged `UnitInit` hits are all type 2. [C] (0x0046675C, 0x00466796,
+   `UnitInit` from the client creator, which sends type 1 to `ClientMonCreate` and every
+   other type to `UnitInit`; the 739 logged `UnitInit` hits are all type 2. [C] (0x00466730, 0x0046675C, 0x00466796,
    0x004667D6, fn:sub_00466360_ClientMonCreate@0x00466360, run:2026-10-11-seed-tree-p1, [rng/0002 § Plan 0038 batch S1b](../../findings/rng/0002-seed-tree.md#plan-0038-batch-s1b-2026-10-16))
-   `UnitInit`'s two other callers (0x004661F0, 0x00466332) pass their own caller's type, not traced,
-   so the claim for them rests on the case at `0x004660A4` reaching the error path. [I] (0x004660A4)
+   `UnitInit`'s two other callers pass their own caller's type, not traced,
+   so the claim for them rests on the case that reaches the error path. [I] (0x004661F0, 0x00466332, 0x004660A4)
 
 ## Outputs
 
@@ -470,8 +471,8 @@ except that step 6a overwrites the DRLG room seed. [C] (run:2026-10-11-seed-tree
 
 ## Worked example
 
-**Observed.** Every value below was logged by the runtime harness with `-seed 12345` (map seed
-`0x3039`) and is reproduced by `tools/rng.py seedtree` from N alone (run:2026-10-11-seed-tree,
+**Observed.** Every value below was logged in the game with `-seed 12345` (map seed
+`0x3039`) and is reproduced by our reference model of the seed tree from N alone (run:2026-10-11-seed-tree,
 run:2026-10-11-seed-tree-p1). The last block uses `-seed 34844169`. Seeds are `low:high`, hex unless noted.
 
 | Step | Operation | Value |
@@ -536,31 +537,32 @@ separate objects.
 
   | Site | Re-seeds | From |
   |---|---|---|
-  | missile-creation callbacks `0x005D40F0`, `0x005D4680` (the rings of progressive entries 37 and 143) | the new missile's `+0x20` | the creator's local seed's low word |
-  | callbacks `0x005C9290` (Firestorm and others), `0x005CD110`, `0x005AC040` | the new missile's `+0x20` | the path position `+0x10`, plus an index for the first two |
+  | missile-creation callbacks `MissCbReseedFromArg`, `MissCbReseedZigzag` (the rings of progressive entries 37 and 143) | the new missile's `+0x20` | the creator's local seed's low word |
+  | callbacks `MissCbReseedPathXPlusArg` (Firestorm and others), `MissCbReseedRoll`, `MissCbReseedPathX` | the new missile's `+0x20` | the path position `+0x10`, plus an index for the first two |
   | missile do 28 and 35 | the missile's `+0x20` | the low word kept in `MissileData+0x28`, stored back after the draws |
   | hit 58, do 34 | the missile's `+0x20` | its position (hit 58 its `SubX`, do 34 its path X) |
-  | `0x005A9820` (missile do 8, 10, 17, 25) | the parent missile's `+0x20` | its `SubX + elapsed` |
+  | `MissSubNearReseed` (missile do 8, 10, 17, 25) | the parent missile's `+0x20` | its `SubX + elapsed` |
   | Armageddon's periodic function (`srvactivefunc` 146) | the **caster's** `+0x20` | the skill entry's `+0x18` (at the first period, the cast's draw under the conditions of *Armageddon's cast draw* below), then a fresh `RNG_Range(1 000 000)` is stored back there |
-  | `0x00645390` | a unit's `+0x20` | a skill entry's `+0x18`/`+0x1C`; no reference in the image |
+  | `UnitSeedFromEntry` | a unit's `+0x20` | a skill entry's `+0x18`/`+0x1C`; no reference in the image |
 
   So a missile's draws after such a re-seed are a function of the creator's value, not of the game seed, and an
   Armageddon period sets the caster's seed from a stored word: a reimplementation keeps that word per skill entry,
   written at the cast as *Armageddon's cast draw* below states.
-  The one other server site of rng/0002's register-seed list, `0x005C276A` in the version-0 set builder, re-seeds an **item's** seed from
+  The one other server site that re-seeds from a register, in the version-0 set builder `ItemBuildSetV0`, re-seeds an **item's** seed from
   its own saved low word, restoring it on failure.
   [I] (fn:sub_005C2740_ItemBuildSetV0@0x005C2740, 0x005C276A, fn:sub_005D40F0_MissCbReseedFromArg@0x005D40F0, fn:sub_005D4680_MissCbReseedZigzag@0x005D4680,
   fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, fn:sub_005CD110_MissCbReseedRoll@0x005CD110,
-  fn:sub_005AC040_MissCbReseedPathX@0x005AC040, fn:sub_005C8520_SkillDo146Armageddon@0x005C8520, 0x005C8688–0x005C8694,
+  fn:sub_005AC040_MissCbReseedPathX@0x005AC040, fn:sub_005A9820_MissSubNearReseed@0x005A9820,
+  fn:sub_00645390_UnitSeedFromEntry@0x00645390, fn:sub_005C8520_SkillDo146Armageddon@0x005C8520, 0x005C8688–0x005C8694,
   [skills/0003 § 9](../../findings/skills/0003-handlers.md#9-re-seed-sites-rng0002--the-other-initialiser-sites))
 
-  The callback `0x005C9290` sets the new missile's seed to `Init(w + arg)`, `w` the u16 at its path's `+0x10` and
+  The callback `MissCbReseedPathXPlusArg` sets the new missile's seed to `Init(w + arg)`, `w` the u16 at its path's `+0x10` and
   `arg` the creator's argument (low `w + arg`, high `0x29A`), and its own `PathPlan` then steps that seed before it
   returns: in 450 of 450 creations the seed at the callback's return lies on that stream, 20 steps past the `Init` for
   each of 442 Firestorm sub-missiles and 38 for each of 8 class-195 missiles of a monster. [C]
   (fn:sub_005C9290_MissCbReseedPathXPlusArg@0x005C9290, run:2026-10-25-skills,
   [skills/0003 § 15](../../findings/skills/0003-handlers.md#15-plan-0045-phase-2-the-run-run2026-10-25-skills))
-  The callback `0x005AC040` (catapult spotters' class-408 missiles) sets the new missile's seed to `Init(w)`, `w` the
+  The callback `MissCbReseedPathX` (catapult spotters' class-408 missiles) sets the new missile's seed to `Init(w)`, `w` the
   same path word, and the same path calls follow: in 36 of 36 creations the seed at `MissileCreate`'s exit lies
   on that stream, 10 steps past the `Init`. [C] (fn:sub_005AC040_MissCbReseedPathX@0x005AC040, run:2026-10-30-skills-catalogue,
   [skills/0003 § 17](../../findings/skills/0003-handlers.md#17-plan-0046-phase-2-the-catalogue-sample-run2026-10-30-skills-catalogue))
@@ -587,7 +589,7 @@ separate objects.
   `srvactivefunc` 146) that event runs the periodic function above, which reads the `+0x18` of
   `SKILLS_GetUnitSkill(caster, id)`'s node and seeds the caster with `Init` of it. So the first period re-seeds the
   caster from the cast's `r` when that node is the used node **and** no other writer of its `+0x18` runs between the
-  cast and that period; the setter `sub_00644560_UnitSkillSet18` has 85 call sites, which were not followed, and no
+  cast and that period; the setter `UnitSkillSet18` has 85 call sites, which were not followed, and no
   run has logged a first period. Hurricane (state 144, `srvactivefunc` 145) is stored the same `r`, and its periodic
   function does not re-seed. [I] (0x005C8299, 0x005C8354–0x005C835C, fn:sub_00644560_UnitSkillSet18@0x00644560,
   fn:sub_005C8520_SkillDo146Armageddon@0x005C8520, 0x005C8647–0x005C8779,
@@ -596,6 +598,10 @@ separate objects.
 
 ## Evidence
 
+- How the statements above were read: the call-graph closures (step notes 5 and 7b) and the caller pins of step
+  note 7a by GNU objdump, with a raw caller scan; the activation re-seed count of step note 5 by
+  `tools/sweep_s1b.py seeds`; the worked example logged by the runtime harness and reproduced by
+  `tools/rng.py seedtree`.
 - [findings/rng/0002-seed-tree.md](../../findings/rng/0002-seed-tree.md): the seed tree, [§ Active room](../../findings/rng/0002-seed-tree.md#active-room), [§ Units](../../findings/rng/0002-seed-tree.md#units).
   [§ Other seed sites](../../findings/rng/0002-seed-tree.md#other-seed-sites-seen-not-yet-followed): game creation's
   draws 1–5, with [items/0009 § 1](../../findings/items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation)

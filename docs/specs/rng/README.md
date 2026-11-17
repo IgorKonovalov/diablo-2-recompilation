@@ -34,15 +34,15 @@ documents a call site states which form it uses (see *Reimplementation notes*).
 | inlined step | 852 multiplier immediates, all inside functions (e.g. fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_RoomCreate@0x0066B3E0) | — | [C] for 846 sites, [I] for 6 |
 
 All 852 occurrences of the multiplier bytes `C5 90 C6 6A` in the file are `mov r32, imm32` instructions inside
-functions, so each one is a draw site: 837 in 427 functions found at first, 4 outside any function Ghidra had
-defined, and 11 in nine DRLG level-link callbacks reached only through data tables (`sub_…_LinkPick`). [C] for the
-count and the instruction form, and for 846 of the sites being inside functions: GNU objdump decodes 852 instructions
-with the operand `0x6AC690C5`, every one `mov r32, imm32`, at the 852 raw byte occurrences (the list of
-`tools/gdb/lcg-sites.txt`, the same 852 Ghidra counts); an objdump walk from every direct call target, every pointer
-to an instruction in `.rdata`/`.data` and every code immediate that names one reaches 836 of them, and 10 more lie in
-bodies that start after `int3` padding with a `push ebp` prologue. [I] for the other 6 sites, whose body the walk
-does not delimit: they are inside functions on Ghidra's reading alone. (fn:DRLG_ActCreate@0x00642DA0,
-fn:DRLG_RoomCreate@0x0066B3E0, fn:sub_00676150_LinkPick@0x00676150, [0001](../../findings/rng/0001-rng-core.md#answer-summary),
+functions, so each one is a draw site: 837 in 427 functions found at first, 4 outside any function the first reading
+had defined, and 11 in nine DRLG level-link callbacks reached only through data tables (the `LinkPick` callbacks).
+[C] for the count and the instruction form, and for 846 of the sites being inside functions: decoding the file gives 852
+instructions with the operand `0x6AC690C5`, every one `mov r32, imm32`, at the 852 raw byte occurrences (the same 852
+the first reading counts); a walk from every direct call target, every pointer to an instruction in `.rdata`/`.data`
+and every code immediate that names one reaches 836 of them, and 10 more lie in bodies that start after `int3` padding
+with a `push ebp` prologue. [I] for the other 6 sites, whose body the walk does not delimit: they are inside functions
+on the first reading alone. (fn:DRLG_ActCreate@0x00642DA0, fn:DRLG_RoomCreate@0x0066B3E0,
+fn:sub_00676150_LinkPick@0x00676150, [0001](../../findings/rng/0001-rng-core.md#answer-summary),
 [§ Plan 0038 batch S1b](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1b-2026-10-16))
 
 Every out-of-line primitive except `RangePow2Plus` takes the seed pointer in ECX and `n` (or the
@@ -129,12 +129,13 @@ Step notes:
    and return 0 without a draw. [C] (run:2026-10-11-rng-emu edge cases)
 4. This helper is dead code in 1.14d: no absolute pointer to it exists anywhere in the file, and no `call` or `jmp`
    rel32 at any `.text` offset reaches it. No spec depends on it, and a reimplementation can omit it. It is defined
-   here only for completeness; the emulation that confirms step 4 (3 000 of 3 000 calls, `n` = 0, 1, powers of two
-   and not, wide `base`, the exit seed one `Step` on, addendum 2026-10-17 to run:2026-10-11-rng-emu) covers the code
-   only. It is not alone: 14 inlined draw sites lie in 9 bodies with no static reference (no rel32 call or jump, no
-   absolute address), `RangePow2Plus` and 0x005528E0, 0x0055FB80, 0x0057D760, 0x005E9750, 0x005F7F10, 0x005F8010,
-   0x005FD0F0 and 0x00675F80 (4 sites), so a count of reachable draw sites leaves them out. Having no reference has no
-   observable, so both stay readings of the code. [I] (fn:RNG_RangePow2Plus@0x00472240,
+   here only for completeness; the emulation of the primitives confirms step 4 (3 000 of 3 000 calls, `n` = 0, 1,
+   powers of two and not, wide `base`, the exit seed one `Step` on) and covers the code only. It is not alone: 14
+   inlined draw sites lie in 9 bodies with no static reference (no rel32 call or jump, no absolute address),
+   `RangePow2Plus` and eight unnamed bodies, the last of them by address with 4 sites, so a count of reachable draw sites leaves them
+   out. Having no reference has no observable, so both stay readings of the code. [I] (fn:RNG_RangePow2Plus@0x00472240,
+   0x005528E0, 0x0055FB80, 0x0057D760, 0x005E9750, 0x005F7F10, 0x005F8010, 0x005FD0F0 and 0x00675F80,
+   run:2026-10-11-rng-emu addendum 2026-10-17,
    [0001](../../findings/rng/0001-rng-core.md#dead-ends), [§ Plan 0038 batch S1b](../../findings/rng/0001-rng-core.md#plan-0038-batch-s1b-2026-10-16))
 
 **What counts as one draw.** In every spec, "draw#k" means one call of `Step` on a named seed
@@ -155,8 +156,8 @@ fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-11-seed-tree-p1,
 
 ## Worked example
 
-Source: `tools/rng.py`, which matches the binary's own functions bit for bit on 5,000 cases
-(run:2026-10-11-rng-emu). Values in hex unless noted.
+Source: our reference model of the primitives, which matches the binary's own functions bit for bit on 5,000 cases
+of the emulation of the primitives (run:2026-10-11-rng-emu). Values in hex unless noted.
 
 | # | Operation | Result | `low` after | `high` after |
 |---|---|---|---|---|
@@ -167,7 +168,7 @@ Source: `tools/rng.py`, which matches the binary's own functions bit for bit on 
 | 4 | `Range(s, 8)` | 0 | `8B57C5B0` | `0090CE87` |
 | 5 | `Range(s, 7)` | 3 | `606EEEF7` | `3A1E6C8A` |
 
-Step 1 in full: `0x3039 × 0x6AC690C5 + 0x29A = 0x0000141D_015B2E77`, and `0x015B2E77 mod 100 = 87`.
+Step 1 in full: `0x3039 × 0x6AC690C5 + 0x29A` is high word `0x0000141D`, low word `0x015B2E77`, and `0x015B2E77 mod 100 = 87`.
 
 ## Reimplementation notes
 
@@ -191,6 +192,9 @@ Step 1 in full: `0x3039 × 0x6AC690C5 + 0x29A = 0x0000141D_015B2E77`, and `0x015
 
 ## Evidence
 
+- How the statements above were read: the 852 multiplier sites and the walk over them by GNU objdump (the site list
+  `tools/gdb/lcg-sites.txt`); "the first reading" of the draw-site count is Ghidra's function list; the worked
+  example's reference model is `tools/rng.py`.
 - [findings/rng/0001-rng-core.md](../../findings/rng/0001-rng-core.md): state, step, range, initialisers (answered).
 - [findings/rng/experiments.md § run:2026-10-11-rng-emu](../../findings/rng/experiments.md#run2026-10-11-rng-emu):
   5,000-case emulator comparison of every primitive except `RangePow2Plus`, and its 2026-10-17 addendum (plan 0038

@@ -1387,7 +1387,7 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
     plan NNNN, `.py`/`.log`/`.claude`, `/home`, the repository name, `lane/`, Ghidra, harness, objdump, debugger,
     logger(s): 0; `r2` as a tool 0 (one "by r2:" found and fixed above); "emulator" 31 and "logged" 1007 (method words
     the plan keeps; not tool names).
-  - **Backlog:** [entry](../backlog/2026-11-17-architect-spec-writer-plan-0070-cut-2-export-readiness.md) to the
+  - **Backlog:** [entry](../backlog/archive/2026-11-17-architect-spec-writer-plan-0070-cut-2-export-readiness.md) to the
     spec-writer: the 19 left-out specs' export-facing wording, the residue sentences, monsters/special § D's two copied
     columns, the four wiki units (before Phase 10), collision's example.
   - **For the owner (Phase 10):** read the cut at `workspace/export/site/src/content/docs/` and `report.txt`; copy
@@ -2418,3 +2418,74 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   the seed constant `0x53454953` of skills/missiles B1, which the parenthetical rule had removed, now fails X1 and
   needs a value entry there. Tests: export_build 194, export_check 191, widgets 274, publish 44, all green.
   `export_check … --repo workspace/export-repo/`: 0 failures, 1018 warnings. Gate green.
+- 2026-11-17, spec-writer, lane/x13b (export readiness part B). Backlog entry items 1 (the eight specs still out),
+  5 and 7. Reword only, by part A's method: no tag added, moved or removed (per-spec tag counts equal, gate E6 green),
+  every `run:`/`fn:`/`data:`/`tbl:`/`struct:` token and finding link kept; an address taken out of the text went into
+  the statement's evidence parenthetical or a pseudocode tail; a named call target from `re/symbols.csv` replaces the
+  address in code and in prose (`OutRoomAlloc`, `MazeLevelCreate`, `RoomRestoredGet`, `PortalPartnerGet`,
+  `ClientRoomAt`, `MissCbReseed*`, `AiSt11`/`AiSt12`, …), an unnamed one is described ("an unnamed site",
+  `unnamed(Shrines[code])` with the address in the tail). Each run is named by what it is (the seed-tree run and the
+  second seed-tree run, the room-k run and the room-k sweep, the collision run and the collision sweep, the first and
+  second path runs, the objects run and the H5b objects run, the spawn run, the third AI run and the rev 5 AI run, the
+  strings run, the lifecycle run, the first monsters sweep, the second chain run, …), the id kept in the parenthetical.
+  A run id in running text became "the … run (run:…)"; inside an outer parenthetical, the id moved to the statement's
+  own. Tool words (objdump, Ghidra, logger, `tools/…` commands, log file paths) left the claims for a new first Evidence
+  bullet "How the statements above were read" in seven specs ("the decoded instructions", "a second walk", "the log
+  lines"). Three source shapes the builder reads as broken, fixed where met: a parenthetical holding words beside its
+  anchors ("3102 room creations", "row 44", "Phase 1": the words moved out, or "row N" and "Phase 1" into the link
+  label), a table cell that opens with a `fn:sub_…` chain (its subject vanishes: names written before the anchors),
+  and a `[README.md](README.md)` label (now "the DRLG overview"). Domain masks the allowlist keeps out (its 2026-11-17
+  owner note) are written as shifts, exact and checked by hand: `0x3F0FF80` → `0x3F << 20 | 0x1FF << 7`, `0x3F0FF00`,
+  `0x1E0FF00`, `0x1E00000`, `0x01E00100` (in a table cell `(0xF << 21) + 0x100`, no `|`), the theme fill values
+  `0x12 << 16`, `0xA << 20`, `0x16 << 20` and `0x6 << 20` (the last, `0x600000`, lay in the image range and was cut
+  silently before); seeds' `0x0213AE09` now reads as its decimal 34844169, spawn K's logged low word as "low 16 bits
+  0 (high half `0xD17D`)". Measured with a scratch manifest adding the eight pages (groups spec-rng 10 and
+  spec-objects 15) and the two table lines below, a scratch allowlist adding the proposals below, full build with
+  illustrations (`workspace/export-x13b`, 89 pages, 0 dropped; specs 16.2 % of words dropped), Open questions and
+  Evidence counted:
+
+  | Spec | Words dropped before | after | Blocks kept before | after |
+  |---|---|---|---|---|
+  | rng/README | 35.9 % | 12.7 % | 3/3 | 3/3 |
+  | rng/seeds | 59.5 % | 15.6 % | 6/7 | 7/7 |
+  | data/strings | 25.0 % | 11.1 % | 11/11 | 11/11 |
+  | drlg/room-tiles | 44.1 % | 14.5 % | 11/14 | 13/13 |
+  | drlg/collision | 25.9 % | 13.7 % | 19/20 | 20/20 |
+  | monsters/spawn | 25.2 % | 11.2 % | 17/19 | 19/19 |
+  | monsters/ai/README | 31.4 % | 18.5 % | 8/11 | 11/11 |
+  | objects/README | 29.7 % | 14.0 % | 16/19 | 19/19 |
+  | monsters/special (item 5) | 18.4 % | 14.1 % | 13/13 | 13/13 |
+
+  (room-tiles' fourteenth block was the worked example's command line, now in Evidence.) `export_check …
+  --repo workspace/export-repo/` with the scratch manifest and allowlist: 0 failures, 1067 warnings (X12). Span
+  equality (the x13f review's script, run on the scratch manifest): 31 296 spans, 3 differ, all path/README and
+  path/search's known `|` cells; 14 202 fence lines, 100 differ, on the nine pages each an evidence parenthetical or
+  an address label gone. What still drops on the eight, besides Evidence and Open questions: monsters/ai/README H's
+  per-think table (line 537, ruled out) and spawn's worked-example sentence on `MinionsSpawn`, whose seed
+  `FB397EDF:00835546` has a high word in the image range; a `pin` does not admit it, because the check's pin test
+  covers the `0x`/hex-letter spellings only, not an all-digit bare value ("bare address of the code image" is not in
+  `HEX_WHATS`): for the archivist, or the example writes that seed `0x`-prefixed. (5) monsters/special § D: the
+  Weights and `xfer` columns are gone from the 32-row table; the paragraph above it points to
+  [MonUMod § Pick weights per difficulty](../tables/MonUMod.md#pick-weights-per-difficulty) and the table doc's
+  *Columns*, which hold every weight, `xfer`, `fPick`, `exclude1` and `enabled` the columns copied; the table now holds
+  only our handler and draw readings and can be named. (7) drlg/collision's worked example: the active room is "the one at
+  tiles (1032, 1024)", its near rooms and right neighbour are named by tile position, the `CB` line 8034 and the `SN`
+  and member lines' numbers left the text (their numbers, the heap pointers and the log name are in the new Evidence
+  bullet); objects' and spawn's examples name their session instead of the log file, likewise. *Proposals for the
+  architect's files.* manifest: `group spec-rng 10 Spec: Randomness`, `group spec-objects 15 Spec: Objects`;
+  `page specs/rng/README.md spec-rng 1 overview`, `page specs/rng/seeds.md spec-rng 2`, `page specs/data/strings.md
+  spec-data 5`, `page specs/drlg/room-tiles.md spec-drlg 8`, `page specs/drlg/collision.md spec-drlg 9`,
+  `page specs/monsters/spawn.md spec-monsters 6`, `page specs/monsters/ai/README.md spec-monster-ai 1 overview`,
+  `page specs/objects/README.md spec-objects 1 overview` (orders chosen to fill the gaps; the cut-2 comment's left-out
+  list then names only conformance/README); `table specs/monsters/special.md 383 our per-mod table of handlers and
+  draws (the MonUMod values are the table doc's)` in place of the left-out ruling on 381; `table
+  specs/objects/README.md 51 our index of the table columns the objects code reads (a schema, no rows)`, as ruled.
+  allow-hex: `pin 0090CE87 specs/rng/README.md` (the high word after step 4 of the worked example, as on
+  wiki/randomness); `53454953` (rng/seeds' constant local seed, the same value x13f's review asks for skills/missiles
+  B1); `pin 00835546 specs/monsters/spawn.md` only with the check change above. The worked examples of the eight
+  already have `section` lines. reviewed-pages.txt: the eight at their redaction review. *Stays out:*
+  conformance/README (part A's ruling); monsters/ai/README's per-think table. Doubts: "the H5b objects run" and "the
+  rev 5 AI run" keep a batch and revision label as their name, the only distinction the ids carry; seeds 7a's
+  "In the second seed-tree run 114 server unit seeds had the parent `game+0xD0` every time" moved a parenthetical count
+  into a sentence before the same tag; § D's `[C]`/`[I]` row tags still cover the dropped weights only through the table
+  doc. Gate green.

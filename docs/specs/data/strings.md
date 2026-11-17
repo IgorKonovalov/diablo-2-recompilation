@@ -51,11 +51,12 @@ flowchart LR
   returns the local, the text. The 906 lookups logged from its return address (886 found, 20 not found) all equal the
   `GetByKey` model, text included. (fn:STRTABLE_GetStringByKey@0x00524E20, 0x00524E29–0x00524E35,
   [run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings), [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16))
-- [C] **What a program run does with the tables** (the six H3b runs that reach the menu): `LoadAll` from 0x004359F2
-  (count 0 → 1), `Unload` from 0x00435C8D (1 → 0), `LoadAll` from 0x0044B911 (0 → 1) before the excel load, and after
-  the game is left `Unload` from 0x0044B976 (1 → 0) after the excel unload; the main menu loads again from 0x004359F2
-  and the program exit unloads from 0x00435C8D. The caller 0x00441B91 ran in none of the runs, and the count never
-  went above 1. Each release to 0 leaves the three file buffers at 0. (fn:STRTABLE_LoadAll@0x005259C0,
+- [C] **What a program run does with the tables** (the six runs of the data-load sweep that reach the menu): `LoadAll` from a
+  first call site (count 0 → 1), `Unload` from a second (1 → 0), `LoadAll` from a third (0 → 1) before the excel load,
+  and after the game is left `Unload` from a fourth (1 → 0) after the excel unload; the main menu loads again from the
+  first site and the program exit unloads from the second. A fifth caller ran in none of the runs, and the count never
+  went above 1. Each release to 0 leaves the three file buffers at 0. (0x004359F2, 0x00435C8D, 0x0044B911, 0x0044B976,
+  0x00441B91, fn:STRTABLE_LoadAll@0x005259C0,
   fn:STRTABLE_Unload@0x00524E40, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load))
 
 ## Inputs
@@ -310,20 +311,20 @@ Step notes:
   NUL). The loop treats `+0x28` as the gem's 4-character `code`, but in 1.14d that field holds the item index the
   `code` column compiles to (557..642 for the 69 rows), which is where the two-byte keys come from. The lookup meant to
   give the gem's name string by its code finds nothing, and every gem stores 0 at `+0x2C` (0x00637225). [C] The 68
-  distinct keys of the 136 lookups from 0x0063721C are exactly those bytes of the 68 `gems.bin` records (a space turned
-  into 0), and every lookup returned 0. (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225, run:2026-10-15-strings, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16),
+  distinct keys of the loop's 136 lookups are exactly those bytes of the 68 `gems.bin` records (a space turned
+  into 0), and every lookup returned 0. (fn:GEMS_Load@0x00636B70 0x006371D6–0x00637225, 0x0063721C, run:2026-10-15-strings, [data/0003 § S1b](../../findings/data/0003-string-tables.md#plan-0038-batch-s1b-2026-10-16),
   [data/0003 § Run](../../findings/data/0003-string-tables.md#run),
   [items/0007 § 9](../../findings/items/0007-sockets-runewords.md))
 - **Rare names, a load-time key and a client-side index.** `sub_00633F40_LoadRareAffixes` fills `+0x0C` of each
   merged rare-name record (0x48 bytes: the suffix and prefix tables together) with `STRTABLE_GetByKey(record + 0x26)`,
   the row's `name`; the `.bin` holds 0 there. The client's item-name builder takes a rare item's two merged ids
-  (`ITEMS_GetRareName1`, item data `+0x32`, and `0x00628040`, `+0x34`), resolves each through `RAREAFFIX_GetRecord`
+  (`ITEMS_GetRareName1`, item data `+0x32`, and its second-name twin, `+0x34`), resolves each through `RAREAFFIX_GetRecord`
   and shows `STRTABLE_GetByIndex(record + 0x0C)` for each; when that index is 0 it shows the raw `name` between `(`
   and `)` instead. The two texts go to two separate buffers. [C] for the load-time key and the shown index: hovering
-  four rare items made the client's two name calls (returning to 0x0048C5FD and 0x0048C6E0) show 7 indices, each equal
+  four rare items made the client's two name calls show 7 indices, each equal
   to `STRTABLE_GetByKey` of the merged record's `name`, the `+0x0C` the load stored. (fn:sub_00633F40_LoadRareAffixes@0x00633F40
   0x006341E0–0x0063420B, fn:RAREAFFIX_GetRecord@0x00634260, fn:ITEMS_GetRareName1@0x00627FE0,
-  fn:STRTABLE_GetByIndex@0x00524A30, 0x0048C5FD, 0x0048C6E0, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load), [data/0003 § Run](../../findings/data/0003-string-tables.md#run))
+  fn:STRTABLE_GetByIndex@0x00524A30, 0x00628040, 0x0048C5FD, 0x0048C6E0, run:2026-10-27-sweep-data-load, [data/0003 § H3b](../../findings/data/0003-string-tables.md#plan-0038-batch-h3b-run2026-10-27-sweep-data-load), [data/0003 § Run](../../findings/data/0003-string-tables.md#run))
   [I] for the raw name shown when the index is 0: every hovered record had a found key. (0x0048C5C1–0x0048C726)
   A missing record leaves its buffer empty. [I] (0x0048C6BE, 0x0048C7F3)
 - **The rare name line is `RareFormat`.** Qualities 6, 8 and 9 share one case of the client builder, which then calls
@@ -334,7 +335,7 @@ Step notes:
   [I] for the rest. (0x0048C89A–0x0048C8BC, 0x0048BEB2–0x0048BED8, 0x0048CDCB–0x0048CDF7,
   fn:sub_0048C060_ClientItemNameBuild@0x0048C060, fn:sub_0048BE80_ClientFormatArgs@0x0048BE80,
   [data/0003 § Plan 0039 batch P1b](../../findings/data/0003-string-tables.md#plan-0039-batch-p1b-2026-10-17))
-  [C] In the shipped English `string.tbl`, entry 1718 is `%0 %1` (data check with `tools/tbl.py`; [tbl.md](../../formats/tbl.md)).
+  [C] In the shipped English `string.tbl`, entry 1718 is `%0 %1` (a data check of the table file, [tbl.md](../../formats/tbl.md)).
   [I] So an English rare name is `name1`, one space, `name2`: the order and the separator come from the string table,
   not the code, and another language's `RareFormat` may reorder them. This rests on `%n` naming the *n*-th argument,
   which the argument copy and the `MagicFormat` call support. The builder is fatal (error line `0x822`) when
@@ -467,10 +468,10 @@ F1. KeyToIndex(cell key) → u16:                                               
 
 ## Worked example
 
-Source: [run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings), expansion session, and the
-same lookups through `python3 -I tools/tbl.py probe|key|index workspace/merged/data/local/lng/eng spx …` (English
+Source: the strings run, expansion session, and the same lookups through our reader of the table files (English
 tables: `string` 5 391 entries / 5 393 nodes / `max_probes` 5 192, `patchstring` 1 179 / 1 181 / 1 179,
-`expansionstring` 2 818 / 2 819 / 2 453).
+`expansionstring` 2 818 / 2 819 / 2 453). (run:2026-10-15-strings,
+[run:2026-10-15-strings](../../findings/data/experiments.md#run2026-10-15-strings))
 
 **A key lookup with a probe chain longer than one: `GetByKey("of Amianthus")`.** [C] (fn:STRTABLE_GetByKey@0x00524D30,
 fn:STRTABLE_FindInTable@0x00524C60, run:2026-10-15-strings)
@@ -530,6 +531,8 @@ all its `max_probes` nodes, and returns 0 with `"funeralpire -not xlated call ke
 
 ## Evidence
 
+- How the statements above were read: the table-file data check of entry 1718 and the worked example's lookups by
+  `python3 -I tools/tbl.py probe|key|index workspace/merged/data/local/lng/eng spx …`.
 - [findings/data/0003-string-tables.md](../../findings/data/0003-string-tables.md): every section (loading, index,
   key, hash, text conversion, language, the run); § Plan 0039 batch P1b (the rare name line); the plan 0038 batch
   sections S1b (kept-log re-checks), S1e (emulation, [run:2026-10-17-sweep-emu](../../findings/data/experiments.md#run2026-10-17-sweep-emu))
