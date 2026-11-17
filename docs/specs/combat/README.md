@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, monsters/stats, player/creation, items/properties, data/calc]
 consumed_by: [items/tc]
 tags: {C: 75, I: 28, L: 5}
-updated: 2026-11-16
+updated: 2026-11-17
 ---
 
 # Combat formulas: the attack event, its seeds and its branches
@@ -143,7 +143,7 @@ Flags at `+0x00`: `0x1` physical already set (skip the roll), `0x2` already buil
 life/mana/stamina drain roll, `0x20` built (and forced at delivery), `0x80` no `domissiledamage` event, `0x100`/
 `0x200`/`0x400` bypass resistances of undead, demons, others, `0x1000` hits non-hostile units. Result bits at
 `+0x04`: `0x1` hit, `0x2` killed, `0x4` get-hit, `0x8` knockback, `0x10` blocked, `0x20` no events, `0x80` dodged,
-`0x100` avoided, `0x200` evaded, `0x2000` doubled, `0x8000` weapon block; a missile's packet can also carry `0x4000`
+`0x100` avoided, `0x200` evaded, `0x2000` doubled, `0x8000` weapon block; a missile's packet can also carry `0x4000`, the soft hit
 ([to-hit C1](to-hit.md#c-the-hit-test-and-the-defence-rolls)). (struct:DamagePacket+0x04) [C] Of these the kept combat logs test flag `0x2` (set at the
 builder's entry in all 6 901 player attacks, each building once, clear in the 4 050 monster and hireling attacks) and
 results `0x1` (set exactly when the melee to-hit roll is below its chance, 9 594), `0x2` (exactly when the defender's

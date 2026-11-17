@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, sim/frame, drlg/overview, drlg/room-tiles, monsters/spawn, monsters/special, monsters/stats, objects, save/d2s]
 consumed_by: [drlg/room-tiles, drlg/preset, drlg/collision, monsters/spawn, monsters/special, monsters/stats, objects, chain, monsters/ai/overview, monsters/ai/machinery, sim/frame]
 tags: {C: 147, I: 52, L: 8}
-updated: 2026-11-16
+updated: 2026-11-17
 ---
 
 # Room lifecycle: activation, release, the inactive records and the restore
@@ -154,7 +154,7 @@ active: 22 of 22 restored copies resolved. A saved 0 staying 0 is not observed (
 0x005419F5, fn:sub_00541990_InactiveItemRestoreOne@0x00541990)
 - [C] **`ItemPlaceOnGround` writes `ItemGroundExpiry` at once**: logged for qualities 1 to 8 and the filler, 80 of 80, and swept at the
 first multiple of 1 500 at or past it for quality 2, 4 of 4. (run:2026-11-04-inventory-2, run:2026-11-04-inventory, fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0)
-- [C] `ItemPlaceOnGround` has 12 direct calls in 11 functions, no jump or pointer: `CursorDrop`; an overflow, `BeltOverflow` and `CorpseOverflowDrop`; `DropGoldAmount`; `NPC_MenuAction` three times; `CubeDropEmptied`; `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate` and `TargetBeltItemToGround`. (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0, fn:sub_0055A090_DropGoldAmount@0x0055A090, fn:sub_00563840_CubeDropEmptied@0x00563840, fn:QUESTS_GiveItem@0x005466B0, fn:sub_0055A200_DropEar@0x0055A200, fn:PLAYER_CorpseCreate@0x0057F700, fn:sub_005A30E0_TargetBeltItemToGround@0x005A30E0, [drlg/0009 § 13](../../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n)) [I] What each caller drops is the callers' reading.
+- [C] `ItemPlaceOnGround` has 12 direct calls in 10 functions, no jump or pointer: `CursorDrop`; the two overflows, `BeltOverflow` and `CorpseOverflowDrop`; `DropGoldAmount`; `NPC_MenuAction` three times; `CubeDropEmptied`; `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate` and `TargetBeltItemToGround`. (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0, fn:NPC_MenuAction@0x00579D60, fn:sub_0055A090_DropGoldAmount@0x0055A090, fn:sub_00563840_CubeDropEmptied@0x00563840, fn:QUESTS_GiveItem@0x005466B0, fn:sub_0055A200_DropEar@0x0055A200, fn:PLAYER_CorpseCreate@0x0057F700, fn:sub_005A30E0_TargetBeltItemToGround@0x005A30E0, [drlg/0009 § 13](../../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n), the function count [§ 16](../../findings/drlg/0009-room-lifecycle.md#16-itemplaceongrounds-callers-recounted-12-calls-in-10-functions-2026-11-17-lanefur)) [I] What each caller drops is the callers' reading.
 
 ### B. Activation: reference counts per near-list distance
 

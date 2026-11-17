@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, combat/overview, player/creation, monsters/stats]
 consumed_by: [combat/overview, combat/damage, combat/delivery]
-tags: {C: 66, I: 16, L: 4}
-updated: 2026-11-16
+tags: {C: 67, I: 19, L: 3}
+updated: 2026-11-17
 ---
 
 # Combat: the hit test, chance to hit and the defence rolls
@@ -274,19 +274,35 @@ C1. MeleeHitTest(att, def, arPct: i32, rangeExtra: i32) → result: u16:        
 - C1. The to-hit, the defence order and the result word reproduced over 27 441 to-hit events with 0 mismatches. [C]
   (run:2026-10-16-combat, [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
 - C1. The result bits are: `0x1` hit, `0x2` killed, `0x4` get-hit, `0x8` knockback, `0x10` blocked, `0x80` dodged,
-  `0x100` avoided, `0x200` evaded (missiles), `0x2000` doubled by a critical or deadly strike, `0x4000` (missiles,
-  below), `0x8000` weapon block. [C] for the bits delivered packets carry: melee `0x1`, `0x3`, `0x5`, `0x7`, `0x9`, `0xB`, `0xD`, `0xF`, `0x2005`, `0x2007`;
+  `0x100` avoided, `0x200` evaded (missiles), `0x2000` doubled by a critical or deadly strike, `0x4000` a missile's
+  soft hit (below), `0x8000` weapon block. [C] for the bits delivered packets carry: melee `0x1`, `0x3`, `0x5`, `0x7`, `0x9`, `0xB`, `0xD`, `0xF`, `0x2005`, `0x2007`;
   missile `0x1`, `0x5`, `0xD` and `0x4001` (537 deliveries) (run:2026-10-16-combat,
   [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)).
   [I] for `0x10`, `0x80`, `0x100`, `0x200` and `0x8000`: a blocked, dodged, avoided, evaded or weapon-blocked hit
   delivers nothing, so no logged packet carries them. (fn:COMBAT_MeleeHitTest@0x0057EC10, fn:MISSILE_ApplyDamage@0x005AD730,
   struct:DamagePacket+0x04)
-- C1. **`0x4000`.** Missile damage function 3 sets it after one step of the missile's seed, when `low & 0x7F` is below
-  the row's `dParam1` ([skills/missiles § G](../skills/missiles.md#g-the-function-tables)). [C]
-  (fn:sub_005AD220_MissDmg03Flag4000@0x005AD220, run:2026-10-20-cat-emu-9b) Which function set the 537 logged ones is
-  not read (*Open questions*).
-- C1. The melee hit test turns an evade (defence result `0x08`) into "not hit" without a bit of its own; the missile
-  caller sets `0x200`. [I] (fn:MISSILE_ApplyDamage@0x005AD730)
+- C1. **`0x4000`, the soft hit.** Three writers on the missile path set it in the result word:
+  1. Missile damage function 3 sets it after one step of the missile's seed, when `low & 0x7F` is below the row's
+     `dParam1` ([skills/missiles § G](../skills/missiles.md#g-the-function-tables)). [C]
+     (fn:sub_005AD220_MissDmg03Flag4000@0x005AD220 0x005AD277, run:2026-10-20-cat-emu-9b)
+  2. `MISSILE_ApplyDamage`, on a hit (after it sets `0x1`), unless the defender is in state 54: the row's `GetHit`
+     bit ORs `0x4`, else its `SoftHit` bit ORs `0x4000`; `GetHit` wins over `SoftHit`. The same state-54 test skips
+     the knockback roll. [I] (fn:MISSILE_ApplyDamage@0x005AD730 0x005AD7A1–0x005AD7C5, tbl:Missiles.txt:GetHit,
+     tbl:Missiles.txt:SoftHit, [combat/0001 § 23](../../findings/combat/0001-formulas.md#23-result-bit-0x4000-its-three-writers-on-the-missile-path-and-the-537-logged-ones-2026-11-17-lanefur))
+  3. `MISSILE_ApplyDamage`, after `COMBAT_DefenceRoll`: when the roll's result has any of bits `0x1F` and the row has
+     neither `GetHit` nor a non-zero `KnockBack`, `result ← (result & ~0x1) | 0x4000` and the roll's bits `0x1F` are
+     cleared, so none of `0x10`, `0x100` or `0x200` is set. With bit `0x1` clear `COMBAT_ApplyDamage` is skipped;
+     `COMBAT_GetHit` is still called. [I] (fn:MISSILE_ApplyDamage@0x005AD730 0x005AD80F–0x005AD852, 0x005AD8B3,
+     0x005AD8D3, tbl:Missiles.txt:KnockBack, [combat/0001 § 23](../../findings/combat/0001-formulas.md#23-result-bit-0x4000-its-three-writers-on-the-missile-path-and-the-537-logged-ones-2026-11-17-lanefur))
+- C1. **The 537 logged `0x4001` deliveries** are 491 of row 457 (`firestorm`, `SoftHit` set, `GetHit` clear,
+  `KnockBack` 0), all 491 of that row's deliveries, and 46 of row 240 (`meteorfire`, damage function 3), whose other
+  211 deliveries carry `0x0001`; no other row's delivery carries `0x4000`. [C] for the counts and the row split
+  ([run:2026-11-17-fur-bit4000](../../findings/combat/experiments.md#run2026-11-17-fur-bit4000), [combat/0001 § 23](../../findings/combat/0001-formulas.md#23-result-bit-0x4000-its-three-writers-on-the-missile-path-and-the-537-logged-ones-2026-11-17-lanefur)). [I] that the 46 come from writer 1's roll: no other writer fits the row, but the roll is not
+  reproduced per event; and writer 3 cannot give `0x4001`, since it clears `0x1`. Row 389, the only other `SoftHit`
+  row, was not met. (fn:sub_005AD220_MissDmg03Flag4000@0x005AD220, fn:MISSILE_ApplyDamage@0x005AD730)
+- C1. The melee hit test turns an evade (defence result `0x08`) into "not hit" without a bit of its own. The missile
+  caller sets `0x200` for an evade only when the row has `GetHit` or a non-zero `KnockBack`; for any other row an
+  evade, avoid or block gives `0x4000` (writer 3). [I] (fn:MISSILE_ApplyDamage@0x005AD730 0x005AD80F–0x005AD852)
 - C1. The range test is `sub_00622C40_InMeleeRange` with the reach above; state 54 is `uninterruptable`. [C]
   (fn:sub_00622C40_InMeleeRange@0x00622C40, fn:UNIT_HasState@0x00639DF0, 0x0057ECA6, 0x0057ED2C–0x0057ED38,
   tbl:States.txt:state, run:2026-11-15-sweep2-s5b,
@@ -412,7 +428,7 @@ The defence draws of 1 957 missiles on the player or the mercenary reproduced. [
 ## Outputs
 
 - The result word of the hit test (C1), carried in the packet at `+0x04`: a hit with or without get-hit, or one of
-  blocked, dodged, avoided, evaded, weapon block, or 0; a missile's word can also carry `0x4000` (C1). [C] for the
+  blocked, dodged, avoided, evaded, weapon block, or 0; a missile's word can also carry `0x4000`, the soft hit (C1). [C] for the
   delivered words (C1's list, run:2026-10-16-combat); [I] for the blocked, dodged, avoided, evaded and weapon-block words, which deliver nothing
   (struct:DamagePacket+0x04)
 - The attacker's seed advanced by 0 or 1 draw, the defender's by 0 to 3 draws (block, then evade, or weapon block
@@ -502,6 +518,5 @@ case shows the running defender: no to-hit draw, and a third of the capped block
 - ~~Whether `0x00621190` (the "moving" test of C2) returns the player's mode or a separate state.~~ Emulated by plan
   0066 S5e (C2: `+0x40` when `+0x30` is not 0, else the mode).
 - [L] The value of B1's Holy Shield term past `SKILLS_EvalCalc`; the rest of A7 and B1 is emulated (plan 0066 S5e).
-- [L] Which function set result bit `0x4000` on the 537 logged missile deliveries (C1); missile damage function 3 is
-  the one writer named ([backlog](../../backlog/archive/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md),
-  the reverser's half).
+- ~~Which function set result bit `0x4000` on the 537 logged missile deliveries (C1).~~ Settled by [combat/0001 § 23](../../findings/combat/0001-formulas.md#23-result-bit-0x4000-its-three-writers-on-the-missile-path-and-the-537-logged-ones-2026-11-17-lanefur): writer 2
+  for row 457, damage function 3 for row 240 (C1).
