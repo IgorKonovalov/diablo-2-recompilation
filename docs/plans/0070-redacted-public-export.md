@@ -406,7 +406,7 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   and widget. A generator reads the user's own files at cut time, as ADR-0034 and ADR-0036 allow (tables, and image
   constants as `maze_anim.py` already does through `maze_replay.py`); only what a frame shows reaches the export, and
   it passes the check. A widget's data never comes from them (ADR-0037).
-- **Candidates (architect, 2026-11-17; awaiting the owner).** Kind: **P** a pre-rendered schematic animation (GIF,
+- **Candidates (architect, 2026-11-17; accepted by the owner the same day).** Kind: **P** a pre-rendered schematic animation (GIF,
   frames, step-through page; ADR-0036, no new rule), **S** a static schematic picture (one marked frame from a P
   tool), **W** a scripted widget (ADR-0037; its fallback is the P row named, or a short table). Routes are the second
   cut's. Inputs name the spec sections the captions restate and the illustrative values; a seed is one of
@@ -1431,3 +1431,9 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `toy` or `page` rows, copied into the cut beside a fallback picture and loaded by one generic host step and a CSP
   `<meta>` in the export repository; a new check rule X13 and gate rule E21 (parity with the Python twin under node).
   No tool or widget is written in this lane.
+- 2026-11-17 — **Owner accepts Phase 11's candidate list and ADR-0037** ("1 yes / 2 yes / 3 acceptable / 4 ok / 5
+  yes"): the list and batch order (batch 1 first), the ADR as written, the one-time change to the export repository's
+  files (prepared in `workspace/export-repo/`; ADR-0038's script copies it), widget data of `toy` and `page` rows at
+  most 20 per array, and gate E21 needing node (skipped with a warning without it). Next: batch 1 (archivist lane, then
+  a spec-writer lane for blocks and captions) and, in parallel, the widget groundwork of ADR-0037 (check X13, gate E21,
+  the builder's widget block, the export repository's host step), each reviewed on Opus.

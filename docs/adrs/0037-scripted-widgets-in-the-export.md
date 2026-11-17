@@ -1,6 +1,9 @@
 # ADR-0037 — Scripted widgets in the public export: small scripts of our own, computing from the specs' rules and hand-written illustrative rows, checked like page text (amends 0035, 0036)
 
-> **Status:** proposed
+> **Status:** accepted (owner, 2026-11-17: "1 yes / 2 yes / 3 acceptable / 4 ok / 5 yes" to the candidate list and
+> batch order, this ADR, the one-time change to the export repository's files, the `toy`/`page` rows capped at 20, and
+> the gate rule that needs node; with [ADR-0038](0038-one-command-publish-of-the-export.md) the publish script copies
+> the export repository's files, so the owner applies nothing by hand)
 > **Date:** 2026-11-17
 > **Related plan(s):** [0070-redacted-public-export](../plans/0070-redacted-public-export.md) (Phase 11)
 
