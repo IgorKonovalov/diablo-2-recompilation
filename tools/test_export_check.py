@@ -85,6 +85,15 @@ def main():
        "our pseudocode passes X5")
     ok("X5" in t("```\n(int)x\n```") and "X5" in t("```\nuVar1 = 3\n```") and "X5" in t("```\nreturn __thiscall\n```"),
        "casts, decompiler names, calling conventions fail X5")
+    # narrowings and widenings of the architect review (2026-11-17)
+    ok("X1" in t("DAT_00556F60") and "X1" in t("g_Table_00556F60") and "X1" in t("at 00556860"),
+       "an address after `_` or bare in the image range fails X1")
+    ok("X3" in t("../../docs/plans/0070-x.md") and "X3" in t("[a](../docs/specs/rng.md)"),
+       "a relative docs/ path fails X3")
+    ok(t("site/src/content/docs/items.md") == set(), "the export repository's content/docs/ passes X3")
+    ok("X4" in t("file:///home/someone/x") and "X4" in t("x:/Users/someone/y"), "home paths fail X4 anywhere")
+    ok("X9" in t("Battle-net") and "X9" in t("opened in rizin") and "X9" in t("run under wine"),
+       "Battle-net and more tool names fail X9")
     # .git directory, built at run time (git can't hold one)
     tmp = tempfile.mkdtemp(prefix="export_check_")
     try:
@@ -96,6 +105,26 @@ def main():
         shutil.copytree(os.path.join(FIX, "repo", "clean"), r)
         os.makedirs(os.path.join(r, ".git"))
         ok("X11" in rules_of(ec.check_repo(r, IDENT)), ".git directory fails X11 (repo)")
+        # architect review 2026-11-17: text inside a schematic folder passes the text rules too
+        shutil.rmtree(os.path.join(c, "site", ".git"))
+        for fname, body in (("steps.json", '{"marker": "%s", "steps": [{"caption": "at 0x00556F60"}]}' % ec.MARKER),
+                            ("schematic.json", None)):
+            c2 = os.path.join(tmp, "cut-" + fname)
+            shutil.copytree(c, c2)
+            m2 = os.path.join(c2, "site", "public", "illustrations", "maze")
+            sj = os.path.join(m2, "schematic.json")
+            with open(sj, encoding="utf-8") as f:
+                meta = ec.json.load(f)
+            if body:
+                with open(os.path.join(m2, fname), "w", encoding="utf-8") as f:
+                    f.write(body)
+                meta["files"][fname] = ec._sha(os.path.join(m2, fname))
+            else:
+                meta["args"] = ["--ds1", "/home/someone/workspace/game/x.ds1"]
+            with open(sj, "w", encoding="utf-8") as f:
+                ec.json.dump(meta, f)
+            ok("X11" in rules_of(ec.check_cut(c2, MANIFEST, IDENT)[0]), f"a leak in {fname} fails X11")
+        ok(not ec.check_cut(c, MANIFEST, IDENT)[0], "the clean copy still passes after .git is removed")
         # an unredacted copy of three specs fails X1, X2 and X3
         root = os.path.normpath(os.path.join(HERE, ".."))
         picks = [p for p in ("docs/specs/rng/README.md", "docs/specs/items/README.md", "docs/specs/drlg/README.md")

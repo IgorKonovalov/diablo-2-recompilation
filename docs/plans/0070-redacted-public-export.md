@@ -507,3 +507,33 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   **`--repo workspace/export-repo/` result:** green, 0 failures, 0 warnings, after two rule narrowings that were
   false positives on correct text: `docs/` inside `site/src/content/docs/` (README) and `startsWith('data:')`
   (the link checker). `LICENSE`'s creativecommons.org text passes X7. Nothing for Phase 4 to fix.
+- 2026-11-17 — **Phase 2 review: accept with fixes** (architect, Tier A, on lane/x70c). Each rule matches the
+  design's table, and the self-tests, `--repo workspace/export-repo/` (green) and the gate were rerun. Fixes, made in
+  `tools/export_check.py` with eight new self-tests (83 checks): (1) X3's repository-path narrowing exempted any `docs/`
+  after a `/`, so `../../docs/plans/…` and `../docs/specs/…` passed; only `content/docs/` is exempt now, and the
+  finding-id shape no longer skips a `/` before it. (2) X1 missed an address after `_` (`DAT_00556F60`, a name ending
+  in an address) and a bare all-digit address; bare hex after `_` and `00[4-7]` plus five digits now fail. (3) The
+  text of a schematic folder was never read: `steps.json` and `index.html` (hex colours aside) and `schematic.json`
+  (hashes aside; it holds the tool's arguments) now pass X1 to X4 and X9, and every file's bytes are searched for an
+  identity string or a home path; a failure is X11 for the folder. (4) X4 fails `/home/`, `/Users/` and `file:/`
+  anywhere (a `file:///home/…` link passed); the lockfile now gets X4. (5) X7 in the cut fails `ftp:`, `mailto:`,
+  `javascript:`, `file:/` and protocol-relative `//` targets, not only `http(s):`. (6) X9 also fails `Battle-net` and
+  the tool names radare2, rizin, x64dbg, ollydbg, IDA Pro and wine (no wiki hit; *debugger*, 3 wiki lines, stays out
+  of X9 per decision 8). **Rulings on the lane's choices:** (1) marker `d2recon-schematic/1` and the `schematic.json`
+  shape accepted; Phase 2b must write the tool's arguments without absolute paths or `workspace/` (they now fail X3
+  and X4). (2) X6 by route accepted. (3) `report.txt` skipped at the cut root only, accepted; Phase 7 copies `site/`
+  only. (4) `--repo` scope accepted, with X4 on the lockfile. (5) The hex heuristics accepted as widened. (6) X7's
+  allowlist of the whole `github.com/IgorKonovalov` prefix accepted for now: the working repository's remote name is
+  an X4 identity string, so a link to it fails; narrow it to the export repository's name once that is chosen
+  (Phase 7). X12 accepted as noise by design. The two other narrowings are safe: an anchor always has a name after
+  the colon, and the link checker's `'data:'` is followed by a quote. Indented code blocks get no X5 (only X1 to X4
+  and X9); findings are out of every scope, so accepted. **Dry run on the cut-1 wiki and glossary as they stand**
+  (copied unredacted, front matter and *Open questions* stripped by hand as the builder will; the three Phase 5 pages
+  absent): 174 failures and 318 X12 warnings (164 distinct). X1 124 (glossary 40; elsewhere 15 `sub_` names, 62 bare
+  hex, mostly seeds, 7 `0x` values such as the save magic and the RNG multiplier), X3 27 (12 commit-hash shapes, all
+  game seeds such as `5389700c`; 6 ADR, 3 `findings/`, 2 plan, 2 `.py`, 2 path), X9 22 (logger 13, logged run 2,
+  Battle.net 2, one each of decompile, disassembler, disassembly, Ghidra, harness), X5 1 (inside an illustration
+  block, which the builder replaces); X2, X4, X6, X7, X8 none. With front matter kept, X3 rose to 108. **Phase 3
+  input:** the simplifier will drop every sentence holding a seed or a game-math value in hex (randomness.md's worked
+  example, 17 lines), as X1 is written ("any other hex of 6 digits or more"). Whether such values may pass by a
+  manifest line is a design question for the architect before Phase 6, not a check change. Next: Phases 2b, 3.

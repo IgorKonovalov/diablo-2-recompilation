@@ -2,9 +2,9 @@
 from: archivist
 to: architect
 date: 2026-11-17
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "Accepted with fixes 2026-11-17 (architect, Tier A): six check fixes and eight self-tests; rulings and the wiki dry run in plan 0070's log."
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.

@@ -16,11 +16,11 @@ Rules (plan 0070 § Publish check):
   X3  repository reference: findings/, finding id (items/0002), ADR-NNNN, plan NNNN, lane/, docs/, re/,
       tools/, workspace/, .py/.csv name, commit hash
   X4  identity: the working repository's name and remote URL, the git user.email (all read from git at run
-      time, never stored), /home/ or any absolute path. The owner's name and account pass.
+      time, never stored), /home/ or /Users/ anywhere, or any absolute path. The lockfile gets X4 (and X7) only. The owner's name and account pass.
   X5  decompiler-like fenced block (mermaid fences exempt from X5 only)
   X6  table over 20 body rows that the manifest does not name (matched by page route, not line number:
       the redactor moves lines)
-  X7  cut: http(s) link, raw HTML (<script> <iframe> <link> <style> ...), @import, url(.
+  X7  cut: http(s)/ftp/mailto/javascript/file:/ or protocol-relative link, raw HTML (<script> <iframe> <link> <style> ...), @import, url(.
       repo: a URL outside the allowlist, an action outside actions/*
   X8  any image: Markdown image, <img>, <video>, an image file; except a target under a verified
       illustrations/<id>/ folder (ADR-0036)
@@ -28,7 +28,8 @@ Rules (plan 0070 § Publish check):
       disassembl*, harness, logger, "logged run"); emulation/emulated/breakpoint pass
   X10 footer component differs from the footer word for word or is unregistered; cut.json without a date
   X11 cut: a file other than .md, cut.json and the schematic allowlist (folder with schematic.json: marker,
-      sha256 list, nothing else, index.html with no URL/request). repo: a path outside the plan's table
+      sha256 list, nothing else, index.html with no URL/request; the text of steps.json, index.html and
+      schematic.json passes X1-X4 and X9, and no file holds an identity string or a home path). repo: a path outside the plan's table
       (plus the lockfile); a .git directory anywhere.
   X12 (warning) quoted run over 12 words; capitalised name matching no table row name of the cut.
 
@@ -73,8 +74,10 @@ RE_X1 = [
     (re.compile(r"\b0x[0-9A-Fa-f]{6,}\b"), "address / hex of 6+ digits"),
     (re.compile(r"\bsub_[0-9A-Fa-f]{6,8}"), "sub_ name"),
     (re.compile(r"\+0x[0-9A-Fa-f]+"), "+0x offset"),
-    (re.compile(r"(?<![\w.])(?=[0-9A-Fa-f]*[0-9])(?=[0-9A-Fa-f]*[A-Fa-f])[0-9A-Fa-f]{6,}(?![\w.])"),
+    # bare hex, also after `_` (DAT_00556F60, a name with an address in it); architect review 2026-11-17
+    (re.compile(r"(?<![A-Za-z0-9.])(?=[0-9A-Fa-f]*[0-9])(?=[0-9A-Fa-f]*[A-Fa-f])[0-9A-Fa-f]{6,}(?![\w.])"),
      "hex of 6+ digits"),
+    (re.compile(r"(?<![A-Za-z0-9.])00[4-7][0-9]{5}(?![\w.])"), "bare address of the code image"),
 ]
 RE_X2 = [
     (re.compile(r"(?<![\w])(?:fn|data|struct|tbl|fmt|src):(?=[A-Za-z0-9_])"), "anchor"),
@@ -82,21 +85,24 @@ RE_X2 = [
 ]
 RE_X3 = [
     (re.compile(r"findings/"), "findings/ path"),
-    (re.compile(r"(?<![\w/])[a-z]+/\d{4}\b"), "finding id"),
+    (re.compile(r"(?<![\w])[a-z]+/\d{4}\b"), "finding id"),
     (re.compile(r"\bADR-\d+", re.I), "ADR reference"),
     (re.compile(r"\bplans? \d{4}\b", re.I), "plan reference"),
     (re.compile(r"(?<![A-Za-z0-9])lane/"), "lane/ reference"),
-    (re.compile(r"(?<![A-Za-z0-9/])(?:docs|re|tools|workspace)/"), "repository path"),
+    # `../docs/` fails; only the export repository's own `content/docs/` passes (architect review 2026-11-17)
+    (re.compile(r"(?<![A-Za-z0-9])(?<!content/)(?:docs|re|tools|workspace)/"), "repository path"),
     (re.compile(r"[\w-]+\.(?:py|csv)\b"), ".py/.csv name"),
     (re.compile(r"(?<![\w.])(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}(?![\w.])"), "commit hash"),
 ]
+RE_HOME = re.compile(r"/(?:home|Users)/|\bfile:/", re.I)
 RE_ABS = re.compile(r"(?:(?<=[\s`\"'(\[])|^)/(?:home|usr|etc|tmp|var|opt|mnt|root|srv|media|proc|dev|Users|[a-z][\w.-]*/[\w.-]+)"
                     r"(?:/[\w.\-]*)*|\b[A-Za-z]:\\[\w.]")
 RE_X9 = [
     (re.compile(r"copy[- ]?protection|\bcd[- ]?key", re.I), "copy protection / CD key"),
-    (re.compile(r"battle[. ]?net|\bbnet\b", re.I), "Battle.net"),
+    (re.compile(r"battle[-. ]?net|\bbnet\b", re.I), "Battle.net"),
     (re.compile(r"\bwarden\b", re.I), "Warden"),
-    (re.compile(r"\bghidra\b|\bgdb\b|\bdecompil\w*|\bdisassembl\w*|\bharness\b|\blogger\b|\blogged runs?\b", re.I),
+    (re.compile(r"\bghidra\b|\bgdb\b|\bdecompil\w*|\bdisassembl\w*|\bharness\b|\blogger\b|\blogged runs?\b"
+                r"|\bradare2?\b|\brizin\b|\bx64dbg\b|\bollydbg\b|\bIDA Pro\b|\bwine\b", re.I),
      "tool name"),
 ]
 RE_FENCE = re.compile(r"^\s*(```+|~~~+)\s*([\w-]*)")
@@ -174,7 +180,7 @@ def check_text(text, identity=None, line0=1):
                 hits.append(("X4", n, "identity string of this machine or repository"))
                 break
         else:
-            mm = RE_ABS.search(line)
+            mm = RE_HOME.search(line) or RE_ABS.search(line)
             if mm:
                 hits.append(("X4", n, f"absolute path: {mm.group(0)[:40]}"))
     return hits
@@ -255,9 +261,10 @@ def check_page(text, rel, route, allowed_tables, illus_ok, identity):
     for ln, n in over[allowed_tables:]:
         hits.append(("X6", ln, f"table of {n} body rows (limit {TABLE_LIMIT}) not named in the manifest"))
     for n, line in enumerate(text.split("\n"), 1):
-        mm = re.search(r"https?:", line, re.I)
+        mm = re.search(r"\b(?:https?|ftp|mailto|javascript):|\bfile:/"
+                       r"|\]\(\s*<?//|(?:href|src)\s*=\s*[\"']?//", line, re.I)
         if mm:
-            hits.append(("X7", n, "http(s) link"))
+            hits.append(("X7", n, f"external link or scheme: {mm.group(0)[:20]}"))
         mm = RE_RAW_HTML.search(line)
         if mm:
             hits.append(("X7", n, f"raw HTML: {mm.group(0)}"))
@@ -304,7 +311,7 @@ def _sha(path):
     return h.hexdigest()
 
 
-def verify_illustration(folder):
+def verify_illustration(folder, identity=()):
     """Check one site/public/illustrations/<id>/ folder (ADR-0036).
     Returns (problems [str], allowed relative files set)."""
     probs = []
@@ -328,6 +335,10 @@ def verify_illustration(folder):
         listing = data["files"]
     except (ValueError, OSError, AttributeError):
         return ["schematic.json unreadable or wrong marker"], set()
+    # schematic.json is published too: its tool and arguments pass the text rules (hashes aside)
+    meta = dict(data, files=sorted(listing))
+    for r_, ln, d in [h for h in check_text(json.dumps(meta, indent=1), identity) if h[0] != "X5"][:5]:
+        probs.append(f"schematic.json:{ln}: {r_} {d}")
     ok = set()
     for rel in sorted(files):
         if rel == "schematic.json":
@@ -352,6 +363,19 @@ def verify_illustration(folder):
         if MARKER.encode() not in data_b:
             probs.append(f"{rel}: no schematic marker")
             continue
+        # captions and calculation text pass the check like page text (plan 0070 design); hex colours aside.
+        # Every file's bytes are also searched for identity strings and home paths (architect review 2026-11-17).
+        low_b = data_b.lower()
+        if any(i and i.lower().encode() in low_b for i in identity) or RE_HOME.search(
+                data_b.decode("latin-1")):
+            probs.append(f"{rel}: identity string or home path in the file")
+            continue
+        if rel in ("index.html", "steps.json"):
+            txt = re.sub(r"#[0-9A-Fa-f]{3,8}\b", "#", data_b.decode("utf-8", "replace"))
+            bad = [h for h in check_text(txt, identity) if h[0] != "X5"]
+            if bad:
+                probs.extend(f"{rel}:{ln}: {r_} {d}" for r_, ln, d in bad[:5])
+                continue
         if rel == "index.html":
             for p in html_problems(data_b.decode("utf-8", "replace"), set(files)):
                 probs.append(f"index.html: {p}")
@@ -413,7 +437,7 @@ def check_cut(cut, manifest=None, identity=None):
         if rel.startswith(illus_root) and rel.count("/") >= illus_root.count("/") + 1:
             folders.setdefault(rel[len(illus_root):].split("/", 1)[0], []).append(rel)
     for fid in sorted(folders):
-        probs, ok = verify_illustration(os.path.join(cut, illus_root + fid))
+        probs, ok = verify_illustration(os.path.join(cut, illus_root + fid), identity)
         for p in probs:
             fails.append(("X11", f"{illus_root}{fid}/", 0, p))
         for rel in ok:
@@ -495,10 +519,10 @@ def check_repo(repo, identity=None):
             fails.append(("X11", rel, 0, "binary file"))
             continue
         text = raw.decode("utf-8", "replace")
-        if rel != "site/package-lock.json":
-            for rule, ln, d in check_text(text, identity):
-                if rule != "X5":  # repo files are not pseudocode
-                    fails.append((rule, rel, ln, d))
+        for rule, ln, d in check_text(text, identity):
+            # repo files are not pseudocode (no X5); the lockfile gets X4 only (its hashes are hex)
+            if rule != "X5" and (rel != "site/package-lock.json" or rule == "X4"):
+                fails.append((rule, rel, ln, d))
         lock = rel == "site/package-lock.json"
         for n, line in enumerate(text.split("\n"), 1):
             for m in re.finditer(r"https?://[^\s\"'<>)\]`]+|http:", line, re.I):
