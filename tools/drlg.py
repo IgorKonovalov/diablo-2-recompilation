@@ -2878,9 +2878,7 @@ class GenModel:
         j = (d["dmask"]).bit_length() - 5
         where = "%s WPR %d slot %d -> %d" % (path, slv, m, dlv)
         self.check(vs[m] == dlv, "%s: Vis%d is %d" % (where, m, vs[m]))
-        k = sum(1 for i in range(m) if vs[i] == dlv)
-        back = [i for i in range(8) if vd[i] == slv]
-        want = back[k] if k < len(back) else None
+        k, back, want = warp_rank_slot(vs, vd, slv, m)
         Ld = next((x for x in levels.values() if x.id == dlv and getattr(x, "wp_rooms", None)
                    and any(r[0] == d["dst"] for r in x.wp_rooms)), None)
 
@@ -2894,11 +2892,9 @@ class GenModel:
             self.check(want == j, "%s: paired slot %d, model slot %s (rank %d of %s)" % (where, j, want, k, back))
             self.hit("warp pairing: destination build not in the log (slot by rank only)")
             return
-        how = "rank %d" % k
-        jm = want if want is not None and first_room(want) is not None else None
-        if jm is None:                            # no room with the rank slot's bit: the first back slot that has one
-            jm = next((i for i in back if first_room(i) is not None), None)
-            how = "rank %d slot has no room, first back slot with a room" % k
+        _k, _want, walk, jm = warp_pair_slot(vs, vd, slv, m, lambda jj: first_room(jj) is not None)
+        how = ("rank %d" % k if jm is not None and not walk      # else: no room with the rank slot's bit, the walk
+               else "rank %d slot has no room, first back slot with a room" % k)
         room = first_room(jm) if jm is not None else None
         self.check(jm == j and room == d["dst"], "%s: paired slot %d room %08x, model slot %s room %s (%s; back slots %s)"
                    % (where, j, d["dst"], jm, room and "%08x" % room, how, back))
@@ -3540,6 +3536,32 @@ def gap_overlap(A, Bq):   # sub_0066B860_RectGapTest(A, B, 0) == 0
     gx = (Bq[0] - A[2] - A[0]) if A[0] < Bq[0] else (A[0] - Bq[2] - Bq[0])
     gy = (Bq[1] - A[3] - A[1]) if A[1] < Bq[1] else (A[1] - Bq[3] - Bq[1])
     return gx < 0 and gy < 0
+
+
+def warp_rank_slot(vis_src, vis_dst, src, m):
+    """sub_0066C220_WarpPairLink's rank (warps F1): k = the slots before m of the source naming the same level as
+    slot m; the rank slot is the k-th slot of the destination naming the source back. -> (k, back slots, rank slot or
+    None). No draw."""
+    dest = vis_src[m]
+    k = sum(1 for j in range(m) if vis_src[j] == dest)
+    back = [j for j in range(8) if vis_dst[j] == src]
+    return k, back, (back[k] if k < len(back) else None)
+
+
+def warp_pair_slot(vis_src, vis_dst, src, m, has_room, rank=True):
+    """sub_0066C220_WarpPairLink (warps F1): the slot of the destination that slot m of the source pairs with.
+    has_room(j): the destination has a room carrying bit 0x10 << j. rank: LevelWarpId(source, m) != -1 (with -1 only
+    the fallback walk is made). -> (k, rank slot or None, the fallback walk's slots in the order tried (empty when the
+    rank slot has a room), paired slot or None). No draw."""
+    k, back, want = warp_rank_slot(vis_src, vis_dst, src, m)
+    if rank and want is not None and has_room(want):
+        return k, want, [], want
+    walk = []
+    for j in back:
+        walk.append(j)
+        if has_room(j):
+            return k, want, walk, j
+    return k, want, walk, None
 
 
 def _chk_plain(B):
