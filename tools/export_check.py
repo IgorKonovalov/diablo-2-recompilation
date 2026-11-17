@@ -22,7 +22,7 @@ Rules (plan 0070 § Publish check):
       the redactor moves lines)
   X7  cut: http(s)/ftp/mailto/javascript/file:/ or protocol-relative link, raw HTML (<script> <iframe> <link> <style> ...), @import, url(.
       repo: a URL outside the allowlist, an action outside actions/*
-  X8  any image: Markdown image, <img>, <video>, an image file; except a target under a verified
+  X8  any image: Markdown image, <img>, <video>, an image file; except a root-absolute /illustrations/<id>/<file> target under a verified
       illustrations/<id>/ folder (ADR-0036)
   X9  banned topics (copy protection, CD key, Battle.net, Warden) and tool names (Ghidra, gdb, decompile*,
       disassembl*, harness, logger, "logged run"); emulation/emulated/breakpoint pass
@@ -33,9 +33,9 @@ Rules (plan 0070 § Publish check):
       (plus the lockfile); a .git directory anywhere.
   X12 (warning) quoted run over 12 words; capitalised name matching no table row name of the cut.
 
-The schematic marker (Phase 2b's generators must write it): the byte string `d2recon-schematic/1` inside
+The schematic marker (Phase 2b's generators must write it): the byte string `schematic-only/1` inside
 every .gif, .png, index.html and steps.json of the folder; `schematic.json` is
-{"marker": "d2recon-schematic/1", "files": {"<relative path>": "<sha256 hex>", ...}} and lists every
+{"marker": "schematic-only/1", "files": {"<relative path>": "<sha256 hex>", ...}} and lists every
 file of the folder but itself.
 
 Text rules as a function: `check_text(unit, identity=None)` returns [(rule, line, detail)] for X1-X5 and X9
@@ -51,7 +51,7 @@ import re
 import subprocess
 import sys
 
-MARKER = "d2recon-schematic/1"
+MARKER = "schematic-only/1"
 TEXT_RULES = ("X1", "X2", "X3", "X4", "X5", "X9")
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico", ".tga", ".pcx", ".dc6", ".dcc",
              ".avif", ".tif", ".tiff", ".mp4", ".webm", ".ogv"}
@@ -100,7 +100,8 @@ RE_X3 = [
     (re.compile(r"(?<![\w.])(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}(?![\w.])"), "commit hash"),
 ]
 RE_HOME = re.compile(r"/(?:home|Users)/|\bfile:/", re.I)
-RE_ABS = re.compile(r"(?:(?<=[\s`\"'(\[])|^)/(?:home|usr|etc|tmp|var|opt|mnt|root|srv|media|proc|dev|Users|[a-z][\w.-]*/[\w.-]+)"
+# a Markdown image target `/illustrations/<id>/<file>` is no absolute path here: X8 verifies it against the folder
+RE_ABS = re.compile(r"(?:(?<=[\s`\"'(\[])|^)/(?!illustrations/[\w.-]+/[\w.-]+\))(?:home|usr|etc|tmp|var|opt|mnt|root|srv|media|proc|dev|Users|[a-z][\w.-]*/[\w.-]+)"
                     r"(?:/[\w.\-]*)*|\b[A-Za-z]:\\[\w.]")
 RE_X9 = [
     (re.compile(r"copy[- ]?protection|\bcd[- ]?key", re.I), "copy protection / CD key"),
@@ -338,7 +339,7 @@ def text_rules(unit, identity=None, allow=None, sect=False, pins=()):
 
 RE_RAW_HTML = re.compile(r"<\s*(?:script|iframe|link|style|object|embed|form|meta|base)\b", re.I)
 RE_IMG = re.compile(r"!\[[^\]]*\](\(([^)\s]*)[^)]*\))?|<\s*(?:img|video|picture|source)\b", re.I)
-RE_ILLUS = re.compile(r"(?:^|/)illustrations/([\w.-]+)/([\w./-]+)$")
+RE_ILLUS = re.compile(r"^/illustrations/([\w.-]+)/([\w./-]+)$")   # root-absolute only: the site prefixes its base
 RE_TABLE_SEP = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
 
 
@@ -492,10 +493,12 @@ def verify_illustration(folder, identity=()):
         data = json.load(open(sj, encoding="utf-8"))
         if data.get("marker") != MARKER or not isinstance(data.get("files"), dict):
             raise ValueError
+        if "tool" in data:
+            return ["schematic.json names a tool (the published file must not tie to the working repository)"], set()
         listing = data["files"]
     except (ValueError, OSError, AttributeError):
         return ["schematic.json unreadable or wrong marker"], set()
-    # schematic.json is published too: its tool and arguments pass the text rules (hashes aside)
+    # schematic.json is published too: its arguments pass the text rules (hashes aside)
     meta = dict(data, files=sorted(listing))
     for r_, ln, d in [h for h in check_text(json.dumps(meta, indent=1), identity) if h[0] != "X5"][:5]:
         probs.append(f"schematic.json:{ln}: {r_} {d}")

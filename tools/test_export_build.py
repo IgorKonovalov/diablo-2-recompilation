@@ -183,6 +183,26 @@ def main():
         ok(res == [] and calls and "--schematic" in calls[0] and calls[0].index("--schematic") < calls[0].index("--out")
            and "-I" in calls[0], "the tool runs under -I with --schematic")
         ok(any("tool failed" in d[3] for d in pg.drops), "a failed tool is a report line")
+
+        def fake_good(cmd, **kw):
+            dest = cmd[cmd.index("--out") + 1]
+            os.makedirs(dest, exist_ok=True)
+            for n in ("index.html", "m.gif"):
+                open(os.path.join(dest, n), "w").close()
+
+            class R:
+                returncode, stdout, stderr = 0, "", ""
+            return R()
+        eb.subprocess.run = fake_good
+        pg = eb.Page({"path": "a.md", "route": "x/y", "order": 1})
+        res = eb.illustration_block(pg, {"lines": ["```illustration", "id: i2", "tool: maze_anim.py", "args: 36 0xc0ffee",
+                                                   "seed: illustrative", "illustrates: x", "caption: Hi.", "```"]},
+                                    tmp, out, al, "H")
+        txt = "\n".join(l for b in res for l in b["lines"])
+        ok("![Animation: i2](/illustrations/i2/m.gif)" in txt and "[Step through i2](../../illustrations/i2/index.html)" in txt,
+           "the GIF is an inline image with a root-absolute target, plus the step-through link")
+        ok(not ec.check_page(txt, "x/y.md", "x/y", 0, {("i2", "m.gif")}, ())
+           and "X8" in {h[0] for h in ec.check_page(txt, "x/y.md", "x/y", 0, set(), ())}, "X8 accepts it only for a verified folder")
         shutil.rmtree(os.path.join(out, "site", "public", "illustrations"), ignore_errors=True)
     finally:
         eb.DOCS, eb.subprocess.run = old_docs, old_run

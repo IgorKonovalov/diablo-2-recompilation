@@ -154,7 +154,10 @@ class SchematicModes(unittest.TestCase):
             with open(os.path.join(out, "schematic.json")) as fh:
                 sj = json.load(fh)
             self.assertEqual(sj["marker"], anim_common.MARKER)
-            self.assertEqual(sj["tool"], tool[:-3])
+            self.assertNotIn("tool", sj)                      # the published file ties nothing to the working repository
+            self.assertNotIn("d2recon", json.dumps(sj))
+            with open(os.path.join(out, "steps.json")) as fh:
+                self.assertNotIn("--mlvl", fh.read())
             self.assertEqual(sj["args"], [str(int(a, 16)) if a.startswith("0x") else a for a in args])
             names = sorted(os.listdir(out))
             self.assertEqual(names, sorted(list(sj["files"]) + ["schematic.json"]))

@@ -536,8 +536,8 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   anchors match only when a name character follows (`data:ItemTypes`), so prose such as "Game data: tables, strings
   and formulas" passes; fixture `pass-x2-data-prose` and two unit checks.
   **Choices the review should confirm:** (1) *The schematic marker*, which Phase 2b's generators must write: the byte
-  string `d2recon-schematic/1` inside every `.gif`, `.png`, `index.html` and `steps.json` of the folder;
-  `schematic.json` is `{"marker": "d2recon-schematic/1", "files": {"<relative path>": "<sha256>"}}` listing every
+  string `schematic-only/1` inside every `.gif`, `.png`, `index.html` and `steps.json` of the folder;
+  `schematic.json` is `{"marker": "schematic-only/1", "files": {"<relative path>": "<sha256>"}}` listing every
   file but itself; frame files may sit in subfolders (`frames/f1.png`). (2) X6 matches a manifest `table` line by
   the page's route, not by line number (the redactor moves lines): a page may hold as many oversized tables as the
   manifest names for it. (3) `report.txt` at the cut root is skipped (the builder writes it there; it is never
@@ -587,9 +587,9 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `tools/tc_anim.py`. Maze: rooms as labelled boxes (room number; Def and preset file index from the conversion steps
   on), green door bars on shared edges, the level's entry and exit marks on the final frame. Drop: name cards coloured
   by quality, no icon. Our palette (`SCHEM_UI` in `tools/anim_common.py`, 768-byte global palette, no `tRNS`) and the 5x7
-  font. The marker is the byte string `d2recon-schematic/1` (the one Phase 2's check, lane/x70c, looks for) in every
+  font. The marker is the byte string `schematic-only/1` (the one Phase 2's check, lane/x70c, looks for) in every
   file: PNG `tEXt` chunk, GIF comment extension, an HTML comment, `steps.json` (an object `{"schematic_only", "steps"}`
-  in schematic mode; the full mode keeps the bare list). `schematic.json` is `{"marker", "tool", "args", "files":
+  in schematic mode; the full mode keeps the bare list). `schematic.json` is `{"marker", "args", "files":
   {name: sha256}}`, every file but itself; args are as given, without the data root and `--out`. The full mode writes
   none of it (byte-identical PNG and GIF to before the change; test).
   - **Splits for the no-art import rule.** `maze_render.convert` and its tables moved to the new `tools/maze_conv.py`
@@ -786,7 +786,7 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   multiplier is the rule itself, a reimplementation can't do without it, it holds no table content, and the specs and
   the randomness page already state it. *`0x6D6D80`*: the drop was the conservative reading; it is a computed checksum,
   now pinned. (a) *Anchors inside a unit*: rewrite, don't drop; written as a Phase 9 prerequisite above. (b) *GIF linked
-  vs embedded*: embed, with a rehype step in Phase 4's config; before Phase 6 ([entry](../backlog/2026-11-17-architect-archivist-plan-0070-before-phase-6-neutral-marker-inline.md)).
+  vs embedded*: embed, with a rehype step in Phase 4's config; before Phase 6 ([entry](../backlog/archive/2026-11-17-architect-archivist-plan-0070-before-phase-6-neutral-marker-inline.md)).
   (c) *`XL`*: accepted, and now also a check rule (fix 4). (d) *The 11 X6 tables*: second-cut matter; at Phase 9 each is
   named in the manifest with a reason (our own step or decision tables) or left out (a list of game-table rows). The
   link layout (`../../illustrations/…`, routes as directories) and the caption's added sentence are accepted. **First
@@ -805,3 +805,23 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   above). Request [closed](../backlog/archive/2026-11-17-archivist-architect-review-plan-0070-phase-3-builder-redactor-simplifi.md).
   Ledger: verdict accept with fixes, 6 fixes: misread 1 (the image range), overclaim 1 (the draw-shape claim),
   omission 3 (pins for the true range, `[L]` in the check, working-docs paths), other 1 (the offset parenthetical).
+- **2026-11-17, archivist, lane/x70m (neutral marker, inline GIF; entry from the Phase 3 review).** (1) *Marker:*
+  `schematic-only/1` (`MARKER`; the PNG `tEXt` keyword and GIF comment key `MARKER_NAME` is `schematic-only`) in
+  `tools/anim_common.py` and `tools/export_check.py`; `schematic.json` is `{"marker", "args", "files"}`, no `tool` key
+  (`write_schematic_json` lost the parameter; `maze_anim.py` and `tc_anim.py` follow) and the check refuses a `tool`
+  key (X11). The Phase 2 design text above names the new string; the ruling at "Rulings on the lane's choices" keeps the
+  old one as history. The TC illustration's calc text no longer names `--mlvl` ("not modelled here", "an input
+  default"). The `clean` and `X11-*` fixtures and `X8-image-outside/pic.gif` were rewritten by a scratch script that
+  swaps the marker in the PNG `tEXt` chunk (CRC recomputed), the GIF comment and the text files and recomputes the
+  hashes (the hash-mismatch fixture keeps its deliberate mismatch). The fixtures' Markdown images are root-absolute.
+  (2) *Inline GIF:* the builder writes `![Animation: <id>](/illustrations/<id>/<gif>)` plus the step-through link
+  (relative, as before). X8 accepts only a root-absolute `/illustrations/<id>/<file>` of a verified folder (a relative,
+  an unlisted or an elsewhere target fails); `RE_ABS` (X4) skips that image-target shape. Tests: 3 new checks in
+  `tools/test_export_check.py` (marker has no project name, `tool` key refused, X8 target shapes), 2 in
+  `tools/test_export_build.py` (inline image, X8 only for a verified folder), `test_anim_schematic.py` asserts no
+  `tool` key and no `d2recon`/`--mlvl` text. **Export repository (workspace, not git):** `site/astro.config.mjs` gained
+  `rehypeIllustrationBase()` (prefixes `SITE_BASE` to an `<img>` whose `src` starts `/illustrations/`, added to
+  `markdown.rehypePlugins` after Mermaid); `site/scripts/check-site-links.mjs` needed no change (it already resolves
+  every `src="..."` against the base). No npm here: the site build and the link check on `dist/` are not run; Phase 6
+  runs them. Result: first cut rebuilt (25 pages, 0 dropped), `export_check` 0 failures (326 X12 warnings), `--repo`
+  0 failures, `grep -r d2recon workspace/export/site` empty, the three test files green.
