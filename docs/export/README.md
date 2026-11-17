@@ -51,7 +51,8 @@ the page as complete.
 
 [`allow-hex.txt`](allow-hex.txt) (architect-owned, a reason on every line) names the game-math hex values that pass
 the check's X1 and X3: named constants and illustrative seeds by value, and worked-example sections by page and
-heading. A `sub_` or `DAT_` name never passes, nor an offset on one. An in-memory struct offset (`Name+0x10`, a chain
+heading. A `sub_` or `DAT_` name never passes, nor an offset on one, nor an offset from the image or a module
+(`Game.exe+0x…`). An in-memory struct offset (`Name+0x10`, a chain
 `Name+0x10+0x4`, a bare `+0x1C`, up to 5 hex digits) passes (owner decision 2026-11-17, plan 0070 Phase 9; ADR-0009 risk (1)
 weighed by the owner). A value in the code image's range (the pinned
 `Game.exe`'s whole mapped image, `0x00400000` to `0x009B9FFF`) passes only by a `pin` line: one value, one page, a

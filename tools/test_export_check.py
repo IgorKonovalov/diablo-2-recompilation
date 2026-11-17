@@ -115,6 +115,18 @@ def main():
        and t("```\n1. x ← a *(b + c)\n```") == set(), "X5: C statements, LAB_ and -> still fail")
     ok("X5" in t("```\n(int)x\n```") and "X5" in t("```\nuVar1 = 3\n```") and "X5" in t("```\nreturn __thiscall\n```"),
        "casts, decompiler names, calling conventions fail X5")
+    # review of lane/x70b2: C-shaped lines the narrowed X5 let through
+    for c in ("x += 3;", "x |= 0x10;", "foo(a, b);", "return x;", "unsigned int x = 5;", "struct Unit *p = q;",
+              "x = 1; // c", "if (x) { y = 1; }", "DWORD dw;", "--i;", "(*p).x = 1;"):
+        ok("X5" in t("```\n" + c + "\n```"), "X5 still fails " + c)
+    for c in ("p.flags &= ~8", "r.init(game, unit, &blk)     ; blk laid out as an AiCtx: ctl, MonStats;",
+              "type Seed { low: u32; high: u32 }", "F(x): for n ≥ 41 the fatal path (pushed before the call);"):
+        ok(t("```\n" + c + "\n```") == set(), "X5 passes our pseudocode " + c)
+    # other spellings of an image address, and offsets from the image
+    for c in ("0X004A1B20", "0X4A1B20", "4A1B20h", "0x0045_1B20", "Game.exe+0x5C00", "image base + 0x1A2B3", "`D2Common.dll+0x1234`",
+              "0x0063????"):
+        ok("X1" in t(c), "X1 fails " + c)
+    ok(t("`Game+0x10F4`, `base +0x114`, flag 0x40000? or 0x66?") == set(), "X1 passes a struct named Game, base, a flag in a question")
     # narrowings and widenings of the architect review (2026-11-17)
     ok("X1" in t("DAT_00556F60") and "X1" in t("g_Table_00556F60") and "X1" in t("at 00556860"),
        "an address after `_` or bare in the image range fails X1")

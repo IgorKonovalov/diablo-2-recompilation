@@ -123,8 +123,11 @@ def main():
     ok(rt("It calls fn:sub_00456789_Foo@0x00456789 here.") == "It calls here.", "a sub_ name is removed whole")
     ok(rt("Read data:DAT_00556F60@0x00556F60 here.") == "Read here.", "a DAT_ name is removed whole")
     ok(rt("Call fn:Cafe00Bad@0x0045ABCD again.") == "Call again.", "a name holding a hex run of 6+ digits is removed")
-    ok(rt("The field struct:Unit+0x20 holds it.") == "The field holds it.", "a struct: token is removed")
-    ok(rt("The field `struct:Unit+0x20` holds it.") == "The field holds it.", "a backticked struct: token is removed")
+    # an in-memory offset is content (owner decision 2026-11-17): a struct anchor becomes its offset (review of lane/x70b2)
+    ok(rt("The field struct:Unit+0x20 holds it.") == "The field `Unit+0x20` holds it.", "a struct: anchor becomes its offset")
+    ok(rt("The field `struct:Unit+0x20` holds it.") == "The field `Unit+0x20` holds it.", "a backticked struct: anchor too")
+    ok("0045ABCD" not in rt("The field struct:Unit+0x0045ABCD holds it.") and "DAT_" not in rt("A struct:DAT_00556F60+0x4 b."),
+       "a struct: anchor with an image-shaped offset or a code name never stays")
     ok(rt("Seen in run:2026-10-11-rng-emu and src:arreat-summit.") == "Seen.", "run: and src: ids removed, dangling and/in go")
     ok(rt("Listed A, items/0012-slug#x, B.") == "Listed A, B." and rt("Read items/0012 now.") == "Read now.",
        "a finding id is removed")
@@ -170,6 +173,14 @@ def main():
     ok(eb.rewrite_row("| a | fn:sub_0045ABCD_X@0x0045ABCD: the call | 2 |") == "| a | — | 2 |", "a broken cell is an em dash")
     ok(eb.rewrite_row("| a | fn:sub_0045ABCD_X@0x0045ABCD → fn:sub_0045ABCE_Y@0x0045ABCE | 2 |") == "| a | — | 2 |",
        "a cell left with arrows only is an em dash")
+    # review of lane/x70b2: a statement cell the rewrite breaks drops its row, it never reads as "none"
+    ok(eb.rewrite_row("| Q80 | The collision test `0x0064FF90`'s result per crossed subtile | 2 |") == eb.BROKEN,
+       "a broken statement cell breaks the row")
+    ok(eb.rewrite_row("| a | 10 000 | fn:PLAYER_GoldCap@0x00622E70, run:2026-10-17-e (the cap reached at L 30, "
+                      "[x § 1](../../findings/items/experiments.md#x)) |") == "| a | 10 000 | — |",
+       "a broken evidence cell (opening with its anchor) is still a dash")
+    ok(eb.rewrite_row("| a | The test `0x0064FF90`'s result per subtile | x |", row_breaks=False) == "| a | — | x |",
+       "a header row never breaks")
     ok(rt("[C] (run:2026-10-18-quests2: x-talk2)") == "[C] (x-talk2)", "a run id before a colon in a parenthetical goes with it")
     ok(rt("[C] run:2026-11-03-path-emu-2, 994 022 draws") == "[C] 994 022 draws", "no comma left after a tag")
     ok(rt("**It rebuilds nothing.** In run:2026-10-27-sweep-vendors, 7 opens found it.") ==

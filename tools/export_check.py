@@ -80,14 +80,22 @@ TABLE_LIMIT = 20
 
 RE_X1 = [
     (re.compile(r"\b0x[0-9A-Fa-f]{6,}\b"), "address / hex of 6+ digits"),
+    # other spellings of a value of 6+ hex digits (review of lane/x70b2): `0X4A1B20`, `0x0045_1B20`, MASM `4A1B20h`
+    (re.compile(r"\b0X[0-9A-Fa-f]{6,}\b|\b0[xX](?=(?:[0-9A-Fa-f][_']?){6})[0-9A-Fa-f]+(?:[_'][0-9A-Fa-f]+)+\b"
+                r"|(?<![\w.])(?=[0-9A-Fa-f]*[0-9])[0-9A-Fa-f]{6,}[hH]\b"), "hex of 6+ digits, other spelling"),
     (re.compile(r"\bsub_[0-9A-Fa-f]{6,8}"), "sub_ name"),
     # an in-memory struct offset `Name+0x10`, `Name+0x10+0x4`, or a bare `+0x1C` passes (owner decision 2026-11-17,
     # plan 0070 Phase 9; ADR-0009 risk (1) weighed by the owner): up to 5 hex digits. 6+ digits is a code-image
     # shaped value and fails as ever, and so does an offset on a `sub_`/`DAT_` name
     (re.compile(r"\+0x[0-9A-Fa-f]{6,}"), "+0x offset of 6+ digits"),
     (re.compile(r"\b(?:sub|DAT|FUN|PTR)_\w*(?:\+0x[0-9A-Fa-f]+)+"), "offset on a code name"),
+    # an offset from the image or a module is an address (`Game.exe+0x5C00`, `image base + 0x1A2B3`; review of lane/x70b2)
+    (re.compile(r"(?i)(?:\.exe|\.dll|\bimage(?:\s*base)?|\bimagebase|\bmodule|\brva)`?\s*\+\s*0x[0-9A-Fa-f]+"),
+     "offset from the image or a module"),
     # a partial address, `0x0063xxxx`: a hex prefix with placeholder digits
-    (re.compile(r"\b0x(?:00)?[4-9][0-9A-Fa-f]{0,5}[xX?]+[0-9A-Fa-f]*\b"), "partial address"),
+    # (6 to 8 places; placeholders `x` or `??`: a flag in a question, `0x40000?`, is no partial address; review of lane/x70b2)
+    (re.compile(r"\b0[xX](?=[0-9A-Fa-fxX?]{6,8}(?![\w?]))(?:00)?[4-9][0-9A-Fa-f]{0,5}(?:[xX]+|\?{2,})[0-9A-Fa-fxX?]*(?![\w?])"),
+     "partial address"),
     # bare hex, also after `_` (DAT_00556F60, a name with an address in it); architect review 2026-11-17
     (re.compile(r"(?<![A-Za-z0-9.])(?=[0-9A-Fa-f]*[0-9])(?=[0-9A-Fa-f]*[A-Fa-f])[0-9A-Fa-f]{6,}(?![\w.])"),
      "hex of 6+ digits"),
@@ -131,9 +139,15 @@ RE_FENCE = re.compile(r"^\s*(```+|~~~+)\s*([\w-]*)")
 RE_BLOCK_BAD = [
     # a C statement: `;`-terminated and assigned with `=`, typed, or compared with `==`/`!=`/`&&`. Our pseudocode uses `;` as a
     # separator and `=` as equality, so a bare `;` at the end of a line is not C
-    (re.compile(r"^(?=.*;\s*$)(?:\s*(?:[A-Za-z]*\d+[a-z]?\.\s+)?[\w.\[\]*]+\s*=\s*[^=\s]"
-                r"|\s*(?:const\s+)?(?:u?int\d*(?:_t)?|char|short|long|byte|bool|float|double|void|[DW]ORD|BYTE|undefined\d?)\b[\s*]+\w"
-                r"|.*(?:==|!=|&&|\|\||\+\+))"), "C statement ending in ;"),
+    # review of lane/x70b2: a compound assignment (`x += 3;`), `unsigned`/`signed`/`struct` declarations, `DWORD`, `--`, a
+    # bare call or `return` statement (the `;` ends the line: our `;` also opens a comment), and a C comment after the `;` (`x = 1; // c`) count too
+    (re.compile(r"^(?=.*;\s*(?://.*|/\*.*\*/\s*)?$)(?:\s*(?:[A-Za-z]*\d+[a-z]?\.\s+)?[\w.\[\]*()]+\s*(?:[-+*/%&|^]|<<|>>)?=\s*[^=\s]"
+                r"|\s*(?:const\s+)?(?:(?:un)?signed|struct\s+\w+|u?int\d*(?:_t)?|char|short|long|byte|bool|float|double|void|D?WORD|BYTE"
+                r"|undefined\d?)\b[\s*]+\w"
+                r"|\s*(?:return\b[^;:]*|[A-Za-z_][\w.]*\([^;:]*\))\s*;\s*(?://.*|/\*.*\*/\s*)?$"
+                r"|.*(?:==|!=|&&|\|\||\+\+|--\w|\w--))"), "C statement ending in ;"),
+    # a C block on one line: braces around a `;`-terminated assignment or call (`if (x) { y = 1; }`); `{ low: u32; high: u32 }` passes
+    (re.compile(r"\{[^{}]*(?:[\w\]]\s*(?:[-+*/%&|^]|<<|>>)?=\s*[^=\s][^{};]*|\w\([^{};]*\)|\breturn\b[^{};]*);\s*\}"), "C block on one line"),
     # C braces: a lone `{`, a line starting with `}`, a line ending in `{`. Our set notation `{a, b}`, `{hi:lo}` passes
     (re.compile(r"^\s*\{\s*$|^\s*\}|\{\s*$"), "brace"),
     (re.compile(r"->"), "-> pointer form"),

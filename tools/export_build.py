@@ -32,7 +32,8 @@ Per page, in this order:
                  6-digit hex in the image's range, a partial `0x0063xxxx`; one the page pins stays), a plan, ADR or lane
                  reference and a repository path or `.py`/`.csv`/`.log` name are removed as tokens, with the same `broken`
                  test (a removed subject, a token before a dash or `=`, a determiner or `run`/`using` before it); a cell
-                 made only of them is an em dash. A pseudocode line's tail (`[C] (fn:..., run:...)`, `; ... 0x...`) is
+                 made only of them is an em dash, a statement cell they break drops its row. A `struct:Name+0x10` anchor
+                 becomes `Name+0x10`. A pseudocode line's tail (`[C] (fn:..., run:...)`, `; ... 0x...`) is
                  rewritten, a comment left empty goes and the tag stays; a removed token in its code part leaves the
                  line as it was (the block then drops). An in-memory offset `Name+0x10` is content and stays.
                  Words and fenced blocks are counted per page and in the report (`words dropped`, `fenced blocks kept`).
@@ -260,7 +261,10 @@ BROKEN = "\x01"         # rewrite_text's result for a unit whose removed token w
 _NAME = r"[A-Za-z0-9_](?:[\w.:]*\w)?"
 _OPEN = r"(?:(?<![\w`/])(`)|(?<![\w`/]))"
 RE_ANCHOR = re.compile(_OPEN + r"(?:fn|data|tbl|fmt):(" + _NAME + r")(?:@0x[0-9A-Fa-f]+)?(?(1)`)")
-RE_REMOVE = re.compile(_OPEN + r"(?:struct:[A-Za-z0-9_]+(?:\+0x[0-9A-Fa-f]+|\.\w+)*|run:[\w.-]*\w|src:[\w.-]*\w"
+# a struct anchor is an in-memory offset, content since the owner's decision (2026-11-17; review of lane/x70b2):
+# `struct:Unit+0x20` -> `Unit+0x20`, as an anchor becomes its name; one with hex in its name or a 6+ digit offset goes
+RE_STRUCT = re.compile(_OPEN + r"struct:([A-Za-z0-9_]+(?:\+0x[0-9A-Fa-f]+|\.\w+)*)(?(1)`)")
+RE_REMOVE = re.compile(_OPEN + r"(?:run:[\w.-]*\w|src:[\w.-]*\w"
                        r"|[a-z]+/\d{4}(?!\d)(?:-[\w-]*\w)?(?:\.md)?(?:#[\w-]+)?)(?(1)`)")
 # a spec citation with a folder: `drlg/maze.md § 3` -> `maze.md § 3`; without a section it goes (with a "spec" before it)
 RE_CITE = re.compile(r"(?<![\w/.:~-])(?:\bspec\s+)?(`)?(?:\.\./|\./)*(?:[\w.-]+/)+([\w.-]+\.md)(?(1)`)", re.I)
@@ -330,6 +334,7 @@ def _addr(m):
 
 def _rw_plain(s, plain=False):
     s = RE_ANCHOR.sub((lambda m: m.group(2) if clean_name(m.group(2)) else SENT) if plain else _anchor, s)
+    s = RE_STRUCT.sub((lambda m: m.group(2) if clean_name(m.group(2)) else SENT) if plain else _anchor, s)
     s = RE_REMOVE.sub(SENT, s)
     s = RE_CITE.sub(_cite, s)
     s = RE_README.sub(SENT, s)
@@ -425,8 +430,11 @@ def rewrite_fence_line(line):
     return (c + t).rstrip() if (c != code or t != tail) else line
 
 
-def rewrite_row(line):
-    """A table row, cell by cell: a cell the rewrite empties becomes an em dash."""
+def rewrite_row(line, row_breaks=True):
+    """A table row, cell by cell: a cell the rewrite empties becomes an em dash. A broken cell that carried a
+    statement of its own (3+ words besides its anchors, and not opening with its evidence) makes the row broken: an em
+    dash would read as "none"
+    (review of lane/x70b2: "The collision test `0x0064FF90`'s result per crossed subtile" became `—`)."""
     if RE_SEP.match(line):
         return line
     cells, changed = split_row(line), False
@@ -435,10 +443,23 @@ def rewrite_row(line):
         r = rewrite_text(c.strip())
         if r != c.strip():
             changed = True
+            if row_breaks and BROKEN in r and not RE_EVID_START.match(c) and cell_words(c) >= 3:
+                return BROKEN
             if BROKEN in r or not re.search(r"[A-Za-z0-9]", r):
                 r = "—"
         new.append(r if r != c.strip() else c.strip())
     return "| " + " | ".join(new) + " |" if changed else line
+
+
+# a cell that opens with its evidence (a tag, an anchor, a run id, an address) is an evidence cell: broken, it is a dash
+RE_EVID_START = re.compile(r"\s*(?:\[[CIL]\]|\(?`?(?:(?:fn|data|struct|tbl|fmt|src|run):|@?0x[0-9A-Fa-f]{6}))")
+
+
+def cell_words(c):
+    """Words of a cell besides its evidence: anchors, links into findings/ and every removed token count none."""
+    t = RE_LINK.sub(lambda m: "" if "findings/" in m.group(2) else m.group(1), drop_evidence_parens(c))
+    t = _rw_plain(RE_ANCHOR.sub(SENT, t)).replace(SENT, " ")
+    return len(re.findall(r"[A-Za-z][A-Za-z'-]*", t))
 
 
 def has_words(t):
@@ -853,9 +874,12 @@ def redact(pg, blocks):
             lines = []
             for i, ln in enumerate(rows):
                 pre = redact_text(ln, sub=False)
-                r = RE_SUB.sub("", rewrite_row(pre)) if i != 1 else RE_SUB.sub("", pre)
+                r = RE_SUB.sub("", rewrite_row(pre, row_breaks=i >= 2)) if i != 1 else RE_SUB.sub("", pre)
                 if i >= 2 and r != RE_SUB.sub("", pre):
                     note_rewrite(pg, heading, b["lines"][i], r)
+                    if BROKEN in r:
+                        note_empty(pg, heading, "row", b["lines"][i], r)
+                        continue
                     if all(c.strip() in ("", "—") for c in split_row(r)):
                         note_empty(pg, heading, "row", b["lines"][i])
                         continue

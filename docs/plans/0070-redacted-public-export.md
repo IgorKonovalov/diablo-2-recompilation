@@ -1174,3 +1174,41 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   pseudocode parameters (`hitfn(…)`, `src: object`) or the word "`fn:`" quoted in a sentence (they pass X2); `run:` only
   as the word (50 lines); one `ADR` word ("that ADR excludes…", a reading flaw: the sentence kept its pointer word);
   no partial address. Per-spec table: `/tmp/claude-1000/-home-igor-Work-recompilcation-project/eb61de30-a30a-401a-a3db-30c67be2439b/scratchpad/x70b2/per-spec-table.txt`.
+- 2026-11-17, architect, review of `lane/x70b2` (Opus, Tier A rigour). **Verdict: accept with fixes (4: omission 3,
+  other 1)**, fixed in this commit. (1) *Safety, omission:* other spellings of an image value passed X1: `0X004A1B20`
+  and `0X4A1B20` (the rules matched lowercase `0x` only), MASM `4A1B20h`, `0x0045_1B20`, a partial `0x0063????` (the
+  trailing `\b` never matched after `?`), and an offset from the image or a module (`Game.exe+0x5C00`, `image base +
+  0x1A2B3`, `D2Common.dll+0x1234`: an address of the image below `0x500000` written as a 4- or 5-digit offset). All fail
+  now; `Game+0x10F4` and `base +0x114` (structs) pass, and a flag in a question (`0x40000?`, `0x66?`, two mermaid
+  blocks) is no partial address: a partial needs 6 to 8 places and `x` or `??` placeholders. The lane's other cases
+  hold: `+0x4A1B20`, `Name+0x0045ABCD`, `base+0x5C0000`, `sub_`/`DAT_`/`FUN_`/`LAB_`/`PTR_` with or without an offset
+  fail; a bare 5-digit value (`4A1B2`, `Name+0x4A1B2`) is below the image and passes. Decimal spellings (`4856608`) stay
+  out of reach of any rule. (2) *Safety, omission:* X5's narrowing let C lines through: compound assignments (`x += 3;`,
+  `x |= 0x10;`), `unsigned int`/`struct Unit *` declarations, `DWORD dw;` (the rule read `[DW]ORD`, not `DWORD`),
+  `--i;`, a bare call or `return x;`, a C comment after the `;` (`x = 1; // c`) and a one-line block (`if (x) { y = 1;
+  }`). They fail now; our `;` comments (`r.init(game, unit, &blk)     ; blk laid out …;`), `&=`/`|=` without `;` and
+  `type Seed { low: u32; high: u32 }` pass: the trial keeps the lane's 867 of 1000 blocks. (3) *Reading, omission:* the
+  owner's offsets decision left `struct:Game+0x6A` removed as evidence; it becomes `` `Game+0x6A` `` as an anchor
+  becomes its name (one with hex in its name or a 6+ digit offset still goes). (4) *Reading, other:* a statement cell
+  broken by the new address class became `—`, which reads as "none": "Q80 | —" in quirks, "The collision test
+  `0x0064FF90`'s result per crossed subtile" → `—`. A broken cell with 3+ words of its own that does not open with its
+  evidence (a tag, an anchor, a run id, an address) now drops the row (`broken`, 53 rows in the trial); an evidence
+  cell is a dash as before; a header row never breaks. The lane's two unrequested fixes are accepted (a heading keeps
+  its words; a link fragment carrying a hex run is dropped). Tests: `test_export_build` 141 (was 137),
+  `test_export_check` 160 (was 136), `test_anim_schematic` OK. **Checks.** Cut 1 (`workspace/export-x70b2-review-cut1`,
+  `--repo workspace/export-repo/`): 0 failures, 330 warnings, identical to the lane's cut; the glossary's kept offsets
+  are 36 tokens on 31 lines, all game structs (`Unit`, `ItemData`, `MonsterData`, `PlayerData`, `Game`, `level`,
+  `drlgRoom`, `activeRoom`, `path`, `StatList`, `QuestControl`, `NpcStoreCtl`, `MonRegion`, `AiCtl`, `act`). Trial
+  (`workspace/export-x70b2-review-trial2`, the x70a manifest): 24 failures, all X6; specs units 1210/14172 dropped
+  (8.5%), words 86243/417111 (20.7%), fenced blocks 867/1000; 49 of 65 specs at or under 25% words. Sections: all 58
+  spec sections read; each admits only its `Worked example` heading and its children (scope ends at the next `##`);
+  about 1300 admitted tokens, seeds `hi:lo`, draw lows and computed flags, none in the image's range (those the rewrite
+  removes, as the lane says). Two kinds to read at the Phase 9 sample: drlg/collision's example names rooms by heap
+  pointers (`0x035A5600`, `0x02DCAB00`, not image values) beside "the `CB` line 8034", a log line; drlg/lifecycle's
+  flags `0x05382000`. Hand greps of the trial: no `sub_`, `DAT_`, `FUN_`, `LAB_`, `PTR_`, `.py`, `.log`, `.claude`,
+  `/home`, repository name, `Ghidra`, `harness`, plan reference; `0x00` only as short or out-of-image values;
+  image-range tokens only the four `pin` values of the wiki pages; `fn:` 3 and `src:` 2 (pseudocode parameters), `run:`
+  47 (the word), `findings` 3 (the word), `ADR` 1 (the lane's "that ADR"). X9 does not list `objdump` (49 lines) or
+  `r2` as the tool ("by objdump and r2 alike"; most of the 119 `r2` are variables), nor `debugger` (4): tool names in prose,
+  a reading for Phase 9 (`breakpoint`, 27, is the game's frame-breakpoint term). Ledger: verdict accept
+  with fixes, 4 (omission 3, other 1).
