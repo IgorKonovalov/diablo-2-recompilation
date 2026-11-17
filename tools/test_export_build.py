@@ -119,11 +119,11 @@ def main():
     ok(rt("Reads data:g_Table@0x0070A000 and tbl:Skills.txt:minmana, fmt:DT1 and tbl:Levels.") ==
        "Reads `g_Table` and `Skills.txt:minmana`, `DT1` and `Levels`.", "data:, tbl:, fmt: anchors, with a column")
     ok(rt("It calls fn:sub_00456789_Foo@0x00456789 here.") == "It calls here.", "a sub_ name is removed whole")
-    ok(rt("The data:DAT_00556F60@0x00556F60 cell.") == "The cell.", "a DAT_ name is removed whole")
-    ok(rt("The fn:Cafe00Bad@0x0045ABCD call.") == "The call.", "a name holding a hex run of 6+ digits is removed")
+    ok(rt("Read data:DAT_00556F60@0x00556F60 here.") == "Read here.", "a DAT_ name is removed whole")
+    ok(rt("Call fn:Cafe00Bad@0x0045ABCD again.") == "Call again.", "a name holding a hex run of 6+ digits is removed")
     ok(rt("The field struct:Unit+0x20 holds it.") == "The field holds it.", "a struct: token is removed")
     ok(rt("The field `struct:Unit+0x20` holds it.") == "The field holds it.", "a backticked struct: token is removed")
-    ok(rt("Seen in run:2026-10-11-rng-emu and src:arreat-summit.") == "Seen in.", "run: and src: ids removed, dangling and goes")
+    ok(rt("Seen in run:2026-10-11-rng-emu and src:arreat-summit.") == "Seen.", "run: and src: ids removed, dangling and/in go")
     ok(rt("Listed A, items/0012-slug#x, B.") == "Listed A, B." and rt("Read items/0012 now.") == "Read now.",
        "a finding id is removed")
     ok(rt("It holds (items/0012, run:2026-10-11-a) here.") == "It holds here.", "an emptied parenthetical goes")
@@ -141,7 +141,43 @@ def main():
     ok(rt("as in `drlg/maze.md` § 3 here") == "as in `maze.md` § 3 here", "a backticked citation keeps its backticks")
     ok(rt("as in maze.md § 3 here") == "as in maze.md § 3 here", "file.md § X passes")
     ok(rt("as in drlg/maze and rng/seeds") == "as in drlg/maze and rng/seeds", "bare subsystem names pass")
-    ok(rt("Details: spec drlg/README.md.") == "Details:.", "a folder path .md with no section is removed, 'spec' too")
+    ok(rt("Details: spec drlg/README.md.") == eb.BROKEN, "a folder path .md with no section is removed, 'spec' too; "
+       "a label left with nothing after its colon is broken")
+    ok(rt("Read it, see spec drlg/README.md.") == "Read it.", "a folder path .md with no section is removed, 'spec' too")
+    # review of lane/x70a: a working-tree citation is never reduced to its file name
+    for c in ("findings/items/0012-x.md", "../plans/0070-redacted-public-export.md", "docs/adrs/0031-constants.md",
+              "`findings/rng/0001.md`", "findings/drlg/experiments.md", "docs/backlog/2026-11-17-foo.md",
+              ".claude/skills/archivist/references/review-fixes.md"):
+        r = rt("see " + c + " § 3 here")
+        ok(r == eb.BROKEN, f"a working-tree citation with a section drops the unit ({r!r})")
+    ok(rt("see 0012-slug.md § 3 here") == "see 0012-slug.md § 3 here", "no folder, no rewrite")
+    ok(rt("per tables/Levels.md § Columns") == "per Levels.md § Columns", "a table doc citation is reduced")
+    # review of lane/x70a: a removed token the unit can't read without drops the unit
+    ok(rt("- [findings/data/0002-x.md § 4](../../findings/data/0002-x.md#4): the language byte.") == eb.BROKEN,
+       "an item whose head before the colon went is broken")
+    ok(rt("- Findings: [a/0001](../../findings/a/0001.md), [a/0002](../../findings/a/0002.md).") == eb.BROKEN,
+       "a label whose whole list went is broken")
+    ok(rt("It takes [the finding](../findings/x/0001.md)'s reading.") == eb.BROKEN, "a removed possessive is broken")
+    ok(rt("no build of run:2026-10-15-vendors passed 20 failures") == eb.BROKEN,
+       "a removed object of a preposition with words after it is broken")
+    ok(rt("It is passed to fn:sub_0045ABCD_X@0x0045ABCD.") == eb.BROKEN, "'to' before a removed token is broken")
+    ok(rt("All from kept logs of run:2026-10-20-chain, each reproduced.") == "All from kept logs, each reproduced.",
+       "a dangling 'of' before punctuation goes with the token")
+    ok(rt("fn:sub_0045ABCD_X@0x0045ABCD, the 1 330 kept logs") == "the 1 330 kept logs",
+       "a list whose first slot went loses the leading comma")
+    ok(eb.rewrite_row("| a | fn:sub_0045ABCD_X@0x0045ABCD: the call | 2 |") == "| a | — | 2 |", "a broken cell is an em dash")
+    ok(eb.rewrite_row("| a | fn:sub_0045ABCD_X@0x0045ABCD → fn:sub_0045ABCE_Y@0x0045ABCE | 2 |") == "| a | — | 2 |",
+       "a cell left with arrows only is an em dash")
+    ok(rt("[C] (run:2026-10-18-quests2: x-talk2)") == "[C] (x-talk2)", "a run id before a colon in a parenthetical goes with it")
+    ok(rt("[C] run:2026-11-03-path-emu-2, 994 022 draws") == "[C] 994 022 draws", "no comma left after a tag")
+    ok(rt("**It rebuilds nothing.** In run:2026-10-27-sweep-vendors, 7 opens found it.") ==
+       "**It rebuilds nothing.** 7 opens found it.", "a dangling 'In' at a sentence's start goes with its comma")
+    ok(rt("All rows: [a/0005 § 6](../../findings/a/0005.md); the run-time rows.") == eb.BROKEN,
+       "a label whose list went, before a semicolon, is broken")
+    ok(rt("each a section: [S2b](../../findings/i/0005.md#s2b) (full-table reads), [S2c](../../findings/i/0005.md#s2c) (vendors)")
+       == eb.BROKEN, "a parenthetical that glossed a removed token is broken")
+    ok(rt("- Runs: [run:2026-10-17-e](../../findings/i/experiments.md#r): 33 logs.") == eb.BROKEN, "a label's colon before a removed head is broken")
+    ok(rt("For quests this is [save/0002](../../findings/save/0002.md); for the NPC") == eb.BROKEN, "a removed complement of 'is' is broken")
     ok(rt("Details (README.md) here.") == "Details here.", "a README name with no section is removed")
     ok(rt("Details in README.md § 2 here.") == "Details in README.md § 2 here.", "README.md § X passes")
     ok(rt("Details [x](../specs/drlg/maze.md) here.") == "Details [x](../specs/drlg/maze.md) here.", "a link target is not a citation")

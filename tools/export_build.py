@@ -23,8 +23,11 @@ Per page, in this order:
                  run of 6+ digits, no `sub_`, no `DAT_`, nothing X1-X5 would fail), else the token goes; `struct:`
                  tokens, `run:` ids, finding ids, links into findings/ and `src:` ids go; a spec citation with a folder
                  (`drlg/maze.md § 3`) is reduced to `maze.md § 3` or removed; what the removal leaves (empty cell,
-                 empty list or parenthetical, a dangling "at"/"see"/"per") is cleaned. A unit left with no words is
-                 dropped. Every rewrite is a REWRITE report line (tab-separated: page, heading, before, after).
+                 empty list or parenthetical, a dangling "at"/"see"/"per"/"of"/"in") is cleaned. A unit left with no
+                 words is dropped (`empty`), and so is one whose removed token it can't read without: its head before a
+                 colon, a possessive, the object of a preposition or determiner (`broken`). A citation into findings/,
+                 plans/, adrs/ and the other working-tree folders is never reduced to its file name. Every rewrite is a
+                 REWRITE report line (tab-separated: page, heading, before, after).
   2. simplifier  runs export_check's text rules (X1-X5, X9, with the hex allowance) on each unit (a sentence of a
                  paragraph, a list item, a table row, a fenced block) and drops a unit that fails; a unit with an
                  `[L]` tag goes too. A section goes when its heading fails or nothing is left under it. It never
@@ -241,6 +244,7 @@ def redact_text(text, rw=None, sub=True):
 # ---------------------------------------------------------------- anchor rewrite (Phase 9 prerequisite)
 
 SENT = "\x00"           # marks where a token was removed, so the clean-up touches only what the removal left
+BROKEN = "\x01"         # rewrite_text's result for a unit whose removed token was a part it can't read without
 _NAME = r"[A-Za-z0-9_](?:[\w.:]*\w)?"
 _OPEN = r"(?:(?<![\w`/])(`)|(?<![\w`/]))"
 RE_ANCHOR = re.compile(_OPEN + r"(?:fn|data|tbl|fmt):(" + _NAME + r")(?:@0x[0-9A-Fa-f]+)?(?(1)`)")
@@ -249,7 +253,19 @@ RE_REMOVE = re.compile(_OPEN + r"(?:struct:[A-Za-z0-9_]+(?:\+0x[0-9A-Fa-f]+|\.\w
 # a spec citation with a folder: `drlg/maze.md § 3` -> `maze.md § 3`; without a section it goes (with a "spec" before it)
 RE_CITE = re.compile(r"(?<![\w/.:~-])(?:\bspec\s+)?(`)?(?:\.\./|\./)*(?:[\w.-]+/)+([\w.-]+\.md)(?(1)`)", re.I)
 RE_README = re.compile(r"(?<![\w/.:~-])(?:\bspec\s+)?(`)?README\.md(?(1)`)(?!\s*§)")
-RE_DANGLE = re.compile(r"(?i)\b(?:at|see|per|and|or)\b[\s,;:]*\x00(?=\s*(?:[.,;:)\]|]|$))", re.M)
+RE_DANGLE = re.compile(r"(?i)\b(?:at|see|per|and|or|of|from|in|by|via)\b"
+                       r"[\s,;:]*\x00(?=\s*(?:[.,;:)\]|]|$))", re.M)
+# a removed token the unit can't do without (review of lane/x70a): the unit's head before a colon, a possessive
+# ("'s"), the object of a preposition or a determiner with words after it, a label whose whole list went
+_LEAD = r"^[\s>*+-]*(?:\d+\.\s+)?(?:\*\*)?"
+RE_BROKEN = re.compile(_LEAD + r"\x00\s*:|\x00\s*['\u2019]s\b"
+                       r"|(?i:\b(?:of|from|in|by|via)\s+\x00[\s\x00]*(?=[\w`(\[]))"
+                       r"|(?i:\b(?:with|to|under|on|for|into|through|between|than|the|a|an|its|their|each|every|this"
+                       r"|that|these|those|is|are|was|were|be)\s+\x00)"
+                       r"|\w:\s*\x00[\s\x00]*[.;]?\s*$|\w:\s*\x00\s*[;,:]|\x00[ \t]*\((?!\s*\x00)")
+# working-tree folders: a citation into them is never reduced to its file name (review of lane/x70a)
+RE_WORK_SEG = re.compile(r"(?:^|[/`\s])(?:findings|plans|done|adrs|backlog|archive|re|tools|workspace|\.claude|skills"
+                         r"|references|export)/")
 RE_EMPTY_PAREN = re.compile(r"(?i)\((?=[^()]*\x00)(?:\b(?:at|see|per|and|or)\b|[\s,;:\x00])*\)")
 
 
@@ -264,6 +280,10 @@ def _anchor(m):
 
 
 def _cite(m):
+    if RE_WORK_SEG.search(m.group(0)) or re.match(r"\d", m.group(2)):
+        # a finding, plan, ADR, backlog or tool file: its name is a tie to the working tree. Without a section it
+        # goes like a finding id; with one the unit can't be read without it and drops (`broken`), check or no check.
+        return BROKEN if re.match(r"\s*§", m.string[m.end():]) else SENT
     if re.match(r"\s*§", m.string[m.end():]):
         bt = "`" if m.group(1) else ""
         return bt + m.group(2) + bt
@@ -289,6 +309,8 @@ def _del_sent(m):
 def sent_cleanup(t):
     """What a removed token leaves behind: runs of separators, empty or dangling parentheticals, "see"/"at"/"per"
     before nothing, doubled spaces. Touches only the text next to a removal mark."""
+    if BROKEN in t:
+        return BROKEN
     if SENT not in t:
         return t
     for _ in range(3):
@@ -296,6 +318,11 @@ def sent_cleanup(t):
         t = re.sub(r"\x00(?:[ \t]*\x00)+", SENT, t)
         t = RE_EMPTY_PAREN.sub(SENT, t)
         t = RE_DANGLE.sub(SENT, t)
+    if RE_BROKEN.search(t):
+        return BROKEN
+    t = re.sub(_LEAD.replace("^", "^(") + r")\x00\s*[,;]\s*", r"\1", t)        # a list's first slot went
+    t = re.sub(r"((?:^|[\].!?*])[ \t]*)\x00\s*[,;]\s*", r"\1", t)          # after a tag or a sentence's end
+    t = re.sub(r"\(\s*\x00\s*:\s*", "(", t)                                    # `(run:…: detail)` -> `(detail)`
     t = re.sub(r"[,;]\s*\x00(?=\s*[,;])", "", t)
     t = re.sub(r"\s*[,;]\s*\x00(?=\s*(?:[.)\]:]|$))", "", t, flags=re.M)
     t = re.sub(r"\(\s*\x00\s*[,;]\s*", "(", t)
@@ -332,7 +359,7 @@ def rewrite_row(line):
         r = rewrite_text(c.strip())
         if r != c.strip():
             changed = True
-            if not re.sub(r"[\s,;:.\-]", "", r.replace("`", "")):
+            if BROKEN in r or not re.search(r"[A-Za-z0-9]", r):
                 r = "—"
         new.append(r if r != c.strip() else c.strip())
     return "| " + " | ".join(new) + " |" if changed else line
@@ -596,7 +623,7 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
         if r0 != s:
             note_rewrite(page, heading, s, r0)
             if not has_words(r0):
-                note_empty(page, heading, "caption sentence", s)
+                note_empty(page, heading, "caption sentence", s, r0)
                 continue
             s = r0
         page.units += 1
@@ -652,14 +679,15 @@ def _flat(t, n=160):
 
 
 def note_rewrite(pg, heading, before, after):
-    pg.rewrites.append((heading, _flat(before), _flat(after)))
+    pg.rewrites.append((heading, _flat(before), "(dropped: broken)" if BROKEN in after else _flat(after)))
 
 
-def note_empty(pg, heading, kind, before):
-    """A unit the rewrite left with no words: dropped, and counted like any other drop."""
+def note_empty(pg, heading, kind, before, after=""):
+    """A unit the rewrite left with no words (`empty`), or one whose removed token was a part it can't read without
+    (`broken`): dropped, and counted like any other drop."""
     pg.units += 1
     pg.dropped += 1
-    pg.drops.append((heading, "empty", kind, _flat(before, 200)))
+    pg.drops.append((heading, "broken" if BROKEN in after else "empty", kind, _flat(before, 200)))
 
 
 def rewrite_sentences(pg, heading, text, kind="sentence"):
@@ -676,7 +704,7 @@ def rewrite_sentences(pg, heading, text, kind="sentence"):
         if has_words(r):
             new.append(r)
         else:
-            note_empty(pg, heading, kind, s)
+            note_empty(pg, heading, kind, s, r)
     return " ".join(new) if changed else None
 
 
@@ -698,7 +726,7 @@ def redact(pg, blocks):
             if t != t0:
                 note_rewrite(pg, heading, b["text"], t)
                 if not has_words(t):
-                    note_empty(pg, heading, "section", b["text"])
+                    note_empty(pg, heading, "section", b["text"], t)
                     skip_level = b["level"]
                     continue
             heading = t
@@ -744,7 +772,7 @@ def redact(pg, blocks):
                 note_rewrite(pg, heading, x, t)
                 body = RE_ITEM.sub("", t.split("\n")[0], count=1) + " ".join(t.split("\n")[1:])
                 if not has_words(body.lstrip("> ")):
-                    note_empty(pg, heading, k, x)
+                    note_empty(pg, heading, k, x, t)
                     continue
             b = dict(b, lines=t.split("\n"))
         red.append(b)
