@@ -855,7 +855,7 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
   35 (the non-player branch → b H4c), 57 (the client rule → d-none).
 - **Contradicted in part: economy row 40** (F1, line 485): the "13 `nodurability` crossbows of a `Repair` type" are 12
   crossbows and the Phase Blade `7cr` (`swor`). A label, not a behaviour: Phase 3 rewords it, and the archivist corrects
-  ItemTypes.md line 181 (backlog [`2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections`](../../backlog/2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections.md),
+  ItemTypes.md line 181 (backlog [`2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections`](../../backlog/archive/2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections.md),
   which also carries skills/0002's monster `useAmmo` sites). No owner decision is needed.
 - **Symbols:** `PLAYER_GoldCap`, `sub_0055B060_PlayerGiveGold`, `sub_0054B1E0_Pkt20UseInvItem`, `sub_0054B560_Pkt26UseBeltItem`
   raised to `C` in `re/symbols.csv` and in items/0011's and items/0012's Functions tables (review-fixes 14).
@@ -3525,7 +3525,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements; the spec's text is Phase 3's):** the floors are reached by monsters; the first call's
   `+0x48` is the live length of the previous mode (3 040 of 3 074 equal the previous record's, 34 do not); the
   fallback record is returned in play (FS, BN, MO in mode 14); the left-hand dual term stays `[I]`. Routed by
-  [the backlog entry](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-h6d-corrections.md).
+  [the backlog entry](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-h6d-corrections.md).
 - **Symbols:** none raised (live reads; no new address named).
 - **Totals** from the 29 files' *Totals by class* after merging `main` `30e8a46c`: a-logs 623, a-run 334, b 507, c 390,
   c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 457, Phase 2 841 (the rows keep class b; the
@@ -4759,3 +4759,16 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
 - **Deferred.** Phase 2 harness batches other than H6d and the bestiary-tour batches did not run (owner question 3 answer (c): the 0.2 to 11 claims per session never reached the threshold). Their rows stay `[I]` as (a-run, deferred) or (b, deferred) with the routes of inventory § 4 kept: H1e, H1m to H1o, H1p and H1r (out of plan 0069), H2a to H2c, H3a to H3f, H4a to H4e, H5a, H5b, H6a to H6c, H7a to H7d. The bestiary-tour batches H1a to H1d, H1g and H1h ran under [plan 0069](../0069-monster-ai-bestiary-tour.md) (Phase 4, `lane/n69g`). The d-owner, d-2c, d-edit and d-none classes (322 rows at Phase 0) stay `[I]`; so do the Phase 1 rows recorded "not settled" with routes (S2ae, S2be, S2c, S4e).
 - **Follow-ups left open in `docs/backlog/` (not done here).** Wiki refreshes: monster-ai (`2026-11-16-spec-writer-spec-writer-wiki-monster-ai-refresh-after-plan-0066-ai`), skills (`...-wiki-skills-refresh-after-plan-0066-skills-cluster`), stats/items (`...-wiki-refresh-after-plan-0066-stats-items-re`). Reverser: the idle-delay C2/C3 `max(n,1)` question (`2026-11-16-spec-writer-reverser-monsters-ai-idle-delay-n-at-or-below`), the leap-attack path label and `ItemPlaceOnGround` count (`2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count`), S5a's result bit `0x4000` (`2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000`). Archivist: the Skills table C4 bit 1 name (`2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name`), the States melee-only bit 38 tag (`2026-11-15-architect-archivist-states-meleeonly-bit38-tag`), S4e part 5f table checks (`2026-11-16-reverser-archivist-plan-0066-s4e-part5f-table-checks`). Spec-writer: the S4a/S4b and H6d corrections (`2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections`, `2026-11-16-reverser-spec-writer-plan-0066-h6d-corrections`). Plan 0069's unit-set-event entry and plan 0064's outdoor entry also stay open. The frame-cluster review request (accepted at its Tier A review above) is closed with this entry.
 - **Bookkeeping.** The plan moved to `docs/plans/done/`; its `0066-inventory/` directory stays in `docs/plans/` (as `0038-inventory/` did), so the plan's links to it now read `../0066-inventory/`.
+
+### 2026-11-17 — Follow-ups after the close (spec-writer, `lane/fus`)
+
+- **Done.** H6d's Phase 3 raises applied to anim/timing (C 168 / I 91 → C 175 / I 86) and anim/movement (C 58 / I 32 →
+  C 61 / I 30): the fallback record in play, the floors 25 and 15 met by monsters (the threshold for `X` 11–14, block's
+  1, the cap, the wrap, a no-path call stay `[I]`), `+0x44`/`+0x48` kept across the rate call (the monster half and the
+  schedule's entry value stay `[I]`), the first call's live `+0x48`, the dual-wield count (the left hand stays `[I]`),
+  the MonStats speed words. sim/frame's new-rooms-flag note raised to H2c's `[C]` (C 144 / I 98 → C 145 / I 97). The
+  archivist's S4e table checks: stats/aggregate D1 (ops 6/7 only on *of Dawn* and *of Sunlight*) whole, K3 a new `[C]`
+  (C 102 / I 27 → C 104 / I 26); items/inventory A1 and K2 a new `[C]` each (C 143 → 145, I 58). Quirks Q376 and Q506
+  `[C]` (C 426 / I 121 → C 428 / I 119). Inventory files' *Phase 3* lines, README § 6 and § 7 updated (each spec once:
+  `[C]` 3 512, `[I]` 2 066). The S4a/S4b items 1–2 were already in items/economy. Entries closed: S4a/S4b corrections,
+  H6d corrections, the sim/frame note. Tier B review requested.
