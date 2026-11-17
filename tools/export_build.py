@@ -68,7 +68,8 @@ REPO = os.path.normpath(os.path.join(HERE, ".."))
 DOCS = os.path.join(REPO, "docs")
 WS = os.path.join(REPO, "workspace")
 ILLUS_TIMEOUT = 600
-SCHEMATIC_TOOLS = ("maze_anim.py", "tc_anim.py", "rng_anim.py", "seedtree_anim.py")
+SCHEMATIC_TOOLS = ("maze_anim.py", "tc_anim.py", "rng_anim.py", "seedtree_anim.py", "quality_anim.py", "special_anim.py",
+                   "timing_anim.py", "frame_anim.py")
 ILLUS_KEYS = ("id", "tool", "args", "seed", "illustrates", "caption")
 
 RE_HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")

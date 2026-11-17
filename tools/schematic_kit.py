@@ -60,6 +60,9 @@ def outline_rect(cv, W, H, x, y, w, h, col, t=1):
     fill_rect(cv, W, H, x + w - t, y, t, h, col)
 
 
+CAPTION_CUT = []        # the captions Kit.caption had to cut (a test asserts the generators leave it empty)
+
+
 def text_w(s, sc=2):
     """Width in pixels of s at scale sc (6 columns a character, the last one blank)."""
     return 6 * sc * len(s) - sc if s else 0
@@ -182,7 +185,10 @@ class Kit:
         """A caption strip: a panel from y to the bottom, s wrapped to cols characters (the first lines that fit)."""
         self.rect(0, y, self.W, self.H - y, "panel")
         self.hline(0, self.W - 1, y, "grey", 1)
-        for i, ln in enumerate(anim_common.wrap(s, cols)[:max(1, (self.H - y - 8) // (7 * sc + 5))]):
+        lines, fit = anim_common.wrap(s, cols), max(1, (self.H - y - 8) // (7 * sc + 5))
+        if len(lines) > fit:
+            CAPTION_CUT.append(s)                    # a caption that does not fit is cut; tests assert none is
+        for i, ln in enumerate(lines[:fit]):
             self.text(x, y + 8 + i * (7 * sc + 5), ln, col, sc)
 
 

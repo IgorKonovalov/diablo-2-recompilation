@@ -1512,3 +1512,40 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   wiki pages for one build (restored after), `export_build.py --out workspace/export-x11a-review`: 71 pages, the six
   illustration folders, `export_check` 0 failures (864 warnings, none new from the blocks); the folder was removed.
   Tests green: `test_schematic_kit` (15), `test_anim_schematic`, `test_export_build`, `test_export_check`; gate green.
+- 2026-11-17, archivist, lane/x11b (Phase 11 batch 1 part 2: rows 5–8). Four generators on the kit, each with
+  `--theme dark|light`, the data root first, `--schematic` accepted, in `SCHEMATIC_TOOLS` (and `test_export_build`'s
+  tuple assertion). **Row 5, `tools/quality_anim.py`** (`lsd 28 0xc0ffee --mf 200`): the ladder of tests, one frame
+  per test reached (base term, magic find's `F`, the minimum, the ratio word, the chance, the draw and its bar), then
+  the outcome; the roll is `quality.roll` with its trace and its per-test record of the chance before the minimum
+  (`cf["pre"]`); the base term and `F` shown are recomputed with `quality.cdiv/diminish` and asserted equal to the
+  model's chance, and the seed after each draw is rebuilt with `quality.range_b` and asserted equal to the roll's exit
+  seed. For these inputs unique, set and rare are lost and the magic draw (15) wins; 6 frames. **Row 6,
+  `tools/special_anim.py`** (`zombie1 0xc0ffee --difficulty hell`; `4 --difficulty nightmare` is a champion): the
+  champion draw against `MonUMod[0].constants`, the `Range(1)` step, one frame per pick, the mod list; the model is
+  `monspecial.Data.mods_roll` and the records of its picks; the number of unit-seed steps is asserted equal to special
+  § A1's count by stepping `rng.step`. **The special § D note:** the per-mod table is not drawn. A pick frame shows the
+  rows that carry a weight of the pick's kind, the number of candidates, their total, the draw and the winner's name
+  with its one weight; no per-mod list of weights and no `xfer` column. The only inference a reader can draw is that
+  a champion pick's total equals its candidate count (the stock champion weights are all 1), which § B2 (kept in the
+  export) already says; flagged for the review. **Row 7, `tools/timing_anim.py`** (defaults: a 14-frame cast record, speed
+  256, event on frame 7, FCR 20 = the timing worked example 1): the rate from `anim_rates.bonus` and `rate_cast`
+  (`--mode gethit` uses `rate_gethit`), the queue from `anim.schedule`, and `anim_rates.closed_len`, `sched_len` and
+  the E2 event-frame formula asserted equal to it; one frame per scan step (11 steps, 13 frames). The attack branch
+  is not offered: its `X` also takes stat 68, which the toy record does not model. The tool reads nothing from the data
+  root. **Row 8, `tools/frame_anim.py`**: no model of the tick exists in `tools/` to drive, so the frames draw the
+  spec's pass list (B1, D1) as a fixed sequence with each pass's draws and seeds from the J table (the tags of the
+  inferred ones are named in the step page) and compute only the modulo tests of ranks 17 to 19 and the sweep on
+  `--frame N` (default 1320; 1321 shows the skips); no log is read. **Kit:** `Kit.caption` records any caption it had
+  to cut in `schematic_kit.CAPTION_CUT`; a test asserts the four tools cut none. **Tests:** `test_schematic_kit.py`
+  grows from 15 to 26 tests: each tool deterministic, both themes' palettes, `export_check.verify_illustration`
+  clean on each folder, no art decoder imported (the `run` helper), quality's per-test chance, draw and `F` equal
+  `quality.roll`/`diminish`, special's picks, totals, draws and seed states equal `mods_roll`, timing's
+  rate 299, `T + 6` and `T + 12` and the get-hit example 2 (rate 143, `T + 9`), frame's pass and walk names and order
+  equal the spec's B1 and D1 listings and the periodic tests; `test_anim_schematic`, `test_export_build` (149 checks),
+  `test_export_check` (191 checks) and `gate.py` green. **Frames viewed** (dark and light): quality 0, 2, 4, 5 and the
+  no-draw normal test; special 1, 2, 4, 5, 6 and a champion pick; timing 0, 6, 12 and a get-hit step; frame 0, 4, 6,
+  14. Fixed after looking: a heading overlapping the seed line, a truncated caption (found with the new cut check),
+  a label colliding with DONE, an overlong seeds line; all read at scale 2 with contrast 4.5 from the kit's palette.
+  **allow-hex:** no line needed (`0xC0FFEE` is present; texts use decimals and `{low:high}` states). **Blocks:** rows
+  5–8 with draft captions and Place lines are in `workspace/phase11/blocks-batch1.md` under "Rows 5–8" (ids
+  `items-quality-lsd-mf200`, `monsters-special-zombie1-hell`, `anim-schedule-cast-fcr20`, `frame-tick-passes`).
