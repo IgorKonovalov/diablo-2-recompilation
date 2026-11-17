@@ -61,6 +61,7 @@ if HERE not in sys.path:
 
 import dt1 as dt1mod  # noqa: E402
 from rng import step  # noqa: E402
+from spawn_place import near_point  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 DEFAULT_ROOT = os.path.join(ROOT, "workspace", "merged")
@@ -987,13 +988,11 @@ class World:
             raise NotLogged("NearWarpTest warp points (NWP)")
         wd = struct.unpack_from("<i", self.t.lv[lid], 0x0C)[0]
         self.ok(p["wd"] == wd, "NearWarpTest WarpDist %d, levels.bin %d" % (p["wd"], wd))
-        for i in range(max(p["n"], 0)):
-            dx, dy = x - p["xs"][i], y - p["ys"][i]
-            if dx * dx + dy * dy < wd:
-                self.ok(self.nww is None, "NearWarpTest: the waypoint lookup ran after a warp-point hit")
-                self.nww = None
-                self.hit("NearWarpTest: near a warp point")
-                return 1
+        if near_point(p["xs"][:max(p["n"], 0)], p["ys"][:max(p["n"], 0)], wd, x, y):
+            self.ok(self.nww is None, "NearWarpTest: the waypoint lookup ran after a warp-point hit")
+            self.nww = None
+            self.hit("NearWarpTest: near a warp point")
+            return 1
         q = self.nww
         self.nww = None
         if q is None:

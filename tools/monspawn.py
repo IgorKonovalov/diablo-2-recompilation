@@ -67,6 +67,7 @@ if HERE not in sys.path:
 import collision  # noqa: E402
 import drlg  # noqa: E402
 import monpool  # noqa: E402
+from spawn_place import MASK_BY_SPAWNCOL, S, ring_search  # noqa: E402
 import monspecial  # noqa: E402
 import monstats  # noqa: E402
 import mon_sweep  # noqa: E402
@@ -89,7 +90,6 @@ UNIT_SEED_MODEL = True
 STATE_FROZEN = None       # a counterfactual (tools/chain.py --cf state-stale): a room's first seed is kept for good
 ROOM_STATE_MODEL = True   # plan 0048 oracle 21: another room's seed from the chain state (False: taken from MT0)
 GAME_L = 1          # monsters/stats input L: game +0x6A or +0x74 not 0 (1 in every logged single-player game)
-MASK_BY_SPAWNCOL = {0: 0x3C01, 1: 0x01C0, 2: 0x3F11, 3: 0}     # jump table 0x005B2F04
 # Plan 0014 FS2: the guard exits of the spec's [C] blocks, counted and printed even at 0 (counters only, no effect
 # on any check). A closed gate is classified from the region state at P0 and PX: +0x0C (nRooms) is read only past
 # the lvl test, so -1 at PX means the lvl = 0 exit.
@@ -124,24 +124,6 @@ def fmt(s):
 
 class Mismatch(Exception):
     pass
-
-
-class S:
-    """A mutable seed."""
-    def __init__(self, t):
-        self.lo, self.hi = t
-
-    def t(self):
-        return self.lo, self.hi
-
-    def step(self):
-        self.lo, self.hi = step(self.lo, self.hi)
-        return self.lo
-
-    def rangeb(self, n):                       # RNG_Range / RNG_RangeB, and the inlined copies
-        if n & 0x80000000 or n == 0:
-            return 0
-        return self.step() % n
 
 
 class Tables:
@@ -572,103 +554,76 @@ class Pass:
             self.guard("H2 smax < s")
             return 0
         size = struct.unpack("b", m2[0x08:0x09])[0]
-        while s <= smax and found is None:
-            if rsd.step() & 1:
-                dx, dy, dirx, diry = s, rsd.rangeb(s), 0, 1
-            else:
-                dx, dy, dirx, diry = rsd.rangeb(s), s, 1, 0
-            if rsd.step() & 1:
-                dx = -dx
-            if rsd.step() & 1:
-                dy = -dy
-            x, y = cx + dx, cy + dy
-            l, r = cx - s, cx + s
-            tp, bt = cy - s, cy + s
-            cnt = 8 * s if 8 * s else 1
-            while cnt > 0:
-                if x == l and y == tp:
-                    dirx, diry = 1, 0
-                if x == r:
-                    if y == tp:
-                        dirx, diry = 0, 1
-                    if y == bt:
-                        dirx, diry = -1, 0
-                if x == l:
-                    if y == bt:
-                        dirx, diry = 0, -1
-                    if y == tp and x == r and y == bt:
-                        dirx, diry = 0, 0
-                y += diry
-                x += dirx
-                cnt -= 1
-                if not (L <= x < Rt and T <= y < B):
-                    self.guard("H2 cell skipped: outside the rectangle")
-                    continue
-                if box:
-                    a = self.take("MR0")
-                    self.eq("LogicRegionIdAt args", (a["room"], a["x"], a["y"]), (room, x, y))
-                    self.eq("MR0 rs", a["rs"], fmt(rsd.t()))
-                    a = self.take("MR")
-                    self.eq("MR rs (exit)", a["rs"], fmt(rsd.t()))
-                    self.pred("LogicRegionIdAt (ring)", a["r"], lambda: self.chk.world.logic_region_id_at(room, x, y))
-                    if a["r"] != box["rid"]:
-                        self.guard("H2 cell skipped: LogicRegionIdAt")
-                        continue
-                a = self.take("MC0")
-                self.eq("SpawnClassCellTest args", (a["room"], a["x"], a["y"]), (room, x, y))
-                self.eq("MC0 rs", a["rs"], fmt(rsd.t()))
-                a = self.take("MC")
-                self.eq("MC rs (exit)", a["rs"], fmt(rsd.t()))
-                self.eq("MC gs (exit)", a["gs"], fmt(self.gs.t()))
-                special = t.m(cls, 0x02, "<h") in collision.CLASS_CELL
-                self.pred("SpawnClassCellTest", 1 if a["r"] else 0,
-                          lambda: self.chk.world.spawn_class_cell_test(cls, room, x, y, 1), need_snap=special)
-                if not a["r"]:
-                    self.guard("H2 cell skipped: SpawnClassCellTest")
-                    continue
-                a = self.take("MK0")
-                self.eq("CollisionTest args", (a["room"], a["x"], a["y"], a["size"], a["mask"]), (room, x, y, size, mask))
-                self.eq("MK0 rs", a["rs"], fmt(rsd.t()))
-                self.eq("MK0 gs", a["gs"], fmt(self.gs.t()))
-                a = self.take("MK")
-                self.eq("MK rs (exit)", a["rs"], fmt(rsd.t()))
-                self.eq("MK gs (exit)", a["gs"], fmt(self.gs.t()))
-                n0 = sum(v for k, v in self.stats.items() if k.startswith("predicted by the collision model"))
-                self.pred("CollisionTest", a["r"], lambda: self.chk.world.collision_test(room, x, y, size, mask))
-                if size in (0, 1) or mask in (0x01C0, 0):
-                    # plan 0038 H5d (collision 5, 24; spawn 41): the size / mask cases by whether the model predicted them
-                    n1 = sum(v for k, v in self.stats.items() if k.startswith("predicted by the collision model"))
-                    k = "H5d CollisionTest (size %d, mask 0x%04x) %s, result %s, class %d" % (
-                        size, mask, "predicted" if n1 > n0 else "oracle", "0" if a["r"] == 0 else "non-zero", cls)
-                    self.stats[k] = self.stats.get(k, 0) + 1
-                    if size in (0, 1) and n1 > n0:
-                        # the case a wrong reading would get wrong: size 2's plus test on the same cells
-                        W = self.chk.world
-                        ov = getattr(self, "overlay", None)
+
+        def cell(x, y):
+            if not (L <= x < Rt and T <= y < B):
+                self.guard("H2 cell skipped: outside the rectangle")
+                return False
+            if box:
+                a = self.take("MR0")
+                self.eq("LogicRegionIdAt args", (a["room"], a["x"], a["y"]), (room, x, y))
+                self.eq("MR0 rs", a["rs"], fmt(rsd.t()))
+                a = self.take("MR")
+                self.eq("MR rs (exit)", a["rs"], fmt(rsd.t()))
+                self.pred("LogicRegionIdAt (ring)", a["r"], lambda: self.chk.world.logic_region_id_at(room, x, y))
+                if a["r"] != box["rid"]:
+                    self.guard("H2 cell skipped: LogicRegionIdAt")
+                    return False
+            a = self.take("MC0")
+            self.eq("SpawnClassCellTest args", (a["room"], a["x"], a["y"]), (room, x, y))
+            self.eq("MC0 rs", a["rs"], fmt(rsd.t()))
+            a = self.take("MC")
+            self.eq("MC rs (exit)", a["rs"], fmt(rsd.t()))
+            self.eq("MC gs (exit)", a["gs"], fmt(self.gs.t()))
+            special = t.m(cls, 0x02, "<h") in collision.CLASS_CELL
+            self.pred("SpawnClassCellTest", 1 if a["r"] else 0,
+                      lambda: self.chk.world.spawn_class_cell_test(cls, room, x, y, 1), need_snap=special)
+            if not a["r"]:
+                self.guard("H2 cell skipped: SpawnClassCellTest")
+                return False
+            a = self.take("MK0")
+            self.eq("CollisionTest args", (a["room"], a["x"], a["y"], a["size"], a["mask"]), (room, x, y, size, mask))
+            self.eq("MK0 rs", a["rs"], fmt(rsd.t()))
+            self.eq("MK0 gs", a["gs"], fmt(self.gs.t()))
+            a = self.take("MK")
+            self.eq("MK rs (exit)", a["rs"], fmt(rsd.t()))
+            self.eq("MK gs (exit)", a["gs"], fmt(self.gs.t()))
+            n0 = sum(v for k, v in self.stats.items() if k.startswith("predicted by the collision model"))
+            self.pred("CollisionTest", a["r"], lambda: self.chk.world.collision_test(room, x, y, size, mask))
+            if size in (0, 1) or mask in (0x01C0, 0):
+                # plan 0038 H5d (collision 5, 24; spawn 41): the size / mask cases by whether the model predicted them
+                n1 = sum(v for k, v in self.stats.items() if k.startswith("predicted by the collision model"))
+                k = "H5d CollisionTest (size %d, mask 0x%04x) %s, result %s, class %d" % (
+                    size, mask, "predicted" if n1 > n0 else "oracle", "0" if a["r"] == 0 else "non-zero", cls)
+                self.stats[k] = self.stats.get(k, 0) + 1
+                if size in (0, 1) and n1 > n0:
+                    # the case a wrong reading would get wrong: size 2's plus test on the same cells
+                    W = self.chk.world
+                    ov = getattr(self, "overlay", None)
+                    alt = None
+                    try:
+                        if not self.snap() and ov is not None:
+                            W.maps_override, W.nears_override = ov(), W.model_near
+                        alt = W.plus_test(room, x, y, mask)
+                    except (collision.NotLogged, IndexError):
                         alt = None
-                        try:
-                            if not self.snap() and ov is not None:
-                                W.maps_override, W.nears_override = ov(), W.model_near
-                            alt = W.plus_test(room, x, y, mask)
-                        except (collision.NotLogged, IndexError):
-                            alt = None
-                        finally:
-                            if not self.snap() and ov is not None:
-                                W.maps_override = W.nears_override = None
-                        if alt is not None and (alt == 0) != (a["r"] == 0):
-                            k = "H5d CollisionTest size %d: the one-cell test decides (a plus test gives %s)" % (
-                                size, "0" if alt == 0 else "non-zero")
-                            self.stats[k] = self.stats.get(k, 0) + 1
-                if self.snap():
-                    self.coll_cases(room, x, y, size, mask, a["r"])
-                if a["r"] != 0 and not (fl & 0x80):
-                    self.guard("H2 cell skipped: CollisionTest")
-                    continue
-                if a["r"] != 0:
-                    self.stats["CollisionTest bypassed by R.flags & 0x80"] = self.stats.get("CollisionTest bypassed by R.flags & 0x80", 0) + 1
-                found = (x, y)
-                break
-            s += 3
+                    finally:
+                        if not self.snap() and ov is not None:
+                            W.maps_override = W.nears_override = None
+                    if alt is not None and (alt == 0) != (a["r"] == 0):
+                        k = "H5d CollisionTest size %d: the one-cell test decides (a plus test gives %s)" % (
+                            size, "0" if alt == 0 else "non-zero")
+                        self.stats[k] = self.stats.get(k, 0) + 1
+            if self.snap():
+                self.coll_cases(room, x, y, size, mask, a["r"])
+            if a["r"] != 0 and not (fl & 0x80):
+                self.guard("H2 cell skipped: CollisionTest")
+                return False
+            if a["r"] != 0:
+                self.stats["CollisionTest bypassed by R.flags & 0x80"] = self.stats.get("CollisionTest bypassed by R.flags & 0x80", 0) + 1
+            return True
+
+        found = ring_search(rsd, cx, cy, rad, cell)
         if found is not None and (found[0] == 0 or found[1] == 0):
             self.stats["MonSpawnTry exit on x = 0 or y = 0"] = self.stats.get("MonSpawnTry exit on x = 0 or y = 0", 0) + 1
         if found is None:

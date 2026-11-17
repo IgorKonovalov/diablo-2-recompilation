@@ -1892,3 +1892,29 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `test_export_build` (154), `test_export_check` (191); gate green. **For the spec-writer:** place the three blocks as
   their Place lines say (row 13: after the "Which seed." paragraph); row 14 keeps `seed: none` and `values: restated`;
   the captions name levels in words, which X12 warns on (not a failure).
+- 2026-11-17, archivist, lane/x12b (Phase 11 batch 2: rows 9, 10). Two generators on the kit, each with `--theme`, in
+  `SCHEMATIC_TOOLS` (a new line). **Row 9, `pack_anim.py`:** one normal group of `swarm1` (MinGrp 4, MaxGrp 8, size 2, no
+  minion) on a toy room of ours (a logic box, three walls, one warp point), 14 frames on `0xC0FFEE`: the leader's tries
+  (try 1 refused by the warp distance, tries 2 and 3 by the probe, try 4 stands), the exact placement and its centre mark,
+  the group size on the leader's seed (k = 6), one frame per member with its ring walk and every refused cell (outside the
+  box, blocked), the end. **Row 10, `pool_anim.py`:** the game seed's first draw, the region seed, the levels built before
+  the shown one (draw counts, seeds), the level's candidates, one frame per pick (the draw over the remaining slots, the
+  class, kept or dropped; every redraw of a `rangedspawn` level's first pick) and the pool; `--level` (default 3, Act 1 -
+  Wilderness 2), `--difficulty`. **Model functions.** The pool's numbers come from `monpool.first_draw_low`, `build_all`
+  and the pick records of `build_pool`; the two now take optional `seed` and `traces`/`trace` arguments (no other change).
+  The placement rules lived inside the log checker's interleaved replay, so they are **refactored into pure functions both
+  call**, in the new `tools/spawn_place.py`: `ring_search` (MonSpawnTry's ring walk, spawn § H2), `near_point` (NearWarpTest's
+  distance rule, § H1 note), the seed class `S` and `MASK_BY_SPAWNCOL` moved there; `monspawn.py` and `collision.py` import
+  them. **No-change proof:** `monspawn.py check` on six logs (the three `monspawn-*` logs, two `collision-*` logs with the
+  grid snapshot, one `monpool-*` log) prints byte-identical output before and after (115 795 and 20 481 checks, 0
+  mismatches, 5 669 collision checks, the guard counters and the 98 near-warp hits equal); `monpool.py check` 361/361; a
+  hash of `build_all` over 3 seeds, 3 difficulties and both game types is equal before and after. **Not shown / restated:**
+  the toy's collision test (the plus footprint against the mask, the 0x1000 centre mark) restates § H3, H4 for one room; the
+  creation draw on the game seed, the class cell test, the region-id test, the waypoint point and minions are not drawn.
+  **Tests** (`tools/test_monster_anim.py`, 21): determinism, both themes, `verify_illustration` clean, no art decoder, clip
+  and cut lists empty, no tool names in step texts; `ring_search` reproduces members 1 and 2 of the spawn worked example
+  (cells, 39 and 4135 refusals, the seeds after) and its group-size draw; the pool equals `build_all` on every checked
+  level and the pool worked example (seed 1, levels 1 to 3: 26 draws, 17 appearance draws). Also green: `test_schematic_kit`
+  (29), `test_export_build` (154), `test_export_check` (191), `test_anim_schematic`, `test_drlg_anim` (18); gate green.
+  **Frames viewed** in both themes: pack 0, 1, 2, 5, 9, 11, 13; pool 0, 2, 3, 4, 5, 7 and the rangedspawn level 110.
+  **Blocks:** `workspace/phase11/blocks-batch2.md`, "Monsters (x12b)", Place lines into `docs/wiki/monsters.md`.
