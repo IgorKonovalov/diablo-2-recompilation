@@ -368,7 +368,10 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   `DAT_`; a `struct:Name+0x…` token, a `run:` id, a finding id or link and a `src:` id are removed as tokens; a cell left
   empty becomes `—`; a list or parenthetical left empty goes. Every rewrite is a report line (`REWRITE`, page, heading,
   before, after), and the simplifier then runs on the rewritten unit, so a residue still drops it. The check is
-  unchanged. Rerun the trial and log the new share per spec before Phase 9 starts. Tier B check.
+  unchanged. Rerun the trial and log the new share per spec before Phase 9 starts. Tier B check. *Done* (`lane/x70a`,
+  reviewed 2026-11-17). Still before the cut (review of `lane/x70a`): the check also fails a `.log` file name, a partial
+  address with `x` digits (`0x0063xxxx`) and a `.claude/` path, which pass today (20 log names in the trial); and the
+  second redactor round the review entry names (*Residue*), then the trial is measured again.
 - **What:** add the reviewed specs to the manifest, cut afresh, and run the Tier A redaction review above. Read every
   drop line of the six sampled specs and the drop counts of every spec. A spec that loses more than a quarter of its
   sentences, or one whose remaining text no longer reads as whole, stays out of the manifest.
@@ -1038,3 +1041,78 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   the read, applied before the push: the schematic maze marks its entry and exit on the warp rooms (lane/x70w) and the
   main column is 60rem wide (`site/src/styles/site.css`). Next, on the owner's word: the second cut (Phases 9 and 10),
   whose prerequisite is the anchor rewrite noted at the Phase 3 review.
+- 2026-11-17, archivist, lane/x70a (anchor rewrite, Phase 9 prerequisite). `tools/export_build.py` now rewrites
+  anchors inside a unit (a sentence, a list item or quote, a table cell, a heading, a caption sentence) before the
+  simplifier's drop test, as ruling (a) asks. `fn:`, `data:`, `tbl:` (with `.Column`/`:column`) and `fmt:` anchors, with
+  or without `@0x…`, become `` `Name` `` when the name holds no hex run of 6+ digits, no `sub_`, no `DAT_` and nothing
+  X1 to X5 would fail (it asks `text_rules`), else the whole token goes; an anchor already in backticks is not
+  doubled. Removed whole: `struct:` tokens, `run:` and `src:` ids, finding ids (`items/0012`, with a slug, `#fragment`
+  or `.md`) and links whose target holds `findings/` (label and all); the `sub_XXXXXXXX_` strip now runs after the
+  rewrite, so `fn:sub_…_x` is removed, not turned into `x`. Clean-up works only next to a removal mark: an emptied cell
+  becomes `—`, doubled list separators, empty or separator-only parentheticals, and "at", "see", "per" (also "and",
+  "or") left before nothing go, and the spaces around the gap are closed. A unit left with no letters is dropped as a
+  new rule `empty` (counted as a drop). Spec citations: `folder/file.md § X` becomes `file.md § X`, a folder path
+  `.md` without a section (with a "spec" before it) is removed, and so is a bare `README.md` without a section; link
+  targets are never touched. The citation rule was not ambiguous in the specs sampled, so both halves are in; the
+  check is unchanged. Every rewritten unit is a report line `REWRITE<TAB>page<TAB>heading<TAB>before<TAB>after`
+  (160 characters each), and the report header gains `rewrites: N`. Tests: `test_export_build` 74 checks (was 41), 0
+  failed; `test_export_check` 125, `test_anim_schematic` OK. **Cut 1** rebuilt: 25 pages, check 0 failures, 330
+  warnings as before; the pages read the same except one rewrite (the wiki monster-ai bullet on the Uber forced cases
+  lost its link to a finding, whose label "G1, G2, G3 and G5" went with it); 1 REWRITE line. **Trial** (every spec
+  with status `reviewed`: 65, groups `s-<folder path>` so that `monsters/` and `monsters/ai/` READMEs do not collide:
+  20 groups; manifest and per-spec table in scratch, output in `workspace/export-trial-x70a/`, built with
+  `--no-illustrations`): 90 pages, 19266 units, 4414 dropped; of the 65 specs 14120 units, **4408 dropped (31.2%)**
+  (was 44.4%). Drops per rule: X1 3869, X3 901, X2 508, X5 214, X9 95, open-questions 63 sections, `parent` 16,
+  `empty` 10; by kind (specs): 1636 list items, 1625 table rows, 705 fenced blocks, 417 sentences, 71 sections, 5
+  tables. 2913 REWRITE lines. The check on the trial: **14 failures, all X6** (tables of 21 to 136 body rows the
+  manifest does not name: drlg/maze 23 (line 314), drlg/outdoor 21 (68), items/properties 25 (224), items/vendors 36
+  (334), monsters/ai README 23 (297), monsters/special 32 (178), quirks 26 (64), 73 (134), 136 (212), 94 (353), 22
+  (476), 25 (505), 30 (541), 59 (598)), 814 warnings, no X1 to X5, X7 to X11. **48 of 65 specs are above 25%, 2 above
+  50%**: rng/seeds 59%, drlg/lifecycle 53% (then save/d2s 46, monsters/ai/machinery 44, monsters/pool 44, anim/movement
+  43, drlg/README 43, items/inventory 43, skills/catalogue 42, path/search 41, path/README 40, monsters/spawn 40,
+  drlg/room-tiles 40, skills/missiles 39, quests/travel 39, stats/aggregate 39, drlg/warps 37, items/quest-drops 37,
+  quests/progression 36, then 34% to 25%: combat/delivery, rng/README, sim/frame, items/affixes, objects/README,
+  items/cube, drlg/preset, monsters/ai README, combat/damage, combat/README, player/creation, stats/README, items/tc,
+  items/economy, anim/timing, drlg/maze, items/uniques-sets, items/sockets-runewords, monsters/special, items/use,
+  skills/dispatch, monsters/ai/catalogue, drlg/collision, items/properties, items/vendors, chain/README,
+  combat/reductions, drlg/outdoor, data/excel). What still drops is outside the rewrite: bare addresses and `+0x`
+  offsets in prose, "plan NNNN" and ADR references (X3), and `[C] (0x…)` evidence lists in pseudocode fences (705
+  fenced blocks). One reading flaw: a sentence whose removed link was its subject reads "takes 's reading" (a
+  finding link inside a quotation); not handled. Next: the architect's Tier B check.
+- 2026-11-17, architect, review of `lane/x70a` (Opus, Tier A rigour). **Verdict: accept with fixes (3: omission 2,
+  other 1)**, fixed in this commit. (1) *Safety, omission:* the citation rule reduced any folder path with a section to
+  its file name, so `findings/items/0012-x.md § 3`, `../plans/0070-….md § 3`, `docs/adrs/0031-….md § X` and
+  `docs/backlog/….md § x` became bare file names that pass X3 (latent: none in the trial). A citation into a working-tree
+  folder (`findings`, `plans`, `done`, `adrs`, `backlog`, `archive`, `re`, `tools`, `workspace`, `.claude`, `skills`,
+  `references`, `export`) or of a numbered file is never reduced: without a section it goes, with one the unit drops.
+  (2) *Reading, omission:* about 350 of the 2913 rewrites left a unit that no longer read whole: an item whose head
+  before the colon went (`-: the CRC check.`, 185), `Findings:.`, a removed possessive (`takes 's reading`, the lane's
+  flag), a removed object or complement (`the classic session of resolved`, `this is ;`). These now drop under a new
+  rule `broken` (the report's after-text reads `(dropped: broken)`): a removed token before `:` at the unit's head, before
+  `'s`, after a determiner, `is`/`are`/`was`/`were`/`be` or `with`/`to`/`under`/`on`/`for`/`into`/`through`/`between`/`than`,
+  after `of`/`from`/`in`/`by`/`via` with words following, a label whose list went, or one followed by `(`. "of", "from",
+  "in", "by", "via" before punctuation go with the token, like the lane's "at"/"see"/"per". (3) *Other:* separators
+  left at a cell's or a sentence's start (`| , K3 |`, `[C], 994 022 draws`), `(: x-talk2)` and arrow-only cells
+  (`| → → |`, now `—`). Tests: `test_export_build` 100 checks (was 74), the lane's four expectations that encoded a
+  flaw corrected; `test_export_check` 125, `test_anim_schematic` OK. Rulings: the lane's extensions ("and"/"or" as
+  dangling words, `empty`, the `sub_` strip after the rewrite) are accepted; *The pick, holds.* (a removed apposition) is
+  accepted unfixed, it changes no meaning. **Checks.** Fresh trial (`workspace/export-x70a-review-trial3`, the lane's
+  manifest): 14 failures, all X6 as before, 794 warnings; spec units 14124, **4642 dropped (32.9%**, the lane's 31.2%
+  plus the 414 `broken`); 50 of 65 specs above 25%. Cut 1 (`workspace/export-x70a-review-cut1`, `--repo
+  workspace/export-repo/`): 0 failures, 330 warnings; its text differs from the served cut by the lane's one rewrite
+  only. Hand greps of the trial: no `sub_`, `DAT_`, `src:`, `run:` id, `struct:`, `fn:`, `/00`, plan or ADR reference;
+  hex of 6+ digits only the five allowlisted values; `findings` only as a plain word (3); `.md §` only spec and format
+  names; but 20 `.log` names and one `0x0063xxxx`, which the check lets pass (Phase 9's *Before the cut* now asks for
+  them). **Residue** (every failing spec unit of the trial captured whole, 4191, and classified by what fails; recovery
+  simulated with a prototype of each rule and the `broken` test, then discounted 15% for the reading misses a sample of
+  14 showed). The units measure hides the worst loss: **639 of the 651 pseudocode blocks drop** (the head line's
+  `[C] (fn:…@0x…, run:…)` evidence alone fails it), and by words the specs lose 51.6%, not 32.9%. Safe classes, all
+  removals: evidence tails on pseudocode lines (+183 units, all blocks), code-image addresses as tokens in prose, items
+  and cells (+764), plan, ADR and lane references (+115), repository paths and `.py`/`.csv`/`.log` names (+82), a cell
+  made only of `+0x` offsets becoming `—` (+76): about 1040 units after the discount, the share to about 25.7%, 33 specs
+  at or under 25%. Rule changes: X5 read our set braces and `(unsigned)` notes as C (+54, an architect ruling on the
+  check); worked-example seed values in specs (`9d613dad:1dba1b44`, ~560 units, an allowlist widening: the owner's);
+  in-memory `+0x` offsets in text (~1400 units, ADR-0009's risk (1) as the owner approved it: the owner's). Measure the
+  bar in words of the body, not units, and count a spec whose pseudocode blocks dropped as not whole. **Recommendation
+  A**: a second redactor round with the safe classes and the X5 ruling, then measure again; B today would publish 15
+  specs (7 by words), none with its pseudocode. Ledger: verdict accept with fixes, 3 (omission 2, other 1).
