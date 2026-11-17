@@ -320,6 +320,11 @@ def main():
             ok(r_ in got, f"unredacted specs fail {r_} (got {sorted(got)})")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    # the step page's URL rule: a scheme starts at a word boundary (review of lane/x11a)
+    for txt in ("draws: 3", "Tomb pairs: 2", "news: none", "<li>two draws: 87, 64</li>"):
+        ok("external URL" not in ec.html_problems(txt, set()), f"html_problems passes text {txt!r}")
+    for txt in ("ws://x", "wss://x", " ws:x", "see WS:x", "(https://x.y)", "ftp:x", "//cdn.example.com/a.js"):
+        ok("external URL" in ec.html_problems(txt, set()), f"html_problems fails URL {txt!r}")
     print(f"TEST export_check: {checks} checks, {len(failed)} failed")
     return 1 if failed else 0
 

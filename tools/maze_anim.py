@@ -49,6 +49,7 @@ import png  # noqa: E402
 
 from anim_common import FONT, encode_gif, lzw_decode, lzw_encode, safe_out, text, wrap  # noqa: E402,F401
 import anim_common  # noqa: E402
+import schematic_kit  # noqa: E402
 
 
 # ---------------------------------------------------------------- model trace
@@ -64,6 +65,9 @@ def trace(root, level, seed):
         raise SystemExit("level %d is not in the maze set of lvlmaze.txt" % level)
     count = [0]
     orig_step, o_connect, o_special, o_themes = M.Seed.step, M.connect, M.special, M.themes
+    o_attach = M.attach_locked
+    fixed = set()      # rooms locked as they are made (a fixed room, or a special's new room); a room the theme or
+                       # special pass locks later is not, so its placement step does not say locked (review of lane/x11a)
     o_growth, o_merge, o_defcalc = M.growth, M.merge, M.defcalc
     notes = []          # (len(ev) when made, post?, formatter(nm) -> str); see calc_for below
     DN = ["west", "north", "east", "south"]
@@ -162,12 +166,20 @@ def trace(root, level, seed):
             r = orig(L, *a, **k)
             ch = [(R, before[R], (R.d, R.lock, R.idx)) for R in L.rooms
                   if R in before and before[R] != (R.d, R.lock, R.idx)]
+            fixed.update(R for R in L.rooms if R not in before and R.lock)
             ev.append((name, ch, count[0]))
             return r
         return f
     M.Seed.step, M.connect = step, connect
     M.growth, M.merge, M.defcalc = growth, merge, defcalc
     M.special, M.themes = diffwrap("special", o_special), diffwrap("themes", o_themes)
+
+    def attach(*a, **k):
+        R = o_attach(*a, **k)
+        if R is not None:
+            fixed.add(R)
+        return R
+    M.attach_locked = attach
     try:
         M.Room.n = 0
         L = M.Level(level, M.Seed(seed & 0xFFFFFFFF, 0x29A))
@@ -187,6 +199,7 @@ def trace(root, level, seed):
         M.run(L, first)
     finally:
         M.Seed.step, M.connect, M.special, M.themes = orig_step, o_connect, o_special, o_themes
+        M.attach_locked = o_attach
         M.growth, M.merge, M.defcalc = o_growth, o_merge, o_defcalc
     alive = set(L.rooms)
     final = [R for R in inserted if R in alive]
@@ -232,7 +245,7 @@ def trace(root, level, seed):
                 lk = (num[o], num[R])
             else:
                 t += "."
-            if R.lock:
+            if R in fixed:
                 t += " Fixed Def and file index (locked)."
             add("place", t, e[2], num[R], lk, ec)
             for (o, d) in pend[1:]:
@@ -255,7 +268,12 @@ def trace(root, level, seed):
                              "from one level draw) names a Def; the first free room with that Def takes the "
                              "special Def and file, or a new room is attached for it.")
             for R, _b, a_ in e[1]:
-                if R in alive:
+                if R in alive and not a_[1]:
+                    # not locked by the pass: a parent's Def recomputed after a special room is attached to it
+                    # (maze_replay.special's fallback calls defcalc on the parent); review of lane/x11a
+                    add("assign", "Room %d: a special room is attached to it, so its Def is recomputed from its open "
+                        "sides: Def %d. It stays free." % (num[R] + 1, a_[0]), e[2], num[R])
+                elif R in alive:
                     what = "special-room table entry" if e[0] == "special" else "theme step"
                     add("assign", "Room %d: %s sets Def %d, forced file index %s." % (
                         num[R] + 1, what, a_[0], a_[2] if a_[2] >= 0 else "none"), e[2], num[R])
@@ -580,16 +598,10 @@ def build_schematic(root, level, seed):
     all_links = steps[-1]["links"]
 
     def box(cv, x, y, w, h, col):
-        for yy in range(max(y, 0), min(y + h, CH)):
-            a, b = max(x, 0), min(x + w, CW)
-            if a < b:
-                cv[yy * CW + a:yy * CW + b] = bytes([col]) * (b - a)
+        schematic_kit.fill_rect(cv, CW, CH, x, y, w, h, col)
 
     def outline(cv, x, y, w, h, col, t=2):
-        box(cv, x, y, w, t, col)
-        box(cv, x, y + h - t, w, t, col)
-        box(cv, x, y, t, h, col)
-        box(cv, x + w - t, y, t, h, col)
+        schematic_kit.outline_rect(cv, CW, CH, x, y, w, h, col, t)
 
     def px(rc):
         return ox + (rc[0] - x0) * ms, oy + (rc[1] - y0) * ms, rc[2] * ms, rc[3] * ms
