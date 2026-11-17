@@ -2,11 +2,11 @@
 from: spec-writer
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/done/0066-simulation-inferred-claims-sweep.md
-  - ../specs/README.md
-resolution: ""
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../specs/README.md
+resolution: "Refreshed in lane/fuw: [wiki/stats-and-states](../../wiki/stats-and-states.md) (the floor and ops 3/10/12 under emulation, the act-clock refresh with 136 in 22 of 28 logs, the open draw path through skill reselect, sockets, the weapon switch, the state test's object answer, durations, the monster refusal, the stamina bonus in the run mode), [wiki/economy](../../wiki/economy.md) (the price core's early exits, ear and body bases, recharge, reduced prices on repair, the gold write, the ethereal refusal, the 13 bases without durability, the melee-only wear caller) and [wiki/inventory](../../wiki/inventory.md) (the handlers to their callees, the discarded refusals, the split stub, belts, stacking, pickup); based_on bumped."
 ---
 
 Plan 0066 Phase 3, the stats/items cluster (`lane/n66si`), updated stats/aggregate, stats/states, stats/README,

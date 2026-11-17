@@ -1,7 +1,7 @@
 ---
 based_on:
-  - docs/specs/items/use.md 2026-11-04
-  - docs/specs/items/inventory.md 2026-11-10
+  - docs/specs/items/use.md 2026-11-16
+  - docs/specs/items/inventory.md 2026-11-17
   - docs/specs/items/trade.md 2026-11-10
 ---
 
@@ -59,13 +59,17 @@ Every client packet passes one gate first ([item use § A](../specs/items/use.md
   evidenced.**
 - **Read from the code:** two item requests in one batch of packets run in the order they arrived, each to the end, and
   the second sees the first's result; no item request is reordered, batched or rate-limited. That was read in the drain and the gate, not through each
-  handler's callees. The batch drops a handler's "no" answer, so whatever the handler did before refusing stays.
+  handler's callees.
+- **Confirmed by a second reading:** the batch drops a handler's "no" answer, so whatever the handler did before
+  refusing stays. **Seen in a game:** the gate draws nothing, the player's seed equal across all 175 logged requests.
 - **Read from the code:** the only item request that does not finish in the same step is a pickup out of reach. It
   starts a walk, and the pickup runs in a later frame ([pickup](#pickup)).
 
 ### What each request checks
 
-All **read from the code** ([§ B](../specs/items/use.md#b-the-use-requests)):
+**Emulated up to the call of the use routine**, for each of the four requests, the length and every test in the table
+included; what the handler does with a refusal the use routine flags after that call is read from the code
+([§ B](../specs/items/use.md#b-the-use-requests)):
 
 | Request | Checks before using the item |
 |---|---|
@@ -226,9 +230,11 @@ When an item is put on a page without a cell, the server searches the grid ([§ 
 
 ### Moving between places
 
-The client's requests that move an item are read, not run ([§ D](../specs/items/inventory.md#d-the-requests)):
+The client's requests that move an item ([§ D](../specs/items/inventory.md#d-the-requests)) ran under emulation up to
+the routine each one calls, their length tests and refusals included; the routines' own moves are read from the code
+unless a section below says more. A handler's refusal changes nothing beyond the handler, since the batch drops it:
 
-| Move | Request | Note (all read from the code) |
+| Move | Request | Note |
 |---|---|---|
 | ground to cursor or inventory | interact (`0x13`, `0x16`) | [pickup](#pickup) |
 | cursor to the ground | `0x17` | [drop](#dropping-to-the-ground) |
@@ -237,6 +243,7 @@ The client's requests that move an item are read, not run ([§ D](../specs/items
 | equip, swap with a body location | `0x1A` to `0x1E` | |
 | swap with a page item | `0x1F` | |
 | stack | `0x21` | [stacks](#stacks) |
+| split a stack | `0x22` | a stub that does nothing ([stacks](#stacks)) |
 | cursor to belt, belt to cursor, swap | `0x23`, `0x24`, `0x25` | [belts](#belts) |
 | inventory item to belt | `0x63` | the [belt's search](#belts), then that box |
 
@@ -264,8 +271,10 @@ flowchart TD
   potions, the rejuvenations); the item goes to the first free box up that column. If none, an item whose row allows
   it goes to the first free bottom box. The number of boxes comes from the worn belt's row, or from the default row when
   no belt is worn (four boxes).
-- A row that does not allow it (`isc`, `tsc`, `yps`, `vps` and `wms` among them) is in no group, so it joins only a column whose bottom box holds its own class (read from the code).
-- A pickup that goes to the belt always uses this search (read from the code).
+- A row that does not allow it (`isc`, `tsc`, `yps`, `vps` and `wms` among them) is in no group, so it joins only a column whose bottom box holds its own class (confirmed against the table: 8 of the 22 beltable rows).
+- A pickup that goes to the belt always uses this search: its test accepted every one of 1 173 items under emulation,
+  and a second reading pins the call.
+- Putting a cursor item into a box (`0x23`) ran under emulation up to the item's removal from the cursor (1 500 cases).
 - Taking an item from the belt shifts its column down; a swap is in place; both **read from the code**.
 - **At a corpse's making** (read from the code, **not run**), a belt moved off the body is treated as the default belt:
   boxes beyond its four go to the inventory page by the placement search, and to the ground if they do not fit. A community
@@ -283,8 +292,11 @@ maximum plus a stat, capped at 511. A merge over the maximum fills the target to
 the cursor; otherwise the target takes the sum and the source is freed (the sum itself was **emulated** up to the
 first stat write, 500 cases; the remainder is read).
 
-**There is no split on the server, as far as the request rows read:** the split request reaches a stub that does
-nothing. Gold's withdraw and drop are other requests and were not part of that reading.
+**There is no split on the server**, confirmed by two tools: the split request reaches a stub that does nothing, and
+its handler has no other path to a split. The handler then answers "no", which the batch drops, so nothing changes.
+Gold's withdraw and drop are other requests and were not part of that reading.
+
+The stack request itself (`0x21`) ran under emulation up to the merge (2 000 cases).
 
 ## Pickup
 
@@ -297,13 +309,15 @@ flowchart TD
   r -->|yes| p["pick up"]
 ```
 
-All of this section is **read from the code** ([§ I](../specs/items/inventory.md#i-pickup)), except where noted.
+Each part says how sure it is ([§ I](../specs/items/inventory.md#i-pickup)). **Emulated** (2 500 cases): the interact
+request's item case, the mode test, the two distance thresholds (under 5 to pick up, 51 or more to do nothing) and the
+choice between picking up and walking there, up to the pickup, the walk and the line test. The walk after a blocked
+line, and the tests run again at its end, are read from the code.
 
 - **Reach.** The distance from the player to the item uses a table for near units and a different formula for far ones.
   **Emulated**, 1 500 cases without a mismatch: a player to an item reaches "under 5" at 22 of the 64 offsets under 8
   (a column offset of 0 to 2 with a row offset of 0 to 4, and so on). The sizes were run for a player, an item and an
-  object; a monster and a missile were not. The thresholds themselves (under 5 to pick up, 51 or more to do nothing)
-  are read.
+  object; a monster and a missile were not.
 - **The line** between the two must be clear for a pickup in place. The code that shortens and tests the line was
   **emulated** (600 cases) as far as the collision test itself, whose result belongs to the
   [collision page of the specs](../specs/drlg/collision.md) and is a reading there; a player's collision mask was declared, not read from a game, so whether a player's line test ever takes the code's other branch is open.
@@ -312,9 +326,11 @@ All of this section is **read from the code** ([§ I](../specs/items/inventory.m
   the item names one (for example an arrow quiver to a hand that holds a bow); the belt for a beltable item; the
   inventory page by the placement search; and if all fail, the item goes back to the ground and nothing moves.
   Note that a location that the equip test then refuses gives up on the pickup: it does not fall back to the belt or the
-  inventory.
-- **Who dropped it is not among the tests read** in the pickups, and the "no pickup" flag was not found read there
-  either; the scope is those two functions and their direct callees' first level.
+  inventory. The choice of that location, with the item's requirement test, ran under emulation (6 000 cases each); the
+  order of the steps is read from the code.
+- **Who dropped it is not among the tests read** in the pickups. The "no pickup" flag is not read there either,
+  confirmed by a scan: its four references are all in the client's code, none in the two pickups or their 36 direct
+  callees.
 - **A merge's remainder** stays the same item with a reduced count and goes on down the list; with no room it is put
   back on the ground with that count, and the stacks it merged into keep what they took.
 - **Gold and the party's share** are on the [prices page](economy.md#gold).

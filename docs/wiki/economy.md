@@ -1,6 +1,6 @@
 ---
 based_on:
-  - docs/specs/items/economy.md 2026-11-15
+  - docs/specs/items/economy.md 2026-11-16
 ---
 
 # Prices, repair, gold and wear
@@ -40,13 +40,14 @@ order matters: each step rounds down, so doing the steps in another order gives 
 The steps, in order:
 
 1. **The base.** Normally the base item's `cost` column. Armour is scaled by its defence against its base's maximum
-   defence; tomes add a cost per charge; quivers and other stacks are priced per unit. The base for ears and body
-   parts is read from the code only: no run priced one.
+   defence; tomes add a cost per charge; quivers and other stacks are priced per unit. No run priced an ear or a
+   body part; under emulation their bases, like the others, ran through the whole price function.
 2. **The value terms** ([§ C](../specs/items/economy.md#c-the-value-terms-modes-0-1-3)), only for an identified item.
    Each affix, set row or unique row adds a multiple of the base, in 1024ths, plus a flat amount. Low quality halves
    the value instead of adding. Magic, rare, crafted, superior and tempered items also add a term per stat, computed
    from the base value (not the value after the affixes), so the stat terms and the affix terms do not compound.
-   Unique and set items get no per-stat terms; that is read from the code. Each socketed gem, rune or jewel adds half
+   Unique and set items get no per-stat terms, confirmed: a model giving them such terms fails hundreds of the
+   logged prices. Each socketed gem, rune or jewel adds half
    its own base cost.
 3. **Ethereal and class items.** An ethereal item sells for a quarter of its value, and a class-specific item for a
    quarter again. Neither touches the buy or repair value.
@@ -58,9 +59,10 @@ The steps, in order:
 5. **Quantity.** The buy and sell values are multiplied by the stack size. A repairable stack (throwing weapons)
    sells for the full stack less the cost of refilling it.
 6. **The cap and the floor.** The sell value is capped by the NPC's *max buy* for the difficulty, after every other
-   step. Every result except the gamble price is at least 1 (apart from early exits read from the code: an item that cannot be
-   repaired has a repair price of 0, and a starting item is priced at 1 in every mode). The player's *reduced prices* stat (Gheed's Fortune)
-   lowers the buy and gamble prices; that it lowers the repair price too is read from the code only.
+   step. Every result except the gamble price is at least 1, apart from early exits: an item that cannot be
+   repaired has a repair price of 0, and a starting item is priced at 1 in every mode; no run met them, and they ran
+   under emulation. The player's *reduced prices* stat (Gheed's Fortune) lowers the buy and gamble prices; that it
+   lowers the repair price too ran under emulation, as no logged repair had the stat.
 
 ```mermaid
 flowchart TD
@@ -122,8 +124,7 @@ average cost 5262, the level term 6083, the factor 70, and the price `(6083 + 52
 
 The repair value is the item's value times the fraction of durability missing, times the NPC's *rep mult*
 ([§ D](../specs/items/economy.md#d-mode-steps-the-npc-row-quantity-and-the-result)). Missing charges add a recharge
-cost after the NPC step, so the NPC does not scale it; that part is read from the code only, as no run recharged an
-item. The repair price has no difficulty term, and a run in Hell confirmed the same arithmetic there.
+cost after the NPC step, so the NPC does not scale it; no run recharged an item, and that part ran under emulation. The repair price has no difficulty term, and a run in Hell confirmed the same arithmetic there.
 
 *Repair all* is the sum of the single repair prices of every damaged item you wear; you pay the sum, then each item is
 repaired ([§ F](../specs/items/economy.md#f-callers-buy-sell-repair)).
@@ -134,9 +135,14 @@ this happens in ordinary play. A run saw two: 300 gold toward a 14 464 repair ra
 7936 toward 14 208 raised it from 2 to 34. With no gold at all, nothing happens.
 
 **Ethereal items** cannot be repaired. The client shows no repair choice for them, so the request never reaches the
-server; the server's own refusal is read from the code only. A broken item is repaired like any other (a run repaired
+server; the server's own refusal, by the repairability test, ran under emulation. A broken item is repaired like any other (a run repaired
 a broken cap from 0 to full and cleared its broken mark); whether that repair draws any random numbers is not yet
 confirmed, because it was seen once.
+
+**Which bases can be repaired** is decided by the item's own type, and on stock data the type's parents give the same
+set (a full-table check: 472 repairable bases and 187 not). Thirteen bases of a repairable type have no durability:
+the 12 crossbows and the Phase Blade. That those, bows and one potion type are refused unless they carry charges is
+read from the code.
 
 **The quest services' repair.** Larzuk's socketing and Anya's personalization repair the item they hand back: a
 damaged cap came back at full durability from each, once each. Charsi's imbue repairs only when the new rare item
@@ -170,8 +176,9 @@ hires and resurrections.
 
 You can carry at most 10 000 gold per character level, and the stash holds at most 2 500 000 whatever your level.
 Gold given past the carried cap is dropped at your feet as piles, and picking up a pile takes only what fits. All of
-this is read from the code: no run went over a cap. One trap, also read from the code: the low-level routine that
-adds gold writes 0, not the cap, when an addition would overflow, so callers must clip first.
+no run went over a cap, so the drop and the partial pickup are read from the code. One trap ran under emulation: the
+low-level routine that adds gold writes 0, not the cap, when an addition would go past a cap, so callers must clip
+first.
 
 ### How much a pile holds
 
@@ -210,8 +217,9 @@ loss of 0.
 
 ### Durability in melee
 
-The durability rolls below run only on a delivered melee hit; a missile or a spell does not reach them (read from
-the code) ([§ H](../specs/items/economy.md#h-wear-durability-quantity-charges-replenish)). On each delivered melee
+The durability rolls below run only on a delivered melee hit: the routine has one caller, the melee delivery
+(confirmed by two tools, and all 1 415 logged calls came from it); that a missile or a spell never reaches that
+delivery is read from the code ([§ H](../specs/items/economy.md#h-wear-durability-quantity-charges-replenish)). On each delivered melee
 hit, for each side that is a player:
 
 - **The attacker's weapon** rolls on the attacker's seed: a 4 % chance to lose 1 durability (10 % for a throwing weapon

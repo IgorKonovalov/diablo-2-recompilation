@@ -4280,7 +4280,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   Aggregate's open question on what queues the 136-frame refresh is narrowed to whether 136 is act 3's period (L
   unchanged). Research-map rows of stats/aggregate and stats (row 95), stats/states, items/economy, items/use and
   items/inventory, and quirks rewritten. Three wiki pages carry W4 (stats-and-states, economy, inventory); a refresh
-  entry is filed ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-stats-items-re.md)).
+  entry is filed ([entry](../../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-stats-items-re.md)).
   `tools/backlog.py close` rewrote the closed entries' links in two findings (items/experiments, stats/experiments); no
   other findings edit. No Mermaid block changed; none disagrees with its text.
 - **Owner note, left as filed.** The move conventions of items/inventory 61 (the cursor clear routed to b, H4d, with no
