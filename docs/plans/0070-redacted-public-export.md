@@ -328,12 +328,12 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   run: this machine has no npm, so they run first on the owner's machine (step 4 below) and again in CI; a red build
   or link check stops the publish. (b) Before the first push the check's repository allowance narrows to the export
   repository's name (step 2): today X7 passes any `https://github.com/igorkonovalov…` URL (Phase 2 review, ruling 6).
-- **The owner's checklist.** `<name>` is the export repository's name: neutral, not the working repository's name, no
-  trademark (ADR-0035). `$W` is the working checkout. No agent runs any of these steps beyond the check in step 2.
+- **The owner's checklist.** `<name>` is the export repository's name, `arpg-1-14d-notes` (chosen 2026-11-17; the site is
+  `https://igorkonovalov.github.io/arpg-1-14d-notes/`). `$W` is the working checkout. No agent runs any of these steps beyond the check in step 2.
   1. **Read the cut**: the pages under `$W/workspace/export/site/src/content/docs/` and the drops in
      `$W/workspace/export/report.txt` (never copied). Rebuild it first if the docs changed since 2026-11-17:
      `python3 -I tools/export_build.py`.
-  2. **Choose `<name>`**, and have it written into the check: `URL_ALLOW` in `tools/export_check.py` takes
+  2. **Done 2026-11-17** (archivist lane x70n): `<name>` = `arpg-1-14d-notes`, written into the check: `URL_ALLOW` in `tools/export_check.py` takes
      `https://github.com/igorkonovalov/<name>` in place of the bare account prefix (an archivist lane, or the owner,
      with a test that the account's other repositories fail). Then, from `$W`:
      `python3 -I tools/export_check.py workspace/export --repo workspace/export-repo/` must print 0 failures.
@@ -345,8 +345,9 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
      `npx playwright install chromium`, `SITE_BASE=/<name>/ npm run build`, then
      `SITE_BASE=/<name>/ node scripts/check-site-links.mjs dist`. Both must pass; `SITE_BASE=/ npm run build` and
      `npm run preview` give a local look. Remove `dist/` and `.astro/` (ignored anyway).
-  5. **Create the repository** `<name>` on GitHub under the owner's account, empty (no README, licence or
-     `.gitignore` from GitHub); in Settings, Pages, set the source to GitHub Actions.
+  5. **Create the repository** `arpg-1-14d-notes` on GitHub under the owner's account, empty (no README, licence or
+     `.gitignore` from GitHub); in Settings, Pages, set the source to GitHub Actions. If it already exists, it must
+     be empty and Pages' source must be GitHub Actions (step 6 pushes into it).
   6. **First commit and pull request.** `git commit --allow-empty -m "chore: start"` on `main` and push it (it holds no
      workflow, so nothing runs); then `git switch -c cut-2026-11-17`, stage the files by path
      (`git add .github .gitignore LICENSE README.md site`), commit, push the branch and open a pull request. The
@@ -978,3 +979,16 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   0xC0FFEE): diamonds on R1 (entry, Catacombs Level 2) and R17 (exit, Catacombs Level 4). This is a second DS1 read
   in the schematic mode, so it needs an architect ruling under ADR-0036: review request filed in
   `docs/backlog/2026-11-17-archivist-architect-plan-0070-maze-schematic-warp-marks-review-request.md`.
+
+- **2026-11-17, Phase 7 step 2 (archivist, lane x70n).** The export repository is `arpg-1-14d-notes`. In
+  `tools/export_check.py` the bare `https://github.com/igorkonovalov` and `https://igorkonovalov.github.io` prefixes
+  are replaced by `RE_URL_ALLOW`, case-insensitive: `https://github.com/igorkonovalov/arpg-1-14d-notes` followed only
+  by `/`, `#`, `?`, `.git` or the end, and the Pages host with the same name rule (the bare Pages host with no path
+  also passes, as the site's own `site:` setting and the link script's `SELF`). `https://github.com/${` stays: it is
+  the template literal in `astro.config.mjs` (account and name joined at build time), not a URL. Tests: this repository
+  passes in both cases; the account's other repositories, a prefix-extended name (`-old`, `2`), the bare account and
+  another account fail. Export repository (workspace): `check-site-links.mjs` named the account as two literals; it now
+  has one `ACCOUNT` constant and a template, so the check passes with the narrowed allowance. `astro.config.mjs`,
+  `README.md` and `pages.yml` need no name: `SITE_BASE` comes from `github.event.repository.name`, and the base and the
+  repo URL follow from it. Rebuilt the cut; `export_check.py workspace/export --repo workspace/export-repo/`: 0 failures;
+  `test_export_check` 119, `test_export_build` 41, 0 failed. Phase 7 checklist filled with the name; step 2 done.

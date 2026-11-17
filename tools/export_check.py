@@ -59,9 +59,17 @@ FOOTER = ("An unofficial, non-commercial preservation project. Not affiliated wi
           "Entertainment. Diablo and Blizzard Entertainment are trademarks of Blizzard Entertainment, Inc. No "
           "game files, art, text dumps or code are included. Descriptions of behaviour are written in our own "
           "words. Cut on {cut.date}.")
-# the owner's account and host pass (ADR-0035); everything else is a failure
-URL_ALLOW = ("https://igorkonovalov.github.io", "https://github.com/igorkonovalov", "https://github.com/${",
-             "https://creativecommons.org/", "https://wiki.creativecommons.org/")
+# the export repository and its Pages site pass (ADR-0035, plan 0070 Phase 7); everything else is a failure.
+# GitHub names are case-insensitive, so the match is too. The name ends at `/`, `#`, `?`, `.git` or the end of the
+# URL: `arpg-1-14d-notes-old` fails. The bare Pages host (no path) is the site's own `site:` setting.
+EXPORT_REPO = "arpg-1-14d-notes"
+RE_URL_ALLOW = re.compile(
+    r"https://github\.com/igorkonovalov/" + re.escape(EXPORT_REPO) + r"(?:\.git)?(?:[/#?]|$)"
+    r"|https://igorkonovalov\.github\.io(?:/" + re.escape(EXPORT_REPO) + r"(?:[/#?]|$))?$"
+    r"|https://igorkonovalov\.github\.io/" + re.escape(EXPORT_REPO) + r"(?:[/#?]|$)",
+    re.I)
+# `https://github.com/${` is a template literal in the site's JS (the account and name join at build time), not a URL
+URL_ALLOW = ("https://github.com/${", "https://creativecommons.org/", "https://wiki.creativecommons.org/")
 URL_ALLOW_LOCKFILE = ("https://registry.npmjs.org/",)
 REPO_PATHS = {"site/package.json", "site/package-lock.json", "site/astro.config.mjs", "site/src/content.config.ts",
               "site/src/components/Footer.astro", "site/scripts/check-site-links.mjs",
@@ -692,7 +700,7 @@ def check_repo(repo, identity=None):
         for n, line in enumerate(text.split("\n"), 1):
             for m in re.finditer(r"https?://[^\s\"'<>)\]`]+|http:", line, re.I):
                 u = m.group(0).lower()
-                ok = u.startswith(URL_ALLOW) or (lock and u.startswith(URL_ALLOW_LOCKFILE))
+                ok = u.startswith(URL_ALLOW) or bool(RE_URL_ALLOW.match(u)) or (lock and u.startswith(URL_ALLOW_LOCKFILE))
                 if not ok:
                     fails.append(("X7", rel, n, f"URL outside the allowlist: {m.group(0)[:60]}"))
             u = re.match(r"\s*-?\s*uses:\s*(\S+)", line)
