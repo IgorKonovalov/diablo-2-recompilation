@@ -7,7 +7,6 @@
 // observed in the game, and the seed offered is illustrative.
 
 const NAME = "rng";
-const MASK = 0xFFFFFFFFn;
 
 function toInt(value, lo, hi, fallback) {
   const v = Math.trunc(Number(value));
@@ -30,8 +29,8 @@ export function compute(inputs, data) {
     let drew = false;
     if (n >= 1) {
       const v = BigInt(low) * mult + BigInt(high);
-      low = Number(v & MASK);
-      high = Number((v >> 32n) & MASK);
+      low = Number(BigInt.asUintN(32, v));
+      high = Number(BigInt.asUintN(32, v >> 32n));
       result = low % n;
       drew = true;
     }
@@ -123,7 +122,7 @@ export function mount(element, data) {
       body.append(tr);
     }
     table.append(thead, body);
-    const last = out.rows[out.rows.length - 1];
+    const last = out.rows.at(-1);
     live.textContent = t.liveHead + " " + out.seed + ", " + t.liveN + " " + out.n + ": " +
       out.rows.map((r) => (r.drew ? String(r.result) : t.noDraw)).join(", ") + ". " + t.liveLow + " " + hex8(last.low) + ".";
   }

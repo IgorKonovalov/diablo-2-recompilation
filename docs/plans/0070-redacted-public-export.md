@@ -1495,3 +1495,74 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
     only Chromium was tried (Firefox's handling of module scripts under the policy and the worker-vs-meta rule is untested);
     the host acts on the Try it link, not the image; no row 1 picture exists yet, so every fallback is a table; `widget.json` is read
     by the host at build time (its code is in the export repository but loads only `/widgets/<id>/widget.js` as a script).
+- 2026-11-17, architect, review of `lane/x11w` (Opus, Tier A: a safety device; ADR-0037 read as the reference).
+  **Verdict: accept with fixes (6: overclaim 2, omission 4).** Fixes, in `fix(tools): … (review of lane/x11w)`:
+  - **X13's ban list was leaky (overclaim: "with the global object unreachable a built name has nothing to index").**
+    51 escape scripts written at the review, none in the lane's 82; 32 of the first 38 passed `js_problems`: a name
+    built from pieces read with `x[k]` (`(() => 0)[k]` is `Function`), `e.view` (an event's window), bare `open(`,
+    `name =` (window.name keeps a value across pages), `history`, `createElement.call(d, "i" + "mg")`,
+    `setAttribute.call`, `style.backgroundImage`, `composedPath()`, `getRootNode()`, `.click()`, `.bind`,
+    destructuring `{ [k]: w } = …`, `toString(36)` (spells words from numbers), `FontFace`, `CSS.paintWorklet`,
+    `Option`, `process` (the gate's node), a `background` attribute, and code hidden from the lexer by a regular
+    expression literal holding a quote (also after `if (…)`), a lone carriage return or U+2028 ending a `//` comment.
+    **Ruling: an allowlist of names, the bans kept as a second layer.** A real lexer (`js_tokens`) for the subset a
+    widget needs: a regular expression literal, an ambiguous slash, a backslash, `#`, `@`, a non-ASCII character
+    outside a string, a control or line-separator character or an HTML comment marker fails. On its tokens
+    (`js_name_problems`): a bare name is a keyword, one of `JS_GLOBAL_ALLOW` (Math, Number, BigInt, JSON, document,
+    timers, `matchMedia`, typed arrays, …) or a name the browser's global object does not have; a member name (after
+    `.`/`?.`, and every key of an object literal or pattern, since a destructuring key reads) is one of
+    `JS_MEMBER_ALLOW` or a name no browser object has; `x[…]` takes only an integer literal (`.at(i)` for a variable
+    index); no computed key; `toString` radix 2, 10 or 16 only; a hex literal passes the text rules; the strings
+    joined (spaces and case aside) spell no identity string or home path; `setAttribute` names from an allowlist
+    (`aria-*`, `data-*`, `role`, `id`, …). Why names and not more bans: no ban list can name every route, while a
+    name the browser does not know can only be the widget's own variable or data. The two name lists
+    (`tools/widgets/browser-globals.txt`, 1 026 names; `browser-members.txt`, 4 775) are written by the new
+    `tools/widgets/browser_names.mjs` from Chromium (the export site's Playwright) plus a hand list of other engines'
+    and node's names; a name only another engine has and the list misses is the residue, with the CSP and the Tier A
+    read behind it. One probe still passes, harmless: `input.type = "ima" + "ge"` (no `src` can be set). The rng `widget.js` changed with it: `0xFFFFFFFFn` masks became `BigInt.asUintN(32, …)` (the hex
+    literal failed X1) and `rows[rows.length - 1]` became `rows.at(-1)`; fixture unchanged, E21 green, browser-checked.
+    Tests: 51 escape forms and 13 allowed forms added to `test_export_widgets.py`, with the joined-identity case and the
+    lists' load.
+  - **The CSP, tightened (overclaim: "`wasm-unsafe-eval` for Pagefind").** Checked on a scratch build in Chromium:
+    Pagefind runs in its own worker, whose requests and WebAssembly follow the worker's policy, so the page needs
+    neither `connect-src` nor `wasm-unsafe-eval` for search. Now, in `workspace/export-repo/site/astro.config.mjs` and
+    `CSP_POLICY` word for word: `default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self'
+    'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self'; manifest-src 'self';
+    frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'`. `'unsafe-inline'` scripts stay
+    (Starlight's own inline scripts), which is why HTML injection stays banned in X13. A meta policy can't cover
+    navigation (`open`, `location`, a link's click): X13's allowlist is the only bar there, and it holds.
+  - **The host step's check (omission).** `check_repo` scanned only for `widgets/` paths, so a host adding
+    `/widgets/${id}/other.js` passed. It now requires exactly one `'script'`, one `src:`, the template
+    `` `${prefix}/widgets/${id}/widget.js` `` and the link shape `/^\/widgets\/([\w-]+)\/widget\.js$/`; 4 tests, and the
+    prepared host passes.
+  - **E21 ran any `widget.js` under node unchecked and unsandboxed (omission).** `test_widgets.py` now runs X13
+    (`js_problems`, `json_problems`) on the sources first (so the gate also catches a refused widget at commit time, not
+    only at publish) and never hands a failing one to node; node runs with `--permission`, read access to the widgets
+    folder and its scratch folder only, and `--disallow-code-generation-from-strings`; 4 tests that the sandbox refuses
+    a process, a write, a read outside and code from a string.
+  - **Text-rule gaps (omission):** a hex literal in code and strings joined across `+` were outside the text rules
+    (both closed above, counted once here).
+  - **`widget.json` string `file` (omission):** fails (an input type a widget may not create); test added.
+  - **Rulings.** The lane's departure from ADR-0037 (the host acts on the "Try it" link, not on the fallback image):
+    **accepted**. The ADR's guarantees hold (without JavaScript the reader keeps the fallback picture or table and the
+    caption; the host loads only `/widgets/<id>/widget.js`), the link is builder-written and X13-verified, and one rule
+    serves both fallback kinds where wrapping the image leaves `fallback: text` with nothing to wrap; with JavaScript the
+    picture stays above the widget. Banning the words in strings and comments too (the lane's stricter reading) stays.
+  - **Checked and right:** `compute` against `tools/rng.py` (`rng_range` with the u32 pattern of n, the 64-bit step on
+    BigInt, `low mod n` unsigned, n below 1 no draw) and the randomness worked example (12345, Range 100: 87,
+    `015B2E77`, `0000141D`); the fixture is the twin's (`twins.py check` OK); widget.json rows `toy`, ≤ 20, strings
+    through the text rules; byte-equality to `tools/widgets/<name>/`; X13 on every widget folder of the cut; the link
+    and image rule for `/widgets/`; E21 skips with one warning without node (and still runs X13 on the sources), fails
+    on a changed fixture or a refused widget; gate 40 s.
+  - **Browser** (scratch copy of the export checkout, cut with a `rng-stepper` text-fallback block under the worked
+    example, `SITE_BASE=/arpg-1-14d-notes/` build, link check "all resolve"; Chromium headless): the widget mounts in
+    dark and light, shows 87 / `015B2E77` / `0000141D`, follows typing and the arrow key, labels bound to their inputs,
+    Tab order seed → range → draws → preset, live region updates, no page overflow at 375 px, no animation (nothing for
+    `prefers-reduced-motion` to stop); without JavaScript the table, caption and "needs JavaScript" figure show. A probe
+    `widget.js` swapped into the scratch build was refused by the policy for `new Function`, `eval`, a string
+    `setTimeout`, `fetch`, XHR, WebSocket, EventSource, `import()` (external and `data:`), an external image, audio,
+    `FontFace`, a blob worker and a `<base>`; search answered under the policy; no policy error on three pages. Firefox
+    was not run (no engine installed): the residue of the meta-policy rules in other engines stays with the redaction
+    review of the first cut that carries a widget (ADR-0037: it opens each widget in both themes).
+  - **At merge:** the export repository files in `workspace/export-repo/` (`astro.config.mjs` CSP changed here, the
+    host and styles as the lane left them) are copied by the publish script; nothing to apply by hand.

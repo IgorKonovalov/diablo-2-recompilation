@@ -21,8 +21,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 WIDGETS = os.path.join(HERE, "widgets")
 sys.path.insert(0, WIDGETS)
 import twins  # noqa: E402
+sys.path.insert(0, HERE)
+import export_check as ec  # noqa: E402
 
 checks, failed = 0, []
+
+
+def node_cmd(*reads):
+    """node under its permission model: it may read the widgets folder and the given scratch folders, nothing else
+    (no writes, no child process, no network module use, no code from strings). A widget runs here only after its
+    sources pass X13 (main), so the gate never runs a script the publish check would refuse."""
+    dirs = dict.fromkeys(os.path.join(os.path.dirname(r) if os.path.isfile(r) else r, "") for r in (WIDGETS,) + reads)
+    return [shutil.which("node"), "--permission"] + [f"--allow-fs-read={d}" for d in dirs] + [
+        "--disallow-code-generation-from-strings"]
 
 
 def ok(cond, what):
@@ -35,12 +46,11 @@ def ok(cond, what):
 
 def node_run(folder, fixture_path=None, js_path=None):
     """-> (outputs list, error). widget.js is copied to a scratch .mjs so node reads it as a module."""
-    node = shutil.which("node")
     tmp = tempfile.mkdtemp(prefix="widget-test-")
     try:
         mod = os.path.join(tmp, "widget.mjs")
         shutil.copyfile(js_path or os.path.join(folder, "widget.js"), mod)
-        cmd = [node, os.path.join(WIDGETS, "run_fixture.mjs"), mod, os.path.join(folder, "widget.json"),
+        cmd = node_cmd(tmp, folder, fixture_path or folder) + [os.path.join(WIDGETS, "run_fixture.mjs"), mod, os.path.join(folder, "widget.json"),
                fixture_path or os.path.join(folder, "fixture.json")]
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         if p.returncode:
@@ -60,6 +70,7 @@ def copy_mjs(folder):
 
 
 def main():
+    ec.set_allow(ec.load_allow(os.path.join(HERE, "..", "docs", "export", "allow-hex.txt")))
     have_node = bool(shutil.which("node"))
     if not have_node:
         print("SKIP node: not on PATH, widget.js not run against its fixtures")
@@ -79,7 +90,12 @@ def main():
             ok((r["result"], r["low"], r["high"]) == (87, 0x015B2E77, 0x0000141D),
                "rng: the first case is the randomness page's worked example")
             ok(any(c["inputs"]["n"] < 1 for c in fixture["cases"]), "rng: a case with n below 1 (no draw)")
-        if not have_node:
+        # X13 on the sources first: the gate catches a refused script at commit time, and node never runs one
+        src = open(os.path.join(folder, "widget.js"), encoding="utf-8").read()
+        xp = ec.js_problems(src, ec.git_identity()) + ec.json_problems(
+            open(os.path.join(folder, "widget.json"), encoding="utf-8").read(), ec.git_identity())[0]
+        ok(not xp, f"{name}: widget.js and widget.json pass X13 ({xp[:2]})")
+        if not have_node or xp:
             continue
         outs, err = node_run(folder)
         ok(outs is not None, f"{name}: node ran widget.js ({err})")
@@ -89,7 +105,8 @@ def main():
         for i, (got, c) in enumerate(zip(outs, fixture["cases"])):
             ok(got == c["expect"], f"{name}: case {i} {c['inputs']}: compute differs from the twin")
         # mount builds its controls with DOM calls only; a stand-in page runs it (no browser) and types into the inputs
-        sm = subprocess.run([shutil.which("node"), os.path.join(WIDGETS, "smoke_mount.mjs"), copy_mjs(folder),
+        mjs = copy_mjs(folder)
+        sm = subprocess.run(node_cmd(mjs) + [os.path.join(WIDGETS, "smoke_mount.mjs"), mjs,
                              os.path.join(folder, "widget.json")], capture_output=True, text=True, timeout=60)
         try:
             res = json.loads(sm.stdout)
@@ -118,12 +135,20 @@ def main():
             open(jp, "w", encoding="utf-8").write(js.replace("low % n", "(low + 1) % n"))
             o3, _ = node_run(folder, js_path=jp)
             open(jp, "w", encoding="utf-8").write(js.replace('return make(document.createElement("td"), text);', "return td(text);"))
-            bm = subprocess.run([shutil.which("node"), os.path.join(WIDGETS, "smoke_mount.mjs"), jp, os.path.join(folder, "widget.json")],
+            bm = subprocess.run(node_cmd(tmp) + [os.path.join(WIDGETS, "smoke_mount.mjs"), jp, os.path.join(folder, "widget.json")],
                                 capture_output=True, text=True, timeout=60)
             ok(name != "rng" or bm.returncode != 0 or '"rows":[]' in bm.stdout, "rng: a mount that recurses forever is caught by the smoke test")
             ok(o3 is not None and o3 != [c["expect"] for c in fixture["cases"]], f"{name}: a changed widget.js differs")
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+    if have_node:
+        # the sandbox itself: a script run as the widgets are may not start a process, write, or read outside
+        for what, code in (("start a process", 'require("child_process").execSync("true")'),
+                           ("write a file", 'require("fs").writeFileSync("x-widget-probe", "x")'),
+                           ("read outside its folders", 'require("fs").readFileSync("/etc/hostname")'),
+                           ("make code from a string", 'new Function("return 1")()')):
+            p = subprocess.run(node_cmd() + ["-e", code], capture_output=True, text=True, timeout=60, cwd=WIDGETS)
+            ok(p.returncode != 0, f"node sandbox: a widget run may not {what}")
     print(f"TEST widgets: {checks} checks, {len(failed)} failed")
     return 1 if failed else 0
 

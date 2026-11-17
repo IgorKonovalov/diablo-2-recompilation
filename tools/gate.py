@@ -45,7 +45,8 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
            E20 the publish check's self-tests fail: `python3 -I tools/test_export_check.py` (plan 0070
                Phase 2; fixtures in tools/gate/fixtures/export/). The gate does not run the check on docs/
            E21 a scripted widget under tools/widgets/ (ADR-0037) whose widget.js `compute` differs, under node, from its
-               fixture (written by its Python twin), or whose fixture is not what the twin computes now:
+               fixture (written by its Python twin), or whose fixture is not what the twin computes now, or whose
+               sources fail X13 (node then never runs it; node runs under its permission model, read-only):
                `python3 -I tools/test_widgets.py`; skipped with a warning when node is missing, like E17
            (a rule in DEMOTED is reported as a warning until the files it flags are fixed: plan 0053)
   warnings W1 a [C]/[I] line or table row with no anchor

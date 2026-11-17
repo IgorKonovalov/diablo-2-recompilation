@@ -36,7 +36,8 @@ Rules (plan 0070 § Publish check):
       most one fallback.png/.gif; marker `widget-only/1` in the js, json and list (the fallback carries the
       schematic marker); sha256 list; widget.js and widget.json byte-equal to tools/widgets/<name>/; caps 48 KB and
       16 KB; widget.js free of network, eval-like, HTML-injection, storage, navigator/location, file-reading, URL and
-      global-object forms (see js_problems); every string and comment of widget.js and every string of widget.json
+      global-object forms, and every name it writes on an allowlist (js_problems, js_name_problems; tools/widgets/
+      browser-*.txt); every string and comment of widget.js and every string of widget.json
       passes X1-X5 and X9; arrays of widget.json are `{"rows": "toy"|"page", "items": [<= 20]}`. A `/widgets/<id>/...`
       link or image of a page must name a verified folder. repo (when the cut has widgets, or the host file exists):
       the host file site/src/rehype-widgets.mjs, and the CSP meta word for word in astro.config.mjs.
@@ -66,12 +67,15 @@ WIDGET_ROOT = "site/public/widgets/"
 WIDGETS_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widgets")   # the reviewed sources (tests override)
 WIDGET_JS_MAX, WIDGET_JSON_MAX, WIDGET_ROWS_MAX = 48 * 1024, 16 * 1024, 20
 HOST_FILE = "site/src/rehype-widgets.mjs"
-# The policy the host's page head carries (ADR-0037): the browser itself refuses any request a widget might make.
-# Search still works under it (checked in a browser, plan log): Pagefind fetches its index from a Web Worker, which a
-# page's meta policy does not cover. Do not add `worker-src 'none'`: it would stop search.
-CSP_POLICY = ("default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
-              "img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; "
-              "form-action 'none'; base-uri 'self'")
+# The policy the host's page head carries (ADR-0037): the browser itself refuses any request a page script might make.
+# Tightened at the lane/x11w review (checked in Chromium on a built copy: the widget mounts, search answers, Mermaid
+# images and fonts load, no policy error): everything not named is refused, no `wasm-unsafe-eval` (Pagefind compiles
+# its WebAssembly in its worker), `base-uri 'none'`. Pagefind's worker comes from the site (`worker-src 'self'`) and
+# its requests follow the worker's own policy, not the page's: never set `worker-src 'none'` (search stops). A widget
+# cannot start a worker: `Worker` and `Blob` are not on the allowlist, and a blob: worker is refused by script-src.
+CSP_POLICY = ("default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+              "font-src 'self'; connect-src 'none'; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; "
+              "form-action 'none'; base-uri 'none'")
 TEXT_RULES = ("X1", "X2", "X3", "X4", "X5", "X9")
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico", ".tga", ".pcx", ".dc6", ".dcc",
              ".avif", ".tif", ".tiff", ".mp4", ".webm", ".ogv"}
@@ -665,68 +669,229 @@ RE_CREATE_EL = re.compile(r"\bcreateElement\s*\(\s*(?:([\"'])([a-z][a-z0-9]*)\1\
 SAFE_TAGS = {"div", "span", "p", "label", "input", "select", "option", "button", "table", "thead", "tbody", "tr", "th",
              "td", "form", "output", "ul", "ol", "li", "strong", "em", "code", "fieldset", "legend", "caption",
              "figure", "figcaption", "pre", "sup", "sub", "small", "h2", "h3", "h4", "details", "summary"}
-BAD_ATTRS = {"src", "href", "srcdoc", "action", "formaction", "data", "poster", "srcset", "ping", "style", "codebase"}
-RE_TIMER = re.compile(r"\bset(?:Timeout|Interval)\s*\(\s*(?!function\b|\([^()]*\)\s*=>)")
+RE_TIMER = re.compile(r"\bset(?:Timeout|Interval)\s*\((?!\s*(?:function\b|\([^()]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>))")
 
 
-def js_split(src):
-    """Split JavaScript source into (nocomment, blank, strings, comments, error): `nocomment` keeps the strings and
-    drops the comments, `blank` also empties each string to "" (a lexer good enough for source of our own: a regular
-    expression literal holding a quote makes it fail, which is the safe side; a template with ${ is an error)."""
-    i, n = 0, len(src)
-    noc, blank, strings, comments = [], [], [], []
+# The allowlist (the lane/x11w review's ruling, plan 0070 Phase 11). The ban lists above are kept, but they are not
+# what makes X13 hold: the review built 30 scripts that passed them (a name built from pieces and read with `x[k]`, a
+# bare `open(` or `name`, `e.view`, `createElement.call`, a regular expression literal or a lone carriage return that
+# hid code from the lexer, ...). A ban list can't name every route; an allowlist of names can. So, on the tokens of
+# the script (js_tokens: a real lexer for the subset a widget may use; a regular expression literal, an ambiguous
+# slash, a backslash, `#`, `@` or a non-ASCII character outside a string fails):
+#   - a bare name (a variable) is a keyword, one of JS_GLOBAL_ALLOW, or a name the browser's global object does not
+#     have (tools/widgets/browser-globals.txt): then it can only be the widget's own variable;
+#   - a member name (after `.` or `?.`, and a key of an object literal or a destructuring pattern) is one of
+#     JS_MEMBER_ALLOW, or a name no browser object has (tools/widgets/browser-members.txt): the widget's own data;
+#   - a computed member `x[...]` takes only a decimal integer literal (`rows[0]`; use `.at(i)` for a variable index,
+#     which turns any key into a number), and an object literal has no computed key;
+#   - `toString` takes no radix but 2, 10 or 16 (base 36 spells words); a hex literal passes the text rules.
+# Both name lists are written by tools/widgets/browser_names.mjs from Chromium plus a hand list of other engines'
+# names; a name only another engine has, missing from both lists, is the residue (the CSP and the Tier A read remain).
+NAMES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widgets")
+JS_KEYWORDS = {
+    "break", "case", "catch", "class", "const", "continue", "default", "delete", "do", "else", "export", "extends",
+    "false", "finally", "for", "function", "if", "in", "instanceof", "let", "new", "null", "of", "return", "static",
+    "switch", "throw", "true", "try", "typeof", "var", "void", "while", "async", "await", "get", "set", "yield",
+}
+JS_BARE_BANNED = {"this", "with", "arguments", "eval", "import", "debugger", "super", "globalThis", "window", "self",
+                  "top", "parent", "frames", "opener", "global"}
+JS_GLOBAL_ALLOW = {
+    "undefined", "NaN", "Infinity", "Math", "Number", "BigInt", "String", "Array", "Boolean", "JSON", "Map", "Set",
+    "Error", "RangeError", "TypeError", "isFinite", "isNaN", "parseInt", "parseFloat", "Uint8Array", "Uint16Array",
+    "Uint32Array", "Int8Array", "Int16Array", "Int32Array", "Float64Array", "BigUint64Array", "BigInt64Array",
+    "document", "setTimeout", "clearTimeout", "setInterval", "clearInterval", "requestAnimationFrame",
+    "cancelAnimationFrame", "matchMedia",
+}
+JS_MEMBER_ALLOW = {
+    # numbers, strings, arrays, maps, sets, BigInt, Math, JSON
+    "length", "push", "pop", "shift", "unshift", "map", "filter", "reduce", "some", "every", "find", "findIndex",
+    "includes", "indexOf", "join", "slice", "concat", "at", "fill", "forEach", "sort", "reverse", "flat", "keys",
+    "values", "has", "get", "set", "add", "delete", "clear", "size", "padStart", "padEnd", "toUpperCase",
+    "toLowerCase", "trim", "split", "repeat", "startsWith", "endsWith", "toFixed", "toString", "trunc", "floor", "ceil",
+    "round", "min", "max", "abs", "sign", "imul", "clz32", "random", "pow", "sqrt", "log2", "isFinite", "isInteger",
+    "isSafeInteger", "MAX_SAFE_INTEGER", "asUintN", "asIntN", "parse",
+    # the DOM a widget builds: its own elements, their text and form state, events
+    "textContent", "className", "classList", "toggle", "remove", "contains", "htmlFor", "type", "id", "step", "value",
+    "valueAsNumber", "checked", "disabled", "hidden", "selected", "selectedIndex", "append", "prepend",
+    "replaceChildren", "appendChild", "createElement", "createTextNode", "querySelector", "querySelectorAll",
+    "addEventListener", "removeEventListener", "preventDefault", "key", "target", "currentTarget", "dataset",
+    "setAttribute", "removeAttribute", "matches", "colSpan", "rowSpan", "scope", "title", "name", "focus",
+    # host contract (the figure's data attributes) and data key names a browser object also has, harmless as reads
+    "widgetData", "widgetName", "widgetId", "mounted", "text", "items", "rows", "default", "data", "start", "low",
+    "high", "result", "seed", "label", "first", "last", "note", "columns", "inputs", "rule", "kind", "unit", "mode",
+}
+SAFE_ATTRS = re.compile(r"(?:aria-[a-z]+|data-[a-z][a-z0-9-]*|role|id|for|type|min|max|step|value|name|hidden|disabled|"
+                        r"tabindex|title|lang|colspan|rowspan|scope|checked|selected|readonly|inputmode|autocomplete|"
+                        r"placeholder|open)")
+JS_PUNCT = sorted(">>>= ... === !== **= <<= >>= >>> &&= ||= ??= => == != <= >= && || ?? ?. ++ -- += -= *= /= %= &= "
+                  "|= ^= ** << >> { } ( ) [ ] ; , < > + - * / % & | ^ ! ~ ? : = .".split(), key=len, reverse=True)
+RE_JS_ID = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*")
+RE_JS_NUM = re.compile(r"0[xX][0-9a-fA-F_]+n?|0[bB][01_]+n?|0[oO][0-7_]+n?|(?:\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)"
+                       r"(?:[eE][+-]?\d+)?n?")
+# a slash after one of these keywords starts a regular expression literal
+JS_EXPR_KEYWORDS = JS_KEYWORDS - {"true", "false", "null", "get", "set", "static", "async"}
+
+
+@functools.lru_cache(maxsize=None)
+def browser_names(kind):
+    """The names of tools/widgets/browser-<kind>.txt (kind: globals or members); empty when the file is missing."""
+    try:
+        with open(os.path.join(NAMES_DIR, f"browser-{kind}.txt"), encoding="utf-8") as f:
+            return frozenset(x.strip() for x in f if x.strip())
+    except OSError:
+        return frozenset()
+
+
+def js_tokens(src):
+    """Lex a widget's JavaScript: ([(kind, text)], comments, error). kind: id, num, str (a quoted string or a template
+    with no `${`), or punct. Only the subset a widget needs lexes; anything else is an error (the safe side): a slash
+    is division only after a name, a number, a string, `]`, or a `)` that does not close an if/while/for header."""
+    toks, comments = [], []
+    bad = re.search(r"[\x00-\x08\x0b-\x1f\x7f\u2028\u2029\ufeff]", src)
+    if bad:
+        return [], [], f"control or line-separator character U+{ord(bad.group(0)):04X} (it ends a comment in JavaScript)"
+    if "<!--" in src or "-->" in src:
+        return [], [], "an HTML comment marker (<!-- or -->)"
+    i, n, parens, closed_kw = 0, len(src), [], False
     while i < n:
         c = src[i]
+        if c in " \t\n":
+            i += 1
+            continue
         if src.startswith("//", i):
             j = src.find("\n", i)
             j = n if j < 0 else j
             comments.append(src[i + 2:j])
             i = j
-        elif src.startswith("/*", i):
+            continue
+        if src.startswith("/*", i):
             j = src.find("*/", i + 2)
             if j < 0:
-                return "", "", [], [], "unterminated comment"
+                return [], [], "unterminated comment"
             comments.append(src[i + 2:j])
-            noc.append(" ")
-            blank.append(" ")
             i = j + 2
-        elif c in "\"'`":
+            continue
+        prev = toks[-1] if toks else None
+        if c in "\"'`":
             j = i + 1
             while j < n and src[j] != c:
                 if src[j] == "\\":
                     j += 1
                 elif c == "`" and src.startswith("${", j):
-                    return "", "", [], [], "template literal with ${"
+                    return [], [], "template literal with ${"
                 elif c != "`" and src[j] == "\n":
-                    return "", "", [], [], "unterminated string"
+                    return [], [], "unterminated string"
                 j += 1
             if j >= n:
-                return "", "", [], [], "unterminated string or template"
-            strings.append(src[i + 1:j])
-            noc.append(src[i:j + 1])
-            blank.append(c + c)
-            i = j + 1
+                return [], [], "unterminated string or template"
+            tok, i = ("str", src[i:j + 1]), j + 1
+        elif RE_JS_ID.match(src, i):
+            m = RE_JS_ID.match(src, i)
+            tok, i = ("id", m.group(0)), m.end()
+        elif c.isdigit() or (c == "." and i + 1 < n and src[i + 1].isdigit()):
+            m = RE_JS_NUM.match(src, i)
+            if m.end() < n and re.match(r"[A-Za-z0-9_$.]", src[m.end()]):
+                return [], [], f"a number followed by a name or a dot: {src[i:m.end() + 1]}"
+            tok, i = ("num", m.group(0)), m.end()
         else:
-            noc.append(c)
-            blank.append(c)
-            i += 1
-    return "".join(noc), "".join(blank), strings, comments, ""
+            if c == "/" and not (prev is not None and (
+                    (prev[0] == "id" and prev[1] not in JS_EXPR_KEYWORDS) or prev[0] in ("num", "str")
+                    or prev[1] == "]" or (prev[1] == ")" and not closed_kw))):
+                return [], [], "a regular expression literal, or a slash after " + (repr(prev[1]) if prev else "nothing")
+            p = next((q for q in JS_PUNCT if src.startswith(q, i)), None)
+            if p is None:
+                return [], [], f"character {c!r} outside a string"
+            if p == "?." and i + 2 < n and src[i + 2].isdigit():
+                p = "?"
+            tok, i = ("punct", p), i + len(p)
+        closed_kw = False
+        if tok == ("punct", "("):
+            parens.append(bool(prev and prev[0] == "id" and prev[1] in ("if", "while", "for", "with", "switch", "catch")))
+        elif tok == ("punct", ")"):
+            closed_kw = parens.pop() if parens else True
+        toks.append(tok)
+    return toks, comments, ""
+
+
+def js_split(src):
+    """(nocomment, blank, strings, comments, error) from js_tokens: `nocomment` is the tokens with their strings,
+    `blank` the same with each string emptied to its quotes."""
+    toks, comments, err = js_tokens(src)
+    if err:
+        return "", "", [], [], err
+    tight = lambda x: re.sub(r" ?(\?\.|\.) ?", r"\1", x)      # `a . b` reads `a.b` again for the patterns
+    noc = tight(" ".join(t if k != "str" else "\0" + str(i) + "\0" for i, (k, t) in enumerate(toks)))
+    noc = re.sub("\0(\\d+)\0", lambda m: toks[int(m.group(1))][1], noc)
+    blank = tight(" ".join(t[0] * 2 if k == "str" else t for k, t in toks))
+    return noc, blank, [t[1:-1] for k, t in toks if k == "str"], comments, ""
+
+
+OBJ_AFTER_KW = {"return", "const", "let", "var", "of", "in", "case", "yield", "await", "typeof", "void", "throw",
+                "delete", "new", "default", "extends"}
+
+
+def js_name_problems(toks, identity=()):
+    """The allowlist pass over the tokens (see the comment above NAMES_DIR): [str]."""
+    globs, membs = browser_names("globals"), browser_names("members")
+    if not globs or not membs:
+        return ["the browser name lists tools/widgets/browser-globals.txt and browser-members.txt are missing"]
+    probs, stack = [], []
+    sig = lambda k: toks[k] if 0 <= k < len(toks) else (None, None)
+    for k, (kind, t) in enumerate(toks):
+        pk, pt = sig(k - 1)
+        nk, nt = sig(k + 1)
+        top = stack[-1] if stack else None
+        if kind == "id":
+            key = top == "obj" and (pt in ("{", ",") or (pt in ("get", "set", "async", "*") and sig(k - 2)[1] in ("{", ",")))
+            if pt in (".", "?."):
+                if t in membs and t not in JS_MEMBER_ALLOW:
+                    probs.append(f"member name not on the allowlist: .{t}")
+            elif key and nt in (":", "(", ",", "}", "="):
+                if t in membs and t not in JS_MEMBER_ALLOW:
+                    probs.append(f"object key not on the allowlist (a destructuring key reads it): {t}")
+                if nt in (",", "}", "=") and t in globs and t not in JS_GLOBAL_ALLOW:
+                    probs.append(f"global name not on the allowlist: {t}")
+            elif t in JS_BARE_BANNED:
+                probs.append(f"banned name: {t}")
+            elif t not in JS_KEYWORDS and t not in JS_GLOBAL_ALLOW and t in globs:
+                probs.append(f"global name not on the allowlist: {t}")
+            if t == "toString" and pt in (".", "?.") and nt == "(" and not (
+                    sig(k + 2)[1] == ")" or (sig(k + 2)[1] in ("2", "10", "16") and sig(k + 3)[1] == ")")):
+                probs.append("toString with a radix other than 2, 10 or 16 (base 36 spells words)")
+        elif kind == "punct":
+            if t == "[":
+                if top == "obj" and pt in ("{", ","):
+                    probs.append("a computed key in an object literal or pattern")
+                elif pk in ("id", "num", "str") and pt not in JS_KEYWORDS or pt in (")", "]", "}", "?."):
+                    if not (sig(k + 1)[0] == "num" and re.fullmatch(r"\d+", sig(k + 1)[1]) and sig(k + 2)[1] == "]"):
+                        probs.append("computed member access other than [<integer>] (use .at(i))")
+                stack.append("[")
+            elif t == "(":
+                stack.append("(")
+            elif t == "{":
+                block = pt is None or pt in (")", ";", "{", "}", "=>") or (pk == "id" and pt not in OBJ_AFTER_KW)
+                stack.append("block" if block else "obj")
+            elif t in (")", "]", "}") and stack:
+                stack.pop()
+        elif kind == "num" and re.match(r"0[xX]", t):
+            for r_, _ln, d in check_text(t.rstrip("n").replace("_", ""), identity)[:1]:
+                probs.append(f"hex literal {t} fails {r_}: {d[:50]}")
+    return probs
 
 
 def js_problems(src, identity=()):
-    """X13 on the text of a widget.js: [str]. See the ADR: no network, eval-like, HTML-injection, storage,
-    navigator/location, file-reading, URL; every string and comment passes the text rules. Obfuscation ruling (the
-    lane's, plan 0070 Phase 11): a pattern list cannot see a name built from pieces, so the forms that build or reach
-    one are banned instead: the global object by any name (window, self, top, parent, frames, globalThis, global,
-    this; `.defaultView`, `.contentWindow`), a quote in a bracket (`x["fe"+"tch"]`), `.constructor`/`.prototype`/
-    Reflect/Proxy, escapes (backslash x, backslash u, octal), String.fromCharCode, atob and its kin, a createElement or setAttribute
-    whose name is not a literal of a short safe list, `${` in a template. With the global object unreachable a
-    built name has nothing to index; the CSP and the Tier A read are the backstop."""
+    """X13 on the text of a widget.js: [str]. The ADR's bans (no network, eval-like, HTML-injection, storage,
+    navigator/location, file-reading, URL; every string and comment passes the text rules), the lane's obfuscation
+    bans (the global object by any bare name, a quote in a bracket, `.constructor`/`.prototype`/Reflect/Proxy,
+    escapes, fromCharCode and atob kin, createElement and setAttribute with a literal of a short safe list only,
+    `document` only as document.<name>, a timer given a function), and the review's allowlist of names
+    (js_name_problems), which is what holds when a ban list is outwitted. The CSP and the Tier A read are the backstop."""
     probs = []
     if len(src.encode("utf-8")) > WIDGET_JS_MAX:
         probs.append(f"widget.js over {WIDGET_JS_MAX // 1024} KB")
     if WIDGET_MARKER not in src:
         probs.append("widget.js has no marker")
+    toks, _c, err = js_tokens(src)
     noc, blank, strings, comments, err = js_split(src)
     if err:
         return probs + [f"widget.js does not lex: {err}"]
@@ -750,13 +915,14 @@ def js_problems(src, identity=()):
         probs.append(f"assignment of a source or link: {m.group(0).strip()}")
     for m in RE_SET_ATTR.finditer(noc):
         name = (m.group(2) or "").lower()
-        if not name or name in BAD_ATTRS or name.startswith("on"):
+        if not SAFE_ATTRS.fullmatch(name):
             probs.append(f"setAttribute with a name that is not a safe literal: {name or '(not a literal)'}")
     for m in RE_CREATE_EL.finditer(noc):
         if m.group(2) not in SAFE_TAGS:
             probs.append(f"createElement of {m.group(2) or '(not a literal)'}")
     if RE_TIMER.search(noc):
         probs.append("setTimeout/setInterval whose first argument is not a function expression or an arrow (a string held in a name runs as code)")
+    probs += js_name_problems(toks, identity)
     for kind, items in (("string", strings), ("comment", comments)):
         for t in items:
             for r_, _ln, d in check_text(t, identity)[:2]:
@@ -764,6 +930,11 @@ def js_problems(src, identity=()):
             for pat in (r"\bparam_\d+\b", r"\blocal_[0-9a-fA-F]+\b", r"\bFUN_", r"\bDAT_"):
                 if re.search(pat, t):
                     probs.append(f"{kind} holds a decompiler artefact name")
+    # a string built from pieces: the pieces joined, spaces and case aside, hold no identity string and no home path
+    joined = "".join(strings)
+    squash = re.sub(r"\s+", "", joined).lower()
+    if any(i and re.sub(r"\s+", "", i).lower() in squash for i in identity) or RE_HOME.search(joined):
+        probs.append("the strings joined spell an identity string or a home path")
     for pat in (r"\bparam_\d+\b", r"\blocal_[0-9a-fA-F]+\b", r"\bFUN_", r"\bDAT_"):
         if re.search(pat, src):
             probs.append("decompiler artefact name in the script")
@@ -802,6 +973,8 @@ def json_problems(text, identity=()):
                 probs.append(f"string {path} fails {r_}: {d[:50]}")
             if re.search(r"\bparam_\d+\b|\blocal_[0-9a-fA-F]+\b|\bFUN_|\bDAT_", v):
                 probs.append(f"string {path} holds a decompiler artefact name")
+            if re.fullmatch(r"\s*file\s*", v, re.I):
+                probs.append(f"string {path} is `file` (an input type the widget may not create)")
     walk(data, "", None)
     return probs, data
 
@@ -1079,7 +1252,15 @@ def check_repo(repo, identity=None, need_host=False):
         if "Content-Security-Policy" not in cfg or CSP_POLICY not in norm_ws(cfg.replace("\n", " ")):
             fails.append(("X13", "site/astro.config.mjs", 0, "the Content-Security-Policy meta is missing or not word for word"))
     if os.path.isfile(hp):
-        for n, line in enumerate(open(hp, encoding="utf-8").read().split("\n"), 1):
+        host = open(hp, encoding="utf-8").read()
+        # the one script it adds, and the one link shape it acts on (the lane/x11w review: the path scan alone let
+        # `/widgets/${id}/other.js` through)
+        if len(re.findall(r"""['"]script['"]""", host)) != 1 or len(re.findall(r"\bsrc\s*:", host)) != 1 or \
+                "src: `${prefix}/widgets/${id}/widget.js`" not in host or \
+                "const LINK = /^\\/widgets\\/([\\w-]+)\\/widget\\.js$/;" not in host:
+            fails.append(("X13", HOST_FILE, 0, "the host step adds a script other than <base>/widgets/<id>/widget.js, "
+                          "or acts on another link shape"))
+        for n, line in enumerate(host.split("\n"), 1):
             if line.lstrip().startswith("//"):
                 continue        # a whole-line comment runs nothing (a trailing one is scanned with its line)
             for m in re.finditer(r"widgets/(?!\$\{|\(\[)", line):

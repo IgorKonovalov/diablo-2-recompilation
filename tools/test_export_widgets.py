@@ -37,7 +37,7 @@ def put(path, text, mode="w"):
         f.write(text)
 
 
-CLEAN = f"// {M}\nconst a = [1, 2];\nexport function compute(i, d) {{ return a[i] + d.x; }}\n"
+CLEAN = f"// {M}\nconst a = [1, 2];\nexport function compute(i, d) {{ return a.at(i) + d.rule; }}\n"
 REAL = os.path.join(HERE, "widgets", "rng")
 
 # (name, line added to CLEAN): every one must fail js_problems
@@ -77,14 +77,46 @@ BAD = [
     ("ADR in a string", "const s = 'see ADR-0037';"), ("Warden in a string", "const s = 'Warden';"),
     ("decompiler name", "const FUN_00112233 = 1;"), ("anchor in a comment", "// fn:Thing@0x004A1B20"),
     ("param_ name in a string", "const s = 'param_3';"),
+
+    # the lane/x11w review's escapes: each passed the ban lists; the allowlist of names and the lexer close them
+    ("constructor built from pieces", "const k = 'constr' + 'uctor'; const F = (() => 0)[k]; F('x')();"),
+    ("event view is the window", "function f(e) { const w = e.view; w.alert2(1); }"),
+    ("computed member by a variable", "const v = rows[i];"), ("computed member by an expression", "const v = rows[i + 1];"),
+    ("computed member after a call", "f()[k];"), ("optional computed member", "const w = e?.[k];"),
+    ("bare open", "open('/' + '/evil.example/');"), ("bare name (window.name storage)", "name = 'remember';"),
+    ("history", "history.pushState(null, '', '/x');"), ("bare status", "status = 'x';"),
+    ("regex literal hides code", "const a = /\"/; const g = 1; const b = /\"/;"),
+    ("regex after if", "if (a) /\"/.test(''); const g = 1; /\"/;"), ("regex after return", "function f() { return /x/; }"),
+    ("slash after a block", "{ }\n/x/;"), ("lone CR ends a comment", "// note\rconst g = 1;"),
+    ("U+2028 ends a comment", "// note const g = 1;"), ("HTML comment open", "<!-- x"),
+    ("backslash in a name", "const f\\u0065 = 1;"), ("non-ASCII name", "const café = 1;"), ("hash", "#!x"),
+    ("createElement.call", "const i = d.createElement.call(d, 'i' + 'mg');"),
+    ("setAttribute.call", "a.setAttribute.call(a, 'sr' + 'c', u);"), ("Object.assign", "Object.assign(i, { src: u });"),
+    ("destructured ownerDocument", "const { ownerDocument: d } = el;"), ("shorthand view", "const { view } = e;"),
+    ("parameter pattern view", "const f = ({ view }) => view;"), ("computed key", "const { [k]: w } = el;"),
+    ("computed key in a literal", "const o = { [k]: 1 };"), ("style", "e.style.top = '0';"),
+    ("style background url", "e.style.backgroundImage = 'u' + 'rl(/x.png)';"), ("composedPath", "e.composedPath();"),
+    ("getRootNode", "el.getRootNode();"), ("anchor click", "document.querySelector('a').click();"),
+    ("form submit", "f.submit();"), ("bind", "const g = el.addEventListener.bind(el);"),
+    ("call", "f.call(x);"), ("apply", "f.apply(x, []);"), ("toString base 36", "el.textContent = (1767).toString(36);"),
+    ("FontFace", "new FontFace('x', u).load();"), ("CSS worklet", "CSS.paintWorklet;"), ("Option", "new Option('x');"),
+    ("queueMicrotask", "queueMicrotask(f);"), ("node process", "process.exitCode = 3;"),
+    ("setAttribute background", "t.setAttribute('background', u);"), ("setAttribute style", "t.setAttribute('style', u);"),
+    ("details open member", "d.open = true;"), ("hex address literal", "const a = 0x00556F60;"),
+    ("strings joined spell a home path", "const p = '/ho' + 'me/' + 'someone';"),
+    ("a slash after a keyword-header paren", "while (a) /x/;"),
 ]
 # forms that must stay allowed
 GOOD = [
-    "e.style.top = '0';", "const v = rows[i];", "e.textContent = s;", "if (typeof document !== 'undefined') { x(); }",
+"e.textContent = s;", "if (typeof document !== 'undefined') { x(); }",
     "document.createElement('div');", "a.setAttribute('aria-live', 'polite');", "setTimeout(() => { x(); }, 5);",
     "setTimeout(function () { x(); }, 5);", "const m = 0x6AC690C5;", "const b = BigInt(1) * 2n;", "const s = 'a\\nb';",
     "x.addEventListener('input', f);", "const o = { data: 1 };", "const u = 'draws, then 87';", "/* block comment */",
     "// widget text: the seed 12345 is illustrative", "const e = el.querySelector('input');",
+    "const v = rows.at(i);", "const v = rows[0];", "const { seed, n } = inputs;", "setTimeout(x => x, 5);",
+    "const h = (a + b) / 2;", "const q = a / b / 2;", "const s = x.toString(16);", "if (a) { b(); } else { c(); }",
+    "const r = { k: 1, drew: true, low: 2 };", "const w = cond ? [1] : [2];", "const m = matchMedia('(prefers-reduced-motion: reduce)').matches;",
+    "const big = BigInt.asUintN(32, 5n);", "for (const { low, high } of rows) { f(low, high); }",
 ]
 
 
@@ -101,6 +133,10 @@ def js_tests():
     ok(any("KB" in p for p in ec.js_problems(CLEAN + "// " + "a" * 49200 + "\n")), "js: over 48 KB fails")
     ok(any("lex" in p for p in ec.js_problems(CLEAN + "const s = 'abc;\n")), "js: an unterminated string fails (the safe side)")
     ok(any("lex" in p for p in ec.js_problems(CLEAN + "/* open\n")), "js: an unterminated comment fails")
+    ok(any("identity" in p for p in ec.js_problems(CLEAN + "const w = 'Ada ' + 'Love' + 'lace';\n", ("Ada Lovelace",))),
+       "js: strings joined that spell the identity fail")
+    ok(ec.browser_names("globals") and "fetch" in ec.browser_names("globals") and "view" in ec.browser_names("members"),
+       "js: the browser name lists load")
     ok(ec.js_problems(CLEAN + "const s = 'fe' + 'tch';\n") == [], "js: a built word alone is not a name (the global object is unreachable)")
     # the global object reached by a bare name is the only route to a built name: every spelling of it fails
     for g in ("window", "self", "top", "parent", "frames", "globalThis", "global", "opener", "this"):
@@ -114,6 +150,7 @@ def json_tests():
     p, _ = ec.json_problems(open(os.path.join(REAL, "widget.json"), encoding="utf-8").read())
     ok(p == [], f"json: the rng widget.json passes ({p[:2]})")
     ok(ec.json_problems("{")[0] != [], "json: invalid JSON fails")
+    ok(ec.json_problems(json.dumps(dict(good, t=" File ")))[0] != [], "json: a string `file` (an input type) fails")
     ok(ec.json_problems(json.dumps(dict(good, marker="x")))[0] != [], "json: wrong marker fails")
     ok(ec.json_problems(json.dumps(dict(good, name="Bad Name")))[0] != [], "json: a bad name fails")
     ok(ec.json_problems(json.dumps(dict(good, s={"rows": "toy", "items": list(range(20))})))[0] == [], "json: 20 entries pass")
@@ -260,7 +297,7 @@ def repo_tests(tmp):
     base = ec.check_repo(repo, ())
     ok(not [x for x in base if x[0] == "X13"], "repo: no host and no widgets in the cut: no X13")
     ok(any(x[0] == "X13" and "no host" in x[3] for x in ec.check_repo(repo, (), need_host=True)), "repo: a cut with widgets needs the host step")
-    put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), "const p = `${base}/widgets/${id}/widget.js`;\n")
+    put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), HOST_OK)
     f = [x for x in ec.check_repo(repo, ()) if x[0] == "X13"]
     ok(any("Content-Security-Policy" in x[3] for x in f), "repo: a host step without the CSP meta fails")
     csp = f"head: [{{ tag: 'meta', attrs: {{ 'http-equiv': 'Content-Security-Policy', content: \"{ec.CSP_POLICY}\" }} }}],\n"
@@ -271,16 +308,31 @@ def repo_tests(tmp):
     put(os.path.join(repo, "site", "astro.config.mjs"), cfg + csp)
     for bad in ("const p = '/widgets/other/x.js';", "const r = await fetch(u);", "const m = await import(u);", "eval(s);",
                 "const p = '/widgets/' + id + '/widget.js';"):
-        put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), bad + "\n")
+        put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), HOST_OK + bad + "\n")
         ok(any(x[0] == "X13" for x in ec.check_repo(repo, ())), f"repo: host step line fails ({bad})")
-    put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), "// a comment names /widgets/<id>/ and fetch\nconst p = `${base}/widgets/${id}/widget.js`;\n")
+    put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), "// a comment names /widgets/<id>/ and fetch\n" + HOST_OK)
     ok(not [x for x in ec.check_repo(repo, ()) if x[0] == "X13"], "repo: a whole-line comment in the host step is not scanned")
-    put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), "const p = `${base}/widgets/${id}/widget.js`; // /widgets/x/\n")
+    put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), HOST_OK + "const q = 1; // /widgets/x/\n")
     ok(any(x[0] == "X13" for x in ec.check_repo(repo, ())), "repo: a trailing comment is scanned with its line")
-    put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), "import { readFileSync } from 'node:fs';\nconst p = `${base}/widgets/${id}/widget.js`;\n")
+    put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), "import { readFileSync } from 'node:fs';\n" + HOST_OK)
     ok(not [x for x in ec.check_repo(repo, ()) if x[0] == "X13"], "repo: a static import of node:fs passes in the host step")
     put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), "const u = 'https://example.org/a.js';\n")
     ok(any(x[0] == "X7" for x in ec.check_repo(repo, ())), "repo: a URL in the host step is X7")
+    # the review's host rule: one script, its src the widget.js template, the one link shape
+    for name, text in (("a second script", HOST_OK + "const t = { tagName: 'script' };\n"),
+                       ("another file name", HOST_OK.replace("/widget.js`", "/other.js`")),
+                       ("a second src", HOST_OK + "const u = { src: x };\n"),
+                       ("a wider link shape", HOST_OK.replace("([\\w-]+)", "(.+)"))):
+        put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), text)
+        ok(any(x[0] == "X13" for x in ec.check_repo(repo, ())), f"repo: host step with {name} fails")
+    real = os.path.join(HERE, "..", "workspace", "export-repo", "site", "src", "rehype-widgets.mjs")
+    if os.path.isfile(real):
+        put(os.path.join(repo, "site", "src", "rehype-widgets.mjs"), open(real, encoding="utf-8").read())
+        ok(not [x for x in ec.check_repo(repo, ()) if x[0] == "X13"], "repo: the prepared host step passes")
+
+
+HOST_OK = ("const LINK = /^\\/widgets\\/([\\w-]+)\\/widget\\.js$/;\n"
+           "const s = { tagName: 'script', properties: { type: 'module', src: `${prefix}/widgets/${id}/widget.js` } };\n")
 
 
 def build_tests(tmp):
