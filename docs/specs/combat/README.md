@@ -162,14 +162,14 @@ is on 7, the rest are in no logged packet. [I]
 | inputs (packets) | a skill's packet (any `srvdofunc` other than 1) and a missile's packet, taken at `ResolveAndQueue` or `ApplyDamage` entry | [C] (run:2026-10-16-combat) |
 | boundary oracles | stat-event handlers other than 15 and 16, `COMBAT_DurabilityLoss`, the knockback, `COMBAT_GetHit`, a monster's on-hit skill `0x005A4390`, a skill do-function's draws before the build, a delivery on a later frame than the hit test: entry seeds asserted, exit seeds taken (ADR-0004) | [C] (run:2026-10-16-combat) |
 
-[C] Under this boundary the recorded run (run:2026-10-16-combat) reproduced 15 358 logged events of 19 sessions with 0 mismatches,
+[C] Under this boundary the combat run (run:2026-10-16-combat) reproduced 15 358 logged events of 19 sessions with 0 mismatches,
 every logged seed asserted; with the resume-lane addendum the run list holds 40 logs and 40 655 events, still with 0
-mismatches. (run:2026-10-16-combat) [C] Under the same boundary the recorded run (run:2026-10-20-shortfalls) (plan 0047 Phase 2,
+mismatches. (run:2026-10-16-combat) [C] Under the same boundary the first shortfalls run (run:2026-10-20-shortfalls) (plan 0047 Phase 2,
 sessions built for the branches the first run met too rarely) reproduced 18 737 events of 31 logs with 0 mismatches,
 and the kept run list re-checks with the same checker at 0 mismatches over its 40 655 events. Its run list names the logs whose player holds no
 usable shield (`--no-shield-log`), which only sets the predicted block chance to 0, so a logged chance above 0 still
 fails ([to-hit § C2](to-hit.md#c-the-hit-test-and-the-defence-rolls)). (run:2026-10-20-shortfalls) [C] Under the same
-boundary the recorded run (run:2026-10-21-shortfalls2) (plan 0047 Phase 2b, flat absorb by element) reproduced 2 527 events of 3 logs
+boundary the second shortfalls run (run:2026-10-21-shortfalls2) (plan 0047 Phase 2b, flat absorb by element) reproduced 2 527 events of 3 logs
 with 0 mismatches, and both kept run lists re-check at 0 mismatches. Its checker takes the attacker's life after a
 defender's stat-event handler from the handler's logged life where it differs from the model's (a value oracle, as
 the handler is), so a leech that follows is predicted from that life
@@ -226,7 +226,7 @@ A2. MonsterAttack(att):                                               [C] (fn:su
   missile's own stats on the missile's seed, and `MISSILE_ApplyDamage` rolls the knockback on the missile's seed,
   the defence on the defender's seed (block only with physical damage), and calls `ApplyDamage` with reductions.
   That path is phase (3); here its packet is an input. [C] The to-hit on the owner's seed (269 rolls) and the packet on
-  the missile's seed (4 118 builds) are [skills/missiles E1, F1](../skills/missiles.md) on the recorded run (run:2026-10-25-skills); the
+  the missile's seed (4 118 builds) are [skills/missiles E1, F1](../skills/missiles.md) on the skills run (run:2026-10-25-skills); the
   knockback on the missile's seed in 8 638 missile events (7 with a knockback row), and no block draw on 10 387
   events with physical 0, 6 838 of them in logs where another missile was blocked (run:2026-10-16-combat,
   [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)).
@@ -433,7 +433,7 @@ sequenceDiagram
 the handlers registered on stock data that draw do so on the **handler's unit**, the unit that owns the event. On
 the attacker's seed: its `do…` handlers 7 knockback, 8 howl and 9 stupidity, 20 skill on attack, hit or kill, and
 its `kill` handler 31 reanimate; on the defender's: 3 shiver armour (`attacked…`), 21 skill on get-hit (`damaged…`) and
-its `killed` handler 30. In the recorded run (run:2026-10-16-combat) these handlers were boundary oracles (the boundary section, ADR-0014); the
+its `killed` handler 30. In the combat run (run:2026-10-16-combat) these handlers were boundary oracles (the boundary section, ADR-0014); the
 list and their draws are [delivery § E5](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze). [C] for
 7, 8 and 20 on the attacker, 9 on a monster attacker and 21 on the player defender: each call stepped its unit's seed
 once in the skills runs (data:g_StatEventFuncs@0x007325B0, run:2026-10-25-skills, run:2026-10-27-skills,

@@ -191,8 +191,8 @@ Step notes:
   `STATLIST_Alloc(pool, 2, a length-derived end, the attacker's type, its guid)` (6 and −1 without an attacker), sets
   its state (2, 115, 11, 1), a remove callback, and links it with damage; the 17 logged poison lists are plain, with
   `0x2`, an end frame and `+0x08` 1 (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i); [stats/0002 § 12](../../findings/stats/0002-states.md#12-plan-0066-batch-s4e-part-5e-the-elemental-appliers-lists-run2026-11-16-sweep2-s4e-emu-static)). The remove
-  callbacks differ: poison and burn set `STATE_DefaultRemoveCB` (0x0056E900), cold 0x0057AD80, freeze 0x0057B170
-  (what the last two do at expiry was not read). (fn:STATEVENT_OpenWounds@0x005BFE60,
+  callbacks differ: poison and burn set `STATE_DefaultRemoveCB` (0x0056E900), cold `ColdEndCb` (0x0057AD80) and
+  freeze a callback of its own (0x0057B170); what the last two do at expiry was not read. (fn:STATEVENT_OpenWounds@0x005BFE60,
   fn:sub_0057D810_PreventHealHook@0x0057D810, fn:COMBAT_ApplyPoison@0x0057AC50, fn:COMBAT_ApplyBurn@0x0057ADD0,
   fn:COMBAT_ApplyCold@0x0057AF80, fn:COMBAT_ApplyFreeze@0x0057B230, run:2026-11-16-sweep2-s4e-emu)
 - B2. [C] **Prevent heal (state 52)** is applied by B1 for 120 000 frames with stat 31 = 0 to the defender in 86 of 918
@@ -205,7 +205,7 @@ Step notes:
   run:2026-10-27-skills)
 - B3. [C] **Use kinds 6 and 9 only** (`sub_005BEDA0_ItemUseTimedState`: `yps`, `wms`, `vps`, `hrb`) run the group clear
   (§ D) before they apply. Healing and mana potions do not: they are kind 3, `sub_005BE3F0_ItemUsePotion`, with no call
-  of it. Of `STATE_GroupClear`'s nine call sites only `0x005BEE15` lies in the use entries (`0x005BE130..0x005BF3D0`).
+  of it. Of `STATE_GroupClear`'s nine call sites only one lies in the use entries (0x005BEE15, in the range 0x005BE130..0x005BF3D0).
   (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:STATE_GroupClear@0x0056C740,
   0x005BEE15, [items/0012 § 9](../../findings/items/0012-use-inventory.md#9-corrections); the nine sites and no abs32
   reference (a second tool, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)); the use kinds:
@@ -218,7 +218,7 @@ C1. EVENT_TimedListExpire(unit) (unit event 12):                       [C] (fn:E
       for each counting child list c of the unit list (+0x3C):
         if c.flags & 0x2 and c.endFrame ≤ frame and c is not extended: free c   ; unlink, remove callback
 C2. STATE_DefaultRemoveCB(unit, state):                                [C] (fn:STATE_DefaultRemoveCB@0x0056E900, run:2026-10-17-stats, the calls in this order, all of C2 but the line marked [I])
-      call 0x005C0B50                                                  ; the stat-event remove, aggregate § G3
+      the stat-event remove                                            ; aggregate § G3, 0x005C0B50
       if unit is dead and the state stays on death (plrstaydeath for players, monstaydeath otherwise): keep the bit   [I] (fn:STATES_StaysOnDeath@0x0063A4A0)
       else: STATE_Set(unit, state, off)
       UNIT_AnimSetRate(unit); SKILLS_RefreshPassivesInState(unit, state)
@@ -236,9 +236,9 @@ Step notes:
   ([aggregate § G](aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback)). (fn:STATLIST_Unlink@0x006269F0,
   run:2026-10-17-stats)
 - C1. [C] **The 300 expiries are met: 449 lists freed over three runs**, each on its own end frame (lateness 0) and
-  each event run's free set as predicted. The recorded run (run:2026-10-17-stats) freed 123 (potion states 178–180 79, state 21 18,
-  state 113 11, poison 7, 86 5, shrines 130/131 2, Conviction 1), the recorded run (run:2026-10-20-shortfalls) 30 (the Druid's shapes 24,
-  the Sorceress armours 3, `palc-wells1` 3) and the recorded run (run:2026-10-21-shortfalls2) 296 in its 1 401 event-12 runs (the potion
+  each event run's free set as predicted. The stats run (run:2026-10-17-stats) freed 123 (potion states 178–180 79, state 21 18,
+  state 113 11, poison 7, 86 5, shrines 130/131 2, Conviction 1), the first shortfalls run (run:2026-10-20-shortfalls) 30 (the Druid's shapes 24,
+  the Sorceress armours 3, `palc-wells1` 3) and the second shortfalls run (run:2026-10-21-shortfalls2) 296 in its 1 401 event-12 runs (the potion
   states 100, 106 and 178–180 153, `poison` 49, `skilldelay` 48, `defense_curse` 42, the shrine states 133 and 134 4).
   (fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-17-stats,
   run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2)
@@ -340,7 +340,7 @@ Step notes:
   `hp + stat 74`. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stats)
 - E2. [I] **The floor at 256** (one life point): a poisoned or wounded player's tick never takes life below 256, so
   poison and open wounds cannot kill a player. No poisoned tick reached it: 0 floored in 1 431 poisoned ticks of
-  the recorded run (run:2026-10-21-shortfalls2) (none in run:2026-10-20-shortfalls), and open wounds never hit the player. The count is
+  the second shortfalls run (run:2026-10-21-shortfalls2) (none in run:2026-10-20-shortfalls), and open wounds never hit the player. The count is
   final (plan 0047): on the staged route (a 30-life character kept alive in Normal by flat damage reduction) the
   stock items that give it also regenerate life or resist and shorten poison; a character with more life drained to
   the floor by poison alone was not tried, so this is no stock-data limit, and that route is out of the plan
@@ -399,7 +399,7 @@ Step notes:
   made 61 aura state lists and ended 59, each unlinked by `sub_005701B0_PlayerSetSkill` (through
   `UNIT_UnlinkStatList`) when the next aura key changed the right skill, before the list's timed end; each unlink's
   writes checked, and no aura list was freed by event 12 in those sessions. This is a second end path beside the timed
-  expiry of § C, which ended the one aura state of the recorded run (run:2026-10-17-stats) (9 on and off events there). The plan's 50 aura
+  expiry of § C, which ended the one aura state of the stats run (run:2026-10-17-stats) (9 on and off events there). The plan's 50 aura
   on and off events are met: 120. (fn:sub_005701B0_PlayerSetSkill@0x005701B0, fn:UNIT_UnlinkStatList@0x006277E0,
   fn:EVENT_TimedListExpire@0x00580800, run:2026-10-20-shortfalls, run:2026-10-17-stats)
 - F3. [I] **Range and filter.** A unit counts when its squared distance to the caster (subtiles) is ≤ `range²` in the
@@ -430,8 +430,8 @@ Step notes:
 ### G. Shrines and wells
 
 § G is inferred but for the effect table G2, the stamina shrine's stat 28 and remove callback, and the shrine
-lists' curse flag, which the step notes confirm: the recorded run (run:2026-10-17-stats) operated 7 shrines and 5 wells, the recorded run (run:2026-10-20-shortfalls) 3 shrines
-(codes 14 twice, 6 once) and no well, and the recorded run (run:2026-10-21-shortfalls2) 6 shrines (codes 11 once, 12 three times, two
+lists' curse flag, which the step notes confirm: the stats run (run:2026-10-17-stats) operated 7 shrines and 5 wells, the first shortfalls run (run:2026-10-20-shortfalls) 3 shrines
+(codes 14 twice, 6 once) and no well, and the second shortfalls run (run:2026-10-21-shortfalls2) 6 shrines (codes 11 once, 12 three times, two
 recharges on a full player) and no well, every one predicted: 21 against the plan's 50 operates and the 20 that the
 draw-freedom check asks per kind. The count is final as a slot-time ruling (plan 0047), not a stock-data limit: one
 explore-and-operate session (`sor-shrines2`) listed one shrine, about one operate in 12 minutes, and `palc-wells2` was
@@ -472,7 +472,7 @@ Step notes:
   (data:g_ShrineEffects@0x006E1850, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i))
 - G2. [C] **Shrine states are curses.** States 128–137 carry the `curse` bit, so a shrine's list has flag `0x20`: the
   6 logged shrine lists (states 128, 130, 131, 136) have flags `0x22` and their rows `curse` = 1; the 3 timed shrines
-  of the recorded run (run:2026-10-17-stats) (codes 10 once, 8 twice) made lists with the duration `Duration in frames` and the table's
+  of the stats run (run:2026-10-17-stats) (codes 10 once, 8 twice) made lists with the duration `Duration in frames` and the table's
   stat with value `Arg0`. (tbl:States.txt:curse, tbl:Shrines.txt:Duration in frames, run:2026-10-17-stats,
   run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)) [I] So a shrine's list is "the" curse of B1: it replaces a monster's curse, and a
   curse replaces it (B1's one-curse rule).

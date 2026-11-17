@@ -92,8 +92,8 @@ life and mana are in 1/256 points.
 
 - A1. **Shapes.** Every skill start and do entry read by the class, item and monster batches is
   `(ECX game, EDX unit; skill id, level)` with `ret 8`.
-  [C] (data:g_SkillStartFuncs@0x00732140, data:g_SkillDoFuncs@0x007322B0, the static text dumps of
-  [skills/0008](../../findings/skills/0008-sorceress.md#answer-summary)–[0018](../../findings/skills/0018-monster-8c.md#answer-summary))
+  [C] (data:g_SkillStartFuncs@0x00732140, data:g_SkillDoFuncs@0x007322B0, the static text dumps)
+  ([skills/0008](../../findings/skills/0008-sorceress.md#answer-summary)–[0018](../../findings/skills/0018-monster-8c.md#answer-summary))
   A missile hit entry is `(ECX game, EDX m; unit)` with `ret 4` and returns the result word of
   [missiles § E](missiles.md#e-the-hit) (bit 0 end, bit 1 damage, bit 2 keep and return at once); a damage entry is
   `(ECX game, EDX m; unit, packet)` with `ret 8` and changes only the packet, the missile's seed and (mdmg 8) the
@@ -215,12 +215,12 @@ flowchart LR
   d1 --> ret["return mdo 1's result"]
 ```
 
-- C0. **The shared tail.** Entry 1 of the table is a 5-byte `jmp 0x005AE1F0`, so mdo 1 is
+- C0. **The shared tail.** Entry 1 of the table is a 5-byte `jmp MissileMoveCollide` (`0x005AE1F0`), so mdo 1 is
   `sub_005AE1F0_MissileMoveCollide` ([missiles § D](missiles.md#d-each-frame)). Every entry of 9a ends in mdo 1 and
   returns its result (mdo 18 after its cookie check); in 9b, mdo 20 and 30 return 1 after mdo 1, mdo 32 ends in
   mdo 7 and mdo 34 in mdo 3; a missing record, owner or sub-missile returns 2. In 9b, entries 19, 21–29, 31, 33, 35
   and 36 also end in mdo 1; do-table entry 37 (`0x005B0AA0`, inside the Baal effect function's range) is non-null and
-  no Missiles row names it. [C] entry 1 is the 5-byte `jmp 0x005AE1F0` and the tails as stated (static, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q)).
+  no Missiles row names it. [C] entry 1 is the 5-byte `jmp MissileMoveCollide` (`0x005AE1F0`) and the tails as stated (static, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q)).
   [I] Which tests return 2 (fn:sub_005B0BC0_MissDo01Thunk@0x005B0BC0, data:g_MissileSrvDoFuncs@0x0073C768) mdo 1, 3, 5
   and 23 are tier A: [missiles § G](missiles.md#g-the-function-tables). [I] (0x005AE1F0)
 

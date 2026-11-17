@@ -42,15 +42,15 @@ data** is `unit+0x14` of an item unit (partial types in `re/types/save.h`).
 
 - [C] *Save and Exit* in single player writes the file **twice**, byte-identical: `PLRSAVE_Save` is called from
   two sites in turn (`0x0052CA5F`, then `0x0052C940`), and both calls reach `PLRSAVE_WriteFile`. Nothing was written during
-  play in the recorded run (run:2026-10-12-d2s-io). (fn:sub_0052CA10_SaveGameClients@0x0052CA10, run:2026-10-12-d2s-io;
+  play in the save input and output run (run:2026-10-12-d2s-io). (fn:sub_0052CA10_SaveGameClients@0x0052CA10, run:2026-10-12-d2s-io;
   [save/0001 §1](../../findings/save/0001-d2s-io.md#1-when-a-save-is-written))
-- [C] **Single player also writes the file at a death.** In the recorded run (run:2026-10-27-sweep-d2s-play) (hell-r3) `PLRSAVE_Save`
+- [C] **Single player also writes the file at a death.** In the save play run (run:2026-10-27-sweep-d2s-play) (hell-r3) `PLRSAVE_Save`
   was called once from the death path `sub_0057FCA0_PlayerDeathModeEnd` (return 0x0057FD88), the write before the
   respawn, with status word `0x0F28` (bit 3 set). This is an event save, not an autosave.
   (fn:sub_0057FCA0_PlayerDeathModeEnd@0x0057FCA0,
   run:2026-10-27-sweep-d2s-play, [save/0001 § Plan 0038 batch H1b](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play))
 - [C] **No autosave runs in single player.** `sub_0052D350_AutosaveTick` was called throughout every session of
-  the recorded run (run:2026-10-27-sweep-d2s-play) with the host callback `0x00883D50` at 0, and no `PLRSAVE_Save` returned into it. That
+  the save play run (run:2026-10-27-sweep-d2s-play) with the host callback `0x00883D50` at 0, and no `PLRSAVE_Save` returned into it. That
   is the outcome only, and which test stopped the save is not shown.
   (fn:sub_0052D350_AutosaveTick@0x0052D350, run:2026-10-27-sweep-d2s-play)
 - [I] The tests, in code order: the entry test of a global word (`0x00730FFC`, 0x0052D353; returns at once when it is 0), the
@@ -62,13 +62,13 @@ data** is `unit+0x14` of an item unit (partial types in `re/types/save.h`).
   are readings that nothing runs. (0x0052D3BA, 0x0052D3D9, fn:sub_0052C0E0_SetHostSaveCallback@0x0052C0E0,
   [save/0001 § Plan 0038 r1h](../../findings/save/0001-d2s-io.md#plan-0038-r1h-the-host-callback-setter-and-the-d2sio-model-2026-10-27))
 - [I] The other callers of `PLRSAVE_Save` are client removal (through `sub_0052C900_SaveClients`), server shutdown
-  (`SaveAllOnShutdown` was entered once per game exit in the recorded run (run:2026-10-27-sweep-d2s-play) and saved nothing; why is a
+  (`SaveAllOnShutdown` was entered once per game exit in the save play run and saved nothing, run:2026-10-27-sweep-d2s-play; why is a
   reading), quest and act events in game types 1 and 2 (`0x0052E2A0`, not reached), and the wrapper
   `sub_00534630_PlrSaveWrapper`, which nothing in the image reaches. With the host callback 0 the death path saves
   with no further test (0x0057FD4B–0x0057FD62); with a callback set it would save only when status test 4
   (0x00538670) is non-zero. (0x0057FD3F, fn:sub_00534630_PlrSaveWrapper@0x00534630,
   fn:sub_0052E9C0_SaveAllOnShutdown@0x0052E9C0)
-- [C] **The join's load chain.** Every single-player load of the recorded run (run:2026-10-27-sweep-d2s-play) logged, in order,
+- [C] **The join's load chain.** Every single-player load of the save play run (run:2026-10-27-sweep-d2s-play) logged, in order,
   `ClientAddPlayerToGame` ← 0x005301E9, `PlayerLoad` ← 0x00539809, `PLRSAVE_ReadFile` ← 0x005344E0 and `D2S_ReadSave`
   ← 0x0053447A; a TCP/IP host's load called `D2S_ReadSave` from one site (0x00534563) with no `PLRSAVE_ReadFile` (the
   client-buffer path). (run:2026-10-27-sweep-d2s-play)
@@ -76,7 +76,7 @@ data** is `unit+0x14` of an item unit (partial types in `re/types/save.h`).
   `sub_005344B0_PlayerLoadFromFile` and 0x00534563 inside `sub_00534520_PlayerLoadFromClient`, each called once by
   `PlayerLoad` (0x005345DB, 0x005345FB). (fn:sub_005344B0_PlayerLoadFromFile@0x005344B0,
   fn:sub_00534520_PlayerLoadFromClient@0x00534520)
-- [C] The client's stub is the 335-byte header alone: the 35 stubs the server read in the recorded run (run:2026-10-16-player) each have a
+- [C] The client's stub is the 335-byte header alone: the 35 stubs the server read in the character run (run:2026-10-16-player) each have a
   valid checksum over 335 bytes and `file_size` 335, status bit 0 and level 1; [player/creation](../player/creation.md)
   gives the stub's fields. (fn:sub_0043C540_StubBuild@0x0043C540, run:2026-10-16-player)
 - [C] The character-select screen does not verify the checksum. `D2S_Checksum` has four callers (the
@@ -108,7 +108,7 @@ data** is `unit+0x14` of an item unit (partial types in `re/types/save.h`).
 
 - [C] The save code reads only the in-memory `ItemStatCost` record. Under `-txt` that record is compiled from
   `.txt` into the same layout, so the code cannot tell `.bin` from `.txt`: the pinned game's own `-direct -txt`
-  compile in the recorded run (run:2026-10-15-cube-saves) wrote an `itemstatcost.bin` byte-identical to the shipped one, and the save
+  compile in the cube saves run (run:2026-10-15-cube-saves) wrote an `itemstatcost.bin` byte-identical to the shipped one, and the save
   widths at the offsets the code reads equal the `.txt` columns on all 359 records, with which all 144 game-written
   saves of the S1a corpus (plan 0038) decode. (fn:D2S_WriteStats@0x00569540, fn:D2S_ReadStatsBits@0x0056A4F0,
   fn:DATATBLS_LoadTable@0x006122F0, run:2026-10-15-cube-saves,
@@ -250,7 +250,7 @@ Step notes:
 - C3. [C] Steps a–i are the section writers `D2S_WriteHeader`, `D2S_WriteQuests`, `D2S_WriteWaypoints`,
   `D2S_WriteNpcs`, `D2S_WriteStats`, `D2S_WriteSkills`, `D2S_WriteItemList`, `D2S_WriteCorpses`,
   `D2S_WriteMercItems`, `D2S_WriteGolem` (`0x00568F20`–`0x00569A00`), and the mercenary header fields
-  `0x0AF`–`0x0BE` come from `D2S_WriteMercHeader`: in every write of the recorded run (run:2026-10-27-sweep-d2s-play) the final pass's
+  `0x0AF`–`0x0BE` come from `D2S_WriteMercHeader`: in every write of the save play run (run:2026-10-27-sweep-d2s-play) the final pass's
   cursor at each writer's entry is the offset of its section in the written file, and the scratch pass's sizes equal
   the final pass's. (fn:D2S_WriteSave@0x00569AD0, fn:D2S_WriteMercHeader@0x00568E60, run:2026-10-27-sweep-d2s-play)
 
@@ -324,7 +324,7 @@ Each row gives the runtime source the writer reads and the runtime field the rea
 | `0x028` | u8 | `class` | client `+0x08` | [C] | ≤ 7 (unsigned) → client `+0x08`, the class of the new player unit; > 7 → (4) (note below the table) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x029` | u8 | stat-slot count | 16 | [C] | used only by the version ≤ 94 stat reader (F2) | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadStats@0x0056A620, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load |
 | `0x02A` | u8 | skill count | `DataTables+0xBA8` (30) | [C] | number of skill bytes `D2S_ReadSkills` reads | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadSkills@0x0056A710, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load |
-| `0x02B` | u8 | `level` | stat 12 of the player (`0x00625480(unit, 12)`) | [C] | not read | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
+| `0x02B` | u8 | `level` | stat 12 of the player (`STATS_GetUnitStat(unit, 12)`) | [C] | not read | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x02C` | u32 | `unk_2c` | client `+0x488` | [C] | → client `+0x488` | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io |
 | `0x030` | u32 | `last_played` | `time(NULL)` at the write | [C] | not read | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load |
 | `0x034` | u32 | `unk_34` | `0xFFFFFFFF` | [C] | not read | [C] | fn:D2S_WriteHeader@0x00568F20, fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load |
@@ -350,7 +350,7 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
 
 - [C] `status`: expansion games only, never ladder. `class`: the classes of the run saves. `left`/`right skill`:
   the skill id, and item ref 0 only. `difficulty`: Normal, act 0 only; the Nightmare byte rests on the load test of
-  the recorded run (run:2026-10-11-tc-drops) (a Nightmare save holds `00 80 00`). (fn:D2S_WriteHeader@0x00568F20,
+  the drops run (run:2026-10-11-tc-drops) (a Nightmare save holds `00 80 00`). (fn:D2S_WriteHeader@0x00568F20,
   fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io, run:2026-10-11-tc-drops)
 - [C] **The rows raised by batches H1b and H1a (plan 0038)**, scoped to their cases
   ([save/0001 § Plan 0038 batch H1b](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1b-run2026-10-27-sweep-d2s-play),
@@ -395,7 +395,7 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
   that is not the file name, a class byte above 7 and the section readers' codes are reached by a listed file too.
   (fn:sub_0043C8A0_CharListReadInfo@0x0043C8A0, fn:sub_00438F70_CharListBuild@0x00438F70, 0x0043C93E–0x0043C9C4,
   [save/0001 § Plan 0038 batch H1a](../../findings/save/0001-d2s-io.md#plan-0038-batch-h1a-run2026-10-27-sweep-d2s-load))
-- [C] **The mercenary header's read side** (`0x0B3`–`0x0BE`) is run-checked: in the recorded run (run:2026-10-16-hirelings), 33 headers
+- [C] **The mercenary header's read side** (`0x0B3`–`0x0BE`) is run-checked: in the hirelings run (run:2026-10-16-hirelings), 33 headers
   were read (expansion and classic, every hireling class and difficulty); 23 mercenaries were created with the saved
   seed, name (+ `+0x114`) and Id passed to `MERC_Init` (compared 23 of 23 against the logged header at the review),
   the class of the Id's row and the level from the experience, and their stats reproduced; 10 classic ones were
@@ -429,7 +429,7 @@ side with the logged client and player-data fields after `D2S_ReadHeader`; [save
 - [C] `level` is written from stat 12 and never read back: a save with header level 2 and stat 12 = 1 was rewritten
   with level 1. (0x0056904D, run:2026-10-11-d2s-edit)
 - [C] `unk_2c` is a pass-through: an edited `0x0BADF00D` survived two load/save cycles, and the only instructions
-  that touch client `+0x488` are its accessors `0x00538760`/`0x00538790`. A character's first full save writes the
+  that touch client `+0x488` are its two accessors (`0x00538760`, `0x00538790`). A character's first full save writes the
   client's initial value, 0 in every sample. (fn:D2S_ReadHeader@0x0056A090, run:2026-10-12-d2s-io)
 
 ```
@@ -445,11 +445,11 @@ D1. Status word (client +0x0A), checked by D2S_CheckStatus:       [C] (fn:D2S_Ch
 D2. The u16 at 0x026 is the high half of the status u32: always 0.  [C] (0x00569012–0x0056901B; 0 in 144 game-written saves)
 ```
 
-- D1. [C] Each code met in the recorded run (run:2026-10-27-sweep-d2s-load), with a file swapped into the listed file's game: a
+- D1. [C] Each code met in the save loading run (run:2026-10-27-sweep-d2s-load), with a file swapped into the listed file's game: a
   hardcore file in a softcore game 11, softcore in hardcore 12, dead hardcore 10, classic file in an expansion game 9,
   expansion file in a classic game 8, progression 4 in Nightmare 13, progression 0 in Hell 14; progression 5 in
   Nightmare and 10 in Hell pass, so the expansion bounds are met from both sides. Single-player reach of codes 8 to
-  14: the note after the header table. The stub path of bit 0 ran in the recorded run (run:2026-10-16-player) (35 stubs). The ladder test
+  14: the note after the header table. The stub path of bit 0 ran in the character run (run:2026-10-16-player) (35 stubs). The ladder test
   is gated by the same setter as the host callback (§ Entry points). (fn:D2S_CheckStatus@0x00569D80,
   run:2026-10-27-sweep-d2s-load, run:2026-10-16-player)
 
@@ -463,7 +463,7 @@ flowchart TD
   rf["PLRSAVE_ReadFile, at most 0x2000 bytes"] --> mg{"len ≥ 8 and magic?"}
   mg -->|no| e9["9, returned unmapped"]
   mg -->|yes| v92{"version < 92?"}
-  v92 -->|yes| leg["legacy reader 0x00534020"]
+  v92 -->|yes| leg["legacy reader"]
   v92 -->|no| hl{"len ≥ 0x14F?"}
   hl -->|no| e4["fail 4"]
   hl -->|yes| ck{"checksum, field as 0, matches?"}
@@ -486,7 +486,7 @@ flowchart TD
 D3. Load(client):                                                 
       a. bytes ← PLRSAVE_ReadFile: fopen("<save dir><name>.d2s", "rb"), at most 0x2000 bytes      [C] (fn:PLRSAVE_ReadFile@0x005343A0, 0x0053441F, run:2026-10-27-sweep-d2s-load)
       b. D2S_ReadSave: len < 8 or u32[0x00] ≠ MAGIC → 9, returned as is (not mapped)               [C] (fn:D2S_ReadSave@0x00534330, 0x0053433C, 0x0053435A, run:2026-10-27-sweep-d2s-load)
-         u32[0x04] < 92 → legacy reader 0x00534020; else D2S_ReadSaveV92
+         u32[0x04] < 92 → ReadSaveLegacy; else D2S_ReadSaveV92  ; 0x00534020
       c. D2S_ReadHeader:                                                                          [C] (fn:D2S_ReadHeader@0x0056A090, 0x0056A0D2–0x0056A104, run:2026-10-12-d2s-io, run:2026-10-27-sweep-d2s-load)
            if len < 0x14F: fail (4)
            stored: u32 ← u32[0x0C];  u32[0x0C] ← 0
@@ -662,7 +662,7 @@ F1. WriteStats(player, bb):                                      [C] (fn:D2S_Wri
 - F1. [C] **The unsigned clamp is hit by high life and mana.** Stats 6–11 (life, mana, stamina and their maxima) have
   `CSvBits` 21, so a base value of `0x1FFFFF` or more (8191.99 points with the 8 fraction bits) is written as
   `0x1FFFFF`. The base list carries the item bonuses, so the written value can be below the character's base entry.
-  Second source: in the 14 level-up logs of the recorded run (run:2026-10-16-player), all 364 written entries (26 save writes) equal
+  Second source: in the 14 level-up logs of the character run (run:2026-10-16-player), all 364 written entries (26 save writes) equal
   `min(base, 2^CSvBits − 1)` of the header-time base list, and the 10 that differ from the base are exactly those with a
   base ≥ `0x1FFFFF` (stat 6 of two Hell Barbarian and Paladin saves, stat 8 of three Sorceress saves). Experience
   (stat 13, `CSvBits` 32) is not clamped. `D2S_WriteHeader` has no stat pass of its own; the header writes only stat
@@ -1050,7 +1050,7 @@ I6. Who sets and clears item flags bit 13 (all through ITEMS_SetFlag(item, 0x200
       clear: the reader (I5)
 ```
 
-- I6. [C] **The ground pass clears the bit.** In the recorded run (run:2026-10-27-sweep-d2s-play) five drops (two `gld`, `mp3`, `hp5`,
+- I6. [C] **The ground pass clears the bit.** In the save play run (run:2026-10-27-sweep-d2s-play) five drops (two `gld`, `mp3`, `hp5`,
   `cm3`) each had `0x2000` set at creation through `ITEMS_SetFlag` from `ItemCreate` with create parameters `+0x2C` = 0,
   and each was cleared on the ground (mode 3) by `UnitFrameReset` inside the tick's `ActUnitsFrameReset` call; the
   11 corpse items recreated at a death were each cleared by `ItemCopy`. (fn:ITEMS_SetFlag@0x006280D0, run:2026-10-27-sweep-d2s-play,
@@ -1120,7 +1120,7 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
   `Save Bits`, the `Save Add` offset, the four groups seen and the terminator, for these ids.
   (fn:ITEMS_ReadProperty@0x0062AC80, fn:ITEMS_WriteFull@0x0062FFF0, run:2026-10-12-d2s-io, run:2026-10-11-d2s-samples)
 - J. [C] **Runtime lists against saved lists.** Three drops picked up and saved by *Save and Exit* in
-  the recorded run (run:2026-10-14-props-forced) (a rare, a unique and a quiver) hold, read back, the main lists logged at their creation
+  the properties run (run:2026-10-14-props-forced) (a rare, a unique and a quiver) hold, read back, the main lists logged at their creation
   (each value `>> ValShift`), with their defense, durability, quantity and flags. What the lists hold at creation is
   [items/properties § G](../items/properties.md#g-stat-storage). (fn:PROP_WriteStat@0x0065EA50, run:2026-10-14-props-forced,
   [items/0006 § 9](../../findings/items/0006-properties.md#9-phase-2-reproduction-run2026-10-14-props-run2026-10-14-props-forced))
@@ -1132,10 +1132,10 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
   non-group properties carry param then value. (run:2026-10-12-d2s-io, run:2026-10-16-player)
 - J. [C] `ValShift` is non-zero for two of the ids seen, 7 (`maxhp`) and 9 (`maxmana`), both 8: the reader shifts
   the stored value left by 8 (J2), so the file holds the in-memory value without its 8 fraction bits. On 13 items of
-  the recorded run (run:2026-10-27-sweep-d2s-play) the full stat was the file value << 8 (5 → 1 280, 1 → 256) and the written value the
+  the save play run (run:2026-10-27-sweep-d2s-play) the full stat was the file value << 8 (5 → 1 280, 1 → 256) and the written value the
   full stat >> 8. A Septic dagger (group 57) had stat 326 = 1 after the read. (fn:ITEMS_ReadProperty@0x0062AC80,
   tbl:ItemStatCost.txt:ValShift, run:2026-10-27-sweep-d2s-play)
-- J. [C] **Group 52.** Ginther's Rift (`9cr`, 52/53 = 50/120) was read three times in the recorded run (run:2026-10-27-sweep-d2s-play)
+- J. [C] **Group 52.** Ginther's Rift (`9cr`, 52/53 = 50/120) was read three times in the save play run (run:2026-10-27-sweep-d2s-play)
   (the rt-r2 session's reads 1 and 2, and the drop) with stats 52 and 53 equal to the file's group values, and rt-r2's second read took
   the file the game had written at the first *Save and Exit*: head value, then the follower's, no id, no param, as
   J1 and J2 frame the other groups. Scope: that one item. (0x0063105D–0x006311AB, 0x0062D99C,
@@ -1192,10 +1192,11 @@ distinct ids and the grouped ids, which are the counts given above (plan 0015 Ph
 
 ## Worked example
 
-A save written by the game, case 5 of its recorded run ([run:2026-10-12-d2s-io](../../findings/save/experiments.md#run2026-10-12-d2s-io)):
-`workspace/runtime/d2sio/written/save3-seedtest-drop.d2s` (1113 bytes, sha256 `2dad064f…16e8`), the first of the
-two identical writes of one *Save and Exit*, with the runtime values logged at that write
-(`workspace/logs/d2sio-7-drop.log`: `WHDR`, `WLVL`, `WTIME`, `SBIT` lines; `CPOST` at the drop). Both are under
+A save written by the game, case 5 of the save input and output run
+([run:2026-10-12-d2s-io](../../findings/save/experiments.md#run2026-10-12-d2s-io)): 1113 bytes, the first of the two
+identical writes of one *Save and Exit*, with the runtime values logged at that write. The file is
+`workspace/runtime/d2sio/written/save3-seedtest-drop.d2s` (sha256 `2dad064f…16e8`) and the log
+`workspace/logs/d2sio-7-drop.log` (`WHDR`, `WLVL`, `WTIME`, `SBIT` lines; `CPOST` at the drop). Both are under
 `workspace/`, not in git. The game ran with `-seed 12345`, Normal, expansion.
 
 **Header**, file bytes `0x000`–`0x02F`:

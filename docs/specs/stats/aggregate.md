@@ -382,7 +382,7 @@ Step notes:
   above `MinAccr` and below `MinAccr << ValShift` is returned as it is: `maxhp` (`MinAccr` 1, `ValShift` 8) keeps
   1..255 and gives 256 for 0 or less. An absent entry returns 0, unfloored; the stored entries are not clamped. The
   ops' base reads and the take test of ops 2/3 pass a NULL record, so they read unfloored. 4 000 emulated cases, 211
-  floored; the threshold `MinAccr << ValShift` as a control fails 79. No read of the recorded run (run:2026-10-17-stats) reached the
+  floored; the threshold `MinAccr << ValShift` as a control fails 79. No read of the stats run (run:2026-10-17-stats) reached the
   floor. (fn:sub_00624F60_StatListGetValue@0x00624F60, fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0,
   0x00624FC5–0x00624FD1, 0x00624F25–0x00624F31, tbl:ItemStatCost.txt:fMin, tbl:ItemStatCost.txt:MinAccr,
   run:2026-11-16-sweep2-s4e-emu, [stats/0001 § 11](../../findings/stats/0001-aggregate.md#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu))
