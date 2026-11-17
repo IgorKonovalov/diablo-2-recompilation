@@ -1437,3 +1437,37 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   most 20 per array, and gate E21 needing node (skipped with a warning without it). Next: batch 1 (archivist lane, then
   a spec-writer lane for blocks and captions) and, in parallel, the widget groundwork of ADR-0037 (check X13, gate E21,
   the builder's widget block, the export repository's host step), each reviewed on Opus.
+- 2026-11-17, archivist, lane/x11a (Phase 11 batch 1 part 1: the kit, rows 1–4). **Row 0, the kit:**
+  `tools/schematic_kit.py` (a new module beside `anim_common.py`): class `Kit` (rect, outline, lines and arrows,
+  text at any scale, labelled box, cell grid, proportion bar in integer arithmetic, number tape, legend, caption
+  strip), the dark and light value sets of ADR-0036's palette (same names, same order; dark is `anim_common.SCHEM_UI`
+  unchanged, so the two earlier tools' palette stays), `fill_rect`/`outline_rect`, and `write_illustration` (PNG with
+  marker, GIF, step page, steps.json, schematic.json). **Byte-identity proof:** `maze_anim.py` (its box and outline
+  helpers) and `tc_anim.py` (`Canvas.rect`, `frame_rect`) now call the kit's rectangle functions; sha256 of all
+  138 files of `maze_anim.py 36 0xc0ffee --schematic` and `tc_anim.py andariel 0xc0ffee --difficulty 2 --mf 200
+  --schematic`, before and after the refactor and after the `tc_anim.py` stack-row change below: identical (diff of the
+  two sorted hash lists empty). **Row 1:** `tools/rng_anim.py` (seed 12345, 8 draws of range 100; the first draw 87
+  and the new seed `{015b2e77:0000141d}` are the randomness page's worked example; values from `rng.rng_range`,
+  the displayed product asserted equal to `rng.step`). **Row 2:** `tools/seedtree_anim.py` over `drlg.Act` and
+  `drlg.Seed` (the five acts, three levels as a sum, three rooms as one draw each); for seed 12345 the model's tree
+  equals the seeds.md worked example (base `015b2e77`, tombs 72/71, act seed `b7a5c418:63a93a78`, level 1
+  `015b2e78:0000029a`, room draws `f61e44f2`, `f3cffcc1`, `6b277fa8`, room 3 `f923bee2:2cb17800`; a test).
+  Both new tools take `--theme dark|light`, take the data root first and ignore it, and are in `SCHEMATIC_TOOLS`
+  (and `test_export_build`'s assertion of the tuple). **Row 3:** `tc_anim.py` already had `--players`; one change:
+  the stack row shows a scaled NoDrop as `ND a>b` (the table's value and the pick's scaled one) when they differ, so
+  the one-player output is unchanged and the eight-player frames show NoDrop shrinking (19 to 0 for Andariel's own TC
+  at n = 4). **Row 4:** `maze_anim.py 47 0xc0ffee` (Sewers Level 1) opens with a ring start shape (the 36 block's
+  is the two-arm Catacombs shape) and has 3 theme assignments for 14 rooms against 4 for 17 (maze § H1); no code
+  change. **Tests:** new `tools/test_schematic_kit.py` (15 tests: palettes, contrast of text colours in both themes,
+  widgets, determinism of each tool, numbers equal to the models and the seeds.md anchor, marker and file list,
+  `export_check.verify_illustration` clean on every folder, no art decoder imported, tc scaled NoDrop equals
+  `tc.nodrop_scaled` at n = 4, level 47 ring and theme count); `test_anim_schematic`, `test_export_build`,
+  `test_export_check` green. **Findings for the review:** (1) the check's `html_problems` URL rule matches `ws:`
+  inside any word ending in "ws" followed by a colon ("draws: ..." fails as "external URL"): the seed-tree text avoids
+  it, the rule is the architect's and is not narrowed here; (2) the dark palette's `dim` and `bad` reach contrast 4.37
+  and 3.82 on the panel colour (earlier tools' values, left alone). **allow-hex:** no line added (`0xC0FFEE`,
+  `6AC690C5`, `0000029A` and `00003039` were present; frames carry hex only as pixels, texts use decimals and
+  `{low:high}` states). **Blocks:** the proposed `illustration` blocks of rows 1–4 with draft captions are in the
+  scratch file `/tmp/claude-1000/-home-igor-Work-recompilcation-project/eb61de30-a30a-401a-a3db-30c67be2439b/scratchpad/x11a/blocks.md`
+  (ids `rng-seed-12345`, `rng-seed-tree-c0ffee`, `items-tc-andariel-hell-8players`, `drlg-maze-level47`) for the
+  spec-writer lane. Not done: a cut build with the blocks placed (the spec-writer places them).
