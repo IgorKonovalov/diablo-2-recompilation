@@ -519,6 +519,14 @@ the three masteries of § The `passive` rows, and eight paladin auras, none with
 - `[L]` The kinds are a grouping by which cells are set, for orientation; which code reads each column, and for
   which kind, is Phase 1 (a skill's own effect is ADR-0014 phase 3).
 
+- `[C]` (plan 0066 S4e follow-up) **No stock row hands out skills 127, 128 or 129 (`Sword`, `Axe`, `Mace Mastery`) through a
+  table column.** Checked by name and by id over: `Hireling` `Skill1`..`Skill6` (120 rows), `MonStats` `Skill1`..`Skill8` and the
+  other `Sk<n>` columns (24 skill columns, 735 rows), the property-parameter columns of `magicprefix`, `magicsuffix`,
+  `automagic`, `uniqueitems` (`par`), `setitems` (`par`, `apar`), `sets` (`PParam`, `FParam`), `runes` (`T1Param`), `gems` and
+  `cubemain` (`mod n param`). The only two cells are `uniqueitems` *Bloodtree Stump* (`par6` 129) and *Bloodletter* (`par7`
+  127), and both sit on a `skill` property (func 22 `skill`, not `aura`), so no `aura` property names them either.
+  Reading those cells as skill ids is `[I]` (property `par` takes a skill name or id).
+
 ## Charge cost columns (plan 0043 Phase 0)
 
 `cost mult` (`+0x234` s32) and `cost add` (`+0x238` s32), [§ Columns](#columns) (`[C]`, `excel_bin.py diff`). Counts
@@ -653,7 +661,7 @@ The client columns are presentation and stay out of scope (plan 0045 *Open quest
 | `weapsel` | int 1..4 (4 distinct), 342 blank | `+0x168` u16 | weapon selection (which hand or both); `[I]` no server read of `+0x168` ([skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
 | `leftskill` | int {1}, 261 blank | `+0x007` bit 6 | can be the left-hand skill; `[I]` one test, in the client ([skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
 | `repeat` | int {1}, 354 blank | `+0x005` bit 3 | repeats while the button is held (the name's reading); `[I]` no server reader, the only readers are client tests; set on the three `startmana` rows ([skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
-| `TgtPlaceCheck` | int {1}, 355 blank | `+0x008` bit 0 | `[I]` read by the monster AI's target test `sub_005FD470_MonSkillTargetOk`: the target must be dead and its cell free for its pattern; not a player start check ([skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
+| `TgtPlaceCheck` | int {1}, 355 blank | `+0x008` bit 0 | `[I]` read by the monster AI's target test `sub_005FD470_MonSkillTargetOk`: the test is the target's `+0xC4` bit 1 set (0x005FD4C5-0x005FD4D0) and its cell free for its pattern (`COLL_PatternTestBool(…, 0x3C01)`); no finding names that bit, so it is not "dead" ([skills/0002 § 21](../findings/skills/0002-missiles.md#21-plan-0066-batch-s2ae-part-5-skills_targetcheck-and-two-re-seed-callbacks-emulated-2026-11-16-lanen66sa)); not a player start check ([skills/0003 § 12](../findings/skills/0003-handlers.md#12-routed-questions-from-p11)) | — | [C] |
 
 ### Summon columns
 

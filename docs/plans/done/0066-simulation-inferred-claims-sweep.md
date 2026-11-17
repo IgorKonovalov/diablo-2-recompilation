@@ -3947,7 +3947,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   over the flag's 19 other users), 41 (whether a stock refresh takes the draw; routed to H4e, no class move: an
   a-logs row, and the path crosses the allocator, 0x0057026C, 0x0056FFFD). Refinements routed by
   [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5f-refinements.md); the table checks by
-  [backlog](../../backlog/2026-11-16-reverser-archivist-plan-0066-s4e-part5f-table-checks.md).
+  [backlog](../../backlog/archive/2026-11-16-reverser-archivist-plan-0066-s4e-part5f-table-checks.md).
 - **Symbols:** none raised (objdump readings beside Ghidra readings; review-fixes 14).
 - **Totals** (the 29 files' *Totals by class* summed after this part, `main` `31a4949c`): a-logs 623, a-run 334, b 514,
   c 389, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 450, Phase 2 848. README § 1
@@ -3998,7 +3998,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   helper 4 has no pool or import. Omission 2: dispatch 127's and missiles 63's Route cells said their callees were not
   read for allocation, which part 1's `routes.txt` reads (stated); the `+0xC4` bit 1 "dead" name in skills/0003
   § `TgtPlaceCheck` (a test of the bit **set**, 0x005FD4C5–0x005FD4D0) marked, and the table doc's copy routed
-  ([backlog](../../backlog/2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name.md)). Stale
+  ([backlog](../../backlog/archive/2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name.md)). Stale
   cross-reference 1: skills/0003's two `SummonSetLevel` bullets and quirks/0001's `noRatio` line given § 25's raise.
 - **Added at review (no fault):** d143's absence given the function's own memory operands (objdump); the mask cells'
   no-store given a dword scan of every section (four hits, the four `.text` operands).

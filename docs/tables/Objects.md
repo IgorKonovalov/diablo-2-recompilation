@@ -268,6 +268,15 @@ by that command; § 2 of its output lists DS1 files no record names (not loaded 
 - `[C]` Fifteen DS1 files that no record names also hold watched classes (Act I `cave?con`, `caveroom6`; Act II
   `magtreas`, `tombtreasure`; Act V ice-cave `dreh` rooms, `poolroom07/08`, `landmark1a/2a`).
 
+## Guild Vault and Trophy Case, rows 338 and 339 (plan 0066 S4e follow-up)
+
+- `[C]` Rows 338 (`Guild Vault`) and 339 (`Trophy Case`) are placed by no preset and no population table in the stock data:
+  `tools/ds1.py objects` with 338 and 339 as the watched classes (ids < 150 through `g_Ds1ObjectIds` of the pinned `Game.exe`,
+  ids >= 150 as id - 150) finds 0 units in all 2274 DS1 files (named by LvlPrest or not; 0 errors); no `ObjGroup` row
+  (133 rows, `ID0`..`ID7`) lists either; and no s32 equal to 338 or 339 lies in the 8 KB of `Game.exe` data from
+  0x00731EA0 (the `OBJPOP_*` lists' start; the window is a bound I chose, not the lists' end). Placement by the code's own
+  literals is the reverser's side (items/0013 inventory 17).
+
 ## Waypoints and portals (plan 0042 Phase 0)
 
 The rows the waypoint and portal code is expected to touch, from `python3 -I tools/travel_survey.py objects
