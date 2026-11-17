@@ -1,6 +1,6 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2, 2b, 3, 4, 5 and 6 done 2026-11-17 (the first cut accepted with fixes at its redaction review; next: Phase 7, the owner's read and first publish, checklist in Phase 7); re-cut 2026-11-16 for three later owner decisions (simplification,
+> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2 to 7 done 2026-11-17 (the first cut served at https://igorkonovalov.github.io/arpg-1-14d-notes/; next: the second cut, Phases 9 and 10, on the owner's word); re-cut 2026-11-16 for three later owner decisions (simplification,
 > schematic illustrations per ADR-0036, the cheapest residue option); approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
 > 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
@@ -1031,3 +1031,10 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `npm install` warns of 4 audit findings (3 low, 1 moderate) in the pinned tree and an unapproved esbuild
   postinstall; the build does not need it. Next: the owner's steps 5 to 7. The maze warp-mark lane (x70w) is still
   under review; when it merges, re-copy `workspace/export/site/` into the folder and rebuild.
+- 2026-11-17 — **Phase 7 done: the first cut is served** at `https://igorkonovalov.github.io/arpg-1-14d-notes/`.
+  Pages enabled with GitHub Actions as its source (orchestrator, `gh api`); the owner pushed `main` (an empty first
+  commit) and the branch `cut-2026-11-17`; pull request 1's `build` job passed and the owner merged it; the `deploy`
+  run on `main` passed, and the front page, a page with a diagram and the maze GIF answer 200. Owner feedback during
+  the read, applied before the push: the schematic maze marks its entry and exit on the warp rooms (lane/x70w) and the
+  main column is 60rem wide (`site/src/styles/site.css`). Next, on the owner's word: the second cut (Phases 9 and 10),
+  whose prerequisite is the anchor rewrite noted at the Phase 3 review.
