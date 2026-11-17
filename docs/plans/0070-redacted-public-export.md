@@ -2638,10 +2638,40 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   check, and the builder removes it and drops the unit as broken, so the cut stays green). `tools/test_anim_schematic.py`
   writes to its own `tempfile.mkdtemp` folder under `workspace/render` (the tools accept only outputs under workspace/),
   removed at the end of the run. A second builder rule, found by the span check: a list item or paragraph that ends inside a code span (a source line break puts `+ i)` at a line start, which the Markdown parse makes a bullet of its own, as in monsters/spawn's `classes + 4·(start`) is dropped as broken, because units that held a named `sub_` anchor and were dropped before now survive and exposed it. Tests: export_build 200, export_check 193, widgets 274, publish 44, anim_schematic 5, all
-  green. *Measured* (full build, illustrations on, 42269df1 before and after): 89 pages both; units dropped 1734 of 19344
+  green. *Measured* (the before figures below are wrong, corrected at the review: see the review entry) (full build, illustrations on, 42269df1 before and after): 89 pages both; units dropped 1734 of 19344
   → 969 of 19671, words dropped 95816 of 540150 (17.7%) → 73884 of 553175 (13.4%); `specs/items/properties.md`, a page
   dropped whole before, is now written (6279 words, 19 units dropped); the units that changed are the *Entry points*
   rows and sentences that held a named `sub_` anchor, on 80 of the 89 pages (every wiki page loses 1–38 dropped
   units). `export_check … --repo workspace/export-repo/`: 0 failures. Span equality (spaneq.py, its anchor list taught that a `sub_` anchor reads as its name): 32321 spans, 0 differ (28415 before);
   fence lines 367 of 15752 differ (306 of 12662 before), the same evidence tails and addresses removed, no new kind. K1 of items/inventory is not in either build as a `Run:` sentence; the
   rule would drop it as broken. Gate green.
+- 2026-11-17, architect, review of lane/x14a (Opus Tier A): **accept with fixes** (3: miscount 1, omission 1, other 1).
+  *The properties finding.* `specs/items/properties.md` was never dropped in a cut built from the main checkout or a
+  lane worktree: the x70a and x70b2 review trials and the Phase 9 cuts all write it (268 units, 19 dropped), and so does
+  42269df1. The lane's "before" build ran in a worktree whose folder name, `base`, X4 reads as an identity string
+  (`git_identity` takes the work tree's basename; the review's first base build reproduced it): the title "Base stats and
+  the property roll" failed X4, the page dropped whole, and 749 other units holding the word dropped with it. The
+  published site has not been missing the page. *Measured again* (42269df1 built in a worktree with a neutral name,
+  against the lane; full builds, illustrations on): units dropped 965 of 19671 before, 969 after (965 after the
+  review's rewraps), words dropped 12.5% → 13.3% (the dropped units now count the names they hold); the drop sets
+  differ by 8 units: `items/uniques-sets`' `item.seed` row is kept now, items/inventory K1 drops as broken on its
+  sentence-initial `Run:` id (fixed on main by lane/x14s), and the two items each of combat/to-hit and monsters/spawn
+  that end inside a code span. The rule's real effect is in the kept units: table rows whose cell was an em dash 735 →
+  449, lines with bare arrows 47 → 14. *Names:* 2084 distinct `sub_` names the rule emits from the manifest pages, every
+  one passing X1–X5 and X9; none is a Ghidra placeholder or carries a tool word (`Thunk` in four, `Stub` in three and
+  `Hook` in two are the game's own code words; left). 5 names are removed whole for a hex-letter run of 6
+  (`AiGroupDeadCb`, `BarricadeCaveEntries`, …): a safe false positive. *Meaning:* span equality 32321 spans, 0 differ
+  (the script's anchor list given the name rule); the fence-line difference set is the same 367 lines in both builds
+  (the lane's 306 was the artifact's), so the rule changes no fence. 31 changed units read across 12 pages (maze,
+  party, collision, stats, d2s, machinery, uniques-sets, room-tiles, movement, affixes, quality, lifecycle) against
+  their sources: whole and true; evidence parentheticals that also hold words now keep their names, as `fn:` anchors
+  always did. *Fixes:* the builder's run-id removal `[Rr]un:` → `(?i:run):`, as X2 (an upper-case `RUN:` id passed the
+  builder to fail the check), tests both ways (`RUN:` removed, `Run: the thing` kept); combat/to-hit's
+  `` `2·alvl/(alvl + dlvl)` `` and monsters/spawn's `` `classes + 4·(start + i)` `` rewrapped so no line starts with
+  `+ ` inside a span (CommonMark made each a list item of its own, in the published site too; no claim or line count
+  changed, and neither page has a manifest `table` line); both items are written again. The lane's measured line
+  above marked as corrected. The odd-backtick rule counts backticks, so a double-backtick span would drop its unit (none
+  in the manifest pages); a drop, never a leak. The leftover `workspace/render/test-anim` folder removed (nothing reads
+  it). Tests: export_build 202, export_check 193, widgets 274, publish 44, anim_schematic 5, all green;
+  `export_check … --repo workspace/export-repo/`: 0 failures; gate green. Merge over b854ef38: one conflict, this log's
+  tail (append on both sides; keep both).

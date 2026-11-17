@@ -824,8 +824,8 @@ K1. RoomWandererTick(game, room):                                 [C] for the fi
   The lifecycle run checked the first draw on 11 064 more walked rooms, re-activated ones included. What room `+0x78`
   is, and so in which rooms the gate can pass, is [drlg/lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick).
 - [C] The class list has an entry for Act I only: one class, 270 `rogue2`. `WandererSpawn` returns for an act ≥ 5
-  (0x0054EF59), reads the act's `(start, count)` byte pair at `pairs + 2·act` and the class at `classes + 4·(start
-  + i)`, two tables of the image; the image holds class 270 and the pairs `(0, 1), (0, 0), (0, 0), (0, 0), (0, 0)`, and
+  (0x0054EF59), reads the act's `(start, count)` byte pair at `pairs + 2·act` and the class at
+  `classes + 4·(start + i)`, two tables of the image; the image holds class 270 and the pairs `(0, 1), (0, 0), (0, 0), (0, 0), (0, 0)`, and
   the only instructions naming these tables are three readers (0x0054EF64, 0x0054EF71, 0x0054EF92), no write. A count
   of 0 returns before any spawn (0x0054EF6E). (fn:sub_0054EF50_WandererSpawn@0x0054EF50, 0x00731B2C, 0x00731B30, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
 - [C] `MonWndr` reaches the game only through this gate. Two tools find two readers of Levels `+0x2E`: the region build,

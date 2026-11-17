@@ -464,8 +464,8 @@ case shows the running defender: no to-hit draw, and a third of the capped block
 
 ## Reimplementation notes
 
-- **`ToHitFactor` is not a level bonus.** Add it to the attack rating (A2); 1.14d has no class term in `2·alvl/(alvl
-  + dlvl)`. [C] (fn:sub_00622560_PlayerBaseToHit@0x00622560, run:2026-10-16-combat)
+- **`ToHitFactor` is not a level bonus.** Add it to the attack rating (A2); 1.14d has no class term in
+  `2·alvl/(alvl + dlvl)`. [C] (fn:sub_00622560_PlayerBaseToHit@0x00622560, run:2026-10-16-combat)
 - **Truncate the percent first.** `c = 100·AR/(AR+DEF)` is an integer before the level factor; computing
   `100·AR·2·alvl / ((AR+DEF)·(alvl+dlvl))` in one step gives different values. [C] (0x0057DB01–0x0057DB30,
   run:2026-10-16-combat)

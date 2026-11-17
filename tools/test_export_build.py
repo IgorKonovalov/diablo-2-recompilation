@@ -191,6 +191,8 @@ def main():
     ok(rt("Reads data:g_Table@0x0070A000 and tbl:Skills.txt:minmana, fmt:DT1 and tbl:Levels.") ==
        "Reads `g_Table` and `Skills.txt:minmana`, `DT1` and `Levels`.", "data:, tbl:, fmt: anchors, with a column")
     ok(rt("Run:2026-11-17-x passed here.") == eb.BROKEN, "a sentence-initial Run: id is removed and the unit broken")
+    ok(rt("RUN:2026-11-17-x passed here.") == eb.BROKEN, "an upper-case RUN: id is removed too, as X2 fails it (review of lane/x14a)")
+    ok(rt("Run: the thing, then stop.") == "Run: the thing, then stop.", "'Run:' with a space is prose, kept (review of lane/x14a)")
     ok(rt("It calls fn:sub_00456789@0x00456789 here.") == "It calls here.", "a sub_ anchor with no readable name is removed whole")
     ok(rt("It calls fn:sub_00456789_Foo@0x00456789 here.") == "It calls `Foo` here.", "a named sub_ anchor reads as its name")
     ok(rt("It calls `fn:sub_00456789_Foo@0x00456789` here.") == "It calls `Foo` here.", "a named sub_ anchor in backticks")

@@ -295,7 +295,7 @@ RE_ANCHOR = re.compile(_OPEN + r"(?:fn|data|tbl|fmt):(" + _NAME + r")(?:@0x[0-9A
 # a struct anchor is an in-memory offset, content since the owner's decision (2026-11-17; review of lane/x70b2):
 # `struct:Unit+0x20` -> `Unit+0x20`, as an anchor becomes its name; one with hex in its name or a 6+ digit offset goes
 RE_STRUCT = re.compile(_OPEN + r"struct:([A-Za-z0-9_]+(?:\+0x[0-9A-Fa-f]+|\.\w+)*)(?(1)`)")
-RE_REMOVE = re.compile(_OPEN + r"(?:[Rr]un:[\w.-]*\w|src:[\w.-]*\w"
+RE_REMOVE = re.compile(_OPEN + r"(?:(?i:run):[\w.-]*\w|src:[\w.-]*\w"
                        r"|[a-z]+/\d{4}(?!\d)(?:-[\w-]*\w)?(?:\.md)?(?:#[\w-]+)?)(?(1)`)")
 # a spec citation with a folder: `drlg/maze.md § 3` -> `maze.md § 3`; without a section it goes (with a "spec" before it)
 RE_CITE = re.compile(r"(?<![\w/.:~-])(?:\bspec\s+)?(`)?(?:\.\./|\./)*(?:[\w.-]+/)+([\w.-]+\.md)(?(1)`)", re.I)
