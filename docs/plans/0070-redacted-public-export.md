@@ -1947,7 +1947,7 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   mark's panel had 12 lines and its last ran over the frame; one blank dropped, the opening put on one line, and the
   panel asserts its 11 lines (the clip test builds ten runs). (6) other: the neighbour box at its true offset hid the
   key column when the neighbour is west (seed 3), overran into the panel gap when east (seed 2) and vanished when north
-  (seed 8): the four sides are about equally common over 1 197 runs. It is now a band beside the grid along the
+  (seed 8): over 1 197 runs the neighbour is north in 384, south 366, east 228, west 219. It is now a band beside the grid along the
   neighbour's stretch, with its name and side under the grid; a test for the four sides. **Block**
   (`workspace/phase11/blocks-batch2.md`, "Outdoor (x12c)", corrected there for 2). The Place line resolves to
   `docs/wiki/levels.md` "Outdoor levels", after the bullet ending at outdoor § M, before "When the act generator is
