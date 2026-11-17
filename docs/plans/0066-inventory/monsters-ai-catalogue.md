@@ -3,6 +3,26 @@
 - **Spec:** [monsters/ai/catalogue](../../specs/monsters/ai/catalogue.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 520; the *Count* column sums to 520.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66ai2`, 2026-11-17, the monsters/ai cluster part 2): re-tagged.** The spec's front matter is now C 521 / I
+  510 / L 18 (it was C 344 / I 520 / L 18). Statement `[C]` whole: rows 1, 2, 13, 15, 16, 19, 22, 25, 28, 34, 38, 39, 43, 44,
+  55, 61, 64, 67, 73, 75, 87, 92, 96, 97, 107, 130, 136, 137, 141, 144, 149, 157, 164, 172, 173, 175, 194, 242, 274, 275, 282,
+  322, 325, 326, 337, 343, 346, 356, 360, 365, 371, 372, 389, 408, 411, 440, 443, 468, 473, 487, 490, 506 (62). Split, the `[C]`
+  half and the remainder `[I]` as the *Route* cell names: 12, 17, 18, 20, 23, 24, 26, 27, 29–32, 35, 36, 40, 45, 47, 49, 51, 52,
+  54, 59, 60, 62, 65, 66, 68, 72, 80, 84, 85, 89, 93, 94, 103–106, 108, 109, 114, 115, 132, 135, 138, 140, 145–148, 150,
+  152–156, 161, 162, 165, 167, 170, 174, 176, 177, 182, 193, 196, 198, 199, 236, 244, 245, 247, 280, 281, 283, 313, 314, 320,
+  321, 323, 324, 332, 335, 336, 341, 344, 345, 362, 369, 370, 388, 406, 407, 409, 410, 431, 467, 485, 486, 498, 501, 503–505,
+  507–509, 514, 516, 517 (111 rows, count 112). Corrected to the finding: 3, 171, 229, 288, 385, 420, 422, 518 (8; S1e
+  corrections 1–6 in rows 420, 385, 3 and 518, 288, 72 and 229, row 72's a refinement counted split; S1f-p1 items 2–4 in rows
+  518, 422, 171). Kept `[I]`: 4–11, 14, 21, 33, 37, 41, 42, 46, 48, 50, 53, 56–58, 63, 69–71, 74, 76–79, 81–83, 86, 88, 90, 91,
+  95, 98–102, 110–113, 116–129, 131, 133, 134, 139, 142, 143, 151, 158–160, 163, 166, 168, 169, 178–181, 183–192, 195, 197,
+  200–228, 230–235, 237–241, 243, 246, 248–273, 276–279, 284–287, 289–312, 315–319, 327–331, 333, 334, 338–340, 342, 347–355,
+  357–359, 361, 363, 364, 366–368, 373–384, 386, 387, 390–405, 412–419, 421, 423–430, 432–439, 441, 442, 444–466, 469–472,
+  474–484, 488, 489, 491–497, 499, 500, 502, 510–513, 515 (337 rows, count 338; no verdict: H1e, H1p, H1r, d-owner, d-none, and
+  the H1 batches' *Kept* rows; rows 7 and 8, the census bullets, refreshed in text). A block row raised in part keeps its line's
+  one `[I]` and gets the entry's `p` line (`[C]`, the logged paths; 50 of them, one per modelled block: R25's three block rows
+  share one, R44's two and S13's three one each; R51's `p` line is its corrected pick); row 44, R12's block, is the one block
+  raised whole. The `l` and `r` lines raised are rewritten in R43l's and R44r's forms; the 17 `r` lines under sentence H1, with
+  state 11's subset, are rows of README H1's table.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
