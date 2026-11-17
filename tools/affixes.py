@@ -314,7 +314,11 @@ class Walk:
         return d
 
     # -- ITEMS_PickMagicAffix
-    def pick(self, kind, spawn, must, apply, pre, forced=0, auto=0):
+    def pick(self, kind, spawn, must, apply, pre, forced=0, auto=0, trace=None):
+        """ITEMS_PickMagicAffix. trace: a dict the animation tool passes (tools/affix_anim.py); it receives the draw 1
+        low word (lo1), the block's row count (rows), the rows each C4 test refused in test order (refused: a list of
+        (test, count)), alvl, the candidates (cands: [(id, weight)]), W, x, the walk's index (k) and the id. Nothing else
+        changes with it."""
         T, it = self.T, self.it
         d = self.take("AF0")
         if not self.free:
@@ -325,6 +329,8 @@ class Walk:
             eq("pick %s" % k, v, d[k])
         eq("pick entry seed", fmt(self.seed), d["seed"])
         lo = self.step()
+        if trace is not None:
+            trace.update(lo1=lo, must=must, rolled=bool(lo & 1) or bool(must), seed1=self.seed)
         rec = dict(kind=kind, pre=pre, alvl=None, n=0, W=0, id=0, rolled=bool(lo & 1) or bool(must))
         if not (lo & 1) and not must:
             d = self.take("AFR")
@@ -341,34 +347,46 @@ class Walk:
         sockref = 0
         m = it.base["mlvl"]
         cands, W = [], 0
+        refused = collections.OrderedDict((n_, 0) for n_ in ("spawnable", "version", "level", "rare", "type", "group",
+                                                             "frequency", "class", "taken"))
         naive = set()                   # contradiction 1: the rows a "level <= ilvl + 2" window would keep
         for i in range(a0, a1):
             r = T.magic[i]
             if spawn and r["spawn"] == 0:
+                refused["spawnable"] += 1
                 continue
             if r["ver"] >= 100 and it.ver < 100:
+                refused["version"] += 1
                 continue
             isforced = forced > 0 and i - a0 == forced - 1
             if r["level"] <= it.ilvl + 2 and self.passes_rest(r, auto):
                 naive.add(i + 1)
             if not isforced:
                 if r["level"] > alvl:
+                    refused["level"] += 1
                     continue
                 if r["maxlevel"] != 0 and r["maxlevel"] < alvl:
+                    refused["level"] += 1
                     continue
             if r["rare"] == 0 and it.q in (6, 8, 9):
+                refused["rare"] += 1
                 continue
             if not type_ok(T, it, r):
                 if sockless and r["mod1"] >= 0 and type_ok(T, it, r, True):
                     sockref += 1
+                refused["type"] += 1
                 continue
             if auto and r["group"] != auto:
+                refused["group"] += 1
                 continue
             if r["freq"] == 0:
+                refused["frequency"] += 1
                 continue
             if r["cs"] != 0xFF and T.tclass(it.cls) != 7 and r["cs"] != T.tclass(it.cls):
+                refused["class"] += 1
                 continue
             if group_taken(T, it, r["group"]):
+                refused["taken"] += 1
                 continue
             if isforced:
                 # the forced row passed every test but the level window: chosen with no weighted draw
@@ -387,6 +405,8 @@ class Walk:
             w = r["freq"] * r["level"] if m else r["freq"]
             cands.append((i + 1, w))
             W += w
+        if trace is not None:
+            trace.update(rows=a1 - a0, refused=list(refused.items()), alvl=alvl, cands=list(cands), W=W, m=m)
         if sockref:
             self.stats["picks where the socket test (b) refused a row"] += 1
         d = self.take("AFC")
@@ -424,6 +444,8 @@ class Walk:
             self.notes["lastcand"].append("%s %s %s x=W=%d -> id %d (last of %d)" % (
                 self.ctx, kind, it.base["code"], W, cands[-1][0], len(cands)))
         aid = cands[k][0]
+        if trace is not None:
+            trace.update(x=x, k=k, id=aid, seed2=self.seed)
         rec.update(x=x, id=aid, exit="row")
         if apply:
             self.oracle("APR0", "APR1", "ItemApplyProps (pick)",
