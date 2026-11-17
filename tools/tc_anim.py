@@ -833,7 +833,7 @@ class Anim:
         gcalc = ["uniques-sets.md A1-A2: DropCreateItem draws two Steps on the game seed (unit seed, then item.start); "
                  "item.seed = {start, 666} = {%08x, 666}. The game seed here is derived from the illustrative input." % start,
                  "tc.md H7: creation does not touch src.seed (seed stays {%s})." % fseed(k["seed"]),
-                 "Creation record as logged for drops: item version 101, Game+0x6A 3, ladder 0, record quality %d, "
+                 "Creation record for drops: item version 101, ladder 0, record quality %d, "
                  "record row %d (uniques-sets.md A, B)." % (k["q"], k["uidx"])]
         itm["build"] = []
         self.S("Item creation for '%s' (quality %d, %s): item seed {%08x:%08x}." % (nm, k["q"], QNAME[k["q"]], start, 666),

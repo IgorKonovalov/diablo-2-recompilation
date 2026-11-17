@@ -1,0 +1,35 @@
+# The hex allowlist of the public export (plan 0070 Phase 3, owner decision 2026-11-17). Owner: architect.
+#
+# Hex values that are game math, not code addresses, may pass the check's X1 and X3 (an address, 6+ hex digits, a
+# commit-hash shape). Each entry has a one-line reason; a change is reviewed at the next cut's redaction review.
+#
+#   <hex value>                       <reason>                  a named constant or an illustrative seed; matched by
+#                                                               value in any spelling (0x..., bare, leading zeros)
+#   section <docs path> <heading start> :: <reason>              a worked example: any hex of 6+ digits under that
+#                                                               heading (to the next heading of its level or higher)
+#
+# Never allowed, whatever is written here: a value in the code image's range 0x00400000-0x007FFFFF (the loader
+# refuses such an entry), a `sub_`/`DAT_` name, a `+0x` offset, a hex after `_` or `+`. ADR-0031 lists constants of
+# the code image (tables and their contents); nothing below is one: each entry is arithmetic the game does on its
+# own seeds, or a value our own examples choose. A value in the code image's range inside a worked example still
+# fails and is dropped by the simplifier.
+# Draw values in the calculation panels of a schematic illustration folder pass by a scoped rule in the check
+# (the shapes `{hi:lo}`, `lo = 0x...`, `seed 0x...`), not by this file.
+
+# Named constants
+6AC690C5   the RNG multiplier (the seed step is a multiply-and-add on it)
+0000029A   the second word, 666, that a freshly initialised seed carries
+AA55AA55   the signature word of a character save file (a file-format constant, not code)
+
+# Illustrative seeds
+0xC0FFEE   the seed of the two schematic illustrations (an illustrative input, never a game-derived seed)
+00003039   12345, the illustrative seed of the randomness page's worked example
+
+# Worked examples (illustrative seeds and the draws computed from them)
+section wiki/randomness.md A worked example :: arithmetic on the illustrative seed 12345
+section wiki/levels.md A worked example :: the Den of Evil and Catacombs examples, computed from illustrative seeds
+section wiki/seed-to-world.md Worked examples :: seeds derived by hand from an illustrative game seed
+section wiki/characters.md Worked examples :: seeds derived by hand from an illustrative game seed
+section wiki/quests.md The quest seed and the player's seed :: seed arithmetic on an illustrative seed
+section wiki/quests.md Town portals :: seed arithmetic on an illustrative seed
+section wiki/saves.md A worked example :: the checksum of an example save, computed byte by byte

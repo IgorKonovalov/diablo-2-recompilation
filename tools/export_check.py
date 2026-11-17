@@ -149,11 +149,122 @@ def git_identity():
     return tuple(sorted(i for i in ids if len(i) >= 4))
 
 
-def check_text(text, identity=None, line0=1):
+# ---------------------------------------------------------------- the hex allowance (owner decision, 2026-11-17)
+# Game math that is written in hex is not a code address: RNG seeds used as illustrative examples, the RNG
+# multiplier and similar named constants (a short reviewed list, docs/export/allow-hex.txt, each entry with a
+# reason), and the draw values in the calculation panels of a schematic illustration folder (a scoped rule).
+# Never allowed, anywhere: a value in the code image's range 0x00400000-0x007FFFFF, a `sub_`/`DAT_` name, a
+# `+0x` offset, a hex after `_` or `+`. (ADR-0031: it lists constants of the code image; the allowlist holds no
+# entry in that range and names only values that are our model's own inputs or game-math constants, never a
+# table's contents or an address.)
+IMAGE_LO, IMAGE_HI = 0x00400000, 0x007FFFFF
+RE_HEXTOK = re.compile(r"(?:0x)?[0-9A-Fa-f]+$")
+HEX_WHATS = ("address / hex of 6+ digits", "hex of 6+ digits", "commit hash")
+# the shapes the schematic generators print for a draw: a seed state {hi:lo}, `{start, 666} = {hex, 666}`,
+# and `lo = 0x...`, `lo 0x...`, `seed 0x...` inside a calculation line
+RE_DRAW_CTX = [
+    re.compile(r"\{[0-9a-f]{8}:[0-9a-f]{8}\}"),
+    re.compile(r"\{[0-9a-f]{8}, \d+\}"),
+    re.compile(r"\b(?:lo|seed|draw)\s*=?\s*0x[0-9a-f]{1,8}\b"),
+]
+
+
+def hex_value(tok):
+    return int(tok[2:] if tok[:2].lower() == "0x" else tok, 16)
+
+
+def in_image(v):
+    return IMAGE_LO <= v <= IMAGE_HI
+
+
+class Allow:
+    """values: {int: reason}; sections: {(docs path, heading prefix): reason} of the allowlist file."""
+
+    def __init__(self, values=None, sections=None):
+        self.values = dict(values or {})
+        self.sections = dict(sections or {})
+
+
+class SectionTracker:
+    """Which lines of a page sit under an allowed section (a worked example whose values are illustrative game
+    math). Feed each heading as it comes; `.on` says whether the text after it is in scope."""
+
+    def __init__(self, allow, path):
+        self.prefixes = [h.lower() for (p, h) in allow.sections if p == path]
+        self.level = None
+        self.on = False
+
+    def heading(self, level, text):
+        if self.on and level <= self.level:
+            self.on = False
+        if not self.on and any(text.lower().startswith(h) for h in self.prefixes):
+            self.on, self.level = True, level
+        return self.on
+
+
+def load_allow(path):
+    """Read docs/export/allow-hex.txt: `<hex value> <one-line reason>` per line, `#` comments. Raises ValueError
+    on a malformed line, an entry without a reason, or an entry in the code image's range."""
+    vals, secs = {}, {}
+    for n, raw in enumerate(open(path, encoding="utf-8"), 1):
+        line = raw.split(" # ", 1)[0].strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("section "):
+            m = re.fullmatch(r"section\s+(\S+)\s+(.+?)\s+::\s+(.+)", line)
+            if not m:
+                raise ValueError(f"{path}:{n}: want `section <docs path> <heading start> :: <reason>`")
+            secs[(m.group(1), m.group(2))] = m.group(3)
+            continue
+        f = line.split(None, 1)
+        if len(f) < 2 or not RE_HEXTOK.match(f[0]) or len(re.sub(r"^0[xX]", "", f[0])) < 6:
+            raise ValueError(f"{path}:{n}: want `<hex of 6+ digits> <reason>`")
+        v = hex_value(f[0])
+        if in_image(v):
+            raise ValueError(f"{path}:{n}: {f[0]} is in the code image's range; refused")
+        vals[v] = f[1].strip()
+    return Allow(vals, secs)
+
+
+ACTIVE_ALLOW = Allow()
+
+
+def set_allow(allow):
+    global ACTIVE_ALLOW
+    ACTIVE_ALLOW = allow if allow is not None else Allow()
+
+
+def _allowed_hex(line, m, what, allow, scoped, sect=False):
+    """True when the hex-shaped match m of rule text `what` is game math the allowance admits."""
+    if what not in HEX_WHATS:
+        return False
+    tok = m.group(0)
+    if not RE_HEXTOK.match(tok):
+        return False
+    before = line[m.start() - 1] if m.start() else ""
+    if before in "_+":
+        return False
+    if scoped:
+        for rx in RE_DRAW_CTX:
+            for cm in rx.finditer(line):
+                if cm.start() <= m.start() and m.end() <= cm.end():
+                    return True
+    v = hex_value(tok)
+    if in_image(v):
+        return False
+    return sect or v in allow.values
+
+
+def check_text(text, identity=None, line0=1, allow=None, scoped=False, sect_lines=None, sect=False):
     """X1-X5 and X9 on one unit of text. Returns [(rule, line, detail)]; line counts from line0.
-    A fenced block in the unit is tracked: X5 applies to its lines unless the fence is `mermaid`."""
+    A fenced block in the unit is tracked: X5 applies to its lines unless the fence is `mermaid`.
+    `allow` (default: the one set with set_allow) admits listed game-math hex values; `scoped` also admits the
+    draw shapes of a schematic illustration folder's calculation panels (RE_DRAW_CTX); `sect` (every line) or
+    `sect_lines` (line numbers) admit any hex of a worked example's section (Allow.sections), image range aside."""
     if identity is None:
         identity = git_identity()
+    if allow is None:
+        allow = ACTIVE_ALLOW
     hits = []
     fence = None  # (marker char run, lang)
     for i, line in enumerate(text.split("\n")):
@@ -170,7 +281,7 @@ def check_text(text, identity=None, line0=1):
                     break
         for rule, table in (("X1", RE_X1), ("X2", RE_X2), ("X3", RE_X3), ("X9", RE_X9)):
             for rx, what in table:
-                mm = rx.search(line)
+                mm = next((x for x in rx.finditer(line) if not _allowed_hex(line, x, what, allow, scoped, sect or (sect_lines is not None and n in sect_lines))), None)
                 if mm:
                     hits.append((rule, n, f"{what}: {mm.group(0)[:40]}"))
                     break
@@ -186,9 +297,10 @@ def check_text(text, identity=None, line0=1):
     return hits
 
 
-def text_rules(unit, identity=None):
-    """The set of rule ids (X1-X5, X9) that one unit of text fails. For the builder's simplifier."""
-    return {h[0] for h in check_text(unit, identity)}
+def text_rules(unit, identity=None, allow=None, sect=False):
+    """The set of rule ids (X1-X5, X9) that one unit of text fails. For the builder's simplifier; `sect` when the
+    unit sits in an allowed worked-example section."""
+    return {h[0] for h in check_text(unit, identity, allow=allow, sect=sect)}
 
 
 # ---------------------------------------------------------------- page rules
@@ -254,9 +366,25 @@ def parse_manifest(path):
     return routes, allowed
 
 
-def check_page(text, rel, route, allowed_tables, illus_ok, identity):
+def section_lines(text, path, allow):
+    """Line numbers (1-based) of a page that sit under one of the allowlist's sections for `path`."""
+    tr, lines, fence = SectionTracker(allow, path), set(), False
+    if not allow.sections:
+        return lines
+    for n, line in enumerate(text.split("\n"), 1):
+        if RE_FENCE.match(line):
+            fence = not fence
+        h = None if fence else re.match(r"^(#{1,6})\s+(.*?)\s*#*\s*$", line)
+        if h:
+            tr.heading(len(h.group(1)), h.group(2))
+        if tr.on:
+            lines.add(n)
+    return lines
+
+
+def check_page(text, rel, route, allowed_tables, illus_ok, identity, path=None):
     """All rules that apply to one Markdown page of the cut. Returns [(rule, line, detail)]."""
-    hits = list(check_text(text, identity))
+    hits = list(check_text(text, identity, sect_lines=section_lines(text, path, ACTIVE_ALLOW) if path else None))
     over = [(ln, n) for ln, n in tables(text) if n > TABLE_LIMIT]
     for ln, n in over[allowed_tables:]:
         hits.append(("X6", ln, f"table of {n} body rows (limit {TABLE_LIMIT}) not named in the manifest"))
@@ -372,7 +500,7 @@ def verify_illustration(folder, identity=()):
             continue
         if rel in ("index.html", "steps.json"):
             txt = re.sub(r"#[0-9A-Fa-f]{3,8}\b", "#", data_b.decode("utf-8", "replace"))
-            bad = [h for h in check_text(txt, identity) if h[0] != "X5"]
+            bad = [h for h in check_text(txt, identity, scoped=True) if h[0] != "X5"]
             if bad:
                 probs.extend(f"{rel}:{ln}: {r_} {d}" for r_, ln, d in bad[:5])
                 continue
@@ -417,6 +545,7 @@ def check_cut(cut, manifest=None, identity=None):
     if identity is None:
         identity = git_identity()
     routes, allowed = parse_manifest(manifest)
+    route_path = {v: k for k, v in routes.items()}
     docs_root = "site/src/content/docs/"
     illus_root = "site/public/illustrations/"
     rels = []
@@ -475,7 +604,7 @@ def check_cut(cut, manifest=None, identity=None):
         fails.append(("X10", "site/src/cut.json", 0, "cut.json missing"))
     for rel, text in pages:
         route = rel[len(docs_root):-3] if rel.startswith(docs_root) else rel[:-3]
-        for rule, ln, d in check_page(text, rel, route, allowed.get(route, 0), illus_ok, identity):
+        for rule, ln, d in check_page(text, rel, route, allowed.get(route, 0), illus_ok, identity, route_path.get(route)):
             fails.append((rule, rel, ln, d))
         for ln, d in x12(text, rel, known):
             warns.append(("X12", rel, ln, d))
@@ -555,6 +684,9 @@ def main(argv=None):
     ap.add_argument("--repo", help="the export repository's files (workspace/export-repo/)")
     ap.add_argument("--manifest", help="manifest.txt (default docs/export/manifest.txt of this repository)")
     ap.add_argument("--identity", action="append", default=[], help="extra identity string (tests)")
+    ap.add_argument("--allow-hex", help="the hex allowlist (default docs/export/allow-hex.txt of this repository)")
+    ap.add_argument("--no-allow-hex", action="store_true", help="no hex allowlist (the scoped rule for illustration "
+                    "folders stays)")
     ap.add_argument("--no-git-identity", action="store_true", help="do not read identity from git (tests)")
     a = ap.parse_args(argv)
     if not a.cut and not a.repo:
@@ -562,6 +694,14 @@ def main(argv=None):
     identity = tuple(a.identity) if a.no_git_identity else tuple(a.identity) + git_identity()
     manifest = a.manifest or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "export",
                                           "manifest.txt")
+    if not a.no_allow_hex:
+        ap_ = a.allow_hex or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "export",
+                                          "allow-hex.txt")
+        try:
+            set_allow(load_allow(ap_) if os.path.isfile(ap_) else Allow())
+        except ValueError as e:
+            print(f"export_check: {e}", file=sys.stderr)
+            return 2
     fails, warns = [], []
     if a.cut:
         if not os.path.isdir(a.cut):

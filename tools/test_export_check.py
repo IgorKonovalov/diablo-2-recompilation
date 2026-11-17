@@ -94,6 +94,44 @@ def main():
     ok("X4" in t("file:///home/someone/x") and "X4" in t("x:/Users/someone/y"), "home paths fail X4 anywhere")
     ok("X9" in t("Battle-net") and "X9" in t("opened in rizin") and "X9" in t("run under wine"),
        "Battle-net and more tool names fail X9")
+    # the hex allowance (owner decision 2026-11-17): listed game math passes, the same value elsewhere fails,
+    # an image-range entry is refused, and the scoped rule for a schematic folder's draw shapes
+    al = ec.Allow({0xC0FFEE: "illustrative seed", 0x6AC690C5: "the RNG multiplier"})
+    ta = lambda s, **k: ec.check_text(s, (), allow=al, **k)
+    ok(ta("seed 0xc0ffee and 6AC690C5") == [], "an allowed seed and the multiplier pass X1")
+    ok(any(h[0] == "X1" for h in ec.check_text("seed 0xc0ffee", ())) and ec.check_text("seed 0xc0ffee", (), allow=ec.Allow()),
+       "the same value fails without the allowlist")
+    ok(any(h[0] == "X1" for h in ta("the seed 0xdeadbeef")), "a value off the allowlist fails")
+    ok(any(h[0] == "X3" for h in ec.check_text("seed 00c0ffee", (), allow=ec.Allow())), "commit-hash shape fails off the list")
+    ok(ta("seed 00c0ffee") == [], "an allowed value passes X3 too, in any spelling")
+    ok(any(h[0] == "X1" for h in ta("DAT_00c0ffee")) and any(h[0] == "X1" for h in ta("x+0xc0ffee")),
+       "an allowed value after `_` or `+` still fails")
+    ok(any(h[0] == "X1" for h in ta("at 0x00556F60")) and any(h[0] == "X1" for h in ta("sub_00556F60")),
+       "image-range addresses fail with an allowlist present")
+    bad = os.path.join(tempfile.mkdtemp(prefix="export_allow_"), "allow.txt")
+    for line in ("0x00556F60 an address\n", "00507fab seed that looks like one\n", "c0ffee\n"):
+        with open(bad, "w") as f:
+            f.write(line)
+        try:
+            ec.load_allow(bad)
+            ok(False, f"load_allow refuses {line.strip()!r}")
+        except ValueError:
+            ok(True, "")
+    with open(bad, "w") as f:
+        f.write("# c\n0xC0FFEE illustrative seed\n6ac690c5 the RNG multiplier\n")
+    ok(set(ec.load_allow(bad).values) == {0xC0FFEE, 0x6AC690C5}, "load_allow reads a good file")
+    shutil.rmtree(os.path.dirname(bad), ignore_errors=True)
+    real = os.path.join(HERE, "..", "docs", "export", "allow-hex.txt")
+    if os.path.isfile(real):
+        ok(len(ec.load_allow(real).values) > 0, "docs/export/allow-hex.txt loads (no image-range entry)")
+    sc = lambda s: ec.check_text(s, (), allow=ec.Allow(), scoped=True)
+    ok(sc("draw lo = 0x7f8b96aa; seed after {ceb6f65b:3ac5bf6e}; {start, 666} = {6bf39f86, 666}") == [],
+       "scoped: the draw shapes pass")
+    ok(sc("lo = 0x00507fab; seed {a28ed4c0:00507fab}") == [], "scoped: a draw value that is numerically in the image range passes in its shape")
+    ok(any(h[0] == "X1" for h in sc("see 0x00556F60")) and any(h[0] == "X1" for h in sc("the sub_00556F60 call")),
+       "scoped: an address outside a draw shape fails")
+    ok(any(h[0] == "X1" for h in ec.check_text("lo = 0x7f8b96aa", (), allow=ec.Allow())),
+       "the draw shapes pass only in a schematic folder (unscoped fails)")
     # .git directory, built at run time (git can't hold one)
     tmp = tempfile.mkdtemp(prefix="export_check_")
     try:
@@ -124,6 +162,20 @@ def main():
             with open(sj, "w", encoding="utf-8") as f:
                 ec.json.dump(meta, f)
             ok("X11" in rules_of(ec.check_cut(c2, MANIFEST, IDENT)[0]), f"a leak in {fname} fails X11")
+        for label, line, want in (("draw", "Pick: level draw lo = 0x2f8cad61; seed after {ceb6f65b:3ac5bf6e}.", True),
+                                  ("address", "Pick: see 0x00556F60.", False)):
+            c3 = os.path.join(tmp, "cut-" + label)
+            shutil.copytree(c, c3)
+            m3 = os.path.join(c3, "site", "public", "illustrations", "maze")
+            with open(os.path.join(m3, "steps.json"), "w", encoding="utf-8") as f:
+                f.write('{"marker": "%s", "steps": [{"caption": "%s"}]}' % (ec.MARKER, line))
+            with open(os.path.join(m3, "schematic.json"), encoding="utf-8") as f:
+                meta = ec.json.load(f)
+            meta["files"]["steps.json"] = ec._sha(os.path.join(m3, "steps.json"))
+            with open(os.path.join(m3, "schematic.json"), "w", encoding="utf-8") as f:
+                ec.json.dump(meta, f)
+            ec.set_allow(None)
+            ok(bool(not ec.check_cut(c3, MANIFEST, IDENT)[0]) == want, f"calc-panel {label} line in a folder: pass={want}")
         ok(not ec.check_cut(c, MANIFEST, IDENT)[0], "the clean copy still passes after .git is removed")
         # an unredacted copy of three specs fails X1, X2 and X3
         root = os.path.normpath(os.path.join(HERE, ".."))
