@@ -28,6 +28,14 @@ Per page, in this order:
                  colon, a possessive, the object of a preposition or determiner (`broken`). A citation into findings/,
                  plans/, adrs/ and the other working-tree folders is never reduced to its file name. Every rewrite is a
                  REWRITE report line (tab-separated: page, heading, before, after).
+     second round (plan 0070 Phase 9): inside the same rewrite, a code-image address (`0x00...`, `@0x...`, a bare 8-digit or
+                 6-digit hex in the image's range, a partial `0x0063xxxx`; one the page pins stays), a plan, ADR or lane
+                 reference and a repository path or `.py`/`.csv`/`.log` name are removed as tokens, with the same `broken`
+                 test (a removed subject, a token before a dash or `=`, a determiner or `run`/`using` before it); a cell
+                 made only of them is an em dash. A pseudocode line's tail (`[C] (fn:..., run:...)`, `; ... 0x...`) is
+                 rewritten, a comment left empty goes and the tag stays; a removed token in its code part leaves the
+                 line as it was (the block then drops). An in-memory offset `Name+0x10` is content and stays.
+                 Words and fenced blocks are counted per page and in the report (`words dropped`, `fenced blocks kept`).
   2. simplifier  runs export_check's text rules (X1-X5, X9, with the hex allowance) on each unit (a sentence of a
                  paragraph, a list item, a table row, a fenced block) and drops a unit that fails; a unit with an
                  `[L]` tag goes too. A section goes when its heading fails or nothing is left under it. It never
@@ -80,7 +88,7 @@ EVIDENCE = [
     re.compile(r"\baddendum\b|\bsee\b|\band\b|\bat\b", re.I),
     re.compile(r"\b\d{4}-\d\d-\d\d\b"),
     re.compile(r"\bsub_[0-9A-Fa-f]+\w*"),
-    re.compile(r"`[\w.>*-]*\+0x[0-9A-Fa-f]+(?:\s*\+\s*0x[0-9A-Fa-f]+)?`"),   # an in-memory offset, `ItemData+0x10`
+    # an in-memory offset `ItemData+0x10` is content, not evidence (owner decision 2026-11-17, plan 0070 Phase 9)
 ]
 
 
@@ -207,11 +215,15 @@ def evidence_only(inner):
 RE_PUNCT_AFTER = re.compile(r"[ \t]*(?:\n[ \t]*)?(?=[.,;:!?])")
 
 
-def drop_evidence_parens(text):
+RE_HAS_EVIDENCE = re.compile(r"\b(?:fn|data|struct|tbl|fmt|src|run):|0x[0-9A-Fa-f]{6}|findings/|[a-z]+/\d{4}")
+
+
+def drop_evidence_parens(text, strict=False):
+    """`strict` (pseudocode lines): only a parenthetical that holds a real evidence token goes, never `(and)`."""
     out, last = [], 0
     for s, e in parenthetical_spans(text):
         inner = text[s + 1:e - 1]
-        if inner.strip() and evidence_only(inner):
+        if inner.strip() and evidence_only(inner) and (not strict or RE_HAS_EVIDENCE.search(inner)):
             # a parenthetical on a line of its own leaves its closing punctuation on the next line; join it back, so
             # the page does not read "confirmed ." (Phase 6 review, 2026-11-17)
             m = RE_PUNCT_AFTER.match(text, e)
@@ -253,16 +265,34 @@ RE_REMOVE = re.compile(_OPEN + r"(?:struct:[A-Za-z0-9_]+(?:\+0x[0-9A-Fa-f]+|\.\w
 # a spec citation with a folder: `drlg/maze.md § 3` -> `maze.md § 3`; without a section it goes (with a "spec" before it)
 RE_CITE = re.compile(r"(?<![\w/.:~-])(?:\bspec\s+)?(`)?(?:\.\./|\./)*(?:[\w.-]+/)+([\w.-]+\.md)(?(1)`)", re.I)
 RE_README = re.compile(r"(?<![\w/.:~-])(?:\bspec\s+)?(`)?README\.md(?(1)`)(?!\s*§)")
-RE_DANGLE = re.compile(r"(?i)\b(?:at|see|per|and|or|of|from|in|by|via)\b"
+RE_AT = re.compile(r"(?i)(?:[ \t]*\n[ \t]*)?\bat\s+\x00")             # "at 0x..." goes with its address
+RE_DANGLE = re.compile(r"(?i)\b(?:at|see|per|and|or|of|from|in|by|via|as|cf)\b"
                        r"[\s,;:]*\x00(?=\s*(?:[.,;:)\]|]|$))", re.M)
 # a removed token the unit can't do without (review of lane/x70a): the unit's head before a colon, a possessive
 # ("'s"), the object of a preposition or a determiner with words after it, a label whose whole list went
 _LEAD = r"^[\s>*+-]*(?:\d+\.\s+)?(?:\*\*)?"
-RE_BROKEN = re.compile(_LEAD + r"\x00\s*:|\x00\s*['\u2019]s\b"
-                       r"|(?i:\b(?:of|from|in|by|via)\s+\x00[\s\x00]*(?=[\w`(\[]))"
+RE_BROKEN = re.compile(_LEAD + r"\x00\s*:|\x00\s*['\u2019]s\b|" + _LEAD + r"\x00\s*(?=[A-Za-z`(])|\x00\s*[\u2013\u2014=]"
+                       r"|(?i:\b(?:run|runs|running|using|uses?|above|below|past|until|beyond|after|before|near|outside|inside|within)\s+\x00)"
+                       r"|(?i:\b(?:of|from|in|by|via|at|as|per|see|cf)\s+\x00[\s\x00]*(?=[\w`(\[]))"
                        r"|(?i:\b(?:with|to|under|on|for|into|through|between|than|the|a|an|its|their|each|every|this"
                        r"|that|these|those|is|are|was|were|be)\s+\x00)"
                        r"|\w:\s*\x00[\s\x00]*[.;]?\s*$|\w:\s*\x00\s*[;,:]|\x00[ \t]*\((?!\s*\x00)")
+# Phase 9 second round: code-image addresses, partial addresses, plan/ADR/lane references and repository paths or tool
+# and data file names are removed as tokens (the `broken` test below drops a unit that can't be read without one)
+_ADDR = (r"@?0x[0-9A-Fa-f]{6,8}\b|@?0x(?:00)?[4-9][0-9A-Fa-f]{0,5}[xX?]+[0-9A-Fa-f]*\b"
+         r"|(?<![A-Za-z0-9._])(?:00[4-9][0-9]{5}|(?=[0-9A-Fa-f]*[0-9])(?=[0-9A-Fa-f]*[A-Fa-f])[0-9A-Fa-f]{6,8})(?![\w.])")
+RE_ADDR = re.compile(r"(?<![\w+/@])(?:" + _ADDR + ")")
+RE_ADDR_SPAN = re.compile(r"`\x00(?:\s*[\u2013\u2014-]\s*\x00)*`")
+RE_ADDR_RANGE = re.compile(r"\x00(?:\s*[\u2013\u2014-]\s*\x00)+")
+RE_PLAN = re.compile(_OPEN + r"(?:(?:\u00a7\s*)?\b(?i:plans?)\s+\d{4}(?:\s*(?:,|and|/)\s*\d{4})*(?:\s+(?:Phase|phase|P)\s*\d+[a-z]?(?:\.\d+)?)?"
+                     r"(?:\s+batch\s+\w+(?:\s+rows?\s+\d+)?)?"
+                     r"|\bADR-\d+(?:\s*\u00a7\s*[\w.]+)?|(?<![A-Za-z0-9])lane/[\w-]+)(?(1)`)")
+_PATH = (r"(?:(?:\.\./|\./)*(?<![\w/])(?:docs|re|tools|workspace|\.claude)/[\w./~-]*[\w/]|(?<![\w/.-])[\w-]+\.(?:py|csv|log)\b"
+         r"|(?<![\w])\.claude\b)")
+RE_PATH_SPAN = re.compile(r"`[^`\n]*?" + _PATH + r"[^`\n]*`")
+RE_PATH = re.compile(_PATH)
+# an address the page pins (a computed value, never an address of the image) stays: set by the builder per page
+PAGE_PINS = {}
 # working-tree folders: a citation into them is never reduced to its file name (review of lane/x70a)
 RE_WORK_SEG = re.compile(r"(?:^|[/`\s])(?:findings|plans|done|adrs|backlog|archive|re|tools|workspace|\.claude|skills"
                          r"|references|export)/")
@@ -290,11 +320,27 @@ def _cite(m):
     return SENT
 
 
-def _rw_plain(s):
-    s = RE_ANCHOR.sub(_anchor, s)
+def _addr(m):
+    t = m.group(0).lstrip("@")
+    if re.search(r"[xX?]", t[2:] if t[:2].lower() == "0x" else t):
+        return SENT                                       # a partial address, `0x0063xxxx`
+    v = ec.hex_value(t)
+    return SENT if ec.in_image(v) and v not in PAGE_PINS else m.group(0)
+
+
+def _rw_plain(s, plain=False):
+    s = RE_ANCHOR.sub((lambda m: m.group(2) if clean_name(m.group(2)) else SENT) if plain else _anchor, s)
     s = RE_REMOVE.sub(SENT, s)
     s = RE_CITE.sub(_cite, s)
-    return RE_README.sub(SENT, s)
+    s = RE_README.sub(SENT, s)
+    s = RE_PLAN.sub(SENT, s)
+    s = RE_PATH_SPAN.sub(SENT, s)
+    s = RE_PATH.sub(SENT, s)
+    if "0x" in s or re.search(r"[0-9A-Fa-f]{6}", s):
+        s = RE_ADDR.sub(_addr, s)
+        s = RE_ADDR_SPAN.sub(SENT, s)
+        s = RE_ADDR_RANGE.sub(SENT, s)
+    return s
 
 
 def _del_sent(m):
@@ -306,9 +352,11 @@ def _del_sent(m):
     return " "
 
 
-def sent_cleanup(t):
+def sent_cleanup(t, lenient=False):
     """What a removed token leaves behind: runs of separators, empty or dangling parentheticals, "see"/"at"/"per"
     before nothing, doubled spaces. Touches only the text next to a removal mark."""
+    if lenient:
+        t = t.replace(BROKEN, SENT)
     if BROKEN in t:
         return BROKEN
     if SENT not in t:
@@ -317,8 +365,9 @@ def sent_cleanup(t):
         t = re.sub(r"\x00(?:\s*(?:[,;]|\b(?:and|or)\b)\s*\x00)+", SENT, t)
         t = re.sub(r"\x00(?:[ \t]*\x00)+", SENT, t)
         t = RE_EMPTY_PAREN.sub(SENT, t)
+        t = RE_AT.sub(SENT, t)
         t = RE_DANGLE.sub(SENT, t)
-    if RE_BROKEN.search(t):
+    if RE_BROKEN.search(t) and not lenient:
         return BROKEN
     t = re.sub(_LEAD.replace("^", "^(") + r")\x00\s*[,;]\s*", r"\1", t)        # a list's first slot went
     t = re.sub(r"((?:^|[\].!?*])[ \t]*)\x00\s*[,;]\s*", r"\1", t)          # after a tag or a sentence's end
@@ -330,23 +379,50 @@ def sent_cleanup(t):
     return re.sub(r"[ \t]+$", "", t, flags=re.M)
 
 
-def rewrite_text(text):
+def rewrite_text(text, plain=False, lenient=False):
     """The anchor rewrite over one unit's text (links: a link into findings/ goes whole, the target of any other
-    stays, its label is rewritten)."""
+    stays, its label is rewritten). `plain`: anchors become bare names (pseudocode lines)."""
     out, last = [], 0
     for m in RE_LINK.finditer(text):
-        out.append(_rw_plain(text[last:m.start()]))
+        out.append(_rw_plain(text[last:m.start()], plain))
         if "findings/" in m.group(2):
             out.append(SENT)
         else:
-            lab = _rw_plain(m.group(1))
+            lab = _rw_plain(m.group(1), plain)
             if lab.replace(SENT, "").strip():
                 out.append(text[m.start():m.start(1)] + lab + text[m.end(1):m.end()])
             else:
                 out.append(SENT)
         last = m.end()
-    out.append(_rw_plain(text[last:]))
-    return sent_cleanup("".join(out))
+    out.append(_rw_plain(text[last:], plain))
+    return sent_cleanup("".join(out), lenient)
+
+
+RE_TAIL = re.compile(r"\s{2,};\s|\s//\s|\s{2,}(?=\[[CI]\])|\s{2,}(?=\()")
+
+
+def rewrite_fence_line(line):
+    """A pseudocode line. Its code part (before a `;` comment, a `//` comment or the `[C]`/`[I]` tag, split at the first)
+    is rewritten strictly: a removed token it cannot be read without leaves the line as it was (the block then fails
+    the check and drops). Its tail (the tag, `(fn:..., run:...)`, `; ... 0x...`) is rewritten leniently: evidence
+    parentheticals and anchors, addresses, runs and references go, a label or comment marker left with nothing goes, the
+    tag stays."""
+    m = RE_TAIL.search(line)
+    code, tail = (line[:m.start()], line[m.start():]) if m else (line, "")
+    if code.strip():
+        c = rewrite_text(drop_evidence_parens(code, strict=True), plain=True)
+        if BROKEN in c:
+            return line
+    else:
+        c = code
+    t = tail
+    if t.strip():
+        t = rewrite_text(drop_evidence_parens(t, strict=True), plain=True, lenient=True)
+        if t != tail:
+            t = re.sub(r"[ \t]*[:,;][ \t]*$", "", t)
+            t = re.sub(r"[ \t]+(?://|;|#)[ \t]*$", "", t)
+            t = re.sub(r"\(\s*\)", "", t).rstrip()
+    return (c + t).rstrip() if (c != code or t != tail) else line
 
 
 def rewrite_row(line):
@@ -411,6 +487,14 @@ def split_sentences(text):
     return [p for p in re.split(r"(?<=[.!?])\s+(?=(?!\[[CIL]\])[A-Z\[`(*\"'_|])", text) if p.strip()]
 
 
+def prose_words(text):
+    """Words of body text: evidence tokens (anchors, run and finding ids, links into findings/, addresses, plan and
+    ADR references, repository paths) are not words, an anchor counts as the name it becomes."""
+    t = RE_LINK.sub(lambda m: "" if "findings/" in m.group(2) else m.group(1), text)
+    t = _rw_plain(t).replace(SENT, " ")
+    return len(re.findall(r"[A-Za-z][A-Za-z'-]*", t))
+
+
 class Page:
     def __init__(self, spec):
         self.spec = spec
@@ -421,6 +505,26 @@ class Page:
         self.units = 0           # units seen: sentences, items, rows, quotes, fences, captions
         self.dropped = 0         # units dropped (children of a dropped item included)
         self.headings = set()
+        self.dropped_page = False
+        self.words = self.words_kept = 0        # words of the body text (fences not counted), source and kept
+        self.fences = self.fences_kept = 0      # fenced blocks other than illustrations, source and kept
+
+    @staticmethod
+    def _count(blocks):
+        w = f = 0
+        for b in blocks:
+            if b["kind"] == "fence":
+                if b["info"] != "illustration" and not b.get("illus"):
+                    f += 1
+            elif b["kind"] != "blank" and not b.get("illus"):
+                w += prose_words("\n".join(b["lines"]))
+        return w, f
+
+    def count_source(self, blocks):
+        self.words, self.fences = self._count(blocks)
+
+    def count_kept(self, blocks):
+        self.words_kept, self.fences_kept = self._count(blocks)
 
 
 def slug(text):
@@ -476,7 +580,7 @@ def simplify(page, blocks, allow):
                 else:
                     kept.append(s)
             if kept:
-                out.append(b if len(kept) == len(sents) else {"kind": "para", "lines": [" ".join(kept)]})
+                out.append(b if len(kept) == len(sents) else dict(b, lines=[" ".join(kept)]))
         elif k == "item":
             page.units += 1
             if dropped_indent is not None and b["indent"] > dropped_indent:
@@ -636,9 +740,9 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
     cap.append("Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed "
                "in the game.")
     blank = {"kind": "blank", "lines": [""]}
-    return [{"kind": "para", "lines": [f"![Animation: {d['id']}]({root_abs})"]}, blank,
-            {"kind": "para", "lines": [f"[Step through {d['id']}]({base}index.html)"]}, blank,
-            {"kind": "para", "lines": [" ".join(cap)]}]
+    return [{"kind": "para", "lines": [f"![Animation: {d['id']}]({root_abs})"], "illus": True}, blank,
+            {"kind": "para", "lines": [f"[Step through {d['id']}]({base}index.html)"], "illus": True}, blank,
+            {"kind": "para", "lines": [" ".join(cap)], "illus": True}]
 
 
 # ---------------------------------------------------------------- link rewriting
@@ -664,7 +768,8 @@ def rewrite_links(text, page, by_path):
             return label
         rel = os.path.relpath(route_dir(tgt.route) or ".", route_dir(page.route) or ".")
         rel = "./" if rel == "." else rel + "/"
-        return f"[{label}]({rel}{'#' + frag if frag and frag in tgt.headings else ''})"
+        keep = frag and frag in tgt.headings and not ec.text_rules(frag)    # a slug that carries a seed fails the check
+        return f"[{label}]({rel}{'#' + frag if keep else ''})"
     return RE_LINK.sub(sub, text)
 
 
@@ -722,7 +827,7 @@ def redact(pg, blocks):
                 pg.drops.append((b["text"], "open-questions", "section", b["text"][:120]))
                 continue
             t0 = redact_text(b["text"])
-            t = redact_text(b["text"], rw=rewrite_text)
+            t = redact_text(b["text"], rw=lambda x: rewrite_text(x, lenient=True))   # a heading keeps its words
             if t != t0:
                 note_rewrite(pg, heading, b["text"], t)
                 if not has_words(t):
@@ -737,6 +842,11 @@ def redact(pg, blocks):
             ls = b["lines"]
             if b["info"] != "mermaid":
                 ls = [ls[0]] + [RE_ADDR_COL.sub(r"\1", x) for x in ls[1:-1]] + ls[-1:]
+                tail = [rewrite_fence_line(x) for x in ls[1:-1]]
+                ch = [(x, y) for x, y in zip(ls[1:-1], tail) if x != y]
+                if ch:
+                    note_rewrite(pg, heading, ch[0][0].strip(), ch[0][1].strip() + (f"  (+{len(ch) - 1} lines)" if len(ch) > 1 else ""))
+                ls = [ls[0]] + tail + ls[-1:]
             b = dict(b, lines=[RE_SUB.sub("", x) for x in ls])
         elif k == "table":
             rows = redact_table(b["lines"])
@@ -780,6 +890,7 @@ def redact(pg, blocks):
 
 
 def build(out, manifest, root, date, allow, run_illus=True):
+    global PAGE_PINS
     out = safe_out(out)
     groups, specs, aliases = parse_manifest(manifest)
     shutil.rmtree(os.path.join(out, "site"), ignore_errors=True)
@@ -805,6 +916,8 @@ def build(out, manifest, root, date, allow, run_illus=True):
             pages.append((pg, None))
             continue
         mid, heading = [], ""
+        PAGE_PINS = allow.pins.get(sp["path"], {})
+        pg.count_source(blocks)
         for b in redact(pg, blocks):
             if b["kind"] == "heading":
                 heading = b["text"]
@@ -813,8 +926,11 @@ def build(out, manifest, root, date, allow, run_illus=True):
             else:
                 mid.append(b)
         kept = simplify(pg, mid, allow)
+        pg.count_kept(kept)
         pg.headings = {slug(b["text"]) for b in kept if b["kind"] == "heading"}
         pages.append((pg, kept))
+    for pg, kept in pages:
+        pg.dropped_page = kept is None
     by_path = {p.path: p for p, k in pages if k is not None}
     for src, dst in aliases:
         if src not in by_path and dst in by_path:
@@ -847,14 +963,31 @@ def write_report(out, pages, date):
             lines.append(f"DROP {pg.path} | {h or '-'} | {r} | {kind} | {t}")
         for h, before, after in pg.rewrites:
             lines.append("\t".join(("REWRITE", pg.path, h or "-", before.replace("\t", " "), after.replace("\t", " "))))
-        rows.append((pg.path, pg.units, pg.dropped, len(pg.drops), kept is None))
+        rows.append(pg)
+
+    def pct(a, b):
+        return 100.0 * a / b if b else 0.0
+
+    def tot(sel):
+        ps = [p for p in rows if sel(p)]
+        u, d = sum(p.units for p in ps), sum(p.dropped for p in ps)
+        w, wk = sum(p.words for p in ps), sum(p.words_kept for p in ps)
+        f, fk = sum(p.fences for p in ps), sum(p.fences_kept for p in ps)
+        return (f"{len(ps)} pages: units dropped {d}/{u} ({pct(d, u):.1f}%), words dropped {w - wk}/{w} "
+                f"({pct(w - wk, w):.1f}%), fenced blocks kept {fk}/{f}")
     with open(os.path.join(out, "report.txt"), "w", encoding="utf-8") as f:
         f.write(f"export_build report, cut {date}\n")
         f.write("drops per rule: " + ", ".join(f"{k} {v}" for k, v in sorted(rule_n.items())) + "\n")
-        f.write(f"rewrites: {sum(len(pg.rewrites) for pg, _ in pages)}\n")
-        f.write("page | units | units dropped | share | report lines\n")
-        for p, u, d, nl, gone in rows:
-            f.write(f"{p} | {u} | {d} | {100.0 * d / u if u else 0:.1f}% | {nl}{' | PAGE DROPPED' if gone else ''}\n")
+        f.write(f"rewrites: {sum(len(pg.rewrites) for pg in rows)}\n")
+        f.write("total: " + tot(lambda p: True) + "\n")
+        if any(p.path.startswith("specs/") for p in rows):
+            f.write("specs: " + tot(lambda p: p.path.startswith("specs/")) + "\n")
+        f.write("page | units | units dropped | share | words | words dropped | share | fenced blocks kept/total | report lines\n")
+        for p in rows:
+            gone = " | PAGE DROPPED" if p.dropped_page else ""
+            f.write(f"{p.path} | {p.units} | {p.dropped} | {pct(p.dropped, p.units):.1f}% | {p.words} | "
+                    f"{p.words - p.words_kept} | {pct(p.words - p.words_kept, p.words):.1f}% | "
+                    f"{p.fences_kept}/{p.fences} | {len(p.drops)}{gone}\n")
         f.write("\n".join(lines) + "\n")
 
 

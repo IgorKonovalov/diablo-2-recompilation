@@ -51,8 +51,11 @@ the page as complete.
 
 [`allow-hex.txt`](allow-hex.txt) (architect-owned, a reason on every line) names the game-math hex values that pass
 the check's X1 and X3: named constants and illustrative seeds by value, and worked-example sections by page and
-heading. A `sub_` or `DAT_` name and a `+0x` offset never pass. A value in the code image's range (the pinned
+heading. A `sub_` or `DAT_` name never passes, nor an offset on one. An in-memory struct offset (`Name+0x10`, a chain
+`Name+0x10+0x4`, a bare `+0x1C`, up to 5 hex digits) passes (owner decision 2026-11-17, plan 0070 Phase 9; ADR-0009 risk (1)
+weighed by the owner). A value in the code image's range (the pinned
 `Game.exe`'s whole mapped image, `0x00400000` to `0x009B9FFF`) passes only by a `pin` line: one value, one page, a
 reason, never an address `re/symbols.csv` names. The draw values in a schematic illustration folder's calculation
 panels pass by a scoped rule in the check, not by this file (plan 0070, owner decision 2026-11-17; pins and the
-range, architect review 2026-11-17).
+range, architect review 2026-11-17). The worked-example `section` lines of the specs (`specs/<folder>/<file>.md Worked
+example`) admit a seed or a value computed from one, never a value of the image's range (owner decision 2026-11-17).

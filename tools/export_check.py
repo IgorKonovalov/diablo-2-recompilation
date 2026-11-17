@@ -81,7 +81,13 @@ TABLE_LIMIT = 20
 RE_X1 = [
     (re.compile(r"\b0x[0-9A-Fa-f]{6,}\b"), "address / hex of 6+ digits"),
     (re.compile(r"\bsub_[0-9A-Fa-f]{6,8}"), "sub_ name"),
-    (re.compile(r"\+0x[0-9A-Fa-f]+"), "+0x offset"),
+    # an in-memory struct offset `Name+0x10`, `Name+0x10+0x4`, or a bare `+0x1C` passes (owner decision 2026-11-17,
+    # plan 0070 Phase 9; ADR-0009 risk (1) weighed by the owner): up to 5 hex digits. 6+ digits is a code-image
+    # shaped value and fails as ever, and so does an offset on a `sub_`/`DAT_` name
+    (re.compile(r"\+0x[0-9A-Fa-f]{6,}"), "+0x offset of 6+ digits"),
+    (re.compile(r"\b(?:sub|DAT|FUN|PTR)_\w*(?:\+0x[0-9A-Fa-f]+)+"), "offset on a code name"),
+    # a partial address, `0x0063xxxx`: a hex prefix with placeholder digits
+    (re.compile(r"\b0x(?:00)?[4-9][0-9A-Fa-f]{0,5}[xX?]+[0-9A-Fa-f]*\b"), "partial address"),
     # bare hex, also after `_` (DAT_00556F60, a name with an address in it); architect review 2026-11-17
     (re.compile(r"(?<![A-Za-z0-9.])(?=[0-9A-Fa-f]*[0-9])(?=[0-9A-Fa-f]*[A-Fa-f])[0-9A-Fa-f]{6,}(?![\w.])"),
      "hex of 6+ digits"),
@@ -102,7 +108,8 @@ RE_X3 = [
     (re.compile(r"(?<![A-Za-z0-9])lane/"), "lane/ reference"),
     # `../docs/` fails; only the export repository's own `content/docs/` passes (architect review 2026-11-17)
     (re.compile(r"(?<![A-Za-z0-9])(?<!content/)(?:docs|re|tools|workspace)/"), "repository path"),
-    (re.compile(r"[\w-]+\.(?:py|csv)\b"), ".py/.csv name"),
+    (re.compile(r"(?<![\w-])(?!console\.log\b)[\w-]+\.(?:py|csv|log)\b"), ".py/.csv/.log name"),   # JS `console.log` is no file name
+    (re.compile(r"(?<![\w])\.claude\b"), ".claude path"),
     # the working docs' trees, written as a path (`specs/items/tc`); architect review 2026-11-17
     (re.compile(r"(?<![\w/.-])(?:specs|tables|formats|findings|plans|adrs|backlog)/[\w-]"), "working-docs path"),
     (re.compile(r"(?<![\w.])(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}(?![\w.])"), "commit hash"),
@@ -122,13 +129,20 @@ RE_X9 = [
 ]
 RE_FENCE = re.compile(r"^\s*(```+|~~~+)\s*([\w-]*)")
 RE_BLOCK_BAD = [
-    (re.compile(r";\s*$"), "line ends in ;"),
-    (re.compile(r"[{}]"), "brace"),
+    # a C statement: `;`-terminated and assigned with `=`, typed, or compared with `==`/`!=`/`&&`. Our pseudocode uses `;` as a
+    # separator and `=` as equality, so a bare `;` at the end of a line is not C
+    (re.compile(r"^(?=.*;\s*$)(?:\s*(?:[A-Za-z]*\d+[a-z]?\.\s+)?[\w.\[\]*]+\s*=\s*[^=\s]"
+                r"|\s*(?:const\s+)?(?:u?int\d*(?:_t)?|char|short|long|byte|bool|float|double|void|[DW]ORD|BYTE|undefined\d?)\b[\s*]+\w"
+                r"|.*(?:==|!=|&&|\|\||\+\+))"), "C statement ending in ;"),
+    # C braces: a lone `{`, a line starting with `}`, a line ending in `{`. Our set notation `{a, b}`, `{hi:lo}` passes
+    (re.compile(r"^\s*\{\s*$|^\s*\}|\{\s*$"), "brace"),
     (re.compile(r"->"), "-> pointer form"),
-    (re.compile(r"\*\("), "*( pointer form"),
+    (re.compile(r"\*\(\s*(?:const\s+)?(?:u?int\d*(?:_t)?|char|short|long|byte|bool|float|double|void|[A-Z_]\w*)\s*\*"), "*( pointer form"),
+    # a C cast: a pointer cast, or a cast glued to its operand. An integer-semantics note `(unsigned)`, `(int32)` passes
     (re.compile(r"\((?:u?int|short|long|char|byte|word|dword|bool|float|double|void|unsigned|signed|size_t"
-                r"|u?int\d+_t|[A-Z]{3,})\s*\**\)"), "C cast"),
-    (re.compile(r"\bgoto\b|\bLAB_\w+"), "goto / label"),
+                r"|u?int\d+_t|[A-Z]{3,})\s*\*+\s*\)|\((?:u?int|short|long|char|byte|word|dword|bool|float|double|void"
+                r"|unsigned|signed|size_t|u?int\d+_t|[A-Z]{3,})\)(?=[\w(*&-])"), "C cast"),
+    (re.compile(r"\bgoto\s+LAB_\w*|\bLAB_\w+"), "goto / label"),   # our pseudocode's `goto next`, `goto retry` is notation
     (re.compile(r"^\s*(?:[a-z]+_\w+|\w*_r0x\w*):\s*$"), "label"),
     (re.compile(r"__\w+"), "calling-convention word"),
     (re.compile(r"\b(?:param_\d+|local_[0-9A-Fa-f]+|[a-z]?[uibcsl]Var\d+|FUN_\w*|DAT_\w*|PTR_\w*)"), "decompiler name"),
