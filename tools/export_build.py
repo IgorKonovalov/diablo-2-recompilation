@@ -96,7 +96,7 @@ EVIDENCE = [
 # ---------------------------------------------------------------- manifest
 
 def parse_manifest(path):
-    groups, pages, aliases = [], [], []
+    groups, pages, aliases, tables = [], [], [], {}
     for raw in open(path, encoding="utf-8"):
         f = raw.split("#", 1)[0].split()
         if not f:
@@ -104,11 +104,16 @@ def parse_manifest(path):
         if f[0] == "group" and len(f) >= 4:
             groups.append({"slug": f[1], "order": int(f[2]), "label": " ".join(f[3:])})
         elif f[0] == "page" and len(f) >= 4:
-            stem = os.path.splitext(os.path.basename(f[1]))[0]
+            # an optional fifth field names the route's last segment (a spec `README.md` reads `overview`; Phase 9)
+            stem = f[4] if len(f) >= 5 else os.path.splitext(os.path.basename(f[1]))[0]
             pages.append({"path": f[1], "group": f[2], "order": int(f[3]),
                           "route": stem if f[2] == "-" else f"{f[2]}/{stem}"})
         elif f[0] == "alias" and len(f) >= 3:
             aliases.append((f[1], f[2]))        # a link to f[1] (not exported) goes to the page f[2] (Phase 6 review)
+        elif f[0] == "table" and len(f) >= 3 and f[2].isdigit():
+            tables.setdefault(f[1], set()).add(int(f[2]))   # the source line of the table's header row
+    for p in pages:
+        p["tables"] = tables.get(p["path"], set())
     return groups, pages, aliases
 
 
@@ -132,8 +137,12 @@ def strip_front_matter(lines):
     return lines
 
 
-def parse_blocks(lines):
-    """-> [dict(kind, lines, ...)]: heading, fence, table, item, quote, para, blank."""
+TABLE_LIMIT = ec.TABLE_LIMIT
+
+
+def parse_blocks(lines, line0=1):
+    """-> [dict(kind, lines, ...)]: heading, fence, table, item, quote, para, blank. A table also carries `line`,
+    the source line of its header row (`line0` is the line number of lines[0]), which a manifest `table` line names."""
     blocks, i, n = [], 0, len(lines)
     while i < n:
         ln = lines[i]
@@ -161,7 +170,7 @@ def parse_blocks(lines):
             j = i
             while j < n and lines[j].lstrip().startswith("|"):
                 j += 1
-            blocks.append({"kind": "table", "lines": lines[i:j]})
+            blocks.append({"kind": "table", "lines": lines[i:j], "line": line0 + i})
             i = j
             continue
         if ln.startswith(">"):
@@ -219,12 +228,19 @@ RE_PUNCT_AFTER = re.compile(r"[ \t]*(?:\n[ \t]*)?(?=[.,;:!?])")
 RE_HAS_EVIDENCE = re.compile(r"\b(?:fn|data|struct|tbl|fmt|src|run):|0x[0-9A-Fa-f]{6}|findings/|[a-z]+/\d{4}")
 
 
+RE_TAG_BEFORE = re.compile(r"\[[CI]\][ \t]*(?:\n[ \t]*)?$")
+
+
 def drop_evidence_parens(text, strict=False):
     """`strict` (pseudocode lines): only a parenthetical that holds a real evidence token goes, never `(and)`."""
     out, last = [], 0
     for s, e in parenthetical_spans(text):
         inner = text[s + 1:e - 1]
-        if inner.strip() and evidence_only(inner) and (not strict or RE_HAS_EVIDENCE.search(inner)):
+        # a parenthetical right after a `[C]`/`[I]` tag is the tag's evidence: when it fails a text rule (a tool name, an
+        # address, a run or a path in it), it goes whole and the statement stays (plan 0070 Phase 9 review)
+        after_tag = bool(RE_TAG_BEFORE.search(text, 0, s)) and bool(inner.strip()) \
+            and bool(ec.text_rules(rewrite_text(inner, plain=True, lenient=True).replace(BROKEN, ""), ()))
+        if after_tag or inner.strip() and evidence_only(inner) and (not strict or RE_HAS_EVIDENCE.search(inner)):
             # a parenthetical on a line of its own leaves its closing punctuation on the next line; join it back, so
             # the page does not read "confirmed ." (Phase 6 review, 2026-11-17)
             m = RE_PUNCT_AFTER.match(text, e)
@@ -430,6 +446,9 @@ def rewrite_fence_line(line):
     return (c + t).rstrip() if (c != code or t != tail) else line
 
 
+RE_TAG_CELL = re.compile(r"^\s*((?:\[[CI]\][ ,;]*)+?)\s*([^\s\[].*?)\s*$")
+
+
 def rewrite_row(line, row_breaks=True):
     """A table row, cell by cell: a cell the rewrite empties becomes an em dash. A broken cell that carried a
     statement of its own (3+ words besides its anchors, and not opening with its evidence) makes the row broken: an em
@@ -440,6 +459,12 @@ def rewrite_row(line, row_breaks=True):
     cells, changed = split_row(line), False
     new = []
     for c in cells:
+        m = RE_TAG_CELL.match(c)
+        if m and ec.text_rules(rewrite_text(m.group(2), lenient=True).replace(BROKEN, ""), ()):
+            # a cell that opens with its tag and goes on with evidence a text rule fails keeps the tag alone (Phase 9 review)
+            changed = True
+            new.append(m.group(1).strip(" ,;"))
+            continue
         r = rewrite_text(c.strip())
         if r != c.strip():
             changed = True
@@ -635,7 +660,12 @@ def simplify(page, blocks, allow):
                 else:
                     keep.append(row)
                     nbody += 1
-            if nbody:
+            if nbody > TABLE_LIMIT and b.get("line") not in page.spec.get("tables", ()):
+                # X6: a table over the limit that no manifest `table` line names goes whole (Phase 9 review)
+                page.dropped += nbody
+                page.drops.append((heading, "X6", "table", f"{nbody} body rows, source line {b.get('line')}, "
+                                   f"not named in the manifest: " + lines[0][:120]))
+            elif nbody:
                 out.append({"kind": "table", "lines": keep})
         elif k in ("quote", "fence"):
             page.units += 1
@@ -928,7 +958,11 @@ def build(out, manifest, root, date, allow, run_illus=True):
             pg.drops.append(("", "missing", "page", f"{sp['path']} does not exist"))
             pages.append((pg, None))
             continue
-        blocks = parse_blocks(strip_front_matter(open(src, encoding="utf-8").read().split("\n")))
+        raw = open(src, encoding="utf-8").read().split("\n")
+        body = strip_front_matter(raw)
+        blocks = parse_blocks(body, line0=len(raw) - len(body) + 1)
+        for ln in sorted(sp.get("tables", set()) - {b["line"] for b in blocks if b["kind"] == "table"}):
+            pg.drops.append(("", "unmatched", "manifest", f"a `table` line names line {ln}, where no table starts"))
         for i, b in enumerate(blocks):                       # the title: the first `# ` heading, removed
             if b["kind"] == "heading" and b["level"] == 1:
                 pg.title = redact_text(b["text"])

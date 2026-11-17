@@ -114,6 +114,16 @@ def main():
     ok(all(r.count("|") == 3 for r in rows), f"anchor-only column dropped ({rows})")
     rows = eb.redact_table(["| a | b |", "|---|---|", "| x | fn:X@0x0045C370 |", "| y | plain words |"])
     ok(len(rows[0].split("|")) == 4, "a column with prose cells stays")
+    # Phase 9 review: a tag's evidence parenthetical that fails a text rule goes whole; one that passes stays
+    t = eb.redact_text("It drops. [C] (r2's pushes, the 20 search sites) Next.")
+    ok("r2" not in t and "[C]" in t and "Next." in t, f"a failing parenthetical after a tag goes ({t!r})")
+    ok(eb.redact_text("It drops. [C] (all 1607 rows) Next.") == "It drops. [C] (all 1607 rows) Next.",
+       "a passing parenthetical after a tag stays")
+    ok(eb.redact_text("It drops (read with objdump) here.") == "It drops (read with objdump) here.",
+       "a failing parenthetical not after a tag stays (the simplifier drops the unit)")
+    ok(eb.rewrite_row("| step | [C] read with objdump beside the reading |") == "| step | [C] |"
+       and eb.rewrite_row("| step | [C] 26 574 returns |") == "| step | [C] 26 574 returns |",
+       "a cell that opens with its tag keeps the tag alone when the rest fails a rule")
     # anchor rewrite (Phase 9 prerequisite)
     rt = eb.rewrite_text
     ok(rt("It calls fn:Foo@0x0045ABCD twice.") == "It calls `Foo` twice.", "fn:Name@0x becomes `Name`")
@@ -400,6 +410,28 @@ def main():
         ok(not ec.check_page(txt, "x/y.md", "x/y", 0, {("i2", "m.gif")}, ())
            and "X8" in {h[0] for h in ec.check_page(txt, "x/y.md", "x/y", 0, set(), ())}, "X8 accepts it only for a verified folder")
         shutil.rmtree(os.path.join(out, "site", "public", "illustrations"), ignore_errors=True)
+        # Phase 9 review: a route stem on a `page` line; an over-limit table the manifest does not name goes whole,
+        # a named one (by its source header line, front matter counted) stays, and the cut passes X6 either way
+        rows = "".join(f"| {i} | step {i} |\n" for i in range(22))
+        page_c = (f"---\nstatus: reviewed\n---\n# Gamma\n\n## Steps\n\n| # | step |\n|---|---|\n{rows}\n"
+                  f"## List\n\n| # | row |\n|---|---|\n{rows}\nAfter.\n")
+        with open(os.path.join(tmp, "docs", "README.md"), "w") as f:
+            f.write(page_c)
+        man2 = "group s 1 Spec\npage README.md s 1 overview\ntable README.md 8 our step table\ntable README.md 99 nothing\n"
+        with open(os.path.join(tmp, "manifest2.txt"), "w") as f:
+            f.write(man2)
+        eb.build(out, os.path.join(tmp, "manifest2.txt"), tmp, "2026-11-17", al, run_illus=False)
+        cpath = os.path.join(out, "site", "src", "content", "docs", "s", "overview.md")
+        c = open(cpath, encoding="utf-8").read() if os.path.isfile(cpath) else ""
+        ok(c.count("| 21 | step 21 |") == 1 and "| # | step |" in c and "| # | row |" not in c and "After." in c,
+           "the named table stays, the unnamed one over the limit goes whole, the route takes the stem")
+        rep = open(os.path.join(out, "report.txt"), encoding="utf-8").read()
+        ok("| X6 | table | 22 body rows, source line 35" in rep and "names line 99, where no table starts" in rep,
+           f"the X6 drop and an unmatched `table` line are report lines ({[l for l in rep.splitlines() if 'X6' in l][:1]})")
+        fails, _ = ec.check_cut(out, os.path.join(tmp, "manifest2.txt"), ())
+        ok(not fails, f"the cut with a left-out table passes export_check ({fails[:3]})")
+        ok(ec.parse_manifest(os.path.join(tmp, "manifest2.txt")) == ({"README.md": "s/overview"}, {"s/overview": 2}),
+           "the check reads the route stem")
     finally:
         eb.DOCS, eb.subprocess.run = old_docs, old_run
         ec.set_allow(None)

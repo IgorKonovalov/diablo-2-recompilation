@@ -136,6 +136,18 @@ def main():
     ok("X4" in t("file:///home/someone/x") and "X4" in t("x:/Users/someone/y"), "home paths fail X4 anywhere")
     ok("X9" in t("Battle-net") and "X9" in t("opened in rizin") and "X9" in t("run under wine"),
        "Battle-net and more tool names fail X9")
+    # Phase 9 review: objdump, debugger, and r2 as the tool fail X9; r2 as a variable passes
+    for c in ("an objdump walk finds 13 calls", "written by a debugger", "by objdump and r2 alike", "read with r2 beside",
+              "Python and r2 agree", "r2 reads the third push", "agreeing with r2's, 852 each", "read by r2.", "both item loggers", "the two harnesses", "read from the image and by r2: entries 43",
+              "r2 and objdump equal"):
+        ok("X9" in t(c), "X9 fails " + c)
+    for c in ("r2 \u2190 aip(5)", "r1 and r2 are the two draws", "the sum of r1 and r2", "with r2 \u2190 0", "q \u2190 x \u00f7 r2",
+              "r2 = Range(seed, 4)"):
+        ok("X9" not in t(c), "X9 passes the variable in " + c)
+    # Phase 9 review: a bare identifier mixing letter cases is a name (`deadD2`), unless its value is in the image
+    ok("X1" not in t("s.dead and deadD2 0 here") and "X1" not in t("deadD2 is a squared distance"),
+       "a mixed-case identifier passes X1")
+    ok("X1" in t("deaddd2 is hex") and "X1" in t("bad 5e8A4b here"), "a one-case run and an image value in mixed case fail X1")
     # the hex allowance (owner decision 2026-11-17): listed game math passes, the same value elsewhere fails,
     # an image-range entry is refused, and the scoped rule for a schematic folder's draw shapes
     al = ec.Allow({0xC0FFEE: "illustrative seed", 0x6AC690C5: "the RNG multiplier"})

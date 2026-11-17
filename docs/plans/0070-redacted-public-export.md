@@ -1,6 +1,6 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2 to 7 done 2026-11-17 (the first cut served at https://igorkonovalov.github.io/arpg-1-14d-notes/; next: the second cut, Phases 9 and 10, on the owner's word); re-cut 2026-11-16 for three later owner decisions (simplification,
+> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2 to 7 done 2026-11-17 (the first cut served at https://igorkonovalov.github.io/arpg-1-14d-notes/); Phase 9 done 2026-11-17 (the second cut: 46 reviewed specs; next: Phase 10, the owner's read and push); re-cut 2026-11-16 for three later owner decisions (simplification,
 > schematic illustrations per ADR-0036, the cheapest residue option); approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
 > 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
@@ -377,7 +377,7 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   drop line of the six sampled specs and the drop counts of every spec. A spec that loses more than a quarter of its
   sentences, or one whose remaining text no longer reads as whole, stays out of the manifest.
 - **Done when:** the manifest holds the specs that pass; a verdict is recorded in this plan's log with the cut date,
-  the check's output, the sample read, and each left-out spec with its reason.
+  the check's output, the sample read, and each left-out spec with its reason. **Done 2026-11-17** (accept; see the log).
 
 ### Phase 10 — The owner's read and the second publish
 - **Owner skill:** human
@@ -1212,3 +1212,105 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `r2` as the tool ("by objdump and r2 alike"; most of the 119 `r2` are variables), nor `debugger` (4): tool names in prose,
   a reading for Phase 9 (`breakpoint`, 27, is the game's frame-breakpoint term). Ledger: verdict accept
   with fixes, 4 (omission 3, other 1).
+- 2026-11-17, architect, **Phase 9: the second cut's redaction review** (Opus, Tier A, `lane/x70p9`). Verdict
+  **accept**; Phase 9 done, Phase 10 (the owner) next. **Decisions recorded** (owner, 2026-11-17, not reopened):
+  in-memory struct offsets pass; worked-example seed sections admitted (x70b2); pure-arithmetic hex constants admitted as
+  `value` lines (limits and masks, powers of two, compiler division reciprocals, the two well-known LCG constants), domain
+  values stay out; every plan 0070 review on Opus; the main column 60rem; code-image addresses fail everywhere. **Bar
+  used:** the builder report's words dropped per page, Open questions sections counted, over 25.0 % stays out; a page
+  whose pseudocode blocks mostly went, or that describes our method or carries provenance throughout, stays out.
+  **Cut:** 2026-11-17, `python3 -I tools/export_build.py` (default `--out workspace/export`, illustrations run) from
+  this branch: **71 pages** (the 25 of cut 1 and 46 specs), 0 dropped, both illustration folders (`drlg-maze-level36`,
+  `items-tc-andariel-hell`); 15 spec groups after the wiki's six. Report: specs units 764/9662 dropped (7.9 %), words
+  48086/281696 (17.1 %), fenced blocks kept 590/621; all pages 772/14834 units, words 12.3 %; drops per rule X1 46, X2 1,
+  X3 5, X6 3, X9 58, broken 534, empty 9, Open questions 44 sections, parent 1; 3184 rewrites. **Check:**
+  `export_check.py workspace/export --repo workspace/export-repo/`: **0 failures, 863 warnings** (all X12: 19 quoted runs,
+  the rest capitalised names; exit 0). Self-tests: `test_export_check` 180, `test_export_build` 149, 0 failed.
+  - **X12 read.** 311 distinct capitalised names: areas, skills, items, monsters, runes (`Lum Eth`, `Ko Ko Mal`) and
+    hireling classes; no string-table text. The 19 quoted runs: 12 page titles (the front matter's quoted `title:`), the
+    rest spans between two short quotes (cube 18, progression 155, quirks 156, sim 754, pathing and server-frame as at
+    cut 1).
+  - **Specs added (46):** data/README, data/excel, data/calc; drlg/README, drlg/lifecycle, drlg/preset, drlg/maze,
+    drlg/outdoor, drlg/warps; monsters/README, monsters/pool, monsters/special, monsters/stats; monsters/ai/machinery;
+    items/tc, items/quality, items/affixes, items/uniques-sets, items/properties, items/sockets-runewords,
+    items/quest-drops, items/cube, items/economy, items/trade; player/README, player/creation, player/party;
+    hirelings/README; combat/to-hit, combat/damage, combat/reductions, combat/delivery; skills/README, skills/dispatch,
+    skills/missiles; anim/README, anim/timing, anim/movement; path/README, path/search; sim/frame; quests/README,
+    quests/progression, quests/travel; chain/README; quirks/README. The highest kept share is combat/to-hit 24.3 %.
+    Groups `spec-<subsystem>` labelled "Spec: Items" etc., orders 11 to 28; a spec `README.md` takes the route stem
+    `overview`, so `monsters` and `monsters/ai` do not collide (`spec-monsters/overview`, `spec-monster-ai/…`).
+  - **Left out (19 of 65), by words dropped:** rng/seeds 59.7 %, drlg/room-tiles 44.1, stats/aggregate 38.9, rng/README
+    35.9, stats/states 34.9, combat/README 33.7, items/inventory 32.8, monsters/ai/README 31.4, items/use 30.4, save/d2s
+    29.7, stats/README 28.4, objects/README 27.7, items/vendors 27.1, drlg/collision 25.9, monsters/spawn 25.6,
+    data/strings 25.05 (16). **Not whole:** skills/catalogue (20.1 % words, but 3 of its 21 pseudocode blocks kept: code
+    addresses as call targets); conformance/README (a guide to running our trace set and checker, which the export does
+    not ship; its command row dropped). **Provenance:** monsters/ai/catalogue (21.4 %, but about 90 rows say "The block
+    was checked against its anchored instructions (the finding's prose agrees)"). The loss is mostly `broken` units
+    (a run id, plan or ADR reference or address as a subject) and tool words mid-claim, plus the Evidence and Open
+    questions sections. What readers lose: the RNG and seed-tree specs (the wiki's randomness page stays), the stats
+    specs, the save format, the room spawn pass; wiki links to them keep their text and lose their target (checked on
+    randomness: "two specs: the RNG core and the seed tree."). The 1741 relative links of the cut's pages (the front page's included) all resolve to a page.
+  - **X6 rulings** (the 24 of the trial; ruling (d)): *named* with a reason (16 lines): drlg/maze 709 (worked-example
+    steps), drlg/outdoor 124 (our index of the constant tables: names and shapes, no values), items/cube 1017 (worked
+    example 1), items/properties 410 (handlers per func), monsters/pool 53 and monsters/special 58 (column indexes, a
+    schema), path/README 62 (the path record's fields, offsets by the owner's decision), quirks 77, 108, 149, 233, 382,
+    522, 555, 585 (our quirk entries), skills/dispatch 1014 (stat-event handlers). *Left out*: monsters/special 381 (its
+    `Weights` and `xfer` columns copy MonUMod's `upick`/`cpick`/`fPick`/`exclude`/`xfer`/`enabled` for every mod: table
+    content, ADR-0009 risk 3), quirks 673 (community-claim verdicts: third-party claims and our cross-check) and 730
+    (coverage of the specs: repository bookkeeping). Ruled on pages left out: items/vendors 658 out (the gambling list by
+    level: item-table content), monsters/ai/README 536 out (a per-think evidence record); objects/README 51, save/d2s 315
+    and 1252, skills/catalogue 151 would be named. *Treatment of an unnamed table:* the builder ignored `table` lines and
+    the check counted allowed tables per route, so a left-out table failed the cut. Now the builder reads each `table`
+    line's source header line and drops, whole and with a report line (`X6`, the row count, the source line), a table
+    still over 20 rows after redaction that no line names; a line that names no table is a report line (`unmatched`).
+    Readers lose special § D's per-mod draws (its handlers and draws per mod; the prose bullets around it stay), the
+    quirks' community verdict list and coverage table.
+  - **Allow-hex lines added (32 values):** limits and masks `7FFFFFFF`, `FFFFFFFF`, `0FFFFFFF`, `F0000000`,
+    `FFFF0000`, `FFFFFF00`, `FFFFF000`, `1FFFFF`, `3FFFFFF`; powers of two `100000`, `200000`, `1000000`, `2000000`,
+    `4000000`, `8000000`, `10000000`, `20000000`, `40000000`, `80000000` (`0x400000` and `0x800000` are in the image's
+    range and the loader refuses them); reciprocals `AAAAAAAB`, `55555555`, `55555556`, `CCCCCCCD`, `66666667`,
+    `24924925`, `38E38E39`, `88888889`, `68DB8BAD`; LCG `19660D`, `3C6EF35F`. Left out as domain values: `0xD17D0000`
+    (a logged seed word), `0x01020304`, `0x80001FFF`, the flag masks `0x3F0FF80`, `0x1E0FF00`, `0x3F0FF00`, `0xFFF800FF`,
+    `0x3000000`, `0x4020000`, `0x402000E`, `0x4020200`, `0x2001002`, `0xC00010`, the theme values `0x120000`,
+    `0xA00000`, `0x1600000`, the four-character codes (`0x20786168`, `0x53454953` …), `0x0213AE09`, `0x0BADF00D`,
+    `91fdb5f0`.
+  - **X9 change:** `objdump`, `debugger` and the plurals `loggers`, `harnesses` fail; `r2` fails in a tool's shape
+    only (beside objdump, Python, Ghidra or "bytes"; after "by"/"with" unless an assignment follows; as the subject of
+    reads, gives, finds, lists, walks, LCG, pushes, sites, beside, alike): 12 tool and 6 variable cases tested
+    (`r2 ← aip(5)`, `r1 and r2`). This drops four units of the served wiki (inventory's tag legend row "Seen in a game"
+    and two forced-case sentences, game-data's start-up sentence, all for "debugger"): reworded in the backlog entry
+    below, before Phase 10.
+  - **Tools, other changes:** (1) a `page` line's optional fifth field names the route stem (builder and check); (2) a
+    parenthetical right after a `[C]`/`[I]` tag that, once rewritten, still fails a text rule (a tool name, an address,
+    a path) goes whole and the statement stays; a table cell that opens with its tag keeps the tag alone in that case;
+    a passing one stays (4 tests). It recovers 38 units the new X9 names would have dropped. (3) A bare identifier
+    mixing letter cases (`deadD2`) is a name, not hex, unless its value is in the image (2 tests). Ledger: tools fixes
+    6, omission 3 (the X9 gap, its plurals, the unnamed-table drop), other 3 (the route stem, the tag evidence rule,
+    the identifier).
+  - **Sample read (six specs).** Every drop line of items/tc (20), items/quality (11), drlg/maze (9), drlg/lifecycle
+    (16), monsters/special (13) and, from the trial with every spec (`workspace/export-x70p9-a`), drlg/collision (37,
+    left out); items/quality read whole; the worked example of drlg/lifecycle read whole; the drops of every spec read
+    as counts. The drops are evidence items, Evidence-section link lists, run-sourced sentences, Open questions, and
+    claims whose subject was a run, plan or tool (items/tc B1's writers, F1/F2's multiplayer facts; lifecycle's 31 pin
+    sites): the spec-writer can reword those. items/quality reads whole: purpose, tables, every step and step note,
+    the test table, draw order and outputs; method words the plan keeps ("logged", "the model", "reproduce") stand, as
+    at cut 1. Lifecycle's `0x05382000` → `0x05282000` is a worked-example value (the room's DRLG flags in our example
+    session, outside the image), inside the owner's section scope: passes. Collision's heap pointers beside "the `CB`
+    line 8034" are log artefacts; moot while it is out, routed for its return. Kept but noted (within the approved
+    design, for the owner's read): small whole tables of game data pass the 20-row rule (items/quality's six ItemRatio
+    records with their values); runtime-state rows naming registers ("EAX at entry"); ~25 sentences on 13 kept pages name
+    our records without a tie ("queued for the archivist in the backlog", "(architect review, 2026-10-19)", "not in a
+    finding", overview READMEs' `reviewed` status columns).
+  - **Hand greps of the cut** (all 71 pages): `sub_`/`DAT_`/`FUN_`/`LAB_`/`PTR_` 0; `0x00[4-9]xxxxx` 0; 8-digit values in
+    the image's range 2, the two wiki pins; `fn:`/`src:`/`run:`/`data:`/`struct:`/`tbl:` ids 0; `findings/`, `ADR-`,
+    plan NNNN, `.py`/`.log`/`.claude`, `/home`, the repository name, `lane/`, Ghidra, harness, objdump, debugger,
+    logger(s): 0; `r2` as a tool 0 (one "by r2:" found and fixed above); "emulator" 31 and "logged" 1007 (method words
+    the plan keeps; not tool names).
+  - **Backlog:** [entry](../backlog/2026-11-17-architect-spec-writer-plan-0070-cut-2-export-readiness.md) to the
+    spec-writer: the 19 left-out specs' export-facing wording, the residue sentences, monsters/special § D's two copied
+    columns, the four wiki units (before Phase 10), collision's example.
+  - **For the owner (Phase 10):** read the cut at `workspace/export/site/src/content/docs/` and `report.txt`; copy
+    `site/src/content/docs/`, `site/public/illustrations/` and `site/src/cut.json` over the export repository's; the
+    sidebar's new groups come from `cut.json` (no change to `astro.config.mjs` expected; the build and link check run
+    in CI). The four wiki units above drop from the served pages until the spec-writer rewords them; publishing before
+    that loses them.
