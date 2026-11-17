@@ -4651,7 +4651,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   Q143, Q359, Q380, Q464, Q497 and Q527 stay `[I]` with their notes or sections. Three open questions narrowed
   (handlers reached, the summon's stats, the finisher entries). Research-map rows of skills/dispatch and quirks
   updated. The wiki refresh is filed for wiki/skills
-  ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-wiki-skills-refresh-after-plan-0066-skills-cluster.md)).
+  ([entry](../../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-skills-refresh-after-plan-0066-skills-cluster.md)).
 - **Judgment calls for the review (part 2):** (1) rows 58 and 82 whole, each with one new `[I]` sentence for a clause
   the raise does not reach (58: the missile after the do with `useAmmo` 0; 82: the state-54 skip and no Misc row
   selecting the item-use entries), as part 1's (3); (2) rows 90 and 191, raised whole by S2a on Bash's logs, counted

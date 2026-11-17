@@ -1,9 +1,9 @@
 ---
 based_on:
-  - docs/specs/skills/README.md 2026-11-04
-  - docs/specs/skills/dispatch.md 2026-11-10
-  - docs/specs/skills/missiles.md 2026-11-04
-  - docs/specs/skills/catalogue.md 2026-11-04
+  - docs/specs/skills/README.md 2026-11-16
+  - docs/specs/skills/dispatch.md 2026-11-16
+  - docs/specs/skills/missiles.md 2026-11-16
+  - docs/specs/skills/catalogue.md 2026-11-16
 ---
 
 # Skills and missiles
@@ -81,14 +81,19 @@ Some inputs belong to other subjects and are taken as given, logged in the runs
 ## Asking for a skill: the request and its checks
 
 A player's request arrives as one of the skill packets: left or right skill, at a point or at a unit, with or
-without walking to the target first ([dispatch § B](../specs/skills/dispatch.md#b-the-request)). Read from the code:
+without walking to the target first ([dispatch § B](../specs/skills/dispatch.md#b-the-request)). The packet table's
+skill rows, their lengths and fields, and the handlers' calls are confirmed by a second tool.
 
-- **Every request moves a counter.** Before any check the player's stat 328 rises by one. That counter later seeds
-  every [pierce](#missiles-creation-speed-range-seed-and-damage) count of the player's missiles, so a request that is then
-  refused still changes the player's later missiles.
+- **Every request moves a counter.** Before any check the player's stat 328 rises by one: confirmed, the stat rose by
+  the number of requests between two observations in 1 660 pairs. That counter later seeds
+  every [pierce](#missiles-creation-speed-range-seed-and-damage) count of the player's missiles. Every logged request
+  passed, so that a refused request still moves it, and so changes the player's later missiles, is read from the code.
 - **Dual wielding alternates.** With a weapon in each hand, the Attack skill alternates request by request between
-  Attack and Left Hand Swing. Left Hand Swing reached the run only this way (confirmed for its 30 uses).
-- A request that asks to walk, at a unit too far away for a melee skill, first makes the player run to it.
+  Attack and Left Hand Swing: confirmed in 56 of 56 consecutive pairs of a dual-wielding Barbarian's requests. Left
+  Hand Swing reached the run only this way (30 uses).
+- A request that passes reaches the mode start in its frame (confirmed for 2 823 point requests and 1 521 unit
+  requests). A request that asks to walk, at a unit too far away for a melee skill, first makes the player run to it:
+  seen for 12 Kick requests, whose mode started in a later frame with the skill kept.
 
 The checks ([dispatch § C](../specs/skills/dispatch.md#c-the-request-checks-skills_canuse)) run in a fixed order and
 return a code. 0 means usable: the server then starts the skill's mode; 1 makes it send the "not enough mana" message;
@@ -110,8 +115,10 @@ any other code does nothing.
 
 **What the run confirmed.** Codes 0, 1, 6 and 8 and their order are confirmed over 1 340 checks: an aura refused with
 6, the mana test with 1, the delay with 8, everything else usable. **A cost equal to the mana passes**: five checks with
-exactly as much mana as the cost returned 0. The other codes, the starting-mana test and the item charges are read
-from the code only; no check of the run reached them.
+exactly as much mana as the cost returned 0. No check of the run reached the other codes, but tests 7 to 10 (mana,
+life under Blood Mana and charges; the state restriction; the starting mana; the item charges) ran under emulation and
+are confirmed that way. Tests 5 and 6 (ammunition and weapon types) and the return of codes 2 to 5 and 7 from the
+check as a whole are read from the code.
 
 **No refused request reached the server.** All 1 126 requests of the run passed, while the client's own check of the
 same skills switched to a refusal 85 times. Read from the code, the client runs the same checks on its own copy of the player
@@ -141,18 +148,27 @@ reading.
 
 ## The mode start and the action frame
 
-When the request passes, the skill's mode starts ([dispatch § D](../specs/skills/dispatch.md#d-the-mode-start)). Read
-from the code: the server checks the target (a corpse only for a skill that takes corpses), refuses a skill not
-allowed in town while the caster stands in a town, tests line of sight for the skills that need it, and runs the
-start function. The cost is paid here, unless the skill pays on the action frame (two rows, Plague Javelin and Blade
-Fury) or has no start function. A refusal at this point puts a player into mode 5.
+When the request passes, the skill's mode starts ([dispatch § D](../specs/skills/dispatch.md#d-the-mode-start)). The
+server checks the target, refuses a skill not allowed in town while the caster stands in a town, tests line of sight
+for the skills that need it, and runs the start function. The cost is paid here, unless the skill pays on the action
+frame (two rows, Plague Javelin and Blade Fury) or has no start function. Seen in the logs: the start routine's
+calls, a row with no start function passing (6 216 times), and exactly one payment whenever a start function passed on
+a row that pays at the start (1 602). The refusals at this point are read from the code; a refusal puts a player into
+mode 5 and a monster just returns, confirmed by a second reading.
 
-On the action frame ([dispatch § E](../specs/skills/dispatch.md#e-the-do-frame-and-skills_srvdo)), also read from the
-code, the do function runs, and **then** the skill's missile is created, if the row names one: 48 stock rows, Fire
-Bolt among them, have a missile and no do function, and get only the missile. Then come the cost (if not paid at the
-start), the ammunition for the rows that use some, and the delay. A flag on the unit, set by the do function or by
-the missile creation and cleared at a player's mode start, makes the do function run **once per mode**, even if the
-animation carries the action on more than one frame.
+**The target test** ran under emulation. A skill with no target passes. A skill that needs a targetable unit passes
+only for a hostile, for its own pet when its row allows that, or for an ally in the same party when its row allows
+that. Past those tests the target is kept or dropped by one bit of the target unit and the skill's corpse column:
+with the bit clear the target is always dropped; with it set, a corpse skill keeps only a monster in its death mode,
+and any other skill keeps anything but that.
+
+On the action frame ([dispatch § E](../specs/skills/dispatch.md#e-the-do-frame-and-skills_srvdo)) the do function
+runs, and **then** the skill's missile is created, if the row names one: 48 stock rows, Fire Bolt among them, have a
+missile and no do function, and get only the missile (confirmed against the table). Then come the cost (if not paid
+at the start), the ammunition for the rows that use some, and the delay; that order is read from the code. A flag on
+the unit, set by the do function or by the missile creation and cleared at a player's mode start, makes the do
+function run **once per mode**, even if the animation carries the action on more than one frame. That flag, its 124
+setters, 17 clearers and two readers, is confirmed by a second reading.
 
 **The machinery draws nothing.** Over 1 142 mode starts and 1 269 action frames, the caster's seed after the start or
 do function was its seed before it, stepped only by the draws of the events nested inside (a hit's to-hit and damage
@@ -173,10 +189,13 @@ rather than nothing at all is read from the code, and why the other 7 uses reach
 action frame added no draw of its own (confirmed). The
 delivering do function was run on its own under emulation up to its calls.
 
-**A monster** reaches the same start and do functions through [its AI](monster-ai.md#the-command), which picks the skill, sets the
-once-per-mode flag itself and sets the mode, so its do function runs through the paths that do not test the flag. A
-monster passes none of the request checks, pays no cost, uses no ammunition and gets no delay. Read from the code
-([dispatch § M](../specs/skills/dispatch.md#m-monster-skill-use)).
+**A monster** reaches the same start and do functions through [its AI](monster-ai.md#the-command), which picks the
+skill, sets the once-per-mode flag itself and sets the mode. In its attack and skill modes the do function runs on a
+path that does not test the flag. **The sequence mode (14) is the exception:** its start clears the flag, and its
+frame runs the do the way a player's does, once per mode. Confirmed: the flag was set at all 1 460 logged monster
+starts in the attack and skill modes and clear at all 566 in mode 14. A monster passes none of the request checks
+(confirmed by three tools: the check has no caller on a monster's path), pays no cost, uses no ammunition and gets
+no delay; those last three are read from the code ([dispatch § M](../specs/skills/dispatch.md#m-monster-skill-use)).
 
 ## Mana cost and delay
 
@@ -312,11 +331,17 @@ count below; the 3 461 handler fires of the earlier combat and stats runs and of
 
 Also confirmed: **life and mana after a kill** add the stat in whole points and are capped at the maximum (the cap
 bound in 154 of 156 gains; mana's addition below the cap is read from the code), and **open wounds** rolls `low mod 100` of
-the attacker's next draw against its chance (82 of 120 fires applied it, for 200 frames). The handlers no session
-fired, among them Chilling Armor, Frozen Armor, Shiver Armor, Iron Maiden, lightning thorns, freeze, life after a
-demon kill, the golems, Energy Shield, Cyclone Armor, chance to cast on death or level-up and reanimate, and the effects
-of the measured handlers beyond their draws, are read from the code (the three chance-to-cast handlers were run under
-emulation up to their cast).
+the attacker's next draw against its chance (82 of 120 fires applied it, for 200 frames). **Slow target** puts the
+slow state on the other unit for 750 frames, its stats lowering the speeds by the item's value: confirmed, with the
+state, its length and the first speed stat in the logged fires.
+
+**Run under emulation past the logs**, each to its first call into another function: knockback whole (a chance of
+32, 64 or 128 in 128 by the target's size), howl's test of the other unit, stupidity's chance and length, lightning
+thorns, freeze's one draw, life after a demon kill, Cyclone Armor's absorb up to its calls, the two golem handlers
+(Blood Golem's owner losing life with it, Clay Golem's slow) and reanimate. The three chance-to-cast handlers ran up
+to their cast. The rest is read from the code: Chilling Armor, Frozen Armor, Shiver Armor, Iron Maiden, fire and cold
+thorns, Blood Golem's heal, Energy Shield, chance to cast on death or level-up past its draw, and the effects of the
+measured handlers the logs do not show.
 
 **Prevent heal is not a handler.** The item property that stops a monster from healing (*Fleshripper*, *Nature's
 Peace*) is applied, read from the code, right after a successful to-hit roll and before the defence rolls. Confirmed:
@@ -334,19 +359,19 @@ Raven, at the target point, read from the code).
   ([monsters](monsters.md)). Confirmed over 219 summons, 207 Ravens and 12 skeletons of Raise Skeleton.
 - **The summon's level.** A skill that passes no level (Raise Skeleton) takes `min(max(L × 3 ÷ 4 + skill level, 1), L)`,
   L the owner's level. Confirmed in 12 of 12 summons, all with the same input (see the worked example); the clamps,
-  which did not bind there, are read from the code. A skill that passes a level, such as Raven, uses it as given
+  which did not bind there, bind under emulation (6 000 cases), with the three-quarters rounding toward 0 in 32 bits. A skill that passes a level, such as Raven, uses it as given
   (confirmed for 207 Ravens).
 - **Raise Skeleton draws on the caster.** After the spawn, the caster's seed steps once for a skeleton warrior above
   skill level 2 (a roll against the skill's `Param1`) and once for a skeleton mage. Confirmed: one step,
   and only there in the action frame, in 12 of 12 casts of a skeleton warrior at skill level 20. The level gate and
-  the mage's draw are read from the code.
+  the mage's draw ran under emulation (no step at skill level 2 or below, one above it).
 - **The summon's other stats** (the skill's passive and aura stats, life bonus, its own skills) are read from the
   code, as are summon classes scaled by level and the golems.
 - **The pet limit**, players only, read from the code: a new summon removes the owner's pets of the other types of
   its group, and while the owner has more pets of its type than the skill allows, removes the first pet of the list
   (not necessarily the oldest) ([glossary](../glossary.md)).
-- **No `noRatio` test**, read from the code: a summon gets its level-table defence and to-hit added whole, whatever its class's
-  `noRatio` bit ([dispatch § L](../specs/skills/dispatch.md#l-summons)).
+- **No `noRatio` test**, confirmed under emulation (4 011 cases): a summon gets its level-table defence and to-hit added
+  whole, whatever its class's `noRatio` bit ([dispatch § L](../specs/skills/dispatch.md#l-summons)).
 
 ## A monster's attack stats
 
@@ -366,9 +391,13 @@ the second and third elemental attacks.
 Read from the code ([dispatch § N](../specs/skills/dispatch.md#n-ammunition-and-weapon-wear),
 [economy](economy.md)): a skill that uses ammunition takes one arrow or bolt from the quiver with a bow or crossbow,
 or one from the thrown weapon itself, and a throw or a normal ranged attack takes one at the missile's creation
-(Magic Arrow excepted). Impale is the one skill that wears its weapon: one draw on the user's seed, and when it falls
-below the skill's chance the weapon loses durability or breaks (a stacked throwing weapon loses one of its quantity
-instead).
+(Magic Arrow excepted).
+
+**Impale is the one skill that wears its weapon** (its one caller, confirmed by three tools): one draw on the user's
+seed, and when it falls below the skill's chance the weapon loses durability or breaks (a stacked throwing weapon loses
+one of its quantity instead). The wear ran under emulation: one step once its gates pass, none before them. The break
+test is the sign bit or zero of the 32-bit durability left, not a true "zero or less", so the two differ when the
+subtraction wraps.
 
 ## Tier A: the skills specified
 
@@ -489,7 +518,9 @@ emulation did not follow, the spec stops its description there and marks the res
 ## Missiles: creation, speed, range, seed and damage
 
 A missile is a unit of its own, created by a skill, an item cast, a monster, a shrine, a quest or another missile
-([missiles § B](../specs/skills/missiles.md#b-creation), [glossary](../glossary.md)). Its life:
+([missiles § B](../specs/skills/missiles.md#b-creation), [glossary](../glossary.md)). The routine that creates one at a
+point has 17 callers, counted by three tools: quest, missile and skill functions and two monster AIs, and no shrine.
+Its life:
 
 ```mermaid
 stateDiagram-v2
@@ -516,9 +547,11 @@ stateDiagram-v2
   where a per-level term from level 2 would give 115. The missile runs at most that many frames, and starts hitting
   units once its `Activate` frames have passed (read from the code).
 
-Read from the code: the speed's per-level term is `VelLev × level ÷ 8` (a community source counts it per level beyond
-the first; no run has separated the two), the Slow Missiles state scales the speed, and a target 100 or more
-sub-tiles away refuses the missile.
+**Emulated, up to the new unit's allocation** (1 577 calls): the owner and class guards, the start point and its room,
+the target point, the speed with its per-level term `VelLev × level ÷ 8` (with no "− 1", against a community source
+that counts it per level beyond the first; that reading fails 853 cases above level 1), the Slow Missiles scaling and
+the 75 % scaling, and the refusal of a target 100 or more sub-tiles away. What the creation does after the allocation,
+the sub-loops of the range among it, is read from the code.
 
 **The damage is taken at creation** ([missiles § C](../specs/skills/missiles.md#c-the-damage-the-missile-carries)).
 The weapon share, the owner's enhanced damage and the elemental damage are stored as the missile's own stats when it
