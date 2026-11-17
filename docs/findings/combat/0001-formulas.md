@@ -1490,6 +1490,51 @@ the `ROWS` tallies. The static claims rest on two tools reading the same bytes (
   one case. (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D5244, fn:sub_0064B860_MissileDamageBlock@0x0064B860,
   fn:ITEMSKILL_Cast@0x005FDA80)
 
+### 23. Result bit `0x4000`: its three writers on the missile path, and the 537 logged ones (2026-11-17, `lane/fur`)
+
+Static reads (objdump over the whole image, r2 `pD`), plus one re-check of the kept logs: [run:2026-11-17-fur-bit4000](experiments.md#run2026-11-17-fur-bit4000).
+It answers the reverser half of backlog
+[`2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000`](../../backlog/archive/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md).
+
+- [I] **The writers.** A scan of the objdump listing covers 0x0052A000–0x00660000. It finds every `or`/`mov` of the
+  immediate `0x4000` to a word or dword in memory, every register `or`/`mov`/`add` of `0x4000`, and every
+  `or`/`mov` of `0x40` to a byte at `+0x05` or to a high-byte register (none). Seven sites match.
+  Three set the packet's result word `+0x04`:
+  1. **Damage function 3** at 0x005AD277 (`or word [eax+4], 0x4000`), as skills/0005 § 14 reads it: one inline step
+     of the missile seed, set when `(low & 0x7F) < dParam1` (Missiles `+0x78`). (fn:sub_005AD220_MissDmg03Flag4000@0x005AD220)
+  2. **`MISSILE_ApplyDamage`, the soft hit**, at 0x005AD7C5. Right after `result |= 1` (0x005AD795), unless the
+     defender is in state 54 (`UNIT_HasState(defender, 54)`, 0x005AD7A1; the same `jne` skips the knockback roll).
+     The Missiles record's byte `+0x04` is tested against the bit table at 0x006CE268. With bit 6 (`GetHit`, mask at
+     0x006CE280) set it ORs `0x4`; else with bit 7 (`SoftHit`, mask at 0x006CE284) set it ORs `0x4000`. These are the
+     columns of [tables/Missiles](../../tables/Missiles.md). So `GetHit` wins over `SoftHit`. (0x005AD7A1–0x005AD7C5,
+     tbl:Missiles.txt:GetHit, tbl:Missiles.txt:SoftHit)
+  3. **`MISSILE_ApplyDamage`, a defended missile turned into a soft one**, at 0x005AD82C. After
+     `COMBAT_DefenceRoll(defender, missile = 1, physical ≠ 0)` (0x005AD806), the branch runs when the roll's result
+     has any of bits `0x1F`, the row's `GetHit` bit is clear (0x005AD80F–0x005AD818), and its `KnockBack` byte
+     (`+0xAE`) is 0 (0x005AD81A). It then does `result = (result & ~1) | 0x4000` and clears the roll's bits `0x1F`
+     (`and eax, 0xFFFFFFE0`, 0x005AD835). So none of `0x200` (roll bit `0x08`), `0x100` (`0x02`) or `0x10` (`0x11`)
+     is set (0x005AD838–0x005AD852). With bit 0 now clear, `COMBAT_ApplyDamage` is skipped (`test byte [esi+4], 1`,
+     0x005AD8B3). `COMBAT_GetHit` (0x005AD8D3) is still called.
+  The other four sites are not this word. 0x005D395C and 0x005D3A60 are `or word [ebx+4], 0x4000` in
+  `sub_005D3880_PrgDamFreeze` and `sub_005D3970_PrgDamRelease`, the progressive-damage hooks on the melee builder,
+  not the missile path. 0x006212A2 and 0x00623E45 set unit `+0xC4` (`UNIT_SeqInit`, `UNIT_AnimAdvance`). The scan
+  does not cover a register built from a table or another constant. (fn:MISSILE_ApplyDamage@0x005AD730,
+  fn:COMBAT_DefenceRoll@0x0057DFB0, fn:COMBAT_ApplyDamage@0x0057C6C0, fn:COMBAT_GetHit@0x0057CEE0)
+- [C] **The 537 logged `0x4001` deliveries are writers 2 and 1.** The re-check counts each md event's `AD0` result
+  word by missile row, over the 74 logs of S5a with the Checker unchanged (0 mismatches, 11 128 md events with an
+  `AD0`). There are 491 deliveries of row 457 (`firestorm`: `SoftHit` set, `GetHit` clear, `KnockBack` 0), and all
+  491 carry `0x4001`. There are 46 of row 240 (`meteorfire`: damage function 3; `GetHit`, `SoftHit` 0) among that
+  row's 257 deliveries, whose other 211 carry `0x0001`. No other row's delivery carries `0x4000`. Row 389, the only
+  other `SoftHit` row, was not met. Writer 3 cannot give `0x4001`, because it clears bit 0. The rows' bits come from
+  the Missiles records that `tools/combat.py`'s `Tables` loads (`mi`); tables/Missiles gives `SoftHit` two non-blank rows. [C] for the counts and for the row split. [I] that the 46 come from writer
+  1's damage-3 roll: no other writer fits that row, but the roll is not reproduced per event.
+  (run:2026-11-17-fur-bit4000, fn:MISSILE_ApplyDamage@0x005AD730, fn:sub_005AD220_MissDmg03Flag4000@0x005AD220)
+- [I] **Correction to § 2's result-word list** (the `+0x04` bullet): `0x4000` is a missile's soft hit. Writers 1 and
+  2 set it on a delivered hit; writer 3 sets it in place of the hit on a defended missile whose row has neither
+  `GetHit` nor `KnockBack`. For such a row, an evade, avoid or block yields `0x4000`, not `0x200`, `0x100` or `0x10`,
+  and delivers nothing. The `0x200` of "evaded (missiles)" needs a row with `GetHit` or `KnockBack`.
+  (0x005AD80F–0x005AD852)
+
 ## Boundary recommendation for Phase 2
 
 - **Event entry points** (breakpoints): `SKILL_AttackDo` entry and return (player attack event), `MON_MeleeHit` entry

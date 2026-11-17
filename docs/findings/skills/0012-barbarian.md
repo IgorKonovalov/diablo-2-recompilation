@@ -138,7 +138,7 @@ None. No community document was opened for this batch.
 | `0x005D8100` | `sub_005D8100_FindPotionPick` | `(EAX unit; game, id)`, `ret 8`: an inline LCG step on the unit's seed (§ 4, after do 69's boundary) | I |
 | `0x005D9460` | `sub_005D9460_WhirlwindEnd` | do 76's boundary (not read beyond its first calls) | I |
 | `0x005DA120` | `sub_005DA120_LeapAttackLand` | do 78's boundary for `+0x0C` bit 8 (not read beyond its calls) | I |
-| `0x005D9F70` | `sub_005D9F70_LeapAttackPath` | `(EDI unit; node)`: do 78's boundary for bit 7 (not read beyond its calls) | I |
+| `0x005D9F70` | `sub_005D9F70_LeapAttackPath` | `(EDI unit; node)`: the bit-7 helper of do 77 (Leap) **and** do 78 (Leap Attack), § 7 | I |
 | `0x005DA660` | `sub_005DA660_LeapAttackHit` | `(EAX unit; game, id, lvl)`: do 78's boundary for bit 9 (not read beyond its calls) | I |
 
 ## Walkthrough
@@ -476,6 +476,29 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
   returns 1 when `0x005DA120` gives 0 (`je 0x005DA8A2`), and returns `0x005D9F70`'s or `0x005DA660`'s value on the
   bit-7 and bit-9 paths. (0x005DA810–0x005DA8AB, 0x005DA120–0x005DA35F, 0x005D9F70–0x005DA01F, 0x005DA660–0x005DA7D5)
 
+### 7. `sub_005D9F70_LeapAttackPath` is shared by Leap and Leap Attack (2026-11-17, `lane/fur`)
+
+Static only (a raw-byte rel32/abs32 scan of the pinned image, and r2 `pD`). It answers item 1 of backlog
+[`2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count`](../../backlog/archive/2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count.md).
+
+- [I] **Two callers, one per skill.** The image has two `call` instructions to 0x005D9F70 and no `jmp` or 32-bit
+  pointer to it. They are do 77 at 0x005DA45B (`push ebx; call`, inside `sub_005DA370_SkillDo77Leap`) and do 78 at
+  0x005DA868 (inside `sub_005DA7E0_SkillDo78LeapAttack`, the node pushed at 0x005DA805). Each is on its function's
+  node `+0x0C` bit-7 branch (`test al, al; jns`: 0x005DA456, 0x005DA864). Per § 1's stock rows, do 77 is skill 132
+  Leap's server do function and do 78 is skill 143 Leap Attack's. So the helper serves both skills, and every
+  address inside it (0x005D9F9C, 0x005DA00C among them) belongs to "Leap or Leap Attack". Neither skill alone fits.
+  The reviewed name `LeapAttackPath` is kept in `re/symbols.csv`. The Functions row now says the helper is
+  shared. (fn:sub_005D9F70_LeapAttackPath@0x005D9F70, fn:sub_005DA370_SkillDo77Leap@0x005DA370,
+  fn:sub_005DA7E0_SkillDo78LeapAttack@0x005DA7E0, 0x005DA45B, 0x005DA868)
+- [I] **What it does** (raises § 6's `[L]` on `0x005D9F70`). `(EDI unit; node)`, `ret 4`. A unit with no path
+  (`+0x2C` = 0) returns 0. Otherwise it calls `UnitSkillSet0C(node, 0x1101)`, then `PathSetCollMask(path, 0)`
+  (0x005D9F94) and `PATH_SetMarkMask(path, 0)` (0x005D9F9C). It reads the node's target `x = UnitSkillGet18(node)`
+  and `y = UnitSkillGet1C(node)`. If either is 0 it returns 0. Otherwise it continues:
+  `PathSetTargetPoint(path, x, y)` and `PathSetType(path, 9)`, then the speed `v << 8`. `v` is the MonStats
+  record's word `+0x34` for a type-1 unit (a monster) and the CharStats record's byte `+0x41` for any other.
+  `PathSetSpeed(path, v << 8)` (0x005D9FFE) follows, then `PathPlan(path, unit, 0)` (0x005DA007), and it returns 1.
+  The plan's return address is 0x005DA00C. (0x005D9F70–0x005DA01C)
+
 ## Corrections to earlier findings
 
 - skills/0001 § 11 and skills/0003 § 5 (tier A), carried there as dated notes: start 32 and do 2 are now `[C]` up to
@@ -510,5 +533,5 @@ u->c4 |= 0x40;  if ((t = UNIT_GetTargetUnit(game, u))) { COMBAT_DeliverQueued(ga
   (§§ 3, 5).
 - [L] Whether bit 8 of the caster's `+0x38` is the animation's alternating hand, as do 9's and do 70's two branches
   suggest (§ 3), a harness check.
-- [L] What `0x005D9460`, `0x00553DC0`, `0x006212C0`, `0x005DA120`, `0x005D9F70` and `0x005DA660` do in full (§ 6).
+- [L] What `0x005D9460`, `0x00553DC0`, `0x006212C0`, `0x005DA120` and `0x005DA660` do in full (§ 6; `0x005D9F70` is read in § 7).
 - [L] Everything after each boundary (§§ 3–6), for a later batch or the harness.
