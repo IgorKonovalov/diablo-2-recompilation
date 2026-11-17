@@ -72,7 +72,7 @@ RE_URL_ALLOW = re.compile(
 URL_ALLOW = ("https://github.com/${", "https://creativecommons.org/", "https://wiki.creativecommons.org/")
 URL_ALLOW_LOCKFILE = ("https://registry.npmjs.org/",)
 REPO_PATHS = {"site/package.json", "site/package-lock.json", "site/astro.config.mjs", "site/src/content.config.ts",
-              "site/src/components/Footer.astro", "site/scripts/check-site-links.mjs",
+              "site/src/components/Footer.astro", "site/scripts/check-site-links.mjs", "site/public/favicon.svg",
               ".github/workflows/pages.yml", "README.md", "LICENSE", ".gitignore"}
 TABLE_LIMIT = 20
 
@@ -661,6 +661,32 @@ def norm_ws(s):
     return re.sub(r"\s+", " ", s).strip()
 
 
+FAVICON = "site/public/favicon.svg"
+FAVICON_MAX = 2048
+SVG_NS = 'xmlns="http://www.w3.org/2000/svg"'
+
+
+def favicon_problems(raw):
+    """The favicon passes only as a small plain SVG of our own: ASCII, one root <svg> with the SVG namespace and
+    nothing but svg/rect/path/circle/g elements; no link, script, style, embedded image, URL or event handler."""
+    out = []
+    if len(raw) > FAVICON_MAX:
+        out.append("favicon over %d bytes" % FAVICON_MAX)
+    try:
+        t = raw.decode("ascii")
+    except UnicodeDecodeError:
+        return out + ["favicon is not ASCII"]
+    if not t.lstrip().startswith("<svg") or t.count(SVG_NS) != 1:
+        out.append("favicon is not one <svg> root with the SVG namespace")
+    rest = t.replace(SVG_NS, "")
+    if re.search(r"href|url\(|<script|<style|<image|<foreignObject|\bon\w+\s*=|://|data:|<!|<\?", rest, re.I):
+        out.append("favicon holds a link, URL, script, style, embedded image or declaration")
+    bad = sorted(set(re.findall(r"</?\s*([A-Za-z][\w:-]*)", rest)) - {"svg", "rect", "path", "circle", "g"})
+    if bad:
+        out.append("favicon element(s) outside svg/rect/path/circle/g: " + ", ".join(bad))
+    return out
+
+
 def check_repo(repo, identity=None):
     fails = []
     if identity is None:
@@ -681,6 +707,11 @@ def check_repo(repo, identity=None):
         full = os.path.join(repo, rel)
         if os.path.islink(full):
             fails.append(("X11", rel, 0, "symlink"))
+            continue
+        if rel == FAVICON:
+            # the site's own icon (Starlight links /favicon.svg from every page): our own drawing, checked by shape
+            # instead of by the text rules (its namespace URL and colours would trip X1, X3, X7)
+            fails.extend(("X8", rel, 0, d) for d in favicon_problems(open(full, "rb").read()))
             continue
         if os.path.splitext(rel)[1].lower() in IMAGE_EXT:
             fails.append(("X8", rel, 0, "image file"))

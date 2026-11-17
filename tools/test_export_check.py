@@ -180,6 +180,24 @@ def main():
         shutil.copytree(os.path.join(FIX, "repo", "clean"), r)
         os.makedirs(os.path.join(r, ".git"))
         ok("X11" in rules_of(ec.check_repo(r, IDENT)), ".git directory fails X11 (repo)")
+        shutil.rmtree(os.path.join(r, ".git"))
+        os.makedirs(os.path.join(r, "site", "public"))
+        fav = os.path.join(r, "site", "public", "favicon.svg")
+        good = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" '
+                'fill="#3a3f58"/><path d="M8 8h16v16H8z" stroke="#e8e4d8"/></svg>\n')
+        for body, want, what in (
+                (good, False, "our own plain favicon passes (repo)"),
+                (good.replace("<path", '<image href="x.png"/><path'), True, "a favicon embedding an image fails X8"),
+                (good.replace("</svg>", "<script>1</script></svg>"), True, "a favicon with a script fails X8"),
+                (good.replace('viewBox', 'onload="x()" viewBox'), True, "a favicon with an event handler fails X8"),
+                (good.replace("<path", '<text>0x00556F60</text><path'), True, "a favicon with text elements fails X8")):
+            with open(fav, "w", encoding="ascii") as f:
+                f.write(body)
+            ok(("X8" in rules_of(ec.check_repo(r, IDENT))) == want, what)
+        os.remove(fav)
+        with open(os.path.join(r, "site", "public", "logo.svg"), "w", encoding="ascii") as f:
+            f.write(good)
+        ok({"X8", "X11"} <= rules_of(ec.check_repo(r, IDENT)), "any other image file in the repo still fails X8 and X11")
         # architect review 2026-11-17: text inside a schematic folder passes the text rules too
         shutil.rmtree(os.path.join(c, "site", ".git"))
         for fname, body in (("steps.json", '{"marker": "%s", "steps": [{"caption": "at 0x00556F60"}]}' % ec.MARKER),

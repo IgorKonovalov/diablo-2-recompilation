@@ -974,3 +974,19 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `README.md` and `pages.yml` need no name: `SITE_BASE` comes from `github.event.repository.name`, and the base and the
   repo URL follow from it. Rebuilt the cut; `export_check.py workspace/export --repo workspace/export-repo/`: 0 failures;
   `test_export_check` 119, `test_export_build` 41, 0 failed. Phase 7 checklist filled with the name; step 2 done.
+- 2026-11-17 — **Phase 7 steps 3 and 4 run** (orchestrator, at the owner's request; the machine has npm through
+  mise after all). The fresh folder `~/Work/arpg-1-14d-notes` (git init, no commit) holds `workspace/export-repo/` and
+  the cut's `site/`. The first real build found three faults in the export repository's files, fixed in
+  `workspace/export-repo/` and the folder: (1) `site/package.json` lacked `@astrojs/markdown-remark` 7.3.0, which
+  Astro 7 needs for `markdown.rehypePlugins` (the owner's other site pins it); (2) the sidebar used Starlight's old
+  `autogenerate` group with a `label`, removed in Starlight 0.39: each group is now `{label, items: [{autogenerate}]}`;
+  (3) the link check found 27 problems: 26 pages linked `/favicon.svg`, which no file supplied, and the 404 page's
+  canonical `/404/` (the page is `404.html`). A `site/public/favicon.svg` of our own (a plain square glyph) is added,
+  and `tools/export_check.py` admits exactly that path, checked by shape (`favicon_problems`: ASCII, one `<svg>` root
+  with the SVG namespace, only svg/rect/path/circle/g, no link, URL, script, style, image or handler; 6 new tests,
+  125 checks); `check-site-links.mjs` skips own-host links on `404.html` only. Results: `SITE_BASE=/arpg-1-14d-notes/
+  npm run build` 26 pages, 76 diagrams drawn (152 light and dark SVGs), Pagefind index, both GIFs under the base;
+  `check-site-links.mjs dist`: 1490 links in 28 pages, all resolve; `export_check.py --repo`: 0 failures.
+  `npm install` warns of 4 audit findings (3 low, 1 moderate) in the pinned tree and an unapproved esbuild
+  postinstall; the build does not need it. Next: the owner's steps 5 to 7. The maze warp-mark lane (x70w) is still
+  under review; when it merges, re-copy `workspace/export/site/` into the folder and rebuild.
