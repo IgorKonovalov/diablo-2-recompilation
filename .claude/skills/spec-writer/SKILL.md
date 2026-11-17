@@ -49,7 +49,10 @@ agent-readable: an agent can jump straight to `## Algorithm` or `## Inputs` in a
 5. **Worked example.** Where findings provide one (a recorded seed and its output), include it. It
    doubles as a test vector for reimplementers. Mark which `run:` it came from.
 6. **Cross-link.** Link upstream (the `rng` spec for every draw) and downstream (which specs consume
-   this output). Add terms to `docs/glossary.md`.
+   this output). Add terms to `docs/glossary.md`: a line or two each, linking the spec or table doc. The
+   glossary is exported (ADR-0035, `docs/export/manifest.txt`), so an address or offset goes in a trailing
+   parenthetical of its own, like (`game+0x7C`), and the definition reads without it and without its *See* link,
+   which the cut drops too (`python3 -I tools/export_build.py` shows the result).
 
 ## Style
 
