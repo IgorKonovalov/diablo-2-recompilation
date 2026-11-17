@@ -1338,3 +1338,7 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   date, `reviewed` status columns); register names such as "EAX at entry"; the four wiki units the new X9 words drop.
   All four are in the spec-writer's backlog entry for the next cut. Phase 11 (animations and interactive elements) is
   added above, at the owner's request.
+- 2026-11-17, archivist, lane/x70pub (ADR-0038: tools/export_publish.py). The one-command publish is built with
+  `tools/test_export_publish.py` (35 checks, 0 failed; build 149 and check 180 still green). Dry run on a copy of the
+  export checkout (main fast-forwarded, no push): build and check 0 failures, link check 7790 links in 74 pages all
+  resolve, one commit `docs: cut 2026-11-17`, and its tree equals the `cut-2026-11-17b` branch (empty diff).
