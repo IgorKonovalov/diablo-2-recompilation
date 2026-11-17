@@ -190,7 +190,13 @@ def main():
     ok(rt("It calls `fn:Foo@0x0045ABCD` twice.") == "It calls `Foo` twice.", "an anchor already in backticks is not doubled")
     ok(rt("Reads data:g_Table@0x0070A000 and tbl:Skills.txt:minmana, fmt:DT1 and tbl:Levels.") ==
        "Reads `g_Table` and `Skills.txt:minmana`, `DT1` and `Levels`.", "data:, tbl:, fmt: anchors, with a column")
-    ok(rt("It calls fn:sub_00456789_Foo@0x00456789 here.") == "It calls here.", "a sub_ name is removed whole")
+    ok(rt("Run:2026-11-17-x passed here.") == eb.BROKEN, "a sentence-initial Run: id is removed and the unit broken")
+    ok(rt("It calls fn:sub_00456789@0x00456789 here.") == "It calls here.", "a sub_ anchor with no readable name is removed whole")
+    ok(rt("It calls fn:sub_00456789_Foo@0x00456789 here.") == "It calls `Foo` here.", "a named sub_ anchor reads as its name")
+    ok(rt("It calls `fn:sub_00456789_Foo@0x00456789` here.") == "It calls `Foo` here.", "a named sub_ anchor in backticks")
+    ok(rt("It calls fn:sub_00456789_Foo00456789@0x00456789 here.") == "It calls here.", "a sub_ name holding hex is still removed")
+    ok(eb.rewrite_row("| a | fn:sub_0045ABCD_X@0x0045ABCD → fn:sub_0045ABCE_Yy@0x0045ABCE | 2 |") == "| a | `X` → `Yy` | 2 |",
+       "an entry-points cell of named sub_ anchors keeps the names")
     ok(rt("Read data:DAT_00556F60@0x00556F60 here.") == "Read here.", "a DAT_ name is removed whole")
     ok(rt("Call fn:Cafe00Bad@0x0045ABCD again.") == "Call again.", "a name holding a hex run of 6+ digits is removed")
     # an in-memory offset is content (owner decision 2026-11-17): a struct anchor becomes its offset (review of lane/x70b2)
@@ -235,13 +241,13 @@ def main():
     ok(rt("It takes [the finding](../findings/x/0001.md)'s reading.") == eb.BROKEN, "a removed possessive is broken")
     ok(rt("no build of run:2026-10-15-vendors passed 20 failures") == eb.BROKEN,
        "a removed object of a preposition with words after it is broken")
-    ok(rt("It is passed to fn:sub_0045ABCD_X@0x0045ABCD.") == eb.BROKEN, "'to' before a removed token is broken")
+    ok(rt("It is passed to fn:sub_0045ABCD@0x0045ABCD.") == eb.BROKEN, "'to' before a removed token is broken")
     ok(rt("All from kept logs of run:2026-10-20-chain, each reproduced.") == "All from kept logs, each reproduced.",
        "a dangling 'of' before punctuation goes with the token")
-    ok(rt("fn:sub_0045ABCD_X@0x0045ABCD, the 1 330 kept logs") == "the 1 330 kept logs",
+    ok(rt("fn:sub_0045ABCD@0x0045ABCD, the 1 330 kept logs") == "the 1 330 kept logs",
        "a list whose first slot went loses the leading comma")
-    ok(eb.rewrite_row("| a | fn:sub_0045ABCD_X@0x0045ABCD: the call | 2 |") == "| a | — | 2 |", "a broken cell is an em dash")
-    ok(eb.rewrite_row("| a | fn:sub_0045ABCD_X@0x0045ABCD → fn:sub_0045ABCE_Y@0x0045ABCE | 2 |") == "| a | — | 2 |",
+    ok(eb.rewrite_row("| a | fn:sub_0045ABCD@0x0045ABCD: the call | 2 |") == "| a | — | 2 |", "a broken cell is an em dash")
+    ok(eb.rewrite_row("| a | fn:sub_0045ABCD@0x0045ABCD → fn:sub_0045ABCE@0x0045ABCE | 2 |") == "| a | — | 2 |",
        "a cell left with arrows only is an em dash")
     # review of lane/x70b2: a statement cell the rewrite breaks drops its row, it never reads as "none"
     ok(eb.rewrite_row("| Q80 | The collision test `0x0064FF90`'s result per crossed subtile | 2 |") == eb.BROKEN,
@@ -363,6 +369,10 @@ def main():
     ok(len(pg.rewrites) == 5 and pg.rewrites[0][0] == "H" and pg.rewrites[0][1].startswith("It calls fn:Foo"),
        f"every rewrite is recorded with its heading, before and after ({len(pg.rewrites)})")
     ok(any(d[1] == "empty" for d in pg.drops), "a unit left with no words is a drop")
+    pgo = eb.Page({"path": "p.md", "route": "p", "order": 1})
+    bo = eb.parse_blocks("## H\n\n- reads `a + 4*(start\n  + i)` here, fn:Foo@0x0045ABCD\n- plain `b` kept\n".split("\n"))
+    to = "\n".join("\n".join(b["lines"]) for b in eb.redact(pgo, bo))
+    ok("start" not in to and "plain `b` kept" in to, "an item left ending inside a code span is dropped")
     tmpo = tempfile.mkdtemp(prefix="export_rep_")
     try:
         eb.write_report(tmpo, [(pg, red)], "2026-11-17")

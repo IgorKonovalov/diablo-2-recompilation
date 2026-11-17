@@ -18,15 +18,18 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
+import tempfile
 import sys
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DATA = os.path.join(ROOT, "workspace", "merged")
-OUT = os.path.join(ROOT, "workspace", "render", "test-anim")
 sys.path.insert(0, HERE)
+RENDER = os.path.join(ROOT, "workspace", "render")    # the tools refuse an output folder outside workspace/
+os.makedirs(RENDER, exist_ok=True)
 import anim_common  # noqa: E402
 
 BLOCKED = ("dt1", "dc6", "item_art", "palette", "maze_render")
@@ -154,9 +157,11 @@ class SchematicModes(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.out = {}
+        cls.tmp = tempfile.mkdtemp(prefix="test-anim-", dir=RENDER)    # one folder per run: parallel runs never collide
+        cls.addClassCleanup(shutil.rmtree, cls.tmp, True)
         for tool, (args, _gif) in cls.cases.items():
             for mode in ("schematic", "full"):
-                out = os.path.join(OUT, "%s-%s" % (tool[:-3], mode))
+                out = os.path.join(cls.tmp, "%s-%s" % (tool[:-3], mode))
                 os.makedirs(out, exist_ok=True)
                 for f in os.listdir(out):
                     os.unlink(os.path.join(out, f))

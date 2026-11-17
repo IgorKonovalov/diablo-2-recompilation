@@ -276,7 +276,7 @@ RE_SEE_PATHS = re.compile(r"(?:(?<=\s)|^)See\s+(?:\[[^\]\s]*/[^\]]*\]\([^)]*\)\s
 
 def redact_text(text, rw=None, sub=True):
     """Evidence parentheticals and "See <path link>." sentences go; `rw` (the anchor rewrite) runs next, then the
-    `sub_XXXXXXXX_` prefixes go (after it, so `fn:sub_..._x` is removed whole, not turned into `x`)."""
+    `sub_XXXXXXXX_` prefixes go (a `fn:sub_..._Name` anchor was already rewritten to `Name`; one with no readable name goes whole)."""
     t = drop_evidence_parens(text)
     if RE_SEE_PATHS.search(t):
         t = re.sub(r"[ \t]+$", "", RE_SEE_PATHS.sub("", t), flags=re.M)
@@ -295,7 +295,7 @@ RE_ANCHOR = re.compile(_OPEN + r"(?:fn|data|tbl|fmt):(" + _NAME + r")(?:@0x[0-9A
 # a struct anchor is an in-memory offset, content since the owner's decision (2026-11-17; review of lane/x70b2):
 # `struct:Unit+0x20` -> `Unit+0x20`, as an anchor becomes its name; one with hex in its name or a 6+ digit offset goes
 RE_STRUCT = re.compile(_OPEN + r"struct:([A-Za-z0-9_]+(?:\+0x[0-9A-Fa-f]+|\.\w+)*)(?(1)`)")
-RE_REMOVE = re.compile(_OPEN + r"(?:run:[\w.-]*\w|src:[\w.-]*\w"
+RE_REMOVE = re.compile(_OPEN + r"(?:[Rr]un:[\w.-]*\w|src:[\w.-]*\w"
                        r"|[a-z]+/\d{4}(?!\d)(?:-[\w-]*\w)?(?:\.md)?(?:#[\w-]+)?)(?(1)`)")
 # a spec citation with a folder: `drlg/maze.md § 3` -> `maze.md § 3`; without a section it goes (with a "spec" before it)
 RE_CITE = re.compile(r"(?<![\w/.:~-])(?:\bspec\s+)?(`)?(?:\.\./|\./)*(?:[\w.-]+/)+([\w.-]+\.md)(?(1)`)", re.I)
@@ -347,8 +347,16 @@ def clean_name(name):
     return not ec.text_rules("`" + name + "`")
 
 
+RE_SUBNAME = re.compile(r"sub_[0-9A-Fa-f]{8}_(.+)$", re.S)
+
+
 def _anchor(m):
-    if not clean_name(m.group(2)):
+    nm = m.group(2)
+    sm = RE_SUBNAME.match(nm)
+    if sm and m.string[m.start():m.end()].lstrip("`").startswith("fn:") and clean_name(sm.group(1)):
+        nm = sm.group(1)        # `fn:sub_XXXXXXXX_Name@0x...` -> `Name`: the symbol's readable part, as the specs' prose writes it
+        return "`" + nm + "`"
+    if not clean_name(nm):
         return SENT
     if not m.group(1) and m.string[m.end():m.end() + 1] == "`" and not m.string.count("`", 0, m.start()) % 2:
         return "`" + m.group(2) + "\x02"        # `data:T@0x...`[i]`` -> `T[i]`: one span, not two run together
@@ -1145,6 +1153,9 @@ def redact(pg, blocks):
                 continue
             else:
                 b = dict(b, lines=[new])
+            if "\n".join(b["lines"]).count("`") % 2 and not x.count("`") % 2:
+                note_empty(pg, heading, k, x, BROKEN)      # the rewrite left a code span open
+                continue
         elif k in ("item", "quote"):
             x = "\n".join(b["lines"])
             t0, t = redact_text(x), redact_text(x, rw=rewrite_text)
@@ -1154,6 +1165,9 @@ def redact(pg, blocks):
                 if not has_words(body.lstrip("> ")):
                     note_empty(pg, heading, k, x, t)
                     continue
+            if t.count("`") % 2:        # an item that ends inside a code span (the span's rest is a block of its own): dropped
+                note_empty(pg, heading, k, x, BROKEN)
+                continue
             b = dict(b, lines=t.split("\n"))
         red.append(b)
     return red

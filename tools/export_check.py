@@ -128,7 +128,7 @@ RE_X1 = [
 ]
 RE_X2 = [
     (re.compile(r"(?<![\w])(?:fn|data|struct|tbl|fmt|src):(?=[A-Za-z0-9_])"), "anchor"),
-    (re.compile(r"(?<![\w])run:(?=[A-Za-z0-9_])"), "run id"),
+    (re.compile(r"(?<![\w])run:(?=[A-Za-z0-9_])", re.I), "run id"),
     # a lead tag never reaches the export (it lives under Open questions); the check guards it, not only the
     # builder's XL rule (architect review 2026-11-17)
     (re.compile(r"\[L\]"), "lead tag [L]"),

@@ -2625,8 +2625,23 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `.log`, `.claude`, Ghidra, harness, objdump, debugger, the repository name, `/home`, `workspace/`, `lane/`: 0; `run:`
   ids 1, items/inventory K1's sentence-initial `Run:` (published since x13a); image addresses 2, the pins of spawn and
   save/d2s; "architect" 2 (monsters/stats, combat/README, both published before). `reviewed-pages.txt`: the eight
-  added. *Backlog:* [archivist: export builder sub_ anchor cells and the run-id case](../backlog/2026-11-17-architect-archivist-export-builder-sub-anchor-cells-and-run-case.md)
+  added. *Backlog:* [archivist: export builder sub_ anchor cells and the run-id case](../backlog/archive/2026-11-17-architect-archivist-export-builder-sub-anchor-cells-and-run-case.md)
   (179 *Entry points* rows on published pages read `—` or bare arrows; X2's `run:` rule is case-sensitive);
   [spec-writer: export cut residue after x13b](../backlog/2026-11-17-architect-spec-writer-export-cut-residue-after-x13b.md)
   (special's plan sentence, collision's log-line names, the published residue above, skills/missiles B1's constant).
   Gate green.
+- 2026-11-17, archivist, lane/x14a (sub_ anchors kept as names; run: case-insensitive; test folder). *Rules*
+  (`tools/export_build.py`, `tools/export_check.py`): a `fn:sub_XXXXXXXX_Name@0x…` anchor, in prose and in a table cell,
+  reads as `` `Name` `` when `Name` passes X1–X5 (no hex run of 6+ digits, no `sub_`, no `DAT_`); a `sub_` anchor with no
+  readable name, or whose name holds hex, is still removed whole, and the unit follows the existing `broken` rules.
+  X2's `run:` rule and the builder's run-id removal are case-insensitive (`Run:2026-…` at a sentence start fails the
+  check, and the builder removes it and drops the unit as broken, so the cut stays green). `tools/test_anim_schematic.py`
+  writes to its own `tempfile.mkdtemp` folder under `workspace/render` (the tools accept only outputs under workspace/),
+  removed at the end of the run. A second builder rule, found by the span check: a list item or paragraph that ends inside a code span (a source line break puts `+ i)` at a line start, which the Markdown parse makes a bullet of its own, as in monsters/spawn's `classes + 4·(start`) is dropped as broken, because units that held a named `sub_` anchor and were dropped before now survive and exposed it. Tests: export_build 200, export_check 193, widgets 274, publish 44, anim_schematic 5, all
+  green. *Measured* (full build, illustrations on, 42269df1 before and after): 89 pages both; units dropped 1734 of 19344
+  → 969 of 19671, words dropped 95816 of 540150 (17.7%) → 73884 of 553175 (13.4%); `specs/items/properties.md`, a page
+  dropped whole before, is now written (6279 words, 19 units dropped); the units that changed are the *Entry points*
+  rows and sentences that held a named `sub_` anchor, on 80 of the 89 pages (every wiki page loses 1–38 dropped
+  units). `export_check … --repo workspace/export-repo/`: 0 failures. Span equality (spaneq.py, its anchor list taught that a `sub_` anchor reads as its name): 32321 spans, 0 differ (28415 before);
+  fence lines 367 of 15752 differ (306 of 12662 before), the same evidence tails and addresses removed, no new kind. K1 of items/inventory is not in either build as a `Run:` sentence; the
+  rule would drop it as broken. Gate green.

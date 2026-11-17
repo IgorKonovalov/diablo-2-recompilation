@@ -72,6 +72,8 @@ def main():
        "'data:' in ordinary prose passes X2")
     ok("X2" in t("see data:ItemTypes"), "data:<name> anchor fails X2")
     ok("X2" in t("see run:items-0002"), "run id fails X2")
+    ok("X2" in t("Run:2026-11-17-x only."), "a sentence-initial Run: id fails X2")
+    ok(t("Run: the thing.") == set(), "'Run:' with a space passes X2")
     ok("X9" in t("- Open Battle.net"), "Battle.net menu line fails X9")
     ok("X9" in t("the Warden and the CD key and copy protection"), "banned topics fail X9")
     ok("X9" in t("a logged run with gdb"), "tool names fail X9")
