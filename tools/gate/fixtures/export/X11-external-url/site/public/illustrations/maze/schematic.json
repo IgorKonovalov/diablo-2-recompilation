@@ -1,9 +1,9 @@
 {
- "marker": "d2recon-schematic/1",
+ "marker": "schematic-only/1",
  "files": {
-  "index.html": "686a73a9eaa8f6076ca912bab9c3ad600d4aa944f6df546edfc6b98a8ab044b5",
-  "steps.json": "a4a2b38ca41cf500d503833bca68216f121cb3b8d077ea430e18bc8ace3ab591",
-  "maze.gif": "59460fb4735f227b7a74aa2e9fbc735748e72fa2639b336bff929d3ae2ff6c9d",
-  "frames/f1.png": "b4c0c1a0f673442affdec8d45479c38380479cdfcaec08e4eab3fbbab174d951"
+  "index.html": "2bc004b8c50fc93703beae494e18b2d76379c316f69b46e39fb5098ae12f730e",
+  "steps.json": "b2e093bc8b7326c06929461497b4fd71445a92b1a03d3f14fec25c8d126a2769",
+  "maze.gif": "b49d2905a4b366194b4bb90eab8e66d554f6d29c3a3a9e9648337199924f0f60",
+  "frames/f1.png": "19f5e1dfef1c89e1c7e72f4ac6dea93605201524b9d15f2fd37ff9f9cc6e4abe"
  }
 }

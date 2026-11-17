@@ -204,6 +204,26 @@ def main():
             ec.set_allow(None)
             ok(bool(not ec.check_cut(c3, MANIFEST, IDENT)[0]) == want, f"calc-panel {label} line in a folder: pass={want}")
         ok(not ec.check_cut(c, MANIFEST, IDENT)[0], "the clean copy still passes after .git is removed")
+        # neutral marker: no project name; a tool key in schematic.json is refused; X8 takes the root-absolute target only
+        ok("d2recon" not in ec.MARKER, "the marker carries no project name")
+        c4 = os.path.join(tmp, "cut-tool")
+        shutil.copytree(c, c4)
+        sj4 = os.path.join(c4, "site", "public", "illustrations", "maze", "schematic.json")
+        with open(sj4, encoding="utf-8") as f:
+            meta = ec.json.load(f)
+        meta["tool"] = "maze_anim"
+        with open(sj4, "w", encoding="utf-8") as f:
+            ec.json.dump(meta, f)
+        ok("X11" in rules_of(ec.check_cut(c4, MANIFEST, IDENT)[0]), "a tool key in schematic.json fails X11")
+        ill = {("maze", "maze.gif")}
+        chk = lambda tgt: [h[0] for h in ec.check_page(f"![a]({tgt})\n", "i.md", "index", 0, ill, IDENT)]
+        ok(chk("/illustrations/maze/maze.gif") == [], "X8 accepts /illustrations/<id>/<file> of a verified folder")
+        ok("X8" in chk("../illustrations/maze/maze.gif") and "X8" in chk("/illustrations/maze/other.gif")
+           and "X8" in chk("/other/illustrations/maze/maze.gif"), "X8 refuses a relative, unlisted or elsewhere target")
+        # X4 skips only a `](/illustrations/<id>/<file>)` target: not prose, not a dot segment
+        ok(all("X4" in {h[0] for h in ec.check_text(t)} for t in ("see (/illustrations/igor/x)", "/illustrations/a/b",
+                                                                     "![a](/illustrations/../home)", "![a](/illustrations/m/../x)")),
+           "X4 still fails a bare, parenthesised or dot-segment /illustrations/ path")
         # an unredacted copy of three specs fails X1, X2 and X3
         root = os.path.normpath(os.path.join(HERE, ".."))
         picks = [p for p in ("docs/specs/rng/README.md", "docs/specs/items/README.md", "docs/specs/drlg/README.md")
