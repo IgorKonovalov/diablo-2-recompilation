@@ -850,6 +850,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-17 | lane/x70w review | 0070 P7 feedback | architect | 80 937 | 33 | 6 | — | accept w/ fixes (Tier A) | 1 |
 | 2026-11-17 | lane/x70a | 0070 P9 prereq | archivist | 110 933 | 30 | 8 | — | accept w/ fixes (Opus) | omission 2, other 1 |
 | 2026-11-17 | lane/x70a review | 0070 P9 prereq | architect | 185 369 | 81 | 18 | — | accept w/ fixes (Opus) | omission 2, other 1 |
+| 2026-11-17 | lane/x70b2 | 0070 P9 prereq | archivist | 224 767 | 94 | 20 | — | accept w/ fixes (Opus) | omission 3, other 1 |
+| 2026-11-17 | lane/x70b2 review | 0070 P9 prereq | architect | 186 884 | 76 | 15 | — | accept w/ fixes (Opus) | omission 3, other 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
