@@ -877,6 +877,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-17 | lane/x12s review | 0070 P11 b2 | architect | 161 017 | 77 | 12 | — | accept w/ fixes (Opus Tier A) | misread 1, bookkeeping 1, other 1 |
 | 2026-11-17 | lane/x13a | 0070 export readiness A | spec-writer | 319 674 | 190 | 29 | — | accept w/ fixes (Opus Tier A) | misread 1, omission 3, wrong anchor 1, other 2 |
 | 2026-11-17 | lane/x13a review | 0070 export readiness A | architect | 274 424 | 134 | 20 | — | accept w/ fixes (Opus Tier A) | misread 1, omission 3, wrong anchor 1, other 2 |
+| 2026-11-17 | lane/x13f | 0070 builder fix | archivist | 120 303 | 48 | 9 | — | accept w/ fixes (Opus) | misread 3, omission 2, other 3 |
+| 2026-11-17 | lane/x13f review | 0070 builder fix | architect | 220 999 | 76 | 22 | — | accept w/ fixes (Opus) | misread 3, omission 2, other 3 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
