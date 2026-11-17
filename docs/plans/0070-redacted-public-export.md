@@ -2414,12 +2414,12 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   16.7 % (60 828 of 364 886), fenced blocks kept 808 of 895 (the lane's 838). The highest page is unchanged
   (combat/to-hit 24.3 %). Against main 87b7df0f, 65 units of published spec pages newly drop: 27 prose units and rows
   and 38 pseudocode blocks. They are listed for the spec-writer, sorted into pin, reword and source fix, in backlog
-  [2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules](../backlog/2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules.md);
+  [2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules](../backlog/archive/2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules.md);
   the seed constant `0x53454953` of skills/missiles B1, which the parenthetical rule had removed, now fails X1 and
   needs a value entry there. Tests: export_build 194, export_check 191, widgets 274, publish 44, all green.
   `export_check … --repo workspace/export-repo/`: 0 failures, 1018 warnings. Gate green.
 - 2026-11-17, spec-writer, lane/x13r (65 units dropped by the code-span rules, backlog
-  [2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules](../backlog/2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules.md)).
+  [2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules](../backlog/archive/2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules.md)).
   Reword only: no claim, tag or anchor changed (the `[C]`/`[I]`/`[L]` counts of the 29 touched specs are unchanged, and
   no line count changed above a manifest `table` line). The review's list holds 70 DROP lines (the 68 the entry's text
   names, its count says 65, plus anim/timing N1 and data/calc G); measured on a cut of this branch against a cut
@@ -2467,3 +2467,32 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   --repo workspace/export-repo/`: 0 failures, 1022 warnings. Span equality: 27 635 spans, 0 differ; 13 888 fence lines,
   359 differ, each an address label, an `init 0x…:` label, a `sub_` prefix or an evidence tail gone (the restored
   blocks carry more of them). Build deleted. **For x13b:** none of the 70 lines is in its files. Gate green.
+- 2026-11-17, architect, Tier A review of lane/x13r (Opus). Verdict **accept with fixes (3: other 3)**, the fixes made
+  in the review. *No claim changed:* a word diff of the 29 specs (7b984160..cac0f980) shows rewording only; per file the
+  `[C]`/`[I]`/`[L]` counts and the distinct `fn:`/`data:`/`run:` anchors are unchanged, finding links kept. Flags read
+  `1 << 22` / bit 22 for `0x400000` and `1 << 23` for `0x800000`, the caps 8388608/8388607 exact. Table bases checked
+  against re/symbols.csv: `g_BorderCornerIdx` 0x006F1088, `g_A1RiverIdx` 0x006F2680, `g_JungleClearingDefs` 0x006F13BC,
+  `g_PropFuncTable` 0x007462F8, `g_MonModeRecords` 0x006E2260, `g_PathFaceStep` 0x006EB548, `g_RiverForgeSpecials`
+  0x006F0474 are the read bases the old text gave; `g_JungleClearingOff` is 0x006F2370, 0x130 = 304 bytes = 76 entries
+  past the old base 0x006F2240, so `[L.id − 76]` is exact; `T[k] = g_ActLinkTables + 240·k` gives the nine old
+  operands for k = 0…8 in the order written. All 48 names the lane wrote for an address checked against
+  re/symbols.csv (none wrong); the 31 addresses worded by role (calls, the maze tables, the mask byte, the host flag,
+  the set-state table) have no symbol, and the roles ("the first test", "its
+  partner", the error routine, the reallocation) are the finding's own words (ai/0013 row 31, items/inventory A2/F3).
+  Manifest `table` lines: all 19 headers at the same line in the lane's files. *Fixes (other 3).* (1) The proposed
+  value entry `53454953` refused: a four-character code, a domain value the owner kept out of allow-hex; skills/missiles
+  B1 now writes `Init(1397049683)`, the same word in decimal (rng/seeds' `0x53454953` will need the same when that page
+  joins the cut). (2) save/d2s I3 and I4 read "the table" in the cut once the address went; named "the set-state
+  table" by role. (3) monsters/ai/catalogue R31's "if the first test = 0: its partner" had no verb; "call its partner".
+  *allow-hex* (docs/export/allow-hex.txt, one block "review of lane/x13r"): the five pins added after recomputing each
+  as one `tools/rng.py` step of the seed its page gives (015B2E7F:0000029A → E18C3A55:0090CE8A for drlg/maze and
+  drlg/README row 9, c35f85d3:0d511944 → 004bc4a3:517d17c7 for items/affixes example 3, d1712f2d:0b0beb6e →
+  007c890f:575b5184 for items/economy § 8, 0109323f:20d5284f → 0be642ca:006e9c81 for combat/damage row 2); none in
+  re/symbols.csv. *Cut* (full build with illustrations, review fixes in): 81 pages, 0 dropped; specs units dropped
+  902 of 12 429, words 16.2 %; highest page combat/to-hit 24.3 %, none over 25 %. `export_check … --repo
+  workspace/export-repo/`: 0 failures, 1024 warnings. Span equality: 27 664 spans, 0 differ; 13 888 fence lines, 360
+  differ, each a label, `init 0x…:`, `sub_` prefix or evidence tail gone. *The 70 units:* 62 restored by the lane's
+  rewording, 5 restored by the pins, 1 (missiles B1) by the decimal rewording, 2 stay dropped by ruling (save/d2s J's
+  `survey` block and the worked example's reproduce block: command lines only, nothing a reader loses). Read as a
+  reader: drlg/warps A1, drlg/outdoor J4, monsters/ai R31, save/d2s I3/I4. Build deleted. Backlog entry closed. Gate
+  green.

@@ -2,11 +2,11 @@
 from: architect
 to: spec-writer
 date: 2026-11-17
-status: open
+status: done
 context:
-  - ../plans/0070-redacted-public-export.md
-  - ../export/allow-hex.txt
-resolution: ""
+  - ../../plans/0070-redacted-public-export.md
+  - ../../export/allow-hex.txt
+resolution: "lane/x13r reworded the units (62 restored); review of lane/x13r added five seed pins to allow-hex, refused the four-character code (missiles B1 now in decimal), 2 command-line blocks stay dropped by ruling"
 ---
 
 Plan 0070, from the review of lane/x13f (2026-11-17). The export builder now drops, instead of silently changing, every unit whose code loses a part to the address removal: a code span with a removed value inside it, a pseudocode line with a removed operand, call target or call argument, a table value cell whose span broke, and a call's argument or a span's parenthetical (no longer taken for an evidence parenthetical). Against the cut of main 87b7df0f, 65 units of published spec pages newly drop: 27 prose units and table rows and 38 pseudocode blocks. Each shows as a DROP line in the builder's report.txt (`python3 -I tools/export_build.py --out workspace/export-<name> --no-illustrations`). Asked: make each one export cleanly without changing what it says.
