@@ -10,7 +10,8 @@
 #   pin <hex value> <docs path> :: <reason>                      one value in the code image's range, allowed on
 #                                                               that page only (computed by an example, not an address)
 #
-# Never allowed, whatever is written here: a `sub_`/`DAT_` name, a `+0x` offset, a hex after `_` or `+`. A value in
+# Never allowed, whatever is written here: a `sub_`/`DAT_` name, a hex of 6+ digits after `_` or `+`. (An in-memory
+# struct offset `Name+0x10` of up to 5 digits passes by the check's own rule: owner decision 2026-11-17.) A value in
 # the code image's range, 0x00400000-0x009B9FFF (the pinned Game.exe's whole mapped image), passes only by a `pin`
 # line: the loader refuses it as a plain value entry, a section does not admit it, and a pin that re/symbols.csv names
 # is refused. A reviewer checks each pin's derivation. ADR-0031 lists constants of the code image (tables and their
@@ -37,6 +38,66 @@ section wiki/characters.md Worked examples :: seeds derived by hand from an illu
 section wiki/quests.md The quest seed and the player's seed :: seed arithmetic on an illustrative seed
 section wiki/quests.md Town portals :: seed arithmetic on an illustrative seed
 section wiki/saves.md A worked example :: the checksum of an example save, computed byte by byte
+
+# Worked examples of the specs (owner decision 2026-11-17, plan 0070 Phase 9: illustrative seeds and the values computed from them)
+section specs/anim/movement.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/anim/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/anim/timing.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/chain/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/combat/damage.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/combat/delivery.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/combat/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/combat/reductions.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/combat/to-hit.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/data/calc.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/data/excel.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/data/strings.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/drlg/collision.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/drlg/lifecycle.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/drlg/maze.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/drlg/outdoor.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/drlg/preset.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/drlg/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/drlg/room-tiles.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/drlg/warps.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/hirelings/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/affixes.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/cube.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/economy.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/inventory.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/properties.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/quality.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/quest-drops.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/sockets-runewords.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/tc.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/trade.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/uniques-sets.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/use.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/items/vendors.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/monsters/ai/catalogue.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/monsters/ai/machinery.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/monsters/ai/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/monsters/pool.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/monsters/spawn.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/monsters/special.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/monsters/stats.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/objects/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/path/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/path/search.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/player/creation.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/player/party.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/quests/progression.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/quests/travel.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/rng/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/rng/seeds.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/save/d2s.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/sim/frame.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/skills/catalogue.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/skills/dispatch.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/skills/missiles.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/skills/README.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/stats/aggregate.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
+section specs/stats/states.md Worked example :: illustrative seeds of the worked example and the draws, masks and sums computed from them
 
 # Pinned values in the code image's range (computed by a worked example; none is a named address)
 pin 0090CE87 wiki/randomness.md :: the high word after step 4 of the worked example on seed 12345

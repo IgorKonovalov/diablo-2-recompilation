@@ -94,8 +94,10 @@ def main():
     ok(eb.redact_text("Calls (see the table) twice.") == "Calls (see the table) twice.", "an ordinary parenthetical stays")
     ok(eb.redact_text("sub_00556F60_ItemRollQualityCreate runs") == "ItemRollQualityCreate runs", "sub_ prefix stripped")
     # architect review 2026-11-17: an offset-only parenthetical goes; a "See <path link>." pointer goes
-    ok(eb.redact_text("Its seed (`unit+0x20`) drives the picks.") == "Its seed drives the picks.",
-       "an in-memory offset parenthetical dropped")
+    ok(eb.redact_text("Its seed (`unit+0x20`) drives the picks.") == "Its seed (`unit+0x20`) drives the picks.",
+       "an in-memory offset parenthetical is content now (owner decision 2026-11-17)")
+    ok(eb.redact_text("Its seed (`unit+0x20`, fn:Foo@0x0045ABCD) drives.") == "Its seed (`unit+0x20`, fn:Foo@0x0045ABCD) drives.",
+       "a parenthetical with an offset is not evidence-only")
     ok(eb.redact_text("Its seed (`unit+0x20`, the source) drives.") == "Its seed (`unit+0x20`, the source) drives.",
        "an offset parenthetical with words stays (the simplifier drops the unit)")
     ok(eb.redact_text("it is confirmed\n([spec](../specs/rng/README.md#notes)):\n") == "it is confirmed:\n",
@@ -121,8 +123,11 @@ def main():
     ok(rt("It calls fn:sub_00456789_Foo@0x00456789 here.") == "It calls here.", "a sub_ name is removed whole")
     ok(rt("Read data:DAT_00556F60@0x00556F60 here.") == "Read here.", "a DAT_ name is removed whole")
     ok(rt("Call fn:Cafe00Bad@0x0045ABCD again.") == "Call again.", "a name holding a hex run of 6+ digits is removed")
-    ok(rt("The field struct:Unit+0x20 holds it.") == "The field holds it.", "a struct: token is removed")
-    ok(rt("The field `struct:Unit+0x20` holds it.") == "The field holds it.", "a backticked struct: token is removed")
+    # an in-memory offset is content (owner decision 2026-11-17): a struct anchor becomes its offset (review of lane/x70b2)
+    ok(rt("The field struct:Unit+0x20 holds it.") == "The field `Unit+0x20` holds it.", "a struct: anchor becomes its offset")
+    ok(rt("The field `struct:Unit+0x20` holds it.") == "The field `Unit+0x20` holds it.", "a backticked struct: anchor too")
+    ok("0045ABCD" not in rt("The field struct:Unit+0x0045ABCD holds it.") and "DAT_" not in rt("A struct:DAT_00556F60+0x4 b."),
+       "a struct: anchor with an image-shaped offset or a code name never stays")
     ok(rt("Seen in run:2026-10-11-rng-emu and src:arreat-summit.") == "Seen.", "run: and src: ids removed, dangling and/in go")
     ok(rt("Listed A, items/0012-slug#x, B.") == "Listed A, B." and rt("Read items/0012 now.") == "Read now.",
        "a finding id is removed")
@@ -134,7 +139,7 @@ def main():
     ok(rt("Read [the page](a.md) and [fn:Foo@0x0045ABCD](b.md).") == "Read [the page](a.md) and [`Foo`](b.md).",
        "other links stay, their labels are rewritten")
     ok(rt("Plain text, no anchors (a, b).") == "Plain text, no anchors (a, b).", "an unchanged unit is unchanged")
-    ok("X1" in eb.unit_fails(rt("The call at 0x00456789 and fn:Foo@0x0045ABCD."), ec.Allow()),
+    ok("X1" in eb.unit_fails(rt("The call at 0x1234567890 and fn:Foo@0x0045ABCD."), ec.Allow()),
        "a unit that still carries a 6+ hex after the rewrite still fails (and is dropped)")
     # spec citations
     ok(rt("as in drlg/maze.md § 3 here") == "as in maze.md § 3 here", "folder + .md with a section is reduced to the file name")
@@ -168,6 +173,14 @@ def main():
     ok(eb.rewrite_row("| a | fn:sub_0045ABCD_X@0x0045ABCD: the call | 2 |") == "| a | — | 2 |", "a broken cell is an em dash")
     ok(eb.rewrite_row("| a | fn:sub_0045ABCD_X@0x0045ABCD → fn:sub_0045ABCE_Y@0x0045ABCE | 2 |") == "| a | — | 2 |",
        "a cell left with arrows only is an em dash")
+    # review of lane/x70b2: a statement cell the rewrite breaks drops its row, it never reads as "none"
+    ok(eb.rewrite_row("| Q80 | The collision test `0x0064FF90`'s result per crossed subtile | 2 |") == eb.BROKEN,
+       "a broken statement cell breaks the row")
+    ok(eb.rewrite_row("| a | 10 000 | fn:PLAYER_GoldCap@0x00622E70, run:2026-10-17-e (the cap reached at L 30, "
+                      "[x § 1](../../findings/items/experiments.md#x)) |") == "| a | 10 000 | — |",
+       "a broken evidence cell (opening with its anchor) is still a dash")
+    ok(eb.rewrite_row("| a | The test `0x0064FF90`'s result per subtile | x |", row_breaks=False) == "| a | — | x |",
+       "a header row never breaks")
     ok(rt("[C] (run:2026-10-18-quests2: x-talk2)") == "[C] (x-talk2)", "a run id before a colon in a parenthetical goes with it")
     ok(rt("[C] run:2026-11-03-path-emu-2, 994 022 draws") == "[C] 994 022 draws", "no comma left after a tag")
     ok(rt("**It rebuilds nothing.** In run:2026-10-27-sweep-vendors, 7 opens found it.") ==
@@ -181,6 +194,91 @@ def main():
     ok(rt("Details (README.md) here.") == "Details here.", "a README name with no section is removed")
     ok(rt("Details in README.md § 2 here.") == "Details in README.md § 2 here.", "README.md § X passes")
     ok(rt("Details [x](../specs/drlg/maze.md) here.") == "Details [x](../specs/drlg/maze.md) here.", "a link target is not a citation")
+    # Phase 9 second round (plan 0070): code-image addresses, plan/ADR/lane references, repository paths and file names
+    ok(rt("It reads the row from 0x00556F60, then loops.") == "It reads the row, then loops.", "an address with its 'from' goes")
+    ok(rt("Called at 0x00556F60.") == "Called.", "'at' goes with a trailing address")
+    ok(rt("Called at 0x00556F60 and 00556F64, run it.") == "Called, run it.", "an address pair, 0x and bare 8-digit, goes")
+    ok(rt("The block `0x005E9F10\u20130x005EA078` ends.") == "The block ends." and rt("The block `0x005E9F10` ends.") == "The block ends.",
+       "a backticked address or range goes")
+    ok(rt("Range 0x005E9F10\u20130x005EA078 is checked, then.") == "Range is checked, then.", "an address range goes as one token")
+    ok(rt("The 0x005E9F10 handler runs.") == eb.BROKEN, "an address after a determiner is broken")
+    ok(rt("0x005E9F10 reads the table.") == eb.BROKEN, "a removed subject is broken")
+    ok(rt("0x005E9F10 = the handler.") == eb.BROKEN and rt("x is 0x005E9F10 \u2013 the handler.") == eb.BROKEN,
+       "a token before = or a dash is broken")
+    ok(rt("The prefix 0x0063xxxx is a handler.") == "The prefix is a handler." and rt("Prefix 0x006XXXXX here.") == "Prefix here." and rt("Calls outside `0x4xxxxx` pass a set.") == eb.BROKEN, "a partial address goes")
+    ok(rt("the value 5E9F10 and 500000 and 0x400000 end.") == "the value and 500000 and end.",
+       "a bare 6-digit hex in the image range goes, a decimal number stays")
+    ok(rt("the seed 0xC0FFEE and 12 345 and 0x20000 stay.") == "the seed 0xC0FFEE and 12 345 and 0x20000 stay.",
+       "a value out of the image range is not an address")
+    eb.PAGE_PINS = {0x0090CE87: "r"}
+    try:
+        ok(rt("the high word 0090CE87 and 0x0090CE88 here.") == "the high word 0090CE87 and here.",
+           "a pinned value stays, another image-range value goes")
+    finally:
+        eb.PAGE_PINS = {}
+    ok(rt("Its field `ItemData+0x10` and Game+0x6A+0x4 stay.") == "Its field `ItemData+0x10` and Game+0x6A+0x4 stay.",
+       "a struct offset and a chain stay (owner decision 2026-11-17)")
+    ok(rt("Done (plan 0038 Phase 2b) and more.") == "Done and more.", "a plan reference in a parenthetical goes with it")
+    ok(rt("Per ADR-0014 the time is in frames.") == eb.BROKEN and rt("Time is in frames, per ADR-0014.") == "Time is in frames.",
+       "an ADR reference goes (the unit drops when it was the object)")
+    ok("ADR" not in rt("Time is in frames (ADR-0014, ADR-0029 \u00a7 2).") and "lane" not in rt("Fixed by lane/x70a in review."),
+       "ADR and lane references go")
+    ok(rt("Run `tools/tc.py check` to see.") == eb.BROKEN, "a run-the-tool clause is broken")
+    ok(rt("The check (tc.py, cube.csv, run.log) is ours.") == "The check is ours." and rt("The files are tc.py and run.log.") == eb.BROKEN,
+       "file names go")
+    ok(rt("It is ours (re/symbols.csv, .claude/skills/x).") == "It is ours." and ".claude" not in rt("Ours, .claude/skills/x too."),
+       "repository paths go")
+    ok(rt("The model, in `tools/x.py`, does it.") == "The model, does it.", "a backticked repository path goes whole")
+    ok(eb.rewrite_row("| a | 0x00555DDF | 2 |") == "| a | \u2014 | 2 |" and
+       eb.rewrite_row("| a | 0x00555DDF, 0x00555DE0 | 2 |") == "| a | \u2014 | 2 |" and
+       eb.rewrite_row("| a | `0x00555DDF`\u20130x00555E00 | 2 |") == "| a | \u2014 | 2 |", "a cell made only of addresses is an em dash")
+    ok(eb.rewrite_row("| a | `+0x1C` | b |") == "| a | `+0x1C` | b |", "an offset cell stays")
+    ok(not eb.is_evidence_cell("`+0x1C`") and eb.redact_table(["| a | b |", "|---|---|", "| x | `+0x10` |", "| y | `+0x14` |"])[2] == "| x | `+0x10` |",
+       "a column of offsets is content, not evidence")
+    # pseudocode lines: evidence tails
+    fl = eb.rewrite_fence_line
+    ok(fl("A1. Foo(x) \u2192 i32:                  [C] (fn:Foo@0x0045ABCD, run:2026-10-16-combat)") == "A1. Foo(x) \u2192 i32:                  [C]",
+       "a pseudocode head line: the evidence parenthetical goes, the tag stays")
+    ok(fl("A1. Foo(x):   [C] (fn:Foo@0x0045ABCD, all of A1\u2013A6; run:2026-10-16-x)").endswith("[C] (Foo, all of A1\u2013A6)"),
+       "an anchor in a tail becomes its bare name")
+    ok(fl("1. U+0xC4 \u2190 U+0xC4 | 0x20000      ; every event      [I] (0x005E9F10, 0x005EA078)") ==
+       "1. U+0xC4 \u2190 U+0xC4 | 0x20000      ; every event      [I]", "a trailing evidence list goes, offsets and masks stay")
+    ok(fl("2. x \u2190 y            ; at 0x005E9F10") == "2. x \u2190 y", "a trailing comment left empty goes")
+    ok(fl("3. x \u2190 y            // see 0x005E9F10") == "3. x \u2190 y", "a trailing // comment left empty goes")
+    ok(fl("4. x \u2190 y            ; step 3: run:2026-10-16-x") == "4. x \u2190 y            ; step 3", "a label left bare goes")
+    ok(fl("5. r \u2190 0x00588D60(&u)") == "5. r \u2190 0x00588D60(&u)", "an address in the code part: the line stays as it was (the block fails)")
+    ok(fl("6. x \u2190 y") == "6. x \u2190 y", "a clean line is unchanged")
+    ok(fl("7. f(and)   [C]") == "7. f(and)   [C]", "a word in parentheses is no evidence")
+    pgf = eb.Page({"path": "p.md", "route": "p", "order": 1})
+    bl = eb.parse_blocks(("## H\n\n```\nA1. Foo(x):        [C] (fn:Foo@0x0045ABCD, run:2026-10-16-c)\n  y \u2190 {a, b}   ; (unsigned) mod 3  [I] (0x0045ABCD)\n```\n"
+                          "\n```\nA2. Bar(x):   [C]\n  r \u2190 0x00588D60(&u)\n```\n").split("\n"))
+    rd = eb.redact(pgf, bl)
+    kp = eb.simplify(pgf, rd, ec.Allow())
+    kt = "\n".join("\n".join(b["lines"]) for b in kp)
+    ok("fn:" not in kt and "A1. Foo(x):        [C]" in kt and "A2." not in kt and len(pgf.drops) == 1 and pgf.drops[0][1] == "X1",
+       f"a block with an evidence tail survives; one with an address in code drops ({kt!r}, {pgf.drops})")
+    # measurement: words, units and fenced blocks per page
+    pgm = eb.Page({"path": "m.md", "route": "m", "order": 1})
+    bm = eb.parse_blocks(("## H\n\nOne two three four. Five six 0x00556F60 seven. Eight 0x1234567890 nine.\n\n```\nA1. Foo(x):  [C]\n```\n\n```\nb = f(x);\n```\n").split("\n"))
+    pgm.count_source(bm)
+    kk = eb.simplify(pgm, eb.redact(pgm, bm), ec.Allow())
+    pgm.count_kept(kk)
+    ok(pgm.fences == 2 and pgm.fences_kept == 1 and pgm.words > pgm.words_kept > 0, f"words and fenced blocks are counted ({pgm.words}, {pgm.words_kept}, {pgm.fences_kept})")
+    tmpm = tempfile.mkdtemp(prefix="export_rep_")
+    try:
+        pgm.dropped_page = False
+        eb.write_report(tmpm, [(pgm, kk)], "2026-11-17")
+        rtxt = open(os.path.join(tmpm, "report.txt"), encoding="utf-8").read()
+        ok("total: 1 pages: units dropped" in rtxt and "words dropped" in rtxt and "fenced blocks kept 1/2" in rtxt and " | 1/2 | " in rtxt,
+           "the report gives units, words and fenced blocks, per page and in total")
+    finally:
+        shutil.rmtree(tmpm, ignore_errors=True)
+    # a link fragment whose slug carries a hex seed is dropped (the heading itself may stay under a worked-example section)
+    pa = eb.Page({"path": "a.md", "route": "a", "order": 1}); pb = eb.Page({"path": "b.md", "route": "b", "order": 1})
+    pb.headings = {"ex-k--b3e5b26e3c7cb331", "plain-one"}
+    byp = {"a.md": pa, "b.md": pb}
+    ok(eb.rewrite_links("[x](b.md#ex-k--b3e5b26e3c7cb331) [y](b.md#plain-one)", pa, byp) == "[x](../b/) [y](../b/#plain-one)",
+       "a heading anchor carrying a hex run is dropped, a plain one stays")
     # rows and cells
     ok(eb.rewrite_row("| a | fn:Foo@0x0045ABCD | 2 |") == "| a | `Foo` | 2 |", "a row: anchor cell rewritten")
     ok(eb.rewrite_row("| a | run:2026-10-11-a | 2 |") == "| a | — | 2 |", "an emptied cell becomes an em dash")

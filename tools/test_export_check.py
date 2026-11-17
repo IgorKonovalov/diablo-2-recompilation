@@ -75,7 +75,18 @@ def main():
     ok("X9" in t("- Open Battle.net"), "Battle.net menu line fails X9")
     ok("X9" in t("the Warden and the CD key and copy protection"), "banned topics fail X9")
     ok("X9" in t("a logged run with gdb"), "tool names fail X9")
-    ok("X1" in t("0x00556F60") and "X1" in t("sub_00556F60") and "X1" in t("Game+0x1B24"), "X1 shapes")
+    ok("X1" in t("0x00556F60") and "X1" in t("sub_00556F60") and "X1" in t("Game+0x00401B24") and "X1" in t("DAT_foo+0x1B"), "X1 shapes")
+    # owner decision 2026-11-17: an in-memory struct offset passes, a code-image value in any spelling still fails
+    ok(t("ItemData+0x10 and Unit+0x10+0x4 and `+0x1C` and U+0xC4") == set(), "X1: a struct offset, a chain and a bare offset pass")
+    ok("X1" in t("0x0063xxxx") and "X1" in t("see 0x0063XXXX") and "X1" in t("0x006Axxxx")
+       and "X1" in t("outside `0x4xxxxx` pass") and "X1" in t("0x006XXXXX"), "X1: a partial address fails")
+    ok(t("0x1xxxxx and 0x0xx and 0xFFxx") == set(), "X1: a partial value outside the image's prefixes passes")
+    ok("X1" in t("0x00401B24") and "X1" in t("00401B24") and "X1" in t("at 5E9F10 here") and "X1" in t("@0x00556F60"),
+       "X1: a code-image value fails in every spelling (offsets admitted notwithstanding)")
+    ok("X3" in t("see run.log") and "X3" in t("the file tc.log here") and "X3" in t("under .claude/skills") and "X3" in t("`.claude`"),
+       "X3: a .log name and a .claude path fail")
+    ok(t("console.log(x) in the site script") == set() and "X3" in t("console.log(x) and run.log"), "X3: JS console.log is no file name, the .log beside it fails")
+    ok(t("the blog or a log of it, catalog.") == set(), "X3: ordinary words with log in them pass")
     ok("X3" in t("ADR-0031") and "X3" in t("findings/rng/0001") and "X3" in t("tools/gate.py"), "X3 shapes")
     ok("X4" in t("/home/x/y") and "X4" in ec.text_rules("hi secret-repo-name", IDENT), "X4 shapes")
     def urlok(u):
@@ -93,8 +104,29 @@ def main():
     ok(t("```mermaid\nflowchart LR\n  A[\"x;\"] --> B{y}\n```") == set(), "mermaid fence exempt from X5")
     ok(t("```\n1. n: i32 ← tbl.Picks    ; draw#1\n2. m: u32 ← (u64) a × b\n```") == set(),
        "our pseudocode passes X5")
+    ok(t("```\n1. S ← {a, b}\n2. {hi:lo} ← draw           ; (unsigned) and (int32) notes\n   x ← (unsigned) a ÷ b\n```") == set(),
+       "X5: set braces and integer-semantics notes pass")
+    ok("X5" in t("```\nif (x) {\n  y;\n}\n```") and "X5" in t("```\n(DWORD *)p\n```") and "X5" in t("```\nx = (int)y\n```")
+       and "X5" in t("```\n} else\n```"), "X5: C braces and glued casts still fail")
+    ok(t("```\nif v14 = 0: Place(3, 3, 629, 0);\n  else: load File(i + 1) into ps[+0x0C];\n  if n < k: goto next\n```") == set(),
+       "X5: our `;` separators, `=` as equality and `goto next` pass")
+    ok("X5" in t("```\nx = f(y);\n```") and "X5" in t("```\nint n = 3;\n```") and "X5" in t("```\nif (a == b) c;\n```")
+       and "X5" in t("```\ngoto LAB_00401000\n```") and "X5" in t("```\np->x\n```") and "X5" in t("```\n*(int *)p\n```")
+       and t("```\n1. x ← a *(b + c)\n```") == set(), "X5: C statements, LAB_ and -> still fail")
     ok("X5" in t("```\n(int)x\n```") and "X5" in t("```\nuVar1 = 3\n```") and "X5" in t("```\nreturn __thiscall\n```"),
        "casts, decompiler names, calling conventions fail X5")
+    # review of lane/x70b2: C-shaped lines the narrowed X5 let through
+    for c in ("x += 3;", "x |= 0x10;", "foo(a, b);", "return x;", "unsigned int x = 5;", "struct Unit *p = q;",
+              "x = 1; // c", "if (x) { y = 1; }", "DWORD dw;", "--i;", "(*p).x = 1;"):
+        ok("X5" in t("```\n" + c + "\n```"), "X5 still fails " + c)
+    for c in ("p.flags &= ~8", "r.init(game, unit, &blk)     ; blk laid out as an AiCtx: ctl, MonStats;",
+              "type Seed { low: u32; high: u32 }", "F(x): for n ≥ 41 the fatal path (pushed before the call);"):
+        ok(t("```\n" + c + "\n```") == set(), "X5 passes our pseudocode " + c)
+    # other spellings of an image address, and offsets from the image
+    for c in ("0X004A1B20", "0X4A1B20", "4A1B20h", "0x0045_1B20", "Game.exe+0x5C00", "image base + 0x1A2B3", "`D2Common.dll+0x1234`",
+              "0x0063????"):
+        ok("X1" in t(c), "X1 fails " + c)
+    ok(t("`Game+0x10F4`, `base +0x114`, flag 0x40000? or 0x66?") == set(), "X1 passes a struct named Game, base, a flag in a question")
     # narrowings and widenings of the architect review (2026-11-17)
     ok("X1" in t("DAT_00556F60") and "X1" in t("g_Table_00556F60") and "X1" in t("at 00556860"),
        "an address after `_` or bare in the image range fails X1")
@@ -158,7 +190,7 @@ def main():
     hits = ec.check_text(page, (), allow=sa, sect_lines=sl)
     ok([h[1] for h in hits] == [13], f"a section admits its hex, subsections included, and ends at its level: {hits}")
     ok(any(h[0] == "X1" for h in ec.check_text("`0090CE87` and sub_0090CE87 and x+0x1B24", (), allow=sa, sect=True)),
-       "a section does not admit an image-range value, a sub_ name or a +0x offset")
+       "a section does not admit an image-range value or a sub_ name")
     ok(ec.section_lines(page, "wiki/y.md", sa) == set(), "a section entry admits nothing on another page")
     # pins: one image-range value, one page
     ok(ec.check_text("`0090CE87`", (), allow=sa, sect=True, pins={0x0090CE87: "r"}) == []

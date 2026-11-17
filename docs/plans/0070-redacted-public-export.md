@@ -371,7 +371,8 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   unchanged. Rerun the trial and log the new share per spec before Phase 9 starts. Tier B check. *Done* (`lane/x70a`,
   reviewed 2026-11-17). Still before the cut (review of `lane/x70a`): the check also fails a `.log` file name, a partial
   address with `x` digits (`0x0063xxxx`) and a `.claude/` path, which pass today (20 log names in the trial); and the
-  second redactor round the review entry names (*Residue*), then the trial is measured again.
+  second redactor round the review entry names (*Residue*), then the trial is measured again. *Done* (`lane/x70b2`, 2026-11-17): the check fails `.log` names, partial addresses
+  and `.claude/` paths; the second redactor round is in; the trial is measured in words (see the log).
 - **What:** add the reviewed specs to the manifest, cut afresh, and run the Tier A redaction review above. Read every
   drop line of the six sampled specs and the drop counts of every spec. A spec that loses more than a quarter of its
   sentences, or one whose remaining text no longer reads as whole, stays out of the manifest.
@@ -1116,3 +1117,98 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   bar in words of the body, not units, and count a spec whose pseudocode blocks dropped as not whole. **Recommendation
   A**: a second redactor round with the safe classes and the X5 ruling, then measure again; B today would publish 15
   specs (7 by words), none with its pseudocode. Ledger: verdict accept with fixes, 3 (omission 2, other 1).
+- 2026-11-17, archivist, lane/x70b2 (second redactor round; owner decisions on offsets and worked-example seeds).
+  **Check** (`tools/export_check.py`): (1) an in-memory struct offset passes X1: `Name+0x10`, a chain `Name+0x10+0x4` and a
+  bare `+0x1C` (up to 5 hex digits); 6+ digits, an offset on a `sub_`/`DAT_`/`FUN_`/`PTR_` name and every code-image
+  value in any spelling (`0x00…`, `@0x…`, bare 8-digit, bare 6-digit with a letter) still fail; bare offsets: both tried,
+  a bare `+0x1C` passes (a table column of offsets is content; only 6+ digits is image-shaped). (4) X5 narrowed (the
+  architect's ruling): a brace fails only as a lone `{`, a line starting with `}` or ending in `{`; a cast only as a
+  pointer cast or glued to its operand, so `(unsigned)` and `(int32)` notes pass; `goto` only with `LAB_`; `*(` only
+  with a type and `*`; a line ending in `;` only when it also assigns with `=` from the line's start, declares a type or
+  compares with `==`/`!=`/`&&`/`||` (our `;` separators and `=` as equality pass). (5) New fails: a `.log` file name
+  (`console.log` of the export repository's JS excepted, tested beside `run.log`), a partial address (`0x0063xxxx`,
+  `0x4xxxxx`, `0x006XXXXX`) and a `.claude` path. **Builder** (`tools/export_build.py`): (3a) a pseudocode line's tail is
+  rewritten (the evidence parenthetical goes, an anchor becomes its bare name, a trailing `; … 0x…` or `// …` evidence
+  comment goes, a comment marker or label left empty goes, the `[C]`/`[I]` tag stays, as in prose); a removed token in
+  the code part leaves the line as it was and the block drops; (3b) code-image addresses, partial addresses and `@0x…`
+  go as tokens (`at` goes with them; a removed subject, a token before a dash or `=`, a determiner or `run`/`using`/
+  `above`/`outside` before it is `broken`; a pinned value of the page stays); (3c) `plan NNNN Phase x`, `ADR-NNNN` and
+  `lane/x` go; (3d) repository paths and `.py`/`.csv`/`.log` names go (a backticked span holding one goes whole); (3e) a
+  cell of addresses only is `—`. A heading keeps its words when a token goes (it was dropping whole sections:
+  "The ADR-0014 boundary"). A link fragment whose slug carries a hex run is dropped (a worked-example heading kept under
+  an allowed section would put its seed into the linking page). The offset-only parenthetical is content now.
+  **Measure:** the report gives per page and in total units dropped, **words dropped** (body words, evidence tokens not
+  counted as words) and **fenced blocks kept/total**, and a `specs:` total. Tests: `test_export_build` 137 checks (was 100),
+  `test_export_check` 136 (was 125), `test_anim_schematic` OK, 0 failed. **Allowlist:** 58 `section` lines
+  `section specs/<path>.md Worked example :: …` (every spec of the trial manifest with a `## Worked example`: anim/movement,
+  anim/README, anim/timing, chain/README, combat/damage, combat/delivery, combat/README, combat/reductions, combat/to-hit,
+  data/calc, data/excel, data/strings, drlg/collision, drlg/lifecycle, drlg/maze, drlg/outdoor, drlg/preset, drlg/README,
+  drlg/room-tiles, drlg/warps, hirelings/README, items/affixes, items/cube, items/economy, items/inventory,
+  items/properties, items/quality, items/quest-drops, items/sockets-runewords, items/tc, items/trade,
+  items/uniques-sets, items/use, items/vendors, monsters/ai/catalogue, monsters/ai/machinery, monsters/ai/README,
+  monsters/pool, monsters/spawn, monsters/special, monsters/stats, objects/README, path/README, path/search,
+  player/creation, player/party, quests/progression, quests/travel, rng/README, rng/seeds, save/d2s, sim/frame,
+  skills/catalogue, skills/dispatch, skills/missiles, skills/README, stats/aggregate, stats/states); the sections cover
+  their `### Example n` children. No `pin` added; none admits an image-range value. **Cut 1** (`workspace/export-x70b2-cut1`,
+  `--repo workspace/export-repo/`): 0 failures, 330 warnings. Three pages differ from the main build: the glossary (31
+  lines now keep their `Name+0x…` offsets, which were dropped as evidence parentheticals; the wiki had offsets in
+  parentheticals only), and the captions of `world/levels` and `items/items`, which lost a `(tools/….py)` parenthetical
+  and so keep their sentence (it was dropped before for the file names). **Trial** (65 specs, `--no-illustrations`,
+  `workspace/export-trial-x70b2`): 90 pages, check **24 failures, all X6** (14 before: the tables that survive more
+  rows now pass the 20-row bar), 1037 warnings, no X1 to X5, X7 to X11. Specs: **units 1160/14172 dropped (8.2%; was
+  32.9%), words 85292/416438 (20.5%; 16.3% without the Open questions sections, which hold 20583 words), fenced blocks
+  kept 867/1000 (was 12/651)**. Drops per rule (all pages): X1 235, X2 7, X3 8, X5 1, X9 75, broken 837, empty 13,
+  Open questions 63 sections. **51 of 65 specs at or under 25.0% words dropped** (data/strings is 25.05%), 50 of them with most pseudocode blocks
+  kept (skills/catalogue keeps 3 of 21: its blocks carry bit-mask constants). Over 25% (13): rng/seeds 60, rng/README 49,
+  drlg/room-tiles 46, combat/README 34, save/d2s 31, stats/aggregate 30, stats/states 29, stats/README 28, drlg/preset 27,
+  drlg/lifecycle 27, drlg/collision 27, drlg/README 26, items/use 26; main reasons `broken` (evidence items and lines
+  whose subject was a removed token) then X1. **Residue**: (a) 162 units fail X1 on non-image hex that is game math,
+  not a seed: bit masks and magic constants (`0x7FFFFFFF` 32, `0x100000` 30, `0x80000000` 17, `0xFFFFFFFF` 12,
+  `0x1000000`, `0x2000000`, `0x200000`, `0x40000000`, `0xAAAAAAAB`), mostly in pseudocode blocks and the long
+  Algorithm items of rng/seeds and drlg/room-tiles: an allowlist widening, the owner's; (b) 75 units keep an image-range
+  value (the address as a call target in pseudocode, `r ← 0x00588D60(&u)`; a worked-example seed in the image's range
+  is removed by the rewrite as an address, so such an example loses its value unless it is pinned); (c) X9 75 units
+  (tool names in prose: Ghidra, logger, harness, Battle.net, disassembly). Hand greps of the trial: no `sub_` or `DAT_`
+  name, no `findings/`, `plans/`, `.py`, `.log`, `.claude`, `lane/` or plan reference; `0x00` followed by 5 hex
+  digits only as values out of the image (`0x00082010` flags, `0x0000029A`, `0x00000055`); 3 `fn:` lines and 2 `src:` lines, all
+  pseudocode parameters (`hitfn(…)`, `src: object`) or the word "`fn:`" quoted in a sentence (they pass X2); `run:` only
+  as the word (50 lines); one `ADR` word ("that ADR excludes…", a reading flaw: the sentence kept its pointer word);
+  no partial address. Per-spec table: `/tmp/claude-1000/-home-igor-Work-recompilcation-project/eb61de30-a30a-401a-a3db-30c67be2439b/scratchpad/x70b2/per-spec-table.txt`.
+- 2026-11-17, architect, review of `lane/x70b2` (Opus, Tier A rigour). **Verdict: accept with fixes (4: omission 3,
+  other 1)**, fixed in this commit. (1) *Safety, omission:* other spellings of an image value passed X1: `0X004A1B20`
+  and `0X4A1B20` (the rules matched lowercase `0x` only), MASM `4A1B20h`, `0x0045_1B20`, a partial `0x0063????` (the
+  trailing `\b` never matched after `?`), and an offset from the image or a module (`Game.exe+0x5C00`, `image base +
+  0x1A2B3`, `D2Common.dll+0x1234`: an address of the image below `0x500000` written as a 4- or 5-digit offset). All fail
+  now; `Game+0x10F4` and `base +0x114` (structs) pass, and a flag in a question (`0x40000?`, `0x66?`, two mermaid
+  blocks) is no partial address: a partial needs 6 to 8 places and `x` or `??` placeholders. The lane's other cases
+  hold: `+0x4A1B20`, `Name+0x0045ABCD`, `base+0x5C0000`, `sub_`/`DAT_`/`FUN_`/`LAB_`/`PTR_` with or without an offset
+  fail; a bare 5-digit value (`4A1B2`, `Name+0x4A1B2`) is below the image and passes. Decimal spellings (`4856608`) stay
+  out of reach of any rule. (2) *Safety, omission:* X5's narrowing let C lines through: compound assignments (`x += 3;`,
+  `x |= 0x10;`), `unsigned int`/`struct Unit *` declarations, `DWORD dw;` (the rule read `[DW]ORD`, not `DWORD`),
+  `--i;`, a bare call or `return x;`, a C comment after the `;` (`x = 1; // c`) and a one-line block (`if (x) { y = 1;
+  }`). They fail now; our `;` comments (`r.init(game, unit, &blk)     ; blk laid out …;`), `&=`/`|=` without `;` and
+  `type Seed { low: u32; high: u32 }` pass: the trial keeps the lane's 867 of 1000 blocks. (3) *Reading, omission:* the
+  owner's offsets decision left `struct:Game+0x6A` removed as evidence; it becomes `` `Game+0x6A` `` as an anchor
+  becomes its name (one with hex in its name or a 6+ digit offset still goes). (4) *Reading, other:* a statement cell
+  broken by the new address class became `—`, which reads as "none": "Q80 | —" in quirks, "The collision test
+  `0x0064FF90`'s result per crossed subtile" → `—`. A broken cell with 3+ words of its own that does not open with its
+  evidence (a tag, an anchor, a run id, an address) now drops the row (`broken`, 53 rows in the trial); an evidence
+  cell is a dash as before; a header row never breaks. The lane's two unrequested fixes are accepted (a heading keeps
+  its words; a link fragment carrying a hex run is dropped). Tests: `test_export_build` 141 (was 137),
+  `test_export_check` 160 (was 136), `test_anim_schematic` OK. **Checks.** Cut 1 (`workspace/export-x70b2-review-cut1`,
+  `--repo workspace/export-repo/`): 0 failures, 330 warnings, identical to the lane's cut; the glossary's kept offsets
+  are 36 tokens on 31 lines, all game structs (`Unit`, `ItemData`, `MonsterData`, `PlayerData`, `Game`, `level`,
+  `drlgRoom`, `activeRoom`, `path`, `StatList`, `QuestControl`, `NpcStoreCtl`, `MonRegion`, `AiCtl`, `act`). Trial
+  (`workspace/export-x70b2-review-trial2`, the x70a manifest): 24 failures, all X6; specs units 1210/14172 dropped
+  (8.5%), words 86243/417111 (20.7%), fenced blocks 867/1000; 49 of 65 specs at or under 25% words. Sections: all 58
+  spec sections read; each admits only its `Worked example` heading and its children (scope ends at the next `##`);
+  about 1300 admitted tokens, seeds `hi:lo`, draw lows and computed flags, none in the image's range (those the rewrite
+  removes, as the lane says). Two kinds to read at the Phase 9 sample: drlg/collision's example names rooms by heap
+  pointers (`0x035A5600`, `0x02DCAB00`, not image values) beside "the `CB` line 8034", a log line; drlg/lifecycle's
+  flags `0x05382000`. Hand greps of the trial: no `sub_`, `DAT_`, `FUN_`, `LAB_`, `PTR_`, `.py`, `.log`, `.claude`,
+  `/home`, repository name, `Ghidra`, `harness`, plan reference; `0x00` only as short or out-of-image values;
+  image-range tokens only the four `pin` values of the wiki pages; `fn:` 3 and `src:` 2 (pseudocode parameters), `run:`
+  47 (the word), `findings` 3 (the word), `ADR` 1 (the lane's "that ADR"). X9 does not list `objdump` (49 lines) or
+  `r2` as the tool ("by objdump and r2 alike"; most of the 119 `r2` are variables), nor `debugger` (4): tool names in prose,
+  a reading for Phase 9 (`breakpoint`, 27, is the game's frame-breakpoint term). Ledger: verdict accept
+  with fixes, 4 (omission 3, other 1).
