@@ -1097,7 +1097,7 @@ Values from the shipped `.bin` files, decoded with `tools/excel_bin.py dump`.
   [Levels](../../tables/Levels.md).
 - Several lead-level statements in the format and table docs (`.bin` vs `.txt`, MPQ order, item index
   order, the 161 TC slots) predate the findings and are superseded by them; this spec follows the
-  findings. The doc updates are queued for the archivist in the backlog.
+  findings, and so do the format and table docs once updated.
 
 ## Open questions
 

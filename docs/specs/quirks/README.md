@@ -668,7 +668,7 @@ hang is also the catalogue's endless-loop note.
 
 [quirks/0001](../../findings/quirks/0001-community-bugs.md#verdicts) compares 30 claims from community bug lists with the code (plan 0057 Phase 2): 20 confirmed, 4
 contradicted, 3 not in 1.14d, 3 not found. Agreement with a page raises no tag: each entry states what the code does, in the
-owning spec's words. Every verdict lands here once; `tools/quirks.py check` holds this table to the finding's.
+owning spec's words. Every verdict lands here once, and a check holds this table to the compared verdicts (`tools/quirks.py`).
 
 | Row | Verdict | Where |
 |---|---|---|
@@ -723,9 +723,9 @@ A reimplementer must not "restore" these. No reviewed statement changes because 
 
 One row per spec with a *Reimplementation notes* section: its note count, the notes taken (cited by at least one entry),
 and the skipped ones by reason. "Weaker duplicate" is a note that restates, at a weaker tag, a statement another spec
-holds raised; the entry takes the raised statement and the disagreement is routed to the spec-writer's backlog
-([entry](../../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md); the three overviews it
-named now state the raised clause). Skipped: 32 notes, presentation 5, table rule 12, not a trap 12, wall-clock 3.
+holds raised; the entry takes the raised statement, and the disagreement goes to the spec with the weaker tag (the
+three overviews named in the [backlog entry](../../backlog/archive/2026-10-30-spec-writer-spec-writer-quirks-harvest-tag-disagreements.md)
+now state the raised clause). Skipped: 32 notes, presentation 5, table rule 12, not a trap 12, wall-clock 3.
 
 | Spec | Notes | Taken | Presentation | Table rule | Not a trap | Wall-clock | Weaker duplicate |
 |---|---|---|---|---|---|---|---|

@@ -387,7 +387,7 @@ D6. repeat n times:
 - D1. [I] `m2` is none when the class's `MonStatsEx` index (read signed) is not a `monstats2` record position, that
   is `< 0` or `≥` the `monstats2` record count, the form the same lookup takes inline in `MonSpawnTry`
   (`i2 < 0 or i2 ≥ nMonStats2`, then a null record), [monsters/0002 §6](../../findings/monsters/0002-room-population.md#6-placement-monspawntry)
-  (0x005B2A66, 0x005B2A72, 0x005B2A8B). `MonStats2Rec`'s own test is not written in a finding.
+  (0x005B2A66, 0x005B2A72, 0x005B2A8B). `MonStats2Rec`'s own test is not read yet.
   (fn:sub_00451FE0_MonStats2Rec@0x00451FE0, fn:sub_005B2A00_MonSpawnTry@0x005B2A00)
 - D1. [C] No stock class reaches the "none" exit: every `MonStatsEx` holds 0..603 and `monstats2` has 609 records,
   so on stock data the bound decides nothing and a reimplementation may use any out-of-range rule. (table survey;

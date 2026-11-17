@@ -29,6 +29,7 @@ AA55AA55   the signature word of a character save file (a file-format constant, 
 # Illustrative seeds
 0xC0FFEE   the seed of the two schematic illustrations (an illustrative input, never a game-derived seed)
 00003039   12345, the illustrative seed of the randomness page's worked example
+0BADF00D   a value written by hand into a save's pass-through field (save/d2s § D), an illustrative input
 
 # Worked examples (illustrative seeds and the draws computed from them)
 section wiki/randomness.md A worked example :: arithmetic on the illustrative seed 12345
@@ -104,6 +105,9 @@ pin 0090CE87 wiki/randomness.md :: the high word after step 4 of the worked exam
 pin 0090CE8A wiki/levels.md :: the high word of the level seed after the first maze room of the Den of Evil example
 pin 6D6D80 wiki/saves.md :: the running checksum after byte 15 of the example save
 pin 800010 wiki/saves.md :: the example item's 32-bit flags field as stored (bits 4 and 23)
+pin 00800010 specs/save/d2s.md :: the example item's 32-bit flags field as stored (bits 4 and 23), save/d2s's worked example
+pin 800000 specs/save/d2s.md :: bit 23 of an item's flags word, a flag value (I1's stored-flags line and the worked example's derivation)
+pin 006E9C81 specs/combat/README.md :: the low word of the player's seed after step 3 of the worked example (a computed draw state)
 
 # Pure arithmetic of the specs (owner decision 2026-11-17, plan 0070 Phase 9): limits and masks, powers of two,
 # compiler division reciprocals and the two well-known LCG constants, admitted as plain values. A domain value (a

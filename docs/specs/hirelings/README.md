@@ -27,7 +27,7 @@ Names of functions, structs and fields are ours ([hirelings/0001](../../findings
 [HireDesc](../../tables/HireDesc.md).
 
 Notation. `S` is the **store seed** of [items/vendors § A](../items/vendors.md#a-store-records-and-the-store-seed-game-creation),
-`NpcControl+0x08`; the finding's "NPC seed" is the same object, and this spec defines no second seed. `Step`, `Init`
+`NpcControl+0x08`; the "NPC seed" of the hireling records is the same object, and this spec defines no second seed. `Step`, `Init`
 and `Range` are the primitives of [rng](../rng/README.md#algorithm): `Init(x)` makes `{x, 666}`; `Range(s, n)` is 0
 with no draw when `n < 1` (signed), else one step and `low mod n` (unsigned). `vflag` is the game's expansion flag
 (`Game+0x70`): rows with `Version` 100 are used when it is set, rows with `Version` 0 otherwise. `difficulty` is

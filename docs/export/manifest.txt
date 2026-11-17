@@ -59,14 +59,13 @@ page glossary.md                  reference    2
 # which says the same two levels in plain words (Phase 6 review, 2026-11-17).
 alias wiki/how-we-know.md export/reading-the-tags.md
 
-# Cut 2: the reviewed specs that pass Phase 9 (plan 0070; review 2026-11-17). One group per subsystem, after the
-# wiki's groups. A spec `README.md` takes the route stem `overview`. A reviewed spec missing here was left out at the
-# review (the plan's log names each with its reason): over 25 % of its words dropped (the builder's measure, Open
-# questions sections counted) rng/README, rng/seeds, data/strings, drlg/room-tiles, drlg/collision, monsters/spawn,
-# monsters/ai/README, objects/README, items/vendors, items/inventory, items/use, combat/README, stats/README,
-# stats/aggregate, stats/states, save/d2s; not whole: skills/catalogue (3 of its 21 pseudocode blocks kept) and
-# conformance/README (a guide to running our trace set and checker, which the export does not ship; its command dropped);
-# provenance on its rows: monsters/ai/catalogue (about 90 rows say how the block was checked against our records).
+# Cut 2: the reviewed specs that pass Phase 9 (plan 0070; review 2026-11-17), and those added at the review of
+# lane/x13a (2026-11-17, export readiness part A). One group per subsystem, after the wiki's groups. A spec
+# `README.md` takes the route stem `overview`. A reviewed spec missing here was left out at a review (the plan's log
+# names each with its reason): over 25 % of its words dropped (the builder's measure, Open questions sections counted)
+# rng/README, rng/seeds, data/strings, drlg/room-tiles, drlg/collision, monsters/spawn, monsters/ai/README,
+# objects/README (part B of the export-readiness entry); not whole: conformance/README (a guide to running our trace
+# set and checker, which the export does not ship).
 group spec-data         11  Spec: Game data
 group spec-drlg         12  Spec: Level generation
 group spec-monsters     13  Spec: Monsters
@@ -75,11 +74,13 @@ group spec-items        16  Spec: Items
 group spec-player       17  Spec: Characters
 group spec-hirelings    18  Spec: Hirelings
 group spec-combat       19  Spec: Combat
+group spec-stats        20  Spec: Stats and states
 group spec-skills       21  Spec: Skills and missiles
 group spec-anim         22  Spec: Animation
 group spec-path         23  Spec: Pathing
 group spec-sim          24  Spec: Server frame
 group spec-quests       25  Spec: Quests and travel
+group spec-save         26  Spec: Save files
 group spec-chain        27  Spec: Seed to world
 group spec-quirks       28  Spec: Quirks
 
@@ -100,6 +101,7 @@ page specs/monsters/special.md                spec-monsters     4
 page specs/monsters/stats.md                  spec-monsters     5
 
 page specs/monsters/ai/machinery.md           spec-monster-ai   2
+page specs/monsters/ai/catalogue.md           spec-monster-ai   3
 
 page specs/items/tc.md                        spec-items        1
 page specs/items/quality.md                   spec-items        2
@@ -109,8 +111,11 @@ page specs/items/properties.md                spec-items        5
 page specs/items/sockets-runewords.md         spec-items        6
 page specs/items/quest-drops.md               spec-items        7
 page specs/items/cube.md                      spec-items        8
+page specs/items/vendors.md                   spec-items        9
 page specs/items/economy.md                   spec-items        10
 page specs/items/trade.md                     spec-items        11
+page specs/items/use.md                       spec-items        12
+page specs/items/inventory.md                 spec-items        13
 
 page specs/player/README.md                   spec-player       1  overview
 page specs/player/creation.md                 spec-player       2
@@ -118,14 +123,20 @@ page specs/player/party.md                    spec-player       3
 
 page specs/hirelings/README.md                spec-hirelings    1  overview
 
+page specs/combat/README.md                   spec-combat       1  overview
 page specs/combat/to-hit.md                   spec-combat       2
 page specs/combat/damage.md                   spec-combat       3
 page specs/combat/reductions.md               spec-combat       4
 page specs/combat/delivery.md                 spec-combat       5
 
+page specs/stats/README.md                    spec-stats        1  overview
+page specs/stats/aggregate.md                 spec-stats        2
+page specs/stats/states.md                    spec-stats        3
+
 page specs/skills/README.md                   spec-skills       1  overview
 page specs/skills/dispatch.md                 spec-skills       2
 page specs/skills/missiles.md                 spec-skills       3
+page specs/skills/catalogue.md                spec-skills       4
 
 page specs/anim/README.md                     spec-anim         1  overview
 page specs/anim/timing.md                     spec-anim         2
@@ -140,16 +151,17 @@ page specs/quests/README.md                   spec-quests       1  overview
 page specs/quests/progression.md              spec-quests       2
 page specs/quests/travel.md                   spec-quests       3
 
+page specs/save/d2s.md                        spec-save         1
+
 page specs/chain/README.md                    spec-chain        1  overview
 
 page specs/quirks/README.md                   spec-quirks       1  overview
 
 # Tables over 20 body rows allowed (X6), each named by its header's source line with a reason (Phase 9 rulings).
 # Left out, so dropped whole by the builder: monsters/special 381 (its Weights and xfer columns copy MonUMod's
-# rows), quirks 673 (community-claim verdicts) and 730 (the specs' coverage, repository bookkeeping). Also ruled,
-# on pages left out of this cut: items/vendors 658 out (the gambling list by level: item-table content),
-# monsters/ai/README 536 out (a per-think evidence record); objects/README 51, save/d2s 315 and 1252,
-# skills/catalogue 151 would be named (a column index, a file layout, our worked example, our step table).
+# rows), quirks 673 (community-claim verdicts) and 730 (the specs' coverage, repository bookkeeping), items/vendors
+# 658 (the gambling list by level: item-table content). Ruled for a page not in this cut: monsters/ai/README 536 out
+# (a per-think evidence record); objects/README 51 would be named (a column index).
 table specs/drlg/maze.md           709   the worked example's draw-by-draw steps (our own step table)
 table specs/drlg/outdoor.md        124   our index of the generators' constant tables: names and shapes, no values
 table specs/items/cube.md          1017  worked example 1's draw-by-draw steps (our own step table)
@@ -166,3 +178,6 @@ table specs/quirks/README.md       522   our quirk entries, group 7
 table specs/quirks/README.md       555   our quirk entries, group 8
 table specs/quirks/README.md       585   our quirk entries, group 9
 table specs/skills/dispatch.md     1014  our decision table of the stat-event handlers: event, effect, draws
+table specs/save/d2s.md            315   the save header's fields: offsets, widths, writers and readers (a file layout)
+table specs/save/d2s.md            1253  the worked example's item bit fields (our own example)
+table specs/skills/catalogue.md    151   our step table of every draw by seed: entry, seed, draws in order

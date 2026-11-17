@@ -18,10 +18,10 @@ experience a kill is worth, and the level-up. This page is the map; the claims, 
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [creation.md](creation.md) | the stub and its checks, `NewCharFromStub` in order, starting values per class, starting skills, starting items (creation record, draws, belt / equip / inventory placement), the experience table, the credit and `XP_Compute` (§ G), `PLAYER_AddExperience`, `PLAYER_LevelUp`, the `-act` grant, party share (§ J4: the distance is to the killed monster), death loss, attribute spending | reviewed |
-| [party.md](party.md) | who is credited and who shares a kill, how much each gets, and every player-count reader with its input (the monster's frozen stat 100 or the current count), each rule restated with its tag and a link | reviewed |
+| File | Covers |
+|---|---|
+| [creation.md](creation.md) | the stub and its checks, `NewCharFromStub` in order, starting values per class, starting skills, starting items (creation record, draws, belt / equip / inventory placement), the experience table, the credit and `XP_Compute` (§ G), `PLAYER_AddExperience`, `PLAYER_LevelUp`, the `-act` grant, party share (§ J4: the distance is to the killed monster), death loss, attribute spending |
+| [party.md](party.md) | who is credited and who shares a kill, how much each gets, and every player-count reader with its input (the monster's frozen stat 100 or the current count), each rule restated with its tag and a link |
 
 Not covered: skill effects and the skill tree (ADR-0002), Battle.net and ladder characters, CharTemplate (read only
 for a template game's class), mercenaries (their levels come from `Hireling`).

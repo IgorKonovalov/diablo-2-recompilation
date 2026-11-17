@@ -75,21 +75,21 @@ flowchart TD
 - [I] Action 3 opens the hire list; the other actions are quest services (imbue, socketing, personalisation,
   travel), outside this spec. (fn:NPC_MenuAction@0x00579D60,
   [items/0009 § 3](../../findings/items/0009-vendors.md#3-open-and-rebuild-npc_menuaction--npc_tradeopen--npc_openstore))
-- [C] The only call sites of `VENDOR_BuildStock` are 0x00578BCB, 0x005794C2 and 0x00579116, and those of
-  `NPCSTORE_Reset` are 0x005372D8 and 0x005794B3 (Ghidra and a raw scan agree). The direct-call walk from the 265
+- [C] `VENDOR_BuildStock` has three call sites only (0x00578BCB, 0x005794C2, 0x00579116), and
+  `NPCSTORE_Reset` two (0x005372D8, 0x005794B3). The direct-call walk from the 265
   callbacks that the 37 quest init functions store never reaches `VENDOR_BuildStock`. It reaches `NPCSTORE_Reset` by
-  one chain only: Baal's death → `0x0052E2A0` (a save of every client, in game types 1 and 2 only) → `0x0052E110` →
-  `0x0052CAF0` (a client dropped after three failed sends) → `0x00539DA0` → `sub_00537580_TownPlayerRemove` →
-  `NPCSTORE_ActStale`. So, by direct calls, quest code resets a store only through that client drop, never in single player.
+  one chain only: Baal's death → a save of every client, in game types 1 and 2 only (`0x0052E2A0`) → its callee
+  (`0x0052E110`) → a client dropped after three failed sends (`0x0052CAF0`) → `ClientRemove` (`0x00539DA0`) →
+  `TownPlayerRemove` (`0x00537580`) → `NPCSTORE_ActStale`. So, by direct calls, quest code resets a store only through that client drop, never in single player.
   (fn:VENDOR_BuildStock@0x00576980, fn:NPCSTORE_Reset@0x00536D10, fn:sub_0058DF20_A5Q6_BaalDeath@0x0058DF20,
   [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 4)
 - [I] The walk follows direct calls only: the 825 indirect call sites under those callbacks are not followed.
   (fn:VENDOR_BuildStock@0x00576980, [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 4)
 - [C] **Which free reaches `NpcStorePlayerLeave`.** `PlayerInteractEnd` has one call site, 0x005555C6 in
-  `sub_00555600_UnitFree`; all 8 logged entries return to 0x005555CB. It calls `NpcStorePlayerLeave` (0x0055555D)
-  when the player is still interacting with an NPC: in run:2026-10-20-two-clients's kept logs, 2 of the 7 host-side
+  `sub_00555600_UnitFree`; all 8 logged entries return to the same site (0x005555CB). It calls `NpcStorePlayerLeave` (0x0055555D)
+  when the player is still interacting with an NPC: in the two-client run's (run:2026-10-20-two-clients) kept logs, 2 of the 7 host-side
   entries, the joiner's leaves while it was talking to Kashya (class 150) and to Akara, are followed by that call. In
-  run:2026-10-27-sweep-vendors's single-player *Save and Exit*, the trade window's cancel had already cleared the
+  the second vendors run's (run:2026-10-27-sweep-vendors) single-player *Save and Exit*, the trade window's cancel had already cleared the
   interaction (`sub_00572F20_NpcInteractRemove`, then `sub_00554190_PlayerClearInteract`, and no new interaction
   after), and no `NpcStorePlayerLeave` call followed. With one player, every window close and menu Escape of the run
   sent the cancel first. (fn:sub_00555500_PlayerInteractEnd@0x00555500, fn:sub_00555600_UnitFree@0x00555600,
@@ -138,8 +138,8 @@ flowchart TD
 
 - [C] The stock and gamble builds read `clvl`, `difficulty`, the act and the expansion flag as inputs. The runs'
   characters were tool-built saves loaded on stock data (run:2026-10-15-vendors: expansion clvl 30 and 75, classic
-  clvl 30; run:2026-10-27-sweep-vendors: expansion clvl 1 and 30 in Normal, 19 in Nightmare, 99 in Hell). Under
-  ADR-0013 they are neutral inputs: they back the code that reads these values, nothing about how a character reaches
+  clvl 30; run:2026-10-27-sweep-vendors: expansion clvl 1 and 30 in Normal, 19 in Nightmare, 99 in Hell).
+  They are neutral inputs (ADR-0013): they back the code that reads these values, nothing about how a character reaches
   that state. The clvl-30 save of the later run, one experience point under clvl 32's threshold, is not a state a
   character reaches by play (§ C). (fn:VENDOR_BuildStock@0x00576980, fn:GAMBLE_BuildInv@0x00578790,
   run:2026-10-15-vendors, run:2026-10-27-sweep-vendors)
@@ -199,7 +199,7 @@ Step notes:
 - A2. [I] **One stock per NPC class per game, shared by every player**; gambling keeps one inventory per player and
   NPC (§ H). (fn:NPCSTORE_FindRec@0x00535EA0, data:g_NpcStoreTable@0x00731184,
   [items/0009 § 1](../../findings/items/0009-vendors.md#1-store-records-and-the-store-seed-game-creation))
-- A2. [C] **The stock is shared with a second player**: in plan 0044's two-client run each store the host built was the
+- A2. [C] **The stock is shared with a second player**: in the two-client run (plan 0044) each store the host built was the
   one the joiner's open of the same NPC found, with no second build (12 opens, C1). Scope: two players, the trade
   stock; per-player gambling was not run with two players. (fn:NPCSTORE_FindRec@0x00535EA0, run:2026-10-20-two-clients)
 
@@ -220,7 +220,7 @@ Step notes:
   the model's lists built from this map equal, byte for byte, the record each of the 94 logged builds read.
   (0x00536271–0x005363EE, 0x00536FC0–0x00537046, fn:VENDOR_BuildAllLists@0x00536F80, run:2026-10-15-vendors)
 - [C] Class 514 (Nihlathak) gets list 15 (Larzuk's) and the gambler mark in his record, while the list builder maps
-  him to 16; the two switches, run through the objdump instructions, agree on the 16 trade classes, and neither gives any class
+  him to 16; the two switches agree on the 16 trade classes, and neither gives any class
   index 11 (Cain). He is not in the trade menu's class list (action 1, above), so his record's list is never built
   into stock; he only gambles. (0x00536252–0x005363F8, fn:VENDOR_BuildAllLists@0x00536F80,
   fn:NPC_MenuAction@0x00579D60,
@@ -301,11 +301,11 @@ Step notes:
 - C1. [C] Every one of the 94 logged trade opens built: 81 first opens (`built` = 0), 6 opens after a reset and 7
   opens of a stale store by the sole interactor (`NPCSTORE_Reset`, then the build), each predicted from the record's
   state at the open. (run:2026-10-15-vendors, fn:NPCSTORE_Reset@0x00536D10)
-- C1. [C] **An open of a built, non-stale store keeps the stock.** In plan 0044's two-client run each store the host
+- C1. [C] **An open of a built, non-stale store keeps the stock.** In the two-client run (plan 0044) each store the host
   built at its first open was kept, with no build, at the joiner's open of the same NPC (12 opens). Scope: the second
   open by another player. (fn:NPCSTORE_FindRec@0x00535EA0, fn:NPC_TradeOpen@0x00579430, run:2026-10-20-two-clients,
   [multiplayer/0001 § 6](../../findings/multiplayer/0001-cases.md#6-phase-2-results-run2026-10-20-two-clients))
-- C1. [C] **The same player opening the window again rebuilds nothing either.** In run:2026-10-27-sweep-vendors, 7
+- C1. [C] **The same player opening the window again rebuilds nothing either.** In the second vendors run (run:2026-10-27-sweep-vendors), 7
   trade opens found the store built and not stale (Charsi 1, Drognan 3, Larzuk 3): no build before the next open, and
   the stock's item ids at each open were those left by the build, less the items bought since (one, Charsi's `lax`).
   (fn:NPC_TradeOpen@0x00579430, fn:NPC_OpenStore@0x00578B30, run:2026-10-27-sweep-vendors,
@@ -318,9 +318,9 @@ Step notes:
   `sole` 1, a reset, then a build. (0x00579E08, fn:sub_00572DA0_NpcInteractCount@0x00572DA0, run:2026-10-20-two-clients)
 - C0–C1. [C] **Asheara's hirelings come before her stock, whatever the menu choice.** Her hire table (252, a store
   and hirelings) is built once, by `HIRE_SendList` called from `sub_00572C10_NpcInteractStart`, at the first click on
-  her and before her first menu action. In run:2026-10-27-sweep-vendors four hire-list actions and then the trade open
+  her and before her first menu action. In the second vendors run (run:2026-10-27-sweep-vendors) four hire-list actions and then the trade open
   followed it, with `hirelingsBuilt` 1 and `built` 0 at the open, and the stock build that followed called no
-  `HIRE_BuildStock`; in run:2026-10-15-vendors's 5 games with Asheara her first trade open likewise found
+  `HIRE_BuildStock`; in the first vendors run's (run:2026-10-15-vendors) 5 games with Asheara her first trade open likewise found
   `hirelingsBuilt` at 1, the hireling build logged before her first menu action (6 of 6 with the later run's). So
   `NPC_OpenStore`'s call 0x00578BFF was never taken in the runs. `HIRE_BuildStock` was a boundary oracle of the first
   run (ADR-0004); its draws on `S` are specified in [hirelings](../hirelings/README.md#entry-points) (plan 0033), which
@@ -341,7 +341,7 @@ Step notes:
   every built store of the act is destroyed at once (by `NPCSTORE_Reset`, or by the clear path when the NPC unit is
   gone) and rebuilt at the next trade open from the opener's current level. (0x00537402, run:2026-10-15-vendors)
 - C2. [C] **Walking out of a town takes the same `TownLevelLeave` call as a waypoint within the act.** In
-  run:2026-10-27-sweep-vendors the walk from the Rogue Encampment into the Blood Moor (levels 1 → 2) called it from the
+  the second vendors run (run:2026-10-27-sweep-vendors) the walk from the Rogue Encampment into the Blood Moor (levels 1 → 2) called it from the
   per-frame room check (the call 0x00538191 in `0x005380D0`, return 0x00538196), and `NPCSTORE_ActStale` got
   `townEmpty` 1 and reset Akara's and Charsi's stores at once. The waypoints within an act took the same call site
   with `townEmpty` 1 (Harrogath → the Frigid Highlands once, Lut Gholein → the Sewers Level 2 six times: Larzuk's and
@@ -378,7 +378,7 @@ Step notes:
   in town with Akara's trade open, its connection dropped) logged the stale call before the interaction ended and no
   reset, the branch with an interactor, but the logged record list was empty there, so the stale byte itself was not
   seen. (fn:NPCSTORE_ActStale@0x00537230, run:2026-10-20-two-clients)
-- [C] **What rebuilds nothing: a town entry, a reopen and a level-up.** In run:2026-10-27-sweep-vendors Drognan's
+- [C] **What rebuilds nothing: a town entry, a reopen and a level-up.** In the second vendors run (run:2026-10-27-sweep-vendors) Drognan's
   store, built at clvl 30 in Lut Gholein, was opened again; the player took the waypoint to the Frigid Highlands (an
   act change, `townEmpty` 0, the store kept), levelled up there, came back by waypoint (a town entry: no
   `NPCSTORE_ActStale` call) and opened the store twice more. None of the three later opens built, each showed the
@@ -477,8 +477,8 @@ Step notes:
   the builds are in the log and lies between the `GetTickCount` values of the stale marks before and after it (7
   marks, 0 out of order); the 240 000 ms test of those marks counts from it. (fn:VENDOR_BuildStock@0x00576980,
   run:2026-10-15-vendors, [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 19)
-- D3–D4. [C] The 32-failure limit was never reached: no build of run:2026-10-15-vendors passed 20 failures (94
-  builds; 348 stock items found no room on their tab, § E), and none of run:2026-10-27-sweep-vendors's 17 passed 27
+- D3–D4. [C] The 32-failure limit was never reached: no build of the first vendors run (run:2026-10-15-vendors) passed 20 failures (94
+  builds; 348 stock items found no room on their tab, § E), and none of the second vendors run's (run:2026-10-27-sweep-vendors) 17 passed 27
   (Larzuk in Hell at `ilvl` 104, five builds in three games: 26, 12, 13, 27 and 17; Fara in Nightmare at `ilvl` 24, the most
   normal copies, 9 to 20; Asheara at 104, 8; Anya and Malah at 104, none). `tools/vendors.py check` reproduces every
   build with the limit modelled. (fn:VENDOR_BuildStock@0x00576980, run:2026-10-15-vendors,
@@ -491,7 +491,7 @@ Step notes:
   the limit can end a build only in the permanent loop, after its first item. (fn:VENDOR_BuildStock@0x00576980,
   [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors) vend 5)
 - D5. [C] **Stock is normal, superior or magic**, never low, rare, set or unique: the 4 656 logged stock items of
-  run:2026-10-15-vendors are quality 2 ×848, 3 ×131 and 4 ×3 677. Since `clvl ≥ 1` gives `ilvl ≥ 6` (D2), the
+  the first vendors run (run:2026-10-15-vendors) are quality 2 ×848, 3 ×131 and 4 ×3 677. Since `clvl ≥ 1` gives `ilvl ≥ 6` (D2), the
   low-quality branch (`ilvl < 5`) is unreachable. A normal entry is superior with 14 chances in 100 below `ilvl` 10
   and 25 in 100 from 10 on (the code's bounds; not a frequency claim). (0x00576900, fn:VENDOR_BuildStock@0x00576980,
   run:2026-10-15-vendors, [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 20)
@@ -574,7 +574,7 @@ Step notes:
   `sub_0062E880_ItemStorePage` reads it. No item type names `mag` (blank 28, `armo` 12, `misc` 45, `weap` 18), so tab 2
   holds only the overflow of tab 1. (fn:sub_0062E880_ItemStorePage@0x0062E880, tbl:ItemTypes.txt:StorePage,
   tbl:StorePage.txt:Code, [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 22, 24)
-- E3. [C] **The tab and the placement.** For all 1 086 stock items of run:2026-10-27-sweep-vendors,
+- E3. [C] **The tab and the placement.** For all 1 086 stock items of the second vendors run (run:2026-10-27-sweep-vendors),
   `ItemStorePage` returned the StorePage byte of the item's type (the type at items `+0x11E`). Placed: tab 0 277,
   tab 1 314, tab 2 171, tab 3 139; parked 185. Each placed item lies on the tab it was placed on, inside the 10 × 10
   grid, overlapping no other (901 cells). Tab 2 received only items whose tab-1 try had failed (171), and a tab-1 item
@@ -589,10 +589,10 @@ Step notes:
 - E3. [C] A stock item that finds no room is still created (its seeds and draws are consumed) and then counted as a
   failure: 348 such items in the run, each reproduced. (fn:VENDOR_CreateStockItem@0x00576330, run:2026-10-15-vendors)
 - [I] Before placement `0x005761C0` fills durability, throwable stacks and charges to their maximum. (0x005761C0)
-- [C] **That fill makes no draw.** The objdump walk under `sub_005761C0_ItemRepairAll` (487 functions), with its
+- [C] **That fill makes no draw.** The walk under `sub_005761C0_ItemRepairAll` (487 functions), with its
   broken-item branch `sub_0055F900_ItemRepairBroken` left out (a new stock item is never broken), reaches no LCG site
   and no RNG call; and the store seed and the game seed continue unchanged across every stock item of the 94 builds of
-  run:2026-10-15-vendors. (fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-15-vendors, [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 25)
+  the first vendors run (run:2026-10-15-vendors). (fn:sub_005761C0_ItemRepairAll@0x005761C0, run:2026-10-15-vendors, [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 25)
 
 ### F. The creation record (`ITEMS_CreateForStore`) and the item seeds
 
@@ -609,13 +609,13 @@ F3. mark the item identified (flag 0x10)                                [C] (fn:
 ```
 
 - F1. [C] At `ItemCreate` (the record logged after each store creation), all 9 206 stock and gamble records of
-  run:2026-10-15-vendors have `+0x80` = 2, row 0, no restore, the quality and `max(1, ilvl)` passed, and the game's
-  item version; all 1 646 of run:2026-10-27-sweep-vendors (from the calls 0x005764DB and 0x005789FE) have `+0x18` = 4,
+  the first vendors run (run:2026-10-15-vendors) have `+0x80` = 2, row 0, no restore, the quality and `max(1, ilvl)` passed, and the game's
+  item version; all 1 646 of the second vendors run (run:2026-10-27-sweep-vendors) (from the calls 0x005764DB and 0x005789FE) have `+0x18` = 4,
   `+0x28` = 1 and `+0x80` = 2 at `ItemCreateByQuality`'s entry. (fn:ITEMS_CreateForStore@0x00559CE0,
   struct:ItemCreateRec+0x80, run:2026-10-15-vendors, run:2026-10-27-sweep-vendors, [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 26, [items/0009 § The S2c pieces](../../findings/items/0009-vendors.md#the-s2c-pieces) vend 26)
 - F1. [C] **Not every `ITEMS_CreateForStore` call is a store item.** `sub_0055A090_DropGoldAmount` calls it too
-  (return 0x0055A18D) for a gold pile (class 523), outside any build: 4 such calls in run:2026-10-27-sweep-vendors,
-  none in run:2026-10-15-vendors. Why those piles dropped is not part of this spec. (fn:sub_0055A090_DropGoldAmount@0x0055A090,
+  (return 0x0055A18D) for a gold pile (class 523), outside any build: 4 such calls in the second vendors run (run:2026-10-27-sweep-vendors),
+  none in the first vendors run (run:2026-10-15-vendors). Why those piles dropped is not part of this spec. (fn:sub_0055A090_DropGoldAmount@0x0055A090,
   run:2026-10-27-sweep-vendors, [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors))
 - F3. [C] All 4 656 stock and 4 550 gamble items have the identified flag `0x10` when `ITEMS_CreateForStore` returns.
   (fn:ITEMS_CreateForStore@0x00559CE0, run:2026-10-15-vendors, [items/0009 § Plan 0038 batch S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) vend 27)
@@ -752,8 +752,8 @@ G3. GAMBLE_Upgrade(lvl, item, uber, ultra) → item:                       [C] (
 
 Step notes:
 
-- G1. [C] Every gamble open of the runs built a window: the 325 of run:2026-10-15-vendors and the 40 of
-  run:2026-10-27-sweep-vendors, each after the previous window's close had freed the inventory (§ H).
+- G1. [C] Every gamble open of the runs built a window: the 325 of the first vendors run (run:2026-10-15-vendors) and the 40 of
+  the second vendors run (run:2026-10-27-sweep-vendors), each after the previous window's close had freed the inventory (§ H).
   (fn:sub_00578AE0_GambleEnsure@0x00578AE0, run:2026-10-15-vendors, run:2026-10-27-sweep-vendors,
   [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors) vend 29)
 - G1. [I] A gamble open builds only for an NPC whose record has `isGambler` (the six classes of § A), and only when
@@ -770,7 +770,7 @@ Step notes:
   that range occurred, and every affix pick of the 4550 gambled items reproduced from that `ilvl` by the general alvl
   rule: there is no separate affix window around the character's level. (0x00578877–0x00578916,
   tbl:Gamble.txt:code, run:2026-10-15-vendors)
-- G2. [C] **The clamp to 5..99.** In run:2026-10-27-sweep-vendors, of 560 `lvl` draws, 26 at clvl 1 fell below 5
+- G2. [C] **The clamp to 5..99.** In the second vendors run (run:2026-10-27-sweep-vendors), of 560 `lvl` draws, 26 at clvl 1 fell below 5
   (−4 to 4) and were taken as 5, and 232 at clvl 99 rose above 99 (100 to 103) and were taken as 99; every window
   reproduces from the clamped value (the pick's bound `countUpTo[lvl]`, the upgrade level and the creation `ilvl`).
   (0x005788A3–0x005788D6, fn:GAMBLE_BuildInv@0x00578790, run:2026-10-27-sweep-vendors, [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors) vend 30)
@@ -813,9 +813,9 @@ Step notes:
   NPC's interaction list, and when the list empties the player's gamble inventory there is freed; the next *Gamble*
   builds a new window. Each of the 325 windows of the run was built this way. (fn:sub_00572F20_NpcInteractRemove@0x00572F20,
   fn:sub_00537190_GambleInvFree@0x00537190, run:2026-10-15-vendors)
-- [C] In run:2026-10-27-sweep-vendors all 77 logged `GambleInvFree` calls came from `NpcInteractRemove` (return
+- [C] In the second vendors run (run:2026-10-27-sweep-vendors) all 77 logged `GambleInvFree` calls came from `NpcInteractRemove` (return
   0x00572FBF: the cancel). The interaction end that frees through `NpcStorePlayerLeave` (§ Entry points) was met only
-  at the joiner's leaves at Kashya and Akara in run:2026-10-20-two-clients, neither a gambler.
+  at the joiner's leaves at Kashya and Akara in the two-client run (run:2026-10-20-two-clients), neither a gambler.
   (fn:sub_00537190_GambleInvFree@0x00537190, fn:sub_00572F20_NpcInteractRemove@0x00572F20,
   run:2026-10-20-two-clients, run:2026-10-27-sweep-vendors, [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors) vend 32)
 - [I] The inventory is also freed when a player unit is freed with its interaction open
@@ -825,7 +825,7 @@ Step notes:
   leaving with a gamble window open, and a second open within one interaction is G1's no-build branch, which needs
   the NPC's interaction list non-empty at a close (0x00572FAF). (fn:sub_00555500_PlayerInteractEnd@0x00555500,
   fn:sub_00536B50_NpcStorePlayerLeave@0x00536B50, fn:NPCSTORE_ClearRec@0x00536580, 0x00572FAF, [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors) vend 32)
-- [C] **A purchase copies the shown item and creates no replacement.** In run:2026-10-27-sweep-vendors two gamble
+- [C] **A purchase copies the shown item and creates no replacement.** In the second vendors run (run:2026-10-27-sweep-vendors) two gamble
   purchases (Gheed's `sml` at clvl 1, Anya's `cap` at clvl 99) went `NPC_BuyItem` → `sub_0055A2A0_ItemCopy` of the
   shown item (a new unit with the same class, quality and file index), then `sub_00576F50_StoreItemSold`'s gamble
   branch (0x00576FFF → 0x00576650), with no `ITEMS_CreateForStore`, `GAMBLE_BuildInv` or `VENDOR_BuildStock` call
@@ -833,13 +833,13 @@ Step notes:
   (fn:NPC_BuyItem@0x00577830, fn:sub_0055A2A0_ItemCopy@0x0055A2A0, fn:sub_00576F50_StoreItemSold@0x00576F50,
   run:2026-10-27-sweep-vendors, [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors) vend 33)
 - [C] **A bought stock item is removed from the store unless `VENDOR_IsPermanent` holds; a sold item is copied in
-  unless refused.** Purchases in run:2026-10-27-sweep-vendors: Akara's `tsc` (permanent: no removal call, the stock
+  unless refused.** Purchases in the second vendors run (run:2026-10-27-sweep-vendors): Akara's `tsc` (permanent: no removal call, the stock
   unchanged), Akara's `wnd`, Charsi's `lax` and Malah's `bwn` (not permanent: the removal call 0x005766D0, the stock
   less the item). Sales (`NPC_SellItem`'s decision): a `hp5` to Akara in Normal and a `cap` to Malah in Hell copied
   and placed; a `tsc` to Akara refused by the permanent test (her permanent list); a `hp5` to Malah in Hell refused
   by the permanent test, where `hp5` is in no vendor's permanent list, so the clause outside Normal refused it,
   against the Normal `hp5` copied; a `cap` sold in Gheed's gamble window refused by the gamble view (0x00579714), with
-  no copy. With run:2026-10-19-economy2's refusals by the flags `0x400000` (ethereal) and `0x100` and by `carry1`
+  no copy. With the second economy run's (run:2026-10-19-economy2) refusals by the flags bit 22 (`0x400000`, ethereal) and `0x100` and by `carry1`
   (`0x00575FA0`) ([items/economy § F](economy.md#f-callers-buy-sell-repair)). (fn:VENDOR_IsPermanent@0x00576ED0,
   0x00576EF0–0x00576F10, fn:sub_00576F50_StoreItemSold@0x00576F50, fn:NPC_SellItem@0x00579510,
   run:2026-10-19-economy2, run:2026-10-27-sweep-vendors, [items/0009 § Plan 0038 batch H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors) vend 34)
@@ -869,7 +869,7 @@ Step notes:
 
 ## Worked example
 
-Both examples are recomputed from the run's logs with `python3 -I tools/vendors.py check` (read-only), which
+Both examples are recomputed from the run's logs (`python3 -I tools/vendors.py check`, read-only), which
 reproduces them with 0 mismatches. Seeds are `low:high` in hex.
 
 ### Stock: Akara, expansion Normal, Act I, clvl 30 (run:2026-10-15-vendors, game 3201)
@@ -969,6 +969,7 @@ on each of slots 0 and 1, 4 on each of the eight slots with one upgrade draw, an
 
 ## Evidence
 
+- How the statements above were read, by statement: the call sites of `VENDOR_BuildStock` and `NPCSTORE_Reset`: Ghidra and a raw scan agree; the two class switches: run through the objdump instructions; the walk under `ItemRepairAll`: walked with objdump.
 - Finding: [items/0009](../../findings/items/0009-vendors.md) (§ 1–8, § Phase 2, the gamble list order table, and
   plan 0038's batches [S2c](../../findings/items/0009-vendors.md#plan-0038-batch-s2c-2026-10-16) and
   [H6c](../../findings/items/0009-vendors.md#plan-0038-batch-h6c-run2026-10-27-sweep-vendors), cited by row as

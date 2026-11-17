@@ -146,7 +146,7 @@ only, no frequency and no champion chance. [C] (run:2026-10-15-berserk-forced, [
 | re-created monster's stats 7, 12, 13 | specified elsewhere | the restore writes 13 and 7 from the inactive record; 12 is this spec's `MonsterInit` level plus the re-applied mods | [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore) | [C] (run:2026-10-17-lifecycle, fn:sub_005424F0_InactiveMonstersRestore@0x005424F0) |
 
 Out of scope: to-hit, damage and elemental damage (attack time, § H), skills, the AI ([monsters/ai](ai/README.md)) and what an aura does in combat.
-[I] (architect ruling, plan 0025 Phase 1; fn:sub_005A4F50_MonAttackStats@0x005A4F50)
+[I] (fn:sub_005A4F50_MonAttackStats@0x005A4F50, plan 0025 Phase 1)
 
 ## Algorithm
 
@@ -868,6 +868,7 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 
 ## Evidence
 
+- The *Out of scope* line under *Inputs and oracles* is the architect's ruling at plan 0025 Phase 1.
 - [findings/ai/0016-uber-event.md](../../findings/ai/0016-uber-event.md): no creator of classes 704, 705 or 709 found in this image, for the hpregen note under *Open questions*.
 - [ai/0017 § 13](../../findings/ai/0017-phase2-second-run.md#13-third-part-2026-11-04-lanep52c-the-fixed-model-the-tier-table-h3-logger-rev-5) and [ai/0006, H3 bullet](../../findings/ai/0006-summons.md): the skill-damage pair of § H1.
 - [findings/monsters/0004-stats.md](../../findings/monsters/0004-stats.md): §§ 1–9 (the reading), § 10 (the boundary),

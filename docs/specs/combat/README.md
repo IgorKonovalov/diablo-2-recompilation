@@ -36,12 +36,12 @@ flowchart LR
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [to-hit.md](to-hit.md) | the hit test, the chance to hit with `ToHitFactor`, defence, block, evade, weapon block, dodge, avoid | reviewed |
-| [damage.md](damage.md) | the damage build: physical roll, critical and deadly strike, elements, steal and drain fields, poison, the `RangeB(1)` step, conversion, the monster `Crit`; `MonAttackStats`' draws | reviewed |
-| [reductions.md](reductions.md) | the percent P, DR and MDR, resistances with the difficulty penalty, caps, immunity and pierce, absorb | reviewed |
-| [delivery.md](delivery.md) | queue and delivery, crushing blow, open wounds, leech, stun, cold, freeze, poison, the life change, the life tick | reviewed |
+| File | Covers |
+|---|---|
+| [to-hit.md](to-hit.md) | the hit test, the chance to hit with `ToHitFactor`, defence, block, evade, weapon block, dodge, avoid |
+| [damage.md](damage.md) | the damage build: physical roll, critical and deadly strike, elements, steal and drain fields, poison, the `RangeB(1)` step, conversion, the monster `Crit`; `MonAttackStats`' draws |
+| [reductions.md](reductions.md) | the percent P, DR and MDR, resistances with the difficulty penalty, caps, immunity and pierce, absorb |
+| [delivery.md](delivery.md) | queue and delivery, crushing blow, open wounds, leech, stun, cold, freeze, poison, the life change, the life tick |
 
 Names of functions, structs and fields are ours ([combat/0001](../../findings/combat/0001-formulas.md),
 `re/types/combat.h`); the server module is the binary's own `.\UNIT\SUnitDmg.cpp`. Primitives (`Step`, `Range`,
@@ -81,7 +81,7 @@ toward zero unless stated. Life, mana and damage fields are in 1/256 points.
 | State | Type | Source |
 |---|---|---|
 | unit seed of each unit | `Seed` at `Unit+0x20` | [rng/seeds](../rng/seeds.md) |
-| unit stats | i32 values of the stat lists | value inputs (§ The ADR-0014 boundary) |
+| unit stats | i32 values of the stat lists | value inputs (the boundary section, ADR-0014) |
 | hit queue | list at `Unit+0xAC` | [delivery § A](delivery.md#a-queue-and-delivery) |
 | frame | `Game+0xA8` | timed states |
 | game type | `Game+0x70`, 0 classic | game creation |
@@ -127,7 +127,7 @@ packet-beta
 [C] The packet is 0x70 bytes, zeroed by the caller on its stack and copied whole onto the attacker's hit queue:
 `COMBAT_QueueHit` copies 0x1C dwords (`mov ecx, 0x1C; rep movsd`, 0x0057CAE1–0x0057CAE6), 33 of the 36 packet
 functions zero it with `memset(&packet, 0, 0x70)`, do 67 with an `EAX` of 0, and the three others take theirs from
-those (r2 beside Ghidra; run:2026-11-15-sweep2-s5b,
+those (run:2026-11-15-sweep2-s5b,
 [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b),
 [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)).
 [I] Its fields: `+0x00` flags, `+0x04` result (u16), `+0x08` physical, `+0x0C` enhanced-damage percent, `+0x10` fire,
@@ -162,14 +162,14 @@ is on 7, the rest are in no logged packet. [I]
 | inputs (packets) | a skill's packet (any `srvdofunc` other than 1) and a missile's packet, taken at `ResolveAndQueue` or `ApplyDamage` entry | [C] (run:2026-10-16-combat) |
 | boundary oracles | stat-event handlers other than 15 and 16, `COMBAT_DurabilityLoss`, the knockback, `COMBAT_GetHit`, a monster's on-hit skill `0x005A4390`, a skill do-function's draws before the build, a delivery on a later frame than the hit test: entry seeds asserted, exit seeds taken (ADR-0004) | [C] (run:2026-10-16-combat) |
 
-[C] Under this boundary run:2026-10-16-combat reproduced 15 358 logged events of 19 sessions with 0 mismatches,
+[C] Under this boundary the combat run (run:2026-10-16-combat) reproduced 15 358 logged events of 19 sessions with 0 mismatches,
 every logged seed asserted; with the resume-lane addendum the run list holds 40 logs and 40 655 events, still with 0
-mismatches. (run:2026-10-16-combat) [C] Under the same boundary run:2026-10-20-shortfalls (plan 0047 Phase 2,
+mismatches. (run:2026-10-16-combat) [C] Under the same boundary the first shortfalls run (run:2026-10-20-shortfalls) (plan 0047 Phase 2,
 sessions built for the branches the first run met too rarely) reproduced 18 737 events of 31 logs with 0 mismatches,
 and the kept run list re-checks with the same checker at 0 mismatches over its 40 655 events. Its run list names the logs whose player holds no
 usable shield (`--no-shield-log`), which only sets the predicted block chance to 0, so a logged chance above 0 still
 fails ([to-hit § C2](to-hit.md#c-the-hit-test-and-the-defence-rolls)). (run:2026-10-20-shortfalls) [C] Under the same
-boundary run:2026-10-21-shortfalls2 (plan 0047 Phase 2b, flat absorb by element) reproduced 2 527 events of 3 logs
+boundary the second shortfalls run (run:2026-10-21-shortfalls2) (plan 0047 Phase 2b, flat absorb by element) reproduced 2 527 events of 3 logs
 with 0 mismatches, and both kept run lists re-check at 0 mismatches. Its checker takes the attacker's life after a
 defender's stat-event handler from the handler's logged life where it differs from the model's (a value oracle, as
 the handler is), so a leech that follows is predicted from that life
@@ -226,7 +226,7 @@ A2. MonsterAttack(att):                                               [C] (fn:su
   missile's own stats on the missile's seed, and `MISSILE_ApplyDamage` rolls the knockback on the missile's seed,
   the defence on the defender's seed (block only with physical damage), and calls `ApplyDamage` with reductions.
   That path is phase (3); here its packet is an input. [C] The to-hit on the owner's seed (269 rolls) and the packet on
-  the missile's seed (4 118 builds) are [skills/missiles E1, F1](../skills/missiles.md) on run:2026-10-25-skills; the
+  the missile's seed (4 118 builds) are [skills/missiles E1, F1](../skills/missiles.md) on the skills run (run:2026-10-25-skills); the
   knockback on the missile's seed in 8 638 missile events (7 with a knockback row), and no block draw on 10 387
   events with physical 0, 6 838 of them in logs where another missile was blocked (run:2026-10-16-combat,
   [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)).
@@ -260,7 +260,7 @@ sequenceDiagram
 [C] On the player's seed the order is: to-hit, the build (whatever the hit result), then on a hit the stat events,
 the leech overlay and the stun; on the monster's seed: the defence rolls (on a hit), then the cold draw at delivery.
 Each draw happens only under the condition given in its file. (fn:SKILL_AttackDo@0x0056F070, fn:COMBAT_ApplyDamage@0x0057C6C0,
-run:2026-10-16-combat) The weapon durability and the get-hit draws are boundary oracles (§ The ADR-0014 boundary).
+run:2026-10-16-combat) The weapon durability and the get-hit draws are boundary oracles (the boundary section, ADR-0014).
 [C] Their seed steps match a draw model in the kept logs: durability, one step for a player attacker, three for a
 player defender, none for a monster or hireling (9 680 pairs but one), and a player defender's get-hit draws are
 `GetHitRoll`'s (25 669 of 25 669). (fn:COMBAT_DurabilityLoss@0x0057D3D0, fn:sub_0057CB00_GetHitRoll@0x0057CB00,
@@ -365,7 +365,7 @@ CritChain(u, w) → bool:                                              [C] (fn:s
   stat-344 entry for one of the weapon's item types, from 0. (fn:sub_0064B860_MissileDamageBlock@0x0064B860,
   fn:sub_0064A850_MissileCritRoll@0x0064A850, 0x0064A864–0x0064A890, tbl:Missiles.txt:SrcDamage, tbl:Skills.txt:SrcDam,
   run:2026-10-25-skills, run:2026-11-16-sweep2-s5fe, [combat/0001 § 22](../../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe))
-  A used skill's mastery path (`0x00645720`'s throwable branch) was not reached. [I] (fn:SKILLS_GetMasteryBonus@0x00645830)
+  A used skill's mastery path (the throwable branch of `0x00645720`) was not reached. [I] (fn:SKILLS_GetMasteryBonus@0x00645830)
 - B4. **It is not the melee build's chain** ([damage](damage.md) step 3, where 337 and 141 each draw only when above
   0): stat 337 draws even at 0, so every weapon-share missile steps its owner's seed at least once (an arrow, a
   javelin, a throw, a `SrcDam` skill missile, a monster archer's arrow): 984 weapon-share creations stepped it once
@@ -375,7 +375,7 @@ CritChain(u, w) → bool:                                              [C] (fn:s
 - B4. A `SrcMissDmg` missile (a sub-missile taking a share of its source missile's damage) draws the chain on the
   **source unit's** seed, a missile's own, with no weapon and so no mastery step. [C] for the call: the site calls the
   chain with `ESI` = the block's third argument and a pushed weapon of 0, only when that argument is non-null, and a
-  null weapon makes no mastery step (two tools on 0x0064BD07–0x0064BD15; the chain's map, run:2026-11-16-sweep2-s5fe).
+  null weapon makes no mastery step (0x0064BD07–0x0064BD15, read by two tools; the chain's map, run:2026-11-16-sweep2-s5fe).
   [I] that the site is the `SrcMissDmg` branch and the argument the source missile, the caller's reading
   ([skills/missiles C2](../skills/missiles.md#c-the-damage-the-missile-carries)). (fn:sub_0064B860_MissileDamageBlock@0x0064B860)
 - B4. The pierce count makes a **local** seed, `Init(baseStat(owner, 328))`, and steps it up to four times while
@@ -386,7 +386,7 @@ CritChain(u, w) → bool:                                              [C] (fn:s
 
 **B5. The progressive finisher (the attacker's seed).** A player's normal attack under a charged progressive
 state (an Assassin's charge-up skills) runs `COMBAT_PrgFinisher` between the queue and the delivery (A1); the run met
-none (§ The ADR-0014 boundary). Its own `RNG_Step` is a **peek**, but the `srvprgfunc` entries it calls **draw on the
+none (the boundary section, ADR-0014). Its own `RNG_Step` is a **peek**, but the `srvprgfunc` entries it calls **draw on the
 attacker's seed**; the full algorithm is [delivery § A3](delivery.md#a-queue-and-delivery). The assassin finishing
 moves (do 42, 46, 50, 52) also call the finisher, with their own queued hit, outside this attack event (delivery § A2).
 
@@ -433,13 +433,13 @@ sequenceDiagram
 the handlers registered on stock data that draw do so on the **handler's unit**, the unit that owns the event. On
 the attacker's seed: its `do…` handlers 7 knockback, 8 howl and 9 stupidity, 20 skill on attack, hit or kill, and
 its `kill` handler 31 reanimate; on the defender's: 3 shiver armour (`attacked…`), 21 skill on get-hit (`damaged…`) and
-its `killed` handler 30. In run:2026-10-16-combat these handlers were boundary oracles (§ The ADR-0014 boundary); the
+its `killed` handler 30. In the combat run (run:2026-10-16-combat) these handlers were boundary oracles (the boundary section, ADR-0014); the
 list and their draws are [delivery § E5](delivery.md#e-the-stat-events-crushing-blow-open-wounds-freeze). [C] for
 7, 8 and 20 on the attacker, 9 on a monster attacker and 21 on the player defender: each call stepped its unit's seed
 once in the skills runs (data:g_StatEventFuncs@0x007325B0, run:2026-10-25-skills, run:2026-10-27-skills,
 [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j));
 [I] for 3, 30 and 31, which never fired ([skills/0003 §§ 3, 13](../../findings/skills/0003-handlers.md#3-the-stat-event-handlers)).
-[C] In plan 0045's runs the handler unit's seed stepped by exactly the handler's own draws in 1 303 handler calls:
+[C] In the recorded runs (plan 0045) the handler unit's seed stepped by exactly the handler's own draws in 1 303 handler calls:
 one for 7, 8, 9, 15 and 16, one for 20 when its roll fails and at least one when its cast follows, at least one for
 21, none for 5, 6, 13, 17, 19, 22, 28 and 29 ([skills/dispatch § K](../skills/dispatch.md#k-stat-event-handlers)).
 (fn:UNIT_DispatchEvent@0x005C0C30, run:2026-10-27-skills, run:2026-10-25-skills) [C] State 52 (prevent heal) is not a
@@ -457,15 +457,15 @@ attacks). (run:2026-10-16-combat)
 
 [I] The run had no finisher events (they were dropped by rule and none occurred), so this chaining does not cover a
 charged progressive state: there the finisher's entries 37, 39, 41 and 143 add one draw each and 38 two or three on the
-player's seed inside the attack, besides the creation draws of the missiles they create (B5, B4), and the drawing stat-event handlers of B6 add theirs inside a hit or a kill. Plan 0045 Phase 2
-checked the handlers' draws (B6); the finisher's entries stayed oracles in its runs. (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D4E80, 0x0056E1C4, data:g_StatEventFuncs@0x007325B0)
+player's seed inside the attack, besides the creation draws of the missiles they create (B5, B4), and the drawing stat-event handlers of B6 add theirs inside a hit or a kill. The recorded runs
+checked the handlers' draws (B6), and the finisher's entries stayed oracles in them (plan 0045 Phase 2). (fn:COMBAT_PrgFinisher@0x005D5220, 0x005D4E80, 0x0056E1C4, data:g_StatEventFuncs@0x007325B0)
 
 [C] A weapon-share missile the player creates (a bow or crossbow attack, a javelin, a throw, a `SrcDam` skill
 missile) inserts the 1–3 critical draws of B4 on the player's seed at its creation frame, between the player's other
 events: one step in each of 856 player creations (run:2026-10-25-skills), the second and third steps emulated
 (run:2026-11-16-sweep2-s5fe). (fn:sub_0064A850_MissileCritRoll@0x0064A850, fn:sub_0064B860_MissileDamageBlock@0x0064B860)
 [I] Whether these draws account for any of the 213 resynchronisations is not established: no kept log holds a bow
-attack under both the combat and the skills logger.
+attack recorded for both the combat and the skills checks.
 
 [C] **A monster's seed chains only within one melee attack**: `MonAttackStats` at the mode change to the attack it
 opens (2 237 monster, 558 mercenary pairs). Between two attacks its AI draws on the same seed, out of scope, so each
@@ -572,6 +572,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
 
 ## Evidence
 
+- How the statements above were read, by statement: the damage packet's zeroing: r2 beside Ghidra. The kept logs that would answer C's bow-attack question come from two loggers, the combat and the skills one.
 - Plan 0066 Phase 1, the raises this spec carries since its Phase 3 re-tag:
   [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)
   and [part 2](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)
@@ -596,7 +597,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   absorb, cold flat absorb final, the leech after a defender's handler at one separating event.
 - [skills/0001](../../findings/skills/0001-dispatch.md) §§ 11 (the conversion writers), 12 (the finisher's seed peek).
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries and the finisher's tail), 3 (the
-  stat-event handlers and their draws), 13 (draws per event), and the architect's P1.3 review (plan 0045 log).
+  stat-event handlers and their draws), 13 (draws per event), and plan 0045's P1.3 review (its log).
 - [skills/0002](../../findings/skills/0002-missiles.md) §§ 2 (creation), 3 (the damage block, `MissileCritRoll`, the
   pierce count), 5 (the hit, the to-hit roll), 6 (`MISSILE_BuildDamage`'s draw order), 9 (draws per event), and the
   architect's ruling on the creation draws (plan 0045 P1.2 review).

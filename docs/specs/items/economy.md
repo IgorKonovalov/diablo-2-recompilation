@@ -163,7 +163,7 @@ Scale(v: i32, m: i32, t: i32) → i32:                                  [C] (0x0
   § B–§ D. (0x0062F0BE–0x0062FD8B, run:2026-10-17-economy)
 - [C] The run separates the large form at the NPC step and in the stat terms: with it the 26 525 price calls
   reproduce, and with the small form alone `tools/economy.py check` reports 1 846 mismatch lines (NPC step) and
-  2 737 (stat terms) on the same logs (architect review, 2026-10-19). (0x0062FAAC–0x0062FAE2, 0x00628E9F–0x006292D7,
+  2 737 (stat terms) on the same logs. (0x0062FAAC–0x0062FAE2, 0x00628E9F–0x006292D7,
   run:2026-10-17-economy)
 - [C] At the other steps that have it the large form holds under emulation: `AddTerm` tests `P` for all three sums
   of the affix, set and unique terms (1 047 large-form terms; the small form alone fails 156), the staff-mod term
@@ -846,7 +846,7 @@ Step notes:
 - H2. [C] **An indestructible item makes no draw.** All 50 rolls without a draw were on two items with stat 152 = 1
   in their full-stat cache (a set `xtb`, 12 rolls, and a unique `uit`, 38, session 4381), whose bases have
   `nodurability` 0, `durability` 18 and 86 and whose maximum is not 0, so only stat 152 makes `ItemHasDurability`
-  false; every roll on an item without stat 152 drew (architect review, 2026-10-19). (0x00559E63,
+  false; every roll on an item without stat 152 drew. (0x00559E63,
   fn:sub_00629930_ItemHasDurability@0x00629930, run:2026-10-17-economy)
 - H2. [C] To the first write after the roll, under emulation: a non-armour throwable weapon in a classic game returns
   before the draw with the owner's seed unchanged (22 cases; drawing fails 15); below the chance with `D − 1 < 1`, an
@@ -857,7 +857,7 @@ Step notes:
   run:2026-10-17-economy the broken armour and the weapon taken to 0 are single cases. (0x00559E38–0x0055A07A,
   fn:ITEMS_DurabilityLossRoll@0x00559E30, run:2026-11-16-sweep2-s4e-emu, [items/0011 § S4e part 2](../../findings/items/0011-economy.md#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu))
   [I] What follows the first write: `D ← M`, the replenish timer the two version branches arm when `MaxStack` is above
-  0 (0x0055A031–0x0055A040), in the code's order (architect review, 2026-10-19), and `HandsRefresh`. (0x00559F72–0x0055A07A)
+  0 (0x0055A031–0x0055A040), in the code's order, and `HandsRefresh`. (0x00559F72–0x0055A07A)
 - H2. [I] A melee weapon whose durability reaches 0 gets `D = 0` and quantity 0 but no `ItemBreak`; `HandsRefresh`
   calls `ItemBreak` only for a stackable or throwable `weap` of quantity ≤ 0, magic or better, without stat 125. The
   one weapon taken to 0 in the run had no broken flag at the roll's exit. (fn:sub_00580310_HandsRefresh@0x00580310,
@@ -1088,6 +1088,8 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
 
 ## Evidence
 
+- Plan 0043's architect review of 2026-10-19 re-ran A's separation of the large form (1 846 and 2 737 mismatch lines
+  with the small form alone), H2's rolls on items without stat 152, and read H's order after the first write.
 - Finding: [items/0011](../../findings/items/0011-economy.md) (§ 1–§ 8, § The writer of `game+0x6A`, § Phase 2,
   § Phase 2b).
 - [skills/0002 § 2](../../findings/skills/0002-missiles.md#2-creation) (`useAmmo` per missile call site, plan 0045 P1.2) and
