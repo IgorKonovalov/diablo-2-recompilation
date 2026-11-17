@@ -536,7 +536,7 @@ DimReturns(lvl, a, b) → i32:                                             [C] (
 
 The codes the harness run did not reach as variables. The confirmed rows ran under emulation on synthetic skills,
 skilldesc and missiles records (run:2026-10-17-sweep-emu, codes 7–72; run:2026-10-17-sweep-emu2, codes 43–48;
-ADR-0015): 5 000 calls of `SKILLS_CalcVar` against a `tools/` model at levels −5…120 and wide values, and 3 000 for
+ADR-0015): 5 000 calls of `SKILLS_CalcVar` against a model of our own at levels −5…120 and wide values, and 3 000 for
 codes 43–48, the code byte with garbage above it in part of each ([data/0005 § Plan 0038 batch S1e](../../findings/data/0005-calc.md#plan-0038-batch-s1e-2026-10-17),
 [§ Plan 0038 batch S1f](../../findings/data/0005-calc.md#plan-0038-batch-s1f-2026-10-17)); the others are read from the
 code only:

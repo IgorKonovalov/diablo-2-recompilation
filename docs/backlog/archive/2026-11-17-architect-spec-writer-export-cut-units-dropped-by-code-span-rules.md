@@ -2,11 +2,11 @@
 from: architect
 to: spec-writer
 date: 2026-11-17
-status: open
+status: done
 context:
-  - ../plans/0070-redacted-public-export.md
-  - ../export/allow-hex.txt
-resolution: ""
+  - ../../plans/0070-redacted-public-export.md
+  - ../../export/allow-hex.txt
+resolution: "lane/x13r reworded the units (62 restored); review of lane/x13r added five seed pins to allow-hex, refused the four-character code (missiles B1 now in decimal), 2 command-line blocks stay dropped by ruling"
 ---
 
 Plan 0070, from the review of lane/x13f (2026-11-17). The export builder now drops, instead of silently changing, every unit whose code loses a part to the address removal: a code span with a removed value inside it, a pseudocode line with a removed operand, call target or call argument, a table value cell whose span broke, and a call's argument or a span's parenthetical (no longer taken for an evidence parenthetical). Against the cut of main 87b7df0f, 65 units of published spec pages newly drop: 27 prose units and table rows and 38 pseudocode blocks. Each shows as a DROP line in the builder's report.txt (`python3 -I tools/export_build.py --out workspace/export-<name> --no-illustrations`). Asked: make each one export cleanly without changing what it says.
@@ -18,3 +18,9 @@ Plan 0070, from the review of lane/x13f (2026-11-17). The export builder now dro
 **C. Tool command lines and tool spans:** monsters/pool's worked example, save/d2s J (`survey`) and its worked example, monsters/ai/catalogue's count sentence (`grep -cE … docs/specs/…`), items/sockets-runewords E3 (`tools/sockets.py check` over two lines). Reword without the path, or let them stay dropped.
 
 **D. A source defect the builder cannot fix:** the table cells `2 max(|dx|, |dy|) + min(|dx|, |dy|)` (path/search § the planner's heuristic row `h`) and `|dx|`, `|dy|` (path/README, row `window`) hold unescaped `|` inside code spans. GFM splits a table cell at every unescaped pipe, code span or not, so the published table shows them as extra cells. Write `\|`.
+
+**2026-11-17, spec-writer (lane/x13r).** Done on the spec side: of the review's 70 DROP lines, 62 export cleanly now,
+6 export once the six allow-hex lines proposed in the plan 0070 log entry of lane/x13r land (five `pin` lines for
+seed words and the value entry `53454953`; the architect owns allow-hex.txt), and 2 stay dropped by ruling (save/d2s
+J's `survey` block and the worked example's reproduce block: command lines only). Class D escaped. Left open for the
+review to add the allow-hex lines and close.

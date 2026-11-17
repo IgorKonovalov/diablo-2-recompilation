@@ -532,7 +532,7 @@ E3. BorderCornerDef(inCode, outCode, style) → i32:                    [C] (fn:
       return style ≥ 4 ? g_BorderDefsA5[2k + style − 6] : g_BorderDefs[4k + style]   ; row k of E2a's table
 ```
 
-- [C] **`g_BorderCornerIdx`** (`i32[9][9]`, `0x006F0FE8`–`0x006F110B`, read as `[0x006F1088 + 4·(in + 9·out)]`). Rows are
+- [C] **`g_BorderCornerIdx`** (`i32[9][9]`, `0x006F0FE8`–`0x006F110B`, read as `g_BorderCornerIdx[in + 9·out]`, 4 bytes an entry). Rows are
   the out code, columns the in code; `·` is −1 (no corner piece). (data:g_BorderCornerIdx@0x006F1088,
   fn:sub_00675850_OutBorderBuild@0x00675850, fn:sub_0067DCF0_BarricadeBorderRing@0x0067DCF0, run:2026-10-15-drlg-outdoor)
 
@@ -813,8 +813,8 @@ H4. A1RiverMidTransCave(L):                                          [C] (fn:sub
         not ok → fatal error;  O.flags |= 0x40
 ```
 
-- [C] **The river index table** `g_A1RiverIdx` is read as `[0x006F2680 + 8·p]` for the 26 piece and `[0x006F2684 + 8·p]`
-  for the 27 piece, `p` the border `Def` in the cell. Only rows `p` 4–15 are read (`0x006F26A0`–`0x006F26FF`, `i32[12][2]`):
+- [C] **The river index table** `g_A1RiverIdx` is read as `g_A1RiverIdx[p][0]` for the 26 piece and `g_A1RiverIdx[p][1]`
+  for the 27 piece (8 bytes a row), `p` the border `Def` in the cell. Only rows `p` 4–15 are read (`0x006F26A0`–`0x006F26FF`, `i32[12][2]`):
   rows 0–3 would overlap the King Tomb table, but `p` = 0 takes the covered rule and no river column holds `Def` 1–3. For
   `p` = 7 at the seam opening (file bits `0x30000`) both pieces take 3. (data:g_A1RiverIdx@0x006F2680,
   fn:sub_0067FE90_A1RiverPlace@0x0067FE90, run:2026-10-15-drlg-outdoor)
@@ -1353,7 +1353,7 @@ JungleRectRel(parent, w, h, d) → rect:                                [C] (fn:
   | 6 S+E | 558 | 0 | 0 | 559 | | 13 N+S+W | 0 | 571 | 0 | 0 |
   | 7 S+E+W | 0 | 0 | 0 | 560 | | 14 N+S+E | 572 | 0 | 0 | 0 |
 
-- [C] **`g_JungleClearingDefs`**, read as `[0x006F13BC + 4·(v >> 4)]`; `v >> 4` is the clearing's own sides (W 1, E 2,
+- [C] **`g_JungleClearingDefs`**, read as `g_JungleClearingDefs[v >> 4]` (4 bytes an entry); `v >> 4` is the clearing's own sides (W 1, E 2,
   S 4, N 8): 1 → 575, 2 → 576, 3 → 577, 4 → 578, 5 → 579, 6 → 580, 7 → 0, 8 → 581, 9 → 582, 10 → 583, 11 → 0, 12 → 584.
   Entry 0 is the last flag of `g_LinkOutdoorFlags` (never read here, since `v ≥ 16`), and entries 13–15 are row 0 of
   `g_JungleSideDefs`. Entries 7, 11 and 13–15 are 0, so a clearing with three or four sides is fatal (0x799).
@@ -1398,7 +1398,8 @@ J4. OutdoorAct3(L):  OutSeamMark(L); OutJungleCells(L); OutKurastLevel(L); OutTr
 - [C] Each clearing of a jungle level gets a distinct file of its three through permutation row `r`. Level 76 takes the
   Webby clearings 575–584, 77 the Boggy 585–594, 78 the Pygmy 595–604. (fn:sub_0067E910_OutJungleCells@0x0067E910,
   run:2026-10-15-drlg-outdoor)
-- [C] **The clearing tables.** The offset table is read as `[0x006F2240 + 4·L.id]`, so its data are the three `i32` at
+- [C] **The clearing tables.** The offset table is read by `L.id` from a base 76 entries (304 bytes) before
+  `g_JungleClearingOff`, as `g_JungleClearingOff[L.id − 76]`, so its data are the three `i32` at
   `0x006F2370`–`0x006F237B` for levels 76, 77, 78: `0, 10, 20`. `g_JungleClearingPerm` (`i32[6][3]`, read as `[k + 3r]`)
   has the rows `0 1 2`, `1 0 2`, `0 2 1`, `1 2 0`, `2 0 1`, `2 1 0`; `r` is `Range(6)` with three clearings, else
   `Range(2)` (rows 0–1), and `k` counts the clearings in placing order. (data:g_JungleClearingOff@0x006F2370,
@@ -1486,7 +1487,7 @@ K1. OutdoorAct4(L):                                                  [C] (fn:sub
       OutSeamMark(L)
       if L.id = 108: DiabloGrid(L); return                           ; K2
       OutBorderBuild(L)
-      FortressTransition: O.flags & 0x400000 → Place(0, 1, 798, −1);  O.flags & 0x800000 → Place(0, 4, 798, −1)
+      FortressTransition: O.flags & (1 << 22) → Place(0, 1, 798, −1);  O.flags & (1 << 23) → Place(0, 4, 798, −1)
       OutBorderSubApply(L, 1, 799); (L, 2, 799); (L, 3, 799)
       MesaFills:                                                     ; all PlaceRandom(·, −1, 0, 0xF); failures ignored
         if L.id = 106: PlaceRandom(811)

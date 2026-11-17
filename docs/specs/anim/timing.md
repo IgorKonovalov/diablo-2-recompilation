@@ -1103,8 +1103,8 @@ sequenceDiagram
 
 - N1. [C] Over the 171 functions under the animation machine's 29 roots (three indirect stat-list callbacks
   unfollowed), the only RNG call is the object start draw (C2); the rate (J2), the schedule, the advance and the
-  sequences draw nothing: a second walker (objdump) over the same roots and stops reaches 164 functions with one draw,
-  `0x00624563 → RNG_RangeB`, and Ghidra's 171 bodies walked again find only `UNIT_AnimInit`'s. (fn:UNIT_AnimInit@0x00624390,
+  sequences draw nothing: a second, independent walker over the same roots and stops reaches 164 functions with one draw,
+  the call to `RNG_RangeB` at 0x00624563, and the first walker's 171 bodies walked again find only `UNIT_AnimInit`'s. (fn:UNIT_AnimInit@0x00624390,
   0x00624563, fn:UNIT_AnimSetRate@0x00623F50, [anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l))
 - N2. [I] On a hit, in delivery order: the durability draws ([items/economy § H](../items/economy.md#h-wear-durability-quantity-charges-replenish)),
   the stat events, the knockback handler, then `COMBAT_GetHit`: `GetHitRoll` (defender seed, 0–2, M2), then the

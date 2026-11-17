@@ -720,8 +720,8 @@ H3. ITEMSKILL_Cast(caster, id, lvl, target, x, y, effect) → bool:    [I] (fn:I
   target, point and bit 6 are the reading, and so is the effect flag's do function `ItemEffect`, which no line logs.
   [I] (fn:SKILLS_SrvDo@0x0056F7F0)
 - H3. The effect flag is 1 only from handler 20 without `ItemTgtDo` (§ K): handler 20's `ItemTgtDo`-clear path pushes 1
-  (0x005C054E, after `test [row+7], [0x006CE27C]; je` at 0x005C0524), and the other eight item-cast calls push 0.
-  So an item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` only on attack, kill or hit. [C] (0x005C054E,
+  (0x005C054E, after the test of `[row+7]` against the mask byte at 0x006CE27C and the `je` at 0x005C0524), and the
+  other eight item-cast calls push 0. So an item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` only on attack, kill or hit. [C] (0x005C054E,
   static, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q), [skills/0015 § 6](../../findings/skills/0015-item.md#6-the-stat-event-handlers-20-21-30))
 - H3. `ITEMSKILL_Cast` and its two callers (`ItemCastAtUnit`, `ItemCastAtXY`) make no draw of their own: the caster
   steps once from the handler's entry to the cast (the handler's roll) and not at all after it, in 86 of 86 casts by
@@ -1200,7 +1200,7 @@ L5. RaiseSkeletonDo(unit, id, lvl):            (srvdofunc 31)        [I] (fn:sub
           SummonSetDataBytes(flag, …; EAX 1): copy row 1 of the 9-byte rows at 0x00741940 into
             MonsterData +4, +5, +0xC, +0xD, +6, +7, +8, and +0x0B only when flag ≠ 0; then +9 from the row
         class 364 (necromage): SummonSetDataBytes(0, …; EAX 1): the same copy (no +0x0B);
-          Step(caster.seed); MonsterData +0x0F, +0x10 ← low & 3; call 0x005B0D70                         ; draw
+          Step(caster.seed); MonsterData +0x0F, +0x10 ← low & 3; call an unnamed routine (0x005B0D70)  ; draw
         other classes: nothing
       SummonInitStats(m, id, lvl, 0);  stat 349 as resistances;  add to the target list
 ```

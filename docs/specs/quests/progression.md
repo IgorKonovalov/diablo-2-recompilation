@@ -762,7 +762,7 @@ stateDiagram-v2
 No record bit is written: the two objects are dialogue selectors whose one handler draws on the player's unit seed.
 
 ```
-W29. NpcTalk266(event) — the e0 handler 0x00596A90, run once for each of quest objects 25 and 30:   [C] for the draws (0x00596A90, run:2026-10-18-quests2); [I] for the branch test
+W29. NpcTalk266(event) — the e0 handler A1Q29_NpcTalk (0x00596A90), run once for each of quest objects 25 and 30:   [C] for the draws (0x00596A90, run:2026-10-18-quests2); [I] for the branch test
        if event.npc class ≠ 266: return
        if G w1 b13 clear and this quest object is active and the player's w1 b0, b13 and b1 are clear:
          msg ← Range(player.unitSeed, 2)                              ; draw: 1 Step
@@ -1629,7 +1629,7 @@ W40. ZooInit — InitFn 79 (object 567), once per game (private +0xA0):   [I] (f
        for t in 0 ..< 10:
          c ← RandLoHi(questSeed, 1, nMonStats)                        ; one draw each
          if MonStats[c].zoo: cls ← c;  break
-       private +0xA4 ← cls;  message 0x0058E120 to every player
+       private +0xA4 ← cls;  the message (0x0058E120) to every player
 ```
 
 - [I] Every Baal credit, and the first join of a player with b0 or b15, raises the client's status progression to at least

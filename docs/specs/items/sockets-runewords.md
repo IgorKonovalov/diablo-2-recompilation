@@ -647,8 +647,8 @@ Step notes:
   fn:PROP_Func02_RollAcPercent@0x0065EBA0, fn:sub_0065CCC0_PropBaseReset@0x0065CCC0, run:2026-10-11-d2s-samples,
   run:2026-10-15-sockets)
 - E3. **Per-func coverage.** The run's 50 runewords reached funcs 1, 2, 3, 5, 6, 7, 8, 10, 11, 15, 16, 17, 19, 21, 22
-  and 23, counted from the logged `SLOT` lines between `RWA` and `RWX` (the per-func table of [items/0007 § 5](../../findings/items/0007-sockets-runewords.md#5-the-runeword-runeword_applyparent-child-0-0x006600a0); `tools/sockets.py
-  check` prints it), and every slot reproduced draw for draw. Ranged lines drew for funcs 1 and 22; the 36 func 3
+  and 23, counted from the logged `SLOT` lines between `RWA` and `RWX` (the per-func table of [items/0007 § 5](../../findings/items/0007-sockets-runewords.md#5-the-runeword-runeword_applyparent-child-0-0x006600a0), which the project's socket checker
+  prints), and every slot reproduced draw for draw. Ranged lines drew for funcs 1 and 22; the 36 func 3
   slots drew nothing, 15 of them on ranged lines. Funcs 8, 10 and 21 met only fixed lines (`min` = `max`), so their
   one-draw case rests on the shared `PROP_RollValue`, which the ranged lines of funcs 1, 2 and 22 corroborate. The
   second run's three runewords (*Prudence*, *Eternity*, *Leaf*) add func 20 and func 17's `par`-0 branch at

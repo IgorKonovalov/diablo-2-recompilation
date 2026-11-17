@@ -463,7 +463,7 @@ H2. ITEMS_DetachFromOwner(owner, force, clamp):                         [I] (fn:
 H3. ItemReqCheck(item, unit) → bool:                                   [C] for strength, dexterity, identified and ethereal (fn:sub_0062EAF0_ItemReqCheck@0x0062EAF0, run:2026-10-17-stats)
       str: i32 ← reqstr + MulDiv(reqstr, stat 91 item_req_percent, 100)    ; record +0x10A
       dex: i32 ← reqdex + MulDiv(reqdex, stat 91, 100)                     ; record +0x10C
-      if item is ethereal (0x400000): str ← str − 10; dex ← dex − 10
+      if item is ethereal (flag bit 22): str ← str − 10; dex ← dex − 10
       pass iff full strength ≥ 1 and ≥ str, full dexterity ≥ 1 and ≥ dex,
                unit level ≥ the item's level requirement, item identified (0x10),
                a type-18 base has stat 70 > 0, and the class matches
@@ -519,10 +519,10 @@ Step notes:
   was reached. (fn:sub_0055F850_ItemBreak@0x0055F850, fn:sub_0055F900_ItemRepairBroken@0x0055F900)
 - H6. [C] Sockets change only the item's own lists ([items/properties § F](../items/properties.md#f-ethereal-and-sockets)),
   which reach the wearer through the item's cache (A4): the fillers' lists hang under their item's list (8 124 nodes),
-  none under the unit list (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)). `ITEMS_MakeEthereal` sets flag `0x400000` on its argument
+  none under the unit list (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)). `ITEMS_MakeEthereal` sets flag bit 22 on its argument
   and writes that argument's stats only (21..24, 159, 160 for a type-45 base, else 31;
   [stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). (fn:STATLIST_LinkToUnit@0x00626E10, fn:ITEMS_MakeEthereal@0x0065E4D0) [I] That ethereal touches only the
-  item's own lists across the flag's other users (19 `push 0x400000` in 12 functions, not read).
+  item's own lists across the flag's other users (19 pushes of the bit-22 value in 12 functions, not read).
 - H7. [C] **An item's per-level (op 4/5) value is not refreshed when the wearer levels up.** After the Paladin's
   level-ups, the item lists with an op-4 source (`item_armor_perlevel` on Stormshield) kept the value of their last
   link (94 entries), equal to the evaluation at the wearer's previous level: nothing propagates a stat of the linked

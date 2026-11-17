@@ -269,16 +269,16 @@ C9. mdo 16 (0x005AF170, the orb nova):                                 [C] → P
           (32-bit sums, truncating division, u16 stores); PathPlan
       after: the +0x28/+0x2C stores                                      [I] (0x005AF170)
 C10. mdo 18 (0x005AF300, towerchestspawner):                           [C] → UnitSetEvent, the chest drop, the free spot (run:2026-10-20-cat-emu-9a)
-      at left = Range − Param1 (raw Range): the drop function 0x00585E00 on the chest whose guid is +0x28;
+      at left = Range − Param1 (raw Range): the drop function (0x00585E00) on the chest whose guid is +0x28;
         +0x2C ← 1 when the chest is gone; after a found chest's drop the store follows the boundary   ; that store [I] (0x005AF300)
       then every 4·Param2 frames (8): two RangeB(m, 2·Param3 + 1) offsets in [−Param3, Param3] (±5);
-        the free spot 0x00555DA0
+        the free spot GroundDropCell (0x00555DA0)
       after: the gold pile at that spot                                  [I] (0x005AF300)
       at left = 1: unit event 0x5C on the chest
 C11. mdo 19 (0x005B0940, radament death):                              [C] → the units-in-range call (run:2026-10-20-cat-emu-9b)
-      while 2 ≤ left ≤ 24: UnitsInRangeCall(ECX game, EDX 0x3002; SubX, SubY, m, 124, 1, 0x005AD8F0);
+      while 2 ≤ left ≤ 24: UnitsInRangeCall(ECX game, EDX 0x3002; SubX, SubY, m, 124, 1, RedemptionChanceCb);    ; (fn:sub_005AD8F0_RedemptionChanceCb@0x005AD8F0)
         at left = 1 the same with RedemptionAlwaysCb; then mdo 1  ; 0x005AD910
-      after: the callbacks are Redemption's corpse callback, 0x005AD8F0 with the chance roll and 0x005AD910
+      after: the callbacks are Redemption's corpse callback, RedemptionChanceCb with the chance roll and RedemptionAlwaysCb
         without it; the roll and the heal                                [I] (0x005B0940, 0x005AD8F0, 0x005AD910)
 C12. mdo 20 (0x005AF540, blade creeper):                               [C] → the re-target (run:2026-10-20-cat-emu-9b)
       owner alive, with a path: re-target the path to the owner's position (0x005A99E0);
@@ -386,7 +386,7 @@ E4. mhit 9 (0x005AA250, immolation arrow):                             [C] → U
       when HitSubMissile1 ≥ 0: UnitSetStat(m, 56, 0, 0) (the boundary)
       else: radius ← sHitPar2 > 0 ? sHitPar2 : max(calc2, 1); the EType roll as mhit 1, the OR's,
         → AreaHitAt(owner; x, y, radius, packet, 0)
-      after (≥ 0 path): stat 134 ← 0, the disc 0x005A9530, the area hit, return 3   [I] (0x005AA2FA–0x005AA458)
+      after (≥ 0 path): stat 134 ← 0, the disc MissSubDisc (0x005A9530), the area hit, return 3   [I] (0x005AA2FA–0x005AA458)
 E5. mhit 7 (0x005A9FB0, holy bolt):                                    [C] (run:2026-10-20-cat-emu-9c)
       the unit is the owner's pet (TargetPet set; a monster whose owner reference is the owner player's guid):
         heal ← (calc1 << 8) + RangeB(m, (calc2 << 8) − (calc1 << 8))
@@ -423,7 +423,7 @@ E15. mhit 21 (0x005AB500, battle cry):                                 [C] → t
       SkillUnitFilter(owner, unit; aurafilter ? 0xA783 : 0); a state index equal to the States count is accepted
 E16. mhit 18 (0x005AB0B0, shout, battle orders, battle command):       [C] → UnitsSameParty (run:2026-10-20-cat-emu-9c)
 E17. mhit 20 (0x005AB370, lightning fury):                             [C] → SKILLS_ForUnitsInRange (run:2026-10-20-cat-emu-9c)
-      ForUnitsInRange(owner; x, y, radius, aurafilter or 0xA783, 0x005AB2A0, ctx, 1, …),
+      ForUnitsInRange(owner; x, y, radius, aurafilter or 0xA783, FuryChainCb, ctx, 1, …),   ; (fn:sub_005AB2A0_FuryChainCb@0x005AB2A0)
         ctx = {owner, m, skill, lvl, sHitPar2 > 0 ? sHitPar2 : max(calc1, 1), HitSubMissile1}
 E18. mhit 22 (0x005ADD20, fist of the heavens delay):                             [C] → MISSILE_BuildDamage (run:2026-10-20-cat-emu-9c)
       the unit MissileData+0x28/+0x2C names; none → return 0; else build its damage
@@ -474,7 +474,7 @@ F11. mhit 52 (0x005AC940, blade fury):                                 [C] → M
 F12. mhit 38, 45 (0x005AC0A0, 0x005AC480; catapult charged ball; lightning javelins):   [C] → MissileCreate or the fatal path (run:2026-10-20-cat-emu-9d)
       n ← mhit 38: (lvl − 1)·sHitPar2 + sHitPar1, else max(calc4, 1); mhit 45: sHitPar1
       sub_0056D4E0_MissNovaCreate(n): for n ≥ 41 ((n − 1) ÷ 5 > 7) the fatal path (0xF0D pushed before the call);  ; 0x00408090
-        else the first creation: flags 3, target offsets (14, −14), creation callback 0x005AC040
+        else the first creation: flags 3, target offsets (14, −14), creation callback MissCbReseedPathX (0x005AC040)
         (mhit 38 always; mhit 45 when sHitPar2 ≠ 0)
 F13. mhit 40 (0x005AC250, catapult spike ball):                        [C] → the scatter (run:2026-10-20-cat-emu-9d)
       sub_005D5BF0_MissScatterAtTarget(n, n ÷ 4) with mhit 38's n
@@ -517,7 +517,7 @@ G2. do 19 (0x005C9640):                                                [C] → M
       the same class test; InfernoCreate(id, lvl, srvmissilea): when the used skill's +0x18 ≠ 0,  ; 0x005C8CA0
         MissileCreate {flags 0x8020, owner and source the caster, class, target the skill's target point,
         skill, lvl, +0x4C ← max(calc1, 1)}; at 0: +0x18 ← 1 and RescheduleSkip(1), or for a monster  ; 0x00553C70
-        +0x44 ← 0xB00 and 0x005C8C10 or UNIT_CancelEvents(1, 0)
+        +0x44 ← 0xB00 and InfernoEndMonster (0x005C8C10) or UNIT_CancelEvents(1, 0)
 G3. st 12 (0x005C9030, Telekinesis, Dragon Flight):                    [C] (run:2026-10-20-cat-emu-sor)
       with a target unit: refuse one with dx² + dy² > aurarangecalc² (32-bit, signed); accept a type > 1
         (unsigned); a player or monster needs UnitsHostile and neither unit in a town room
@@ -542,7 +542,7 @@ G8. do 144 (0x005CA910, Hydra):                                        [C] → t
       after: the classes summon + 1 at (x, y) and summon + 2 at (x + 1, y − 1)   [I] (0x005CA910)
 G9. do 17 (0x005C9300, Charged Bolt):                                  [C] → MissileCreate (run:2026-10-20-cat-emu-sor)
       calc1 > 0 and a target point (else 1): {flags 0x21, owner, the caster's position, class, the target point,
-        skill, lvl, callback 0x005C9290, +0x58 index 0}
+        skill, lvl, callback MissCbReseedPathXPlusArg (0x005C9290), +0x58 index 0}
 G10. do 22 (Nova, Frost Nova) is tier A: dispatch § O, its velocity and first block there
       do 17 and do 22 take srvmissileb/srvmissilec for a progressive row whose aurastate list holds aurastat1
         at 2 or 3+                                                       [C] (run:2026-10-20-cat-emu-sor)
@@ -566,7 +566,7 @@ are tier A ([dispatch § O](dispatch.md#o-tier-a-the-start-and-do-functions)); t
 ```
 H1. st 4 (0x005DA8B0, 18 bow, crossbow and javelin rows):              [C] (run:2026-10-20-cat-emu-ama)
       no skill-record test; a non-player → 1; a player with no inventory (+0x60 = 0) →
-        sub_00580310_HandsRefresh(game, unit); with one → the inventory call 0x0063C9B0 inside UnitGetWeapon
+        sub_00580310_HandsRefresh(game, unit); with one → the inventory call (0x0063C9B0) inside UnitGetWeapon
 H2. st 5 (Jab): whether UNIT_GetTargetUnit gives a unit; 0 without a record   [C] (run:2026-10-20-cat-emu-ama)
 H3. st 8 (Strafe), st 9 (Fend):                                        [C] → NearestUnitInRange or SKILLS_ForUnitsInRange (run:2026-10-20-cat-emu-ama)
       the record, then UNIT_GetUsedSkill (none → 0)
@@ -574,7 +574,7 @@ H3. st 8 (Strafe), st 9 (Fend):                                        [C] → N
       st 9: r ← UnitMeleeReach(unit) + 4 (a monster's MonStats2 MeleeRng; a player ends at the inventory call);  ; 0x00622870
             F ← 0x20003
       no target unit: NearestUnitInRange(game, caster; 0, 0, r, F, −1, &n), n = 0
-      a target unit: 0x0056BC80 → ForUnitsInRange(game, caster; 0, 0, r, F | 0xA783, 0x0056BC70, &n, 0, …)
+      a target unit: CountUnitsInRange (0x0056BC80) → ForUnitsInRange(game, caster; 0, 0, r, F | 0xA783, CountUnitsCb, &n, 0, …)   ; (fn:sub_0056BC70_CountUnitsCb@0x0056BC70)
       after: the count clamped by the calcs into node +0x18; the target's type and guid into +0x1C, +0x20;
         st 8 uses ammunition                                             [I] (0x0056BC80)
 H4. st 6 (Power Strike, Charged Strike), st 10 (Lightning Strike), st 7 (Impale), do 7 (Jab):
@@ -589,8 +589,8 @@ H4. st 6 (Power Strike, Charged Strike), st 10 (Lightning Strike), st 7 (Impale)
 H5. do 6 (0x005DB1C0, Inner Sight, Slow Missiles):                     [C] → SKILLS_ForUnitsInRange (run:2026-10-20-cat-emu-ama)
       auratargetstate (s16) in the States count and aurastat1 (s16) in the ItemStatCost count (−1 refused):
         block {id, lvl, auralencalc, auratargetstate, aurastat1, aurastatcalc1};
-        ForUnitsInRange(game, caster; 0, 0, aurarangecalc, aurafilter, 0x005DB150, &block, 1, …)
-      after: the callback 0x005DB150 calls STATE_ApplyTimed (0x005DB1A6, ECX → its frame block) with
+        ForUnitsInRange(game, caster; 0, 0, aurarangecalc, aurafilter, SkillDo06UnitCb, &block, 1, …)   ; (fn:sub_005DB150_SkillDo06UnitCb@0x005DB150)
+      after: the callback SkillDo06UnitCb calls STATE_ApplyTimed (0x005DB1A6, ECX → its frame block) with
         {game (ctx+4), unit, id, lvl, auralencalc, aurastat1, aurastatcalc1, auratargetstate, 0}: the state
         word after the stat pair                                         [C] (run:2026-11-16-sweep2-s2be2, 1 500 cases)
         that ForUnitsInRange hands it each unit, and what STATE_ApplyTimed does   [I] (0x005DB150)
@@ -602,7 +602,7 @@ H6. do 8 (Multiple Shot, Teeth, PrimePoisonball, Shock Wave; tier A): [C] → th
       after: the other creations, group by group, stepped by (sx, sy)   [C] at (n, calc3) = (21, 2): 36 of 36 Multiple Shot do events, 21 creations each in groups of 9, 2 and 10, flags 0x10820, 0x820, 0x10820, the targets stepped by one (sx, sy) (0x005DB410, run:2026-10-25-skills)
 H7. do 10 (0x005DB6D0, Guided Arrow, Bone Spirit):                     [C] → MissileCreate (run:2026-10-20-cat-emu-ama)
       bit 6; needs a target point; {flags 0x20 (0x420 without a target unit), +0x0C the target unit, the point,
-        +0x54 callback 0x005DB6A0 when calc1 ≠ 0, +0x58 calc1}
+        +0x54 callback MissCbAddStat25 (0x005DB6A0) when calc1 ≠ 0, +0x58 calc1}
       do 8 and do 10 take srvmissileb (when ≥ 0) for a caster with no inventory; with one → the inventory call
         inside SkillSrcDamWeapon                                                [C] (0x00623990, run:2026-10-20-cat-emu-ama)
 H8. do 11 (0x005DB850, Charged Strike, bit 6), do 14 (0x005DBE50, Lightning Strike, no bit 6): [C] → COMBAT_DeliverQueued (run:2026-10-20-cat-emu-ama)
@@ -637,7 +637,7 @@ I1. the target tests: each but st 18 refuses (0) without a target       [C] (run
       st 18 (0x005C3260): 1, no read
       st 21 (SkillSt21Revive): ReviveTargetTest → MonTestN(ECX target, EDX 7)  ; 0x005C3350, 0x005C3300, 0x0056E2F0
       st 20 (0x005C32A0): an item target (type 4) in mode 3 whose record has +0xDC bit 1, whose data flags have
-        0x10 and whose STATLIST_GetOwnerUnit is 0; an item class at or past the item count → the fatal path 0x00408090
+        0x10 and whose STATLIST_GetOwnerUnit is 0; an item class at or past the item count → the fatal path (0x00408090)
       MonCorpseTest(u, f): a monster in mode 12 (or 0 when f ≠ 0), carrying no state of DataTables+0x150's  ; 0x00645510
         bit-set, MonStats2 flag bit 7, MonStats +0x32 ≠ 0
       MonCorpseTestDead(u): a monster in mode 12, no such state, flag bit 7  ; 0x00645680
@@ -702,7 +702,7 @@ J1. the aura entries do 65 (Might; tier A), 66 (Holy Fire; tier A), 81, 82:   [C
       SkillCallOnSelf(ECX game, EDX caster; AURA_ApplyToTarget, &block) → AURA_ApplyToTarget(ECX &{game, caster, 0, &block}, EDX caster)  ; 0x0056B740, 0x005CEDC0
       do 65: aurastat1..6 up to the first below 0 with aurastatcalc1..6; +0x48 ← passivestate when > 0;
         +0x00 ← aurastate when in (0, States count); otherwise auratargetstate in [0, States count) and
-        ForUnitsInRange(game, caster; 0, 0, aurarangecalc, aurafilter, 0x005CEDC0, &block, 1, …); neither → 1
+        ForUnitsInRange(game, caster; 0, 0, aurarangecalc, aurafilter, AURA_ApplyToTarget, &block, 1, …); neither → 1   ; (fn:AURA_ApplyToTarget@0x005CEDC0)
       do 66, 81, 82: an aurastate outside [0, States count) → 0; passivestat1..5 with passivecalc1..5
         (all five, no stop; do 82 skips the value of a stat below 0); do 81 puts 0x005D0770 at +0x4C
       after: the target pass and its per-unit draws (§ B2)              [C] Holy Fire's 35 do events: one elemental roll on the caster, its first draw after the do's entry, one fire value across the packets of the 17 events with 2 to 15 units (run:2026-10-25-skills)
@@ -851,7 +851,7 @@ L1. do 114 (Raven), do 115 (0x005C6A80), do 119 (0x005C7390):          [C] → S
       after: SummonSetLevel, SummonInitStats; do 115 sets stat 12 ← max(calc2, 1) and state 150   [I] (0x005C6A80)
 L2. do 116 (0x005C6EC0):                                               [C] → STATE_GroupClear (run:2026-10-21-cat-emu-dru)
       aurastate in [0, States count) (jl); bit 6; STATE_GroupClear(ECX caster, EDX aurastate; 1)
-      after: its list (no max(…, 1) on its length) and the remove callback 0x005C6C50   [I] (0x005C6C50)
+      after: its list (no max(…, 1) on its length) and the remove callback ShapeRemoveCb   [I] (0x005C6C50)
 L3. do 120 (0x005C77C0), do 124 (0x005C8190):                          [C] → each call below (run:2026-10-21-cat-emu-dru)
       aurastate in [0, States count); UNIT_GetUsedSkill and SkillNodeId(node) (its record's s16 +0x00) equal to  ; 0x00643CE0
         the id, else 0; bit 6
@@ -893,7 +893,7 @@ L8. do 121 (0x005C8AD0):                                               [C] → M
 L9. do 118 (0x005C72F0); do 117 (Firestorm) is tier A, dispatch § O:  [C] → MissileCreate (run:2026-10-21-cat-emu-dru)
       SrvMissileByCharge's class in [0, Missiles count); bit 6; calc1 > 0 (else 0)
       do 118: SkillMissileSeries(game, caster; calc1, class, id, lvl, 0): no target point → 1; else MissileCreate  ; 0x005C7040
-        {flags 0x21, owner the caster, class, the caster's position, the target point, id, lvl, +0x54 0x005C9290, +0x58 0}
+        {flags 0x21, owner the caster, class, the caster's position, the target point, id, lvl, +0x54 MissCbReseedPathXPlusArg (0x005C9290), +0x58 0}
       after: the further creations                                      [I] (0x005C7040)
 L10. do 123 (0x005C8080, Volcano):                                     [C] → MissileCreate or the fatal path (run:2026-10-21-cat-emu-dru)
       a class > 0, no upper test; the target point; sub_0056E450_SkillTargetCellFree reaches the fatal path
@@ -948,7 +948,7 @@ M2. the hits:                                                          [C] → e
       do 42 (0x005D5A30), do 50 (0x005D7180), and do 46 on a bad id: → COMBAT_PrgFinisher(game, caster;
         QueuedHitFind(caster, target)); do 42 with no null test of the hit; do 50 after copying the 0x70-byte
         packet to its frame
-      the finisher calls: do 42 0x005D5A8C, do 46 0x005D6399 and 0x005D63E1, do 50 0x005D71F2, do 52 0x005D79DF
+      the finisher calls of do 42 (0x005D5A8C), do 46 (0x005D6399, 0x005D63E1), do 50 (0x005D71F2) and do 52 (0x005D79DF)
       after: do 33's knock roll by a Step(caster) and its kill flag; do 42's Range(caster, 100) at the last
         charge; the deliveries and the finisher                          [I] (0x005D31BF–0x005D32E8, 0x005D5A91–0x005D5BE9)
 M3. the progressive entries:                                           [C] → the first creation, or as below (run:2026-10-21-cat-emu-ass)
@@ -1051,13 +1051,13 @@ N5. ITEMSKILL_Cast (0x005FDA80):                                       [C] → S
       id 0 or ItemEffect 0 → refuse, no write; aim the caster's path at the unit or point; out type 6, guid −1,
         point (0, 0)
       ItemTarget (+0x120) low byte: 1 → aim at the caster (out type and guid the caster's)
-        2 → 0x005FD850 with EDX the cast's caster (the call at 0x005FDB9F): the caster's room; none → refuse
+        2 → ItemTargetRandomPoint (0x005FD850) with EDX the cast's caster (the call at 0x005FDB9F): the caster's room; none → refuse
             with no draw, the cast then restoring the target, the point and bit 6; else per try
             Step(caster), Step(caster)                                   ; draws #1, #2
             offsets low₁ mod 40 − 20, low₂ mod 40 − 20 (unsigned remainders)
             → COLL_PatternTest(room, x + off₁, y + off₂, path+0x48, path+0x4C)
         3 → CorpsePickNear(ECX caster, EDX target after the aim; id, lvl)  ; 0x0056E390
-        4 → keep a target, else the unit 0x00553010 stored (+0xC8 bit 17, +0x9C type, +0xA0 guid) or none;
+        4 → keep a target, else the stored unit (UnitStoredUnit9C, 0x00553010; +0xC8 bit 17, +0x9C type, +0xA0 guid) or none;
             out type and guid (6 and −1 for none)
         any other low byte skips the switch (jump table 0x005FDC88, values 1–4)
       ItemCheckStart (+0x08 bit 1) → SKILLS_SrvStart(id, lvl, 1); else SKILLS_SrvDo(id, lvl, 0, 1, effect)
@@ -1081,7 +1081,7 @@ N7. SKILLS_PayCost (0x0056BFE0):                                       [C] → U
         state 114 → BloodManaPay; stat 8 ≥ cost → UnitAddStat(caster, 8, −cost, 0); less mana, a bad id, or
         mana and lvlmana both 0 → 0
 N8. the shrine missiles:                                               [C] → each call below (run:2026-10-21-cat-emu-item)
-      shrine 19 (SHRINE_Storm, Storm): the unit search RoomUnitSearchInit(pool, &iter, room, x, y, Arg1, 0x00582710,  ; 0x00582DA0, 0x0065A950
+      shrine 19 (SHRINE_Storm, Storm): the unit search RoomUnitSearchInit(pool, &iter, room, x, y, Arg1, its callback,  ; the callback at 0x00582710; 0x00582DA0, 0x0065A950
         &{0x583, …, +0x0C x, +0x10 y, +0x14 Arg1}) round the shrine
       shrines 21 (0x005830E0, Exploding), 22 (0x00583410, Poison): n ← Arg0 + RangeB(shrine, Arg1 − Arg0)   ; draw#1
         n > 0 → ItemIndexByCode('opm ' / 'gpm '); else the first of six MissileCreate blocks
@@ -1170,7 +1170,7 @@ O7. missiles and the infernos:                                         [C] → e
       do 93 (0x005CC050): → MissileCreate, flags 3, the position a sixth of the way to a point four steps from
         the caster towards the target, that point's offsets as the target words
       do 95 (0x005CC4E0): → MissileCreate, flags 0x25, from the caster's position to the target point,
-        +0x28 ← (VelLev·lvl) ÷ 8 + Vel; no target point → the CancelEvents(0, 0) of 0x005CC3B0
+        +0x28 ← (VelLev·lvl) ÷ 8 + Vel; no target point → the CancelEvents(0, 0) of InfernoEnd (0x005CC3B0)
       st 53 (0x005CC240, the infernos 178, 311, 317, 319, 323 and 193 DiabLight): a bad id or no
         used node → 0; node +0x18 ← frame + max(calc2, 1); the caster in state 12 → 1; else → STATE_Set(caster, 12, 1)
       do 111 (SkillDo111FetishAura): bit 6; → the allocation inside UnitListAround(Param4 + 2·lvl, target x, y)  ; 0x005CE670, 0x0056C210
@@ -1195,7 +1195,7 @@ P1. the missile casts:                                                 [C] → e
         target words (0, 2), the first of sixteen .rdata pairs
       do 101 (SkillDo101FingerMage): a target → PathFaceXY(path, Tx, Ty, 0); else MissileCreate (flags 3, the path point's  ; 0x005CCFA0, 0x00649EF0
         offsets from the caster)
-      do 102 (0x005CD1C0): → the first of calc1 MissileCreate calls, flags 0x21, the target point, +0x54 0x005CD110
+      do 102 (0x005CD1C0): → the first of calc1 MissileCreate calls, flags 0x21, the target point, +0x54 MissCbReseedRoll (0x005CD110)
       do 105 (0x005CD6A0): → the first of a row of calc1 missiles across the line to the target, flags 3, step
         (−2·sgn dy, 2·sgn dx), the row's start shifted back by calc1 ÷ 2 steps, the position's y the caster's y
         plus the x offset over 6
@@ -1239,11 +1239,11 @@ P3. node words, prison, corpses, curse:                                [C] → e
         SpawnAtUnitClass(ECX game, EDX room; 0, 0, unit, class, 0) for the target, or the object whose guid the path's  ; 0x005B34C0
         +0x10 holds when its +0x12 is 2, unless that unit has no room or a town room
       do 141 (0x005D2E80): → SkillAreaBlock(ECX game, EDX &block), a 0x24-byte block (0x3002, the caster, skill 285  ; 0x0056DCC0
-        whatever the id, its position, radius (lvl − 1)·Param6 + Param5, the level, the callback 0x005D2E50)
+        whatever the id, its position, radius (lvl − 1)·Param6 + Param5, the level, the callback BaalCorpseCb (0x005D2E50))
       do 112 (0x005CE2B0, MonCurseCast 212):
         Step(caster)                                                   ; draw#1, before any test
         k ← caster.low mod 5 picks the curse
-        → SkillForUnitsNearTarget(ECX game, EDX 3; caster, radius, 0x005C35C0, &block), the drawn row's curse block
+        → SkillForUnitsNearTarget(ECX game, EDX 3; caster, radius, CurseApplyCb, &block), the drawn row's curse block   ; (fn:sub_005C35C0_CurseApplyCb@0x005C35C0)
 P4. the data joins:                                                    [C] the cells and rows below (tbl:Skills.txt:srvdofunc, tbl:Skills.txt:Param7); [I] one time in five, the caster's level and row 91's Param7 use, which are code
       DiabLight (193) runs st 53 and do 152, the infernos' cast with diablight
       Baal Corpse Explode (285): Param5 40, Param6 0, a radius of 40 at every level
@@ -1311,11 +1311,11 @@ Q2. do 131 (0x005D1F70, Overseer Whip):                                [C] → S
         r ← Range(caster, 100)                                         ; draw#1
       through WhipApplyState: STATE_ApplyTimed {caster, target, id, lvl, auralencalc, −1, 0, auratargetstate, no  ; 0x005D1D70
         callback}; or, for r ≥ calc1 (signed setl) and a target not yet in the state, the class-change
-        helper 0x005D1E10
+        helper WhipChangeClass (0x005D1E10)
       after: the class change                                           [I] (0x005D1E10–0x005D1F64)
 Q3. the missile casts:                                                 [C] → each call below (run:2026-10-21-cat-emu-8c)
-      do 130 (0x005D1CD0): → the first of calc1 MissileCreate calls of 0x005D1C30, flags 3, the target point,
-        target words (0, 1) the first of four .rdata offsets, +0x54 0x005C9290
+      do 130 (0x005D1CD0): → the first of calc1 MissileCreate calls of VineCreateRow (0x005D1C30), flags 3, the target point,
+        target words (0, 1) the first of four .rdata offsets, +0x54 MissCbReseedPathXPlusArg (0x005C9290)
       do 132 (0x005D2090): → SkillMissileCreate(srvmissilea + the caster's class chain position)
       do 136 (0x005D25B0): → MissileCreateAt(caster; id, lvl, srvmissilea, 0, 0)
       do 139 (0x005D2940): → SkillMissileCreate(srvmissilea)
@@ -1323,17 +1323,17 @@ Q3. the missile casts:                                                 [C] → e
         srvmissilea plus the caster's monster-data byte +0x0E (148) or +0x0F (149); the bodies differ in that byte only
       st 63 (0x005D2A10): a monster caster with an owner and a target not in state 118 → STATE_Set(target, 118, 1)
       after: do 130's further vines (index i & 3); do 136's range from calc1 and the distance; do 139's missile
-        +0x2C/seed word from the offsets; st 63's missile and 0x00571AA0   [I] (0x005D1C88–0x005D1CC1, 0x005D2539–0x005D25A1)
+        +0x2C/seed word from the offsets; st 63's missile and UnitMsgA3 (0x00571AA0)   [I] (0x005D1C88–0x005D1CC1, 0x005D2539–0x005D25A1)
 Q4. hits, curses, states:                                              [C] → each call below (run:2026-10-21-cat-emu-8c)
       do 128 (SkillDo128CryHelp, Cry Help): → MonHelpBlock(ECX game, EDX caster; &block), block words 1, the target's type  ; 0x005D1800, 0x0058F730
         and guid, game +0xA8 + max(calc1, 1)
       do 134 (0x005D2320, Siege Beast Stomp): → SkillRollPhys(ECX caster, EDX &packet; id, lvl), +0x00 ← 1 | HitFlags,
         +0x04 ← ResultFlags, +0x60 ← HitClass
-      do 137 (0x005D26F0): a target that passes 0x00645590 → STATE_Set(target, 104, 1)
+      do 137 (0x005D26F0): a target that passes CorpseTestF12 (0x00645590) → STATE_Set(target, 104, 1)
       do 133 (0x005D2250, Impregnate): a live monster target of no base 546 or 551, not in state 110, alignment
-        not 2 → STATE_ApplyTimed, state 110, length 0, the callback 0x005D21B0
+        not 2 → STATE_ApplyTimed, state 110, length 0, the callback ImpregnateEndCb (0x005D21B0)
       after: do 128's overlay; do 133's end callback (the painworm spawn from a dead unit); do 134's elemental
-        roll and area hit; do 137's 0x0064C040 and 0x00570590           [I] (0x005D21B0–0x005D2249, 0x005D2777–0x005D2793)
+        roll and area hit; do 137's UnitMarkUpdated (0x0064C040) and an unnamed call (0x00570590)   [I] (0x005D21B0–0x005D2249, 0x005D2777–0x005D2793)
       do 137 after STATE_Set(target, 104, 1), run whole: state bit 104 set (when it was clear, its changed bit at word
         (states + 31) / 32 + 3, and with States record 104's +0x12 bit 0 the target's +0xC8 |= 8); UnitMarkUpdated
         links the target to its room's +0x1C list (its own UnitMarkUpdated call then changes nothing); then a further call

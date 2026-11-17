@@ -435,7 +435,7 @@ only then).
 | 24 | fn:PROP_Func24_ParParam@0x0065F390 | `v ← prev or Roll` | `W(stat, par, v)` | [I] |
 | 36 | fn:PROP_Func36_RandClassSkill@0x0065FBA0 | `Roll` | `W(stat, param = v, value = val)` | [I] |
 
-- [C] The handler of func *f* is the word at `0x007462F8 + 4f`; slots 0 and 25..35 are NULL. The run reached funcs 1,
+- [C] The handler of func *f* is the word `g_PropFuncTable[f]` (4 bytes a slot); slots 0 and 25..35 are NULL. The run reached funcs 1,
   2, 3, 5, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 19, 20, 21 and 22 (2 279 slots), every one reproduced. A TC-named
   forced run (a loose `treasureclassex.bin` naming the carriers; ADR-0013, the handlers read no TreasureClassEx cell)
   reached func 12 and func 23's make branch, three slots each, reproduced with the final lists. Funcs 18, 24 and 36
@@ -594,8 +594,8 @@ F2. if rec+0x80 & 0x02: return                                                  
     if not (IsType(item, 45) or IsType(item, 50)): return                            [C] (fn:sub_00629930_ItemHasDurability@0x00629930, run:2026-10-14-props-forced, all of F2–F3)
     if not ItemHasDurability(item) or quality ∈ {1, 5} or base.quest: return
     r ← Range(item.seed, 100)                                                        ; draw
-F3. if (rec+0x80 & 0x04) or (rec+0x44 & 0x400000) or r < 5:
-      ITEMS_MakeEthereal(item)          ; flag 0x400000; weapon: base 21..24, 159, 160 ← (x × 3) ÷ 2; else base 31 ← (x × 3) ÷ 2
+F3. if (rec+0x80 & 0x04) or (rec+0x44 & (1 << 22)) or r < 5:
+      ITEMS_MakeEthereal(item)          ; flag 1 << 22; weapon: base 21..24, 159, 160 ← (x × 3) ÷ 2; else base 31 ← (x × 3) ÷ 2
       if ItemHasDurability(item):
         base stat 73 ← base73 ÷ 2 + 1;  base stat 72 ← EVD
 SocketRoll:                                                                         (fn:sub_00556B60_ItemRollSockets@0x00556B60)

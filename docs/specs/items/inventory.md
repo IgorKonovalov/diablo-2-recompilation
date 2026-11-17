@@ -124,7 +124,7 @@ A1. InvRowForUnit(unit, page: i32, expansion: i32) → i32:            [C] (ADR-
 
 A2. InvRecordGrid(row, set, out):                                    [C] (ADR-0015) (family invrec, fn:sub_0065C1F0_InvRecordGrid@0x0065C1F0, run:2026-11-04-inventory-emu)
       copies 24 bytes, gridX to gridBoxHeight, from base + (16 × set + row) × 0xF0 + 0x10
-      an index above the count (0x0096D4F0) reaches 0x00408090;  the count itself (32) is accepted and past the table
+      an index above the count (0x0096D4F0) reaches the error routine (0x00408090);  the count itself (32) is accepted and past the table
 A3. BeltsRecord(row, set, out):                                      [C] (ADR-0015) (family beltrec, fn:sub_00660CB0_BeltsRecord@0x00660CB0, run:2026-11-04-inventory-emu)
       copies 264 bytes from base + (7 × set + row) × 0x108, no upper bound on the row
 A4. InvPageGet(inv, page, row):                                      [C] (ADR-0015) a later request with another size, and the returns with no row (family `pageget`, 1 000 cases, run:2026-11-16-sweep2-s4e-emu, [items/0013 § 13](../../findings/items/0013-grids-belts-stacks.md#13-plan-0066-batch-s4e-part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-invpageget-invrowforunit-run2026-11-16-sweep2-s4e-emu)); [I] the first use (fn:sub_0063ADD0_InvPageGet@0x0063ADD0, 0x0063AE53, 0x0063AE5A)
@@ -132,7 +132,7 @@ A4. InvPageGet(inv, page, row):                                      [C] (ADR-00
       a page is made on first use from the row given then           ; the allocator 0x0040B430, left to a live run
       a later request with another size returns 0, so nothing is placed
       with no row: the page if made, else 0
-      an index at or above the count, with a row: the reallocation 0x0040B4B0
+      an index at or above the count, with a row: the reallocation (0x0040B4B0)
 ```
 
 - A1. [C] (ADR-0015) **The stash is 6 × 8 in an expansion game and 6 × 4 in a classic one**, by that row (control `stashsmall` fails 20 of 400). (fn:sub_00621050_InvRowForUnit@0x00621050, run:2026-11-04-inventory-emu)
@@ -225,7 +225,7 @@ C2. ItemSkillQtyAdjust(add) (0x0055C110):                            [C] (ADR-00
       skill ← Books[+8] for type 22 (a type-22 item that is also type 18 too), Books[+0xC] for type 18, else −1, which returns 0
       a tome with stat 70 = 0 returns 0 before the skill is looked up (0x0055C13E)
       q ← stat 70 when non-zero, as it is (a negative value too);  1 for a non-tome with stat 70 = 0
-      add ≠ 0: the skill's quantity + q;  a missing skill: UnitAddStat(unit, 5, q, 0), then the grant 0x00570080
+      add ≠ 0: the skill's quantity + q;  a missing skill: UnitAddStat(unit, 5, q, 0), then the grant, PLAYER_SpendSkillPoint (0x00570080)
       add = 0: less, floored at 0;  a missing skill reaches the error routine (line 0x230);  an empty left or right skill choice is reset
       sends the quantity to the client
 ```
@@ -312,7 +312,7 @@ F2. BeltPlace(item):                                                 [C] (ADR-00
       BeltFreeSlot; no box returns 0;  ends at InvGridPut(box, 0, 1, 0)
 F3. ItemAutoBeltTest(item) → 1:                                      [C] (ADR-0015) for an item the test accepts (families `autobelt`, `holds`, run:2026-11-16-sweep2-s4e-emu, [items/0013 § 14](../../findings/items/0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu); 0x00628BFD, 0x00563716, fn:sub_00628BA0_ItemAutoBeltTest@0x00628BA0)
       an autobelt row returns 1;  any other compares BeltHoldsSameGroup (0 or 1) with −1
-      a null item, a non-item or a row past the Items table ends at the error routine 0x00408090
+      a null item, a non-item or a row past the Items table ends at the error routine (0x00408090)
     BeltHoldsSameGroup (0x0063C560): 0 for isc/tsc, a bad signature, a non-item, or a belt page made at another size than 16 × 1;
       else 1 when one of boxes 0..3 holds the same class or potion list
 F4. ItemToBelt(guid, box, 0) (packet 0x23):                          [C] (ADR-0021) BeltPutItem to InvItemRemove (family `beltput`, 1 500 cases, run:2026-11-16-sweep2-s4e-emu, [items/0013 § 14](../../findings/items/0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu); 0x0063C4C0, fn:sub_0063C4F0_BeltPutItem@0x0063C4F0, fn:sub_0055E9B0_ItemToBelt@0x0055E9B0)
@@ -524,7 +524,7 @@ flowchart TD
   f -->|0| nl["null; out keeps the start"]
 ```
 
-**What this section's `[C]` is.** Every `drop` `[C]` below is `[C] (ADR-0015, ADR-0029 § a)` **given that the allocation returned a writable block**, at size 1 and step 1: the code's map on declared rooms and one declared pool page. It is not a live run, and not how often a game's rooms make a statement matter; the rows the evidence table's *Live raise* column marks raised are live as well, in the scope it gives. [C] (ADR-0015, ADR-0029 § a) (fn:sub_00555DA0_GroundDropCell@0x00555DA0, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan)
+**What this section's `[C]` is.** Every `drop` `[C]` below is a `[C]` by emulated reproduction (ADR-0015, ADR-0029 § a) **given that the allocation returned a writable block**, at size 1 and step 1: the code's map on declared rooms and one declared pool page. It is not a live run, and not how often a game's rooms make a statement matter; the rows the evidence table's *Live raise* column marks raised are live as well, in the scope it gives. [C] (ADR-0015, ADR-0029 § a) (fn:sub_00555DA0_GroundDropCell@0x00555DA0, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan)
 
 ```
 J1. GroundDropCell(room, pos, out, size: i32 = 1, fallback: i32) → room:    [C] (ADR-0015, ADR-0029 § a) (family drop, 4 000 cases, to the return, given the block; all of J1–J2 but the cell mask's bits 0x1 and 0x800; fn:sub_00555DA0_GroundDropCell@0x00555DA0, fn:COLL_FindFreeNear@0x0064DEA0, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan)

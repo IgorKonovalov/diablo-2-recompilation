@@ -355,7 +355,7 @@ E1. RoomsDeactivate(game):                                        [C] (fn:sub_00
 E2. RoomReleaseAllowed(act, room) → bool:                         [C] (fn:sub_0061A3F0_RoomReleaseAllowed@0x0061A3F0, fn:sub_0061BA30_DrlgRoomReleaseTest@0x0061BA30, run:2026-10-17-lifecycle)
       if act[+0x50] ≠ 0: fatal error                              ; [I] never taken, 0 on the server at every pass (0x0061A3F0)
       R ← room.drlg
-      if R.flags & 0x400000: return false                         ; pinned
+      if R.flags & (1 << 22): return false                        ; pinned
       if R's act is a client act: fatal error                     ; [I] never taken (0x0061BA30)
       if R.status < 2: return false
       if R's level is a town or level 120:
@@ -369,7 +369,7 @@ E3. ActiveRoomFree(act, room):                                    [C] the unlink
         R[+0x30] ← 0;  R[+0x60] ← room.flags & 1
         if R.flags & 0x100000: RoomTilesRelease(R, EDX ← (wrapper EDX = 0))   ; room-tiles § Release
       DUNGEON_RoomFree(room):
-        for u still in room.units: u[+0xC4] |= 0x800000; unless u[+0xC4] bit 22: u[+0xC8] |= 0x20; unlink u
+        for u still in room.units: u[+0xC4] |= (1 << 23); unless u[+0xC4] bit 22: u[+0xC8] |= 0x20; unlink u
         free the collision map, the tile lists and the room
 ```
 

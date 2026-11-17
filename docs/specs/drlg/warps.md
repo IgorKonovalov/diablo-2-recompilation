@@ -108,20 +108,21 @@ flowchart TD
 
 ```
 A1. ActLinkInit(act):                                                [C] (fn:sub_00678AD0_ActLinkInit@0x00678AD0, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor)
-      act 0 (I):  Build(0x006F0750, check Act1A, after LinkOutdoorFlags)
-                  Build(0x006F0840, check Act1B, after LinkOutdoorFlags)
+                                                                     ; T[k]: the link table at g_ActLinkTables + 240·k (data:g_ActLinkTables@0x006F0750)
+      act 0 (I):  Build(T[0], check Act1A, after LinkOutdoorFlags)
+                  Build(T[1], check Act1B, after LinkOutdoorFlags)
                   LevelBorderAdj(1 … 17)
-      act 1 (II): Build(0x006F0930, check Act2A);  Build(0x006F0A20, check Act2B)
+      act 1 (II): Build(T[2], check Act2A);  Build(T[3], check Act2B)
                   LevelBorderAdj(40 … 46)
-      act 2 (III): level 75 at its Levels offset; jungle layout 0x00677880 / 0x00678910   ; outdoor.md § J
+      act 2 (III): level 75 at its Levels offset; JungleLayout / KurastStack            ; outdoor.md § J (fn:sub_00677880_JungleLayout@0x00677880, fn:sub_00678910_KurastStack@0x00678910)
                   LevelSeamsByTouch(75, 83);  LevelBorderAdj(75 … 83)
-      act 3 (IV): Build(0x006F0C00, check Act4A);  Build(0x006F0CF0, check Act4B)
+      act 3 (IV): Build(T[5], check Act4A);  Build(T[6], check Act4B)
                   level 104's outdoor data (+0x14) |= g_LinkPickOutdoorFlag   ; set by its pick (B2, 0x00676C00)
                   LevelBorderAdj(103 … 106)
-      act 4 (V):  Build(0x006F0DE0, no check);  Build(0x006F0ED0, no check)
+      act 4 (V):  Build(T[7], no check);  Build(T[8], no check)
                   LevelSeamsByTouch(111, 112);  LevelBorderAdj(111 … 112)
                   LevelSeamsByTouch(110, 111);  LevelSeamsByTouch(109, 110)
-                  Build(0x006F0B10, check Act5C)
+                  Build(T[4], check Act5C)
 ```
 
 - A1. [C] This runs inside `DRLG_ActCreate` after the act seed's own draws (rng/seeds steps 3a–3c) and before the town is

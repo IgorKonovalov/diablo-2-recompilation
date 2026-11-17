@@ -950,9 +950,9 @@ K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's 
 - The order of a game's frame: the rank of each event and the order inside each list. [C] ranks 1, 3, 4, 6–9, 14 and 17–20 (§ B1,
   § D1); [I] ranks 2, 5, 10–13, 15 and 16 (fn:sub_0052D870_GameTick@0x0052D870)
 - The game state after the frame, and the queued packets, flushed after it. [C] Besides them, one direct send: `GameTick` → `ClientsRoomSync`
-  → `AutosaveTick` → 0x0052CAF0 → 0x0053B220 sends a one-byte packet `0xB0` through the transmit routine 0x0052B330 at once (0x0053B231),
-  not through the queue, per client when `AutosaveTick`'s save conditions hold and `[0x00883D50]` is non-zero; `GameTick`'s
-  direct-call graph does not reach `ClientFlushPackets` ([frame/0001 § 9](../../findings/frame/0001-tick-and-messages.md#9-plan-0066-batch-s7a-part-2-the-frames-reach-to-the-packet-senders-2026-11-16-lanen66n)). [I] What sets `[0x00883D50]`, so whether single player takes
+  → `AutosaveTick` → two unnamed calls (0x0052CAF0 → 0x0053B220), the last of which sends a one-byte packet `0xB0` through the transmit routine (0x0052B330) at once (0x0053B231),
+  not through the queue, per client when `AutosaveTick`'s save conditions hold and a global dword (0x00883D50) is non-zero; `GameTick`'s
+  direct-call graph does not reach `ClientFlushPackets` ([frame/0001 § 9](../../findings/frame/0001-tick-and-messages.md#9-plan-0066-batch-s7a-part-2-the-frames-reach-to-the-packet-senders-2026-11-16-lanen66n)). [I] What sets that dword (0x00883D50), so whether single player takes
   that branch, is not read, and nothing else leaves the frame: 751 indirect calls of the graph are not followed.
   (fn:sub_0052FD90_ServerGamesFlush@0x0052FD90, fn:sub_0052D350_AutosaveTick@0x0052D350, fn:sub_0052E320_ClientFlushPackets@0x0052E320)
 - For the [chain](../chain/README.md): the activation-order record, § H5, as an input. [I] (fn:sub_0061B730_RoomActivateB@0x0061B730)

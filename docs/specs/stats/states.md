@@ -454,7 +454,7 @@ G3. SHRINE_TimedStat: SHRINE_ApplyState(duration = Duration in frames, value, st
               otherwise stat × Arg0 ÷ 100 of the player
 G4. SHRINE_Combat: state 129 with 25 damagepercent = Arg1, then 19 tohit = SHRINE_StatValue(19)   [I] (fn:SHRINE_Combat@0x005839B0)
     SHRINE_Stamina: stamina ← max; state 136 with 162 = stat 162 × Arg0 ÷ 100, stat 10 = twice that,
-                    28 staminarecoverybonus = 1000; its own remove callback 0x00583A40           [I] (fn:SHRINE_Stamina@0x00583A70); [C] stat 28 = 1000 and the callback (G2's step note)
+                    28 staminarecoverybonus = 1000; its own remove callback (0x00583A40)         [I] (fn:SHRINE_Stamina@0x00583A70); [C] stat 28 = 1000 and the callback (G2's step note)
     SHRINE_Skill: state 134 with stat 11 = 0, then a skill refresh                               [I] (fn:SHRINE_Skill@0x00583BF0)
 G5. recharge shrines (unsigned arithmetic):                            [I] (fn:SHRINE_Refill@0x005828E0, fn:SHRINE_HealthExchange@0x00582940, fn:SHRINE_ManaExchange@0x005829A0)
       1 refill: life and mana to max;  2: life to max;  3: mana to max

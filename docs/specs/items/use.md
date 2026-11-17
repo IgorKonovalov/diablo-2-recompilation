@@ -360,7 +360,7 @@ F1h. Returns 1 when any slot reached F1e's add or passed F1f's allocation, len +
 F2. A fresh list:                                                    [C] for a player user: 16 fresh lists with words 2, end, user type 0 at 0x005BE602 (UAL), then STATE_Set, the callback and LinkToUnit (run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)); [I] the non-player branch (0x005BE5E8–0x005BE673)
       STATLIST_Alloc(game+0x1C, 2, end, user type, user id);  its state;  STATE_Set(user, state, 1)
       a non-player user: UNIT_CancelEvents(3, 0), event 3 at frame + 1
-      the remove callback 0x0056E900;  STATLIST_LinkToUnit(user, list, 1)
+      the remove callback STATE_DefaultRemoveCB (0x0056E900);  STATLIST_LinkToUnit(user, list, 1)
       ; the loop goes on with rem = 0, so the rate is v ÷ len
 
 F3. PotionLifeMul(user, v: i32) → i32:                               [C] (family classmul, to the return, fn:sub_0062A5D0_PotionLifeMul@0x0062A5D0, run:2026-11-03-use-emu)
@@ -433,7 +433,7 @@ H1. Identify (kind 1) is two requests.
     Test (first request: ItemUse sees flag 4 clear):                 [C] (ADR-0021) (family idtest, 120; fn:sub_005BE130_ItemUseIdentifyTest@0x005BE130, 0x005BE165, run:2026-11-03-use-emu)
       set item flag 4 on the scroll or tome
       a book or scroll with no Books row: return 1, no message
-      ends at the client lookup 0x005531C0
+      ends at the client lookup PlayerGetClient (0x005531C0)
     After that boundary:                                             [I] (0x005BE165, 0x0053D220)
       message 0x3F, the row's spell icon, the skill                  ; 0x53D220(icon, 0, 1, skill)
       returns 1                                                      ; so ItemUse returns 0 (C2): nothing is used up
@@ -453,7 +453,7 @@ H2. The cube (kind 7):                                               [C] (ADR-00
       busy and the interaction is object class 0x10B: ends at PlayerClearInteract
       otherwise: return 0
     After:                                                           [I] (0x0055FA40)
-      messages 0x11, 0x15;  0x0055FA40, read as far as its walk of page-0 items
+      messages 0x11, 0x15;  InvBookSkillsRebuild (0x0055FA40), read as far as its walk of page-0 items
       returns 0, so PlayerUseInvItem falls to D2's codes and returns 0: the cube stays
 
 H3. Kinds 6 and 9:                                                   [I] (fn:sub_005BEF90_ItemUseCure@0x005BEF90, fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, 0x005BEE15)

@@ -238,7 +238,7 @@ B5. d, level as in pool § E
 B6. o ← MonLvlStats(class, L, d, level, mask 7)                  ; § A2
 B7. base: i32 ← o.minHp + RangeB(unit.seed, o.maxHp − o.minHp + 1)   ; draw; no step when the range is < 1
 B8. hp: i32 ← base + MulDiv(base, pb.hpPct, 100)
-    if hp ≥ 0x800000: hp ← 0x7FFFFF
+    if hp ≥ 8388608: hp ← 8388607                                     ; 2^23, 2^23 − 1
     SetStat(7, hp << 8);  SetStat(6, hp << 8)
     SetStat(31, o.ac)
     SetStat(13, o.exp + MulDiv(o.exp, pb.xpPct, 100))
