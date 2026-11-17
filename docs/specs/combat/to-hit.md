@@ -274,7 +274,7 @@ C1. MeleeHitTest(att, def, arPct: i32, rangeExtra: i32) → result: u16:        
 - C1. The to-hit, the defence order and the result word reproduced over 27 441 to-hit events with 0 mismatches. [C]
   (run:2026-10-16-combat, [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j))
 - C1. The result bits are: `0x1` hit, `0x2` killed, `0x4` get-hit, `0x8` knockback, `0x10` blocked, `0x80` dodged,
-  `0x100` avoided, `0x200` evaded (missiles), `0x2000` doubled by a critical or deadly strike, `0x4000` a missile's
+  `0x100` avoided, `0x200` evaded (a missile whose row has `GetHit` or `KnockBack`, below), `0x2000` doubled by a critical or deadly strike, `0x4000` a missile's
   soft hit (below), `0x8000` weapon block. [C] for the bits delivered packets carry: melee `0x1`, `0x3`, `0x5`, `0x7`, `0x9`, `0xB`, `0xD`, `0xF`, `0x2005`, `0x2007`;
   missile `0x1`, `0x5`, `0xD` and `0x4001` (537 deliveries) (run:2026-10-16-combat,
   [combat/experiments § S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)).
@@ -519,4 +519,4 @@ case shows the running defender: no to-hit draw, and a third of the capped block
   0066 S5e (C2: `+0x40` when `+0x30` is not 0, else the mode).
 - [L] The value of B1's Holy Shield term past `SKILLS_EvalCalc`; the rest of A7 and B1 is emulated (plan 0066 S5e).
 - ~~Which function set result bit `0x4000` on the 537 logged missile deliveries (C1).~~ Settled by [combat/0001 § 23](../../findings/combat/0001-formulas.md#23-result-bit-0x4000-its-three-writers-on-the-missile-path-and-the-537-logged-ones-2026-11-17-lanefur): writer 2
-  for row 457, damage function 3 for row 240 (C1).
+  for row 457, damage function 3 for row 240 (C1; the row-240 attribution is read from the code).

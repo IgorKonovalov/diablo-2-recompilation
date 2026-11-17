@@ -14,7 +14,9 @@ and ended. It also covers the per-frame regeneration of life, mana and stamina, 
 restates the reviewed stats specs: the overview in [stats/README](../specs/stats/README.md#purpose), the adding up in
 [aggregate](../specs/stats/aggregate.md#purpose) and the states in [states](../specs/stats/states.md#purpose). The
 specs carry the exact arithmetic; this page tells the story. Where something is read from the code but not yet seen
-in a test run, or is still unknown, the page says so.
+in a test run, or is still unknown, the page says so. "Confirmed by a second reading" means the instructions were read
+again with a second tool, or every call of or store into the thing was scanned: it covers what the code says, not that
+a game reached it.
 
 Stats and states are the project's second *simulation* subject, after [combat](combat.md). Combat takes a unit's
 stats as given; this subject explains where they come from. The specs were checked against one recorded run of 18

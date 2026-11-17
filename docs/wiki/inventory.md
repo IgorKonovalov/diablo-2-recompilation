@@ -17,7 +17,7 @@ the cube's recipes are out of scope; the cube's transmute is on the
 
 ## How sure each statement is
 
-Most of this area is known in one of four ways, and the page names which at each statement. The specs spell out the
+Most of this area is known in one of five ways, and the page names which at each statement. The specs spell out the
 same split in their sections on [how to read the tags](../specs/items/use.md#how-to-read-the-tags) and
 [the inventory's](../specs/items/inventory.md#how-to-read-the-tags). The differences matter here,
 because the two runs of the real game were small.
@@ -26,6 +26,7 @@ because the two runs of the real game were small.
 |---|---|---|
 | **Seen in a game** | Two runs of the real game, three kept logs, with the server's calls logged and compared with a prediction. Seeds, amounts, cells and frames were read from the log. The first run was one fresh process, and two of its requests carried a field written by a debugger (named below; they stay readings). The second used a fresh process per session and forced nothing. | They cover a few cases: 17 potion uses by one Sorceress, 80 ground drops, 118 ground searches; each count is given where it is used. Only the expiry amounts and the 16 stored rates were checked against a table committed before the kept sessions. The rest compare the reading with the log case by case, on inputs the log gives: that checks the code against its reading, and says nothing of which inputs occur. |
 | **Emulated** | The game's own code run in an emulator on made-up inputs, and compared bit for bit with the project's model ([how we know](how-we-know.md)). It shows what the code does with the bytes it is given. | It is not a game. It says nothing about which inputs a game produces. Many runs stop at a named call into another function, and what is after that call is not covered. |
+| **Confirmed by a second reading** | The instructions read again with a second tool, or a scan of every call of or store into the thing named. The spec counts it confirmed. | It covers what the code says, as far as the scan reaches, not that a game reached it. |
 | **Read from the code** | The instructions were read, and nothing ran. | It can be wrong in ways no run has checked. |
 | **Unknown** | Named under [What is not known yet](#what-is-not-known-yet). | |
 

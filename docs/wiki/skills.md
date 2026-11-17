@@ -15,7 +15,9 @@ hits and kills, how a summon is made, and how a missile is created, flies, colli
 reviewed skills specs: the overview in [skills/README](../specs/skills/README.md#purpose), the skill side in
 [dispatch](../specs/skills/dispatch.md#purpose) and the missile side in [missiles](../specs/skills/missiles.md#purpose).
 The specs carry the exact arithmetic and [draw](../glossary.md) order; this page tells the story. Where something is
-read from the code but not yet seen in a test run, or is still unknown, the page says so.
+read from the code but not yet seen in a test run, or is still unknown, the page says so. "Confirmed by a second
+reading" means the instructions were read again with a second tool, or every call of or store into the thing was
+scanned: it covers what the code says, not that a game reached it.
 
 Skills and missiles are the project's third *simulation* subject, after [combat](combat.md) and
 [stats and states](stats-and-states.md). Combat takes a skill's damage packet as given; this subject explains where
