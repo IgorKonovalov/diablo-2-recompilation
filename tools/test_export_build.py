@@ -410,6 +410,12 @@ def main():
            "the GIF is an inline image with a root-absolute target, plus the step-through link")
         ok(not ec.check_page(txt, "x/y.md", "x/y", 0, {("i2", "m.gif")}, ())
            and "X8" in {h[0] for h in ec.check_page(txt, "x/y.md", "x/y", 0, set(), ())}, "X8 accepts it only for a verified folder")
+        ok("Seed: illustrative, an input of our own." in txt, "an illustrative seed is labelled")
+        res = eb.illustration_block(pg, {"lines": ["```illustration", "id: i3", "tool: maze_anim.py", "args: --frame 1320",
+                                                   "seed: none", "illustrates: x", "caption: Hi.", "```"]},
+                                    tmp, out, al, "H")
+        txt = "\n".join(l for b in res for l in b["lines"])
+        ok("No seed is drawn on." in txt and "Seed:" not in txt, "review of lane/x11b: a generator with no seed gets no seed label")
         shutil.rmtree(os.path.join(out, "site", "public", "illustrations"), ignore_errors=True)
         # Phase 9 review: a route stem on a `page` line; an over-limit table the manifest does not name goes whole,
         # a named one (by its source header line, front matter counted) stays, and the cut passes X6 either way

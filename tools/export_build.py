@@ -789,8 +789,8 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
             page.drops.append((heading, ",".join(sorted(r)), "caption sentence", s[:200]))
         else:
             cap.append(s)
-    cap.append("Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed "
-               "in the game.")
+    cap.append(("No seed is drawn on. " if d["seed"].strip() == "none" else "Seed: illustrative, an input of our own. ")
+               + "Every value shown is computed by our model, not observed in the game.")   # seed: none, a generator with no draw
     blank = {"kind": "blank", "lines": [""]}
     return [{"kind": "para", "lines": [f"![Animation: {d['id']}]({root_abs})"], "illus": True}, blank,
             {"kind": "para", "lines": [f"[Step through {d['id']}]({base}index.html)"], "illus": True}, blank,

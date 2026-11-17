@@ -1,6 +1,6 @@
 """Animate the schedule of a timed mode (docs/specs/anim/timing.md sections E, F and J): the rate from the speed and a
-speed bonus, then the animation position advancing by that rate once per game frame, the event frame falling due, and
-the end. Schematic only (ADR-0036): boxes, text and bars in our own palette.
+speed bonus, then the scan the mode start makes of the steps ahead (one step for each game frame, the animation
+position advancing by the rate), the event frame queued, and the end. Schematic only (ADR-0036): boxes, text and bars in our own palette.
 
 Usage:
   python3 -I tools/timing_anim.py <root> [--mode cast|gethit] [--stat N] [--frames F] [--speed V] [--start S]
@@ -35,7 +35,7 @@ import schematic_kit as K  # noqa: E402
 
 W, H = 960, 500
 CAP_Y = 436
-HELP = """<li>Top row: the game frames after the mode starts at T. The scan takes one step per game frame; the end fires one frame after the last step.</li>
+HELP = """<li>Top row: the game frames after the mode starts at T. The scan runs once, when the mode starts, and takes one step for each game frame ahead; the end fires one frame after the last step.</li>
 <li>Middle row: the animation's own frames. The marker is the position in 1/256 of a frame, it advances by the rate r each step; a frame event queues on the step whose position has passed its frame.</li>
 <li>The rate comes from the record's speed and a speed bonus; the length of the mode is the record's 256 F divided by r, rounded up, and at least 2.</li>
 <li>The record is a toy given by its numbers, not a table row. Every value is computed by our model for the numbers given, not observed in the game.</li>"""
@@ -120,24 +120,24 @@ def build(mode, stat, F, speed, S, ev, theme):
     animrow(None)
     ytxt = 250
     if mode == "cast":
-        calc = "B = 120 X %d / (120 + %d) = %d;  X = MIN(100 + B, 175) = %d" % (stat, stat, b, x)
+        calc = "B = 120 * %d / (120 + %d) = %d;  X = MIN(100 + B, 175) = %d" % (stat, stat, b, x)
     else:
-        calc = "B = 120 X %d / (120 + %d) = %d;  X = B + 50 = %d" % (stat, stat, b, x)
+        calc = "B = 120 * %d / (120 + %d) = %d;  X = B + 50 = %d" % (stat, stat, b, x)
     if stat == 0:
-        calc = calc.replace("120 X 0 / (120 + 0) = 0", "0")
+        calc = calc.replace("120 * 0 / (120 + 0) = 0", "0")
     k.text(20, ytxt, calc, "txt", 2)
-    k.text(20, ytxt + 30, "RATE R = SPEED X X / 100 = %d X %d / 100 = %d" % (speed, x, r), "acc", 2, True)
-    k.text(20, ytxt + 60, "LENGTH L = 256 X F = %d;  START POSITION 256 X S = %d" % (F << 8, S << 8), "dim", 2)
-    k.text(20, ytxt + 90, "STEP K, ON GAME FRAME T + K: POSITION = 256 S + K R", "dim", 2)
-    k.text(20, ytxt + 116, "SCANNING STOPS WHEN THE POSITION REACHES L", "dim", 2)
+    k.text(20, ytxt + 30, "RATE R = SPEED * X / 100 = %d * %d / 100 = %d" % (speed, x, r), "acc", 2, True)
+    k.text(20, ytxt + 60, "LENGTH L = 256 * F = %d;  START POSITION 256 * S = %d" % (F << 8, S << 8), "dim", 2)
+    k.text(20, ytxt + 90, "AT THE START ONE CALL WALKS ALL STEPS; STEP K IS FOR GAME FRAME T + K", "dim", 2)
+    k.text(20, ytxt + 116, "POSITION = 256 S + K R; THE WALK STOPS WHEN IT REACHES L", "dim", 2)
     k.caption("%d animation frames at speed %d with %s %d: the rate is %d per game frame, in 1/256 of an "
               "animation frame (timing J, E)." % (F, speed, label.lower(), stat, r), CAP_Y, 76)
     frames.append(k.done())
     caps.append(dict(
         text="A toy record of %d frames, speed %d, start frame %d, event byte 1 on frame %d, with %s %d: the rate is %d." % (
             F, speed, S, ev, label.lower(), stat, r),
-        calc=["timing J1: B = (k x s) / (k + s) with k = 120 and s = %d gives %d." % (stat, b),
-              "timing J2: X = %d, r = speed x X / 100 = %d x %d / 100 = %d." % (x, speed, x, r),
+        calc=["timing J1: B = (k * s) / (k + s) with k = 120 and s = %d gives %d." % (stat, b),
+              "timing J2: X = %d, r = speed * X / 100 = %d * %d / 100 = %d." % (x, speed, x, r),
               "timing E1: length L = 256 F = %d, S = %d, so the position starts at %d and gains %d per step." % (
                   F << 8, S, S << 8, r)]))
     # ---- the steps
@@ -152,34 +152,34 @@ def build(mode, stat, F, speed, S, ev, theme):
         assert bool(fired) == (ev >= 0 and lo <= ev <= min(hi, 0x8F) and kk <= steps)
         if fired:
             queued.add(kk)
-        header("STEP %d, ON GAME FRAME T + %d" % (kk, kk))
+        header("STEP %d: FOR GAME FRAME T + %d" % (kk, kk))
         timeline(kk, queued | ({ev_t} if ev_t is not None and ev_t < kk else set()))
         animrow(acc)
-        k.text(20, 250, "POSITION = 256 X %d + %d X %d = %d  (FRAME %d)" % (S, kk, r, acc, acc >> 8), "txt", 2, True)
+        k.text(20, 250, "POSITION = 256 * %d + %d * %d = %d  (FRAME %d)" % (S, kk, r, acc, acc >> 8), "txt", 2, True)
         k.text(20, 280, "THIS STEP SCANS FRAMES %d TO %d" % (lo, hi) if hi >= lo else "THIS STEP SCANS NO NEW FRAME", "dim", 2)
         if fired:
             k.text(20, 310, "FRAME %d CARRIES EVENT BYTE 1: QUEUED FOR T + %d" % (ev, kk), "blue", 2, True)
-            k.text(20, 340, "CLOSED FORM: T + MAX(1, CEIL(256 X (%d - %d) / %d)) = T + %d" % (ev, S, r, kk), "dim", 2)
+            k.text(20, 340, "CLOSED FORM: T + MAX(1, CEIL(256 * (%d - %d) / %d)) = T + %d" % (ev, S, r, kk), "dim", 2)
         elif ev_t is not None and ev_t < kk:
             k.text(20, 310, "EVENT BYTE 1 ALREADY QUEUED FOR T + %d" % ev_t, "dim", 2)
         k.text(20, 372, "%d STEPS SO FAR; NEXT POSITION %d %s %d" % (kk, acc + r, "<" if acc + r < (F << 8) else ">=", F << 8),
                "dim", 2)
-        k.caption("Step %d on game frame T + %d: the position is %d, frame %d.%s" % (
+        k.caption("Step %d, for game frame T + %d: the position is %d, frame %d.%s" % (
             kk, kk, acc, acc >> 8, " Frame %d carries the event, so it is queued for T + %d (timing E1, E2)." % (ev, kk)
             if fired else ""), CAP_Y, 76)
         frames.append(k.done())
-        calc = ["timing E1: step k = %d, t = T + %d: position = 256 S + k r = %d + %d x %d = %d < L = %d." % (
+        calc = ["timing E1: step k = %d, t = T + %d: position = 256 S + k r = %d + %d * %d = %d < L = %d." % (
             kk, kk, S << 8, kk, r, acc, F << 8),
                 "timing E1: frames %d to %d are scanned." % (lo, hi) if hi >= lo else "timing E1: no new frame is scanned."]
         if fired:
             calc.append("timing E1: event byte 1 on frame %d: UnitQueueEvent(kind 0, frame T + %d, a 1, b 0)." % (ev, kk))
-        caps.append(dict(text="Step %d, game frame T + %d: position %d, frame %d%s." % (
+        caps.append(dict(text="Step %d, for game frame T + %d: position %d, frame %d%s." % (
             kk, kk, acc, acc >> 8, ", the event is queued" if fired else ""), calc=calc))
     # ---- the end
     header("THE END: T + %d" % end)
     timeline(end, queued | {end} | ({ev_t} if ev_t is not None else set()))
     animrow(None)
-    k.text(20, 250, "LENGTH N = MAX(2, CEIL(256 X (%d - %d) / %d)) = %d" % (F, S, r, end), "txt", 2, True)
+    k.text(20, 250, "LENGTH N = MAX(2, CEIL(256 * (%d - %d) / %d)) = %d" % (F, S, r, end), "txt", 2, True)
     k.text(20, 280, "%d SCAN STEPS, THE END ONE FRAME AFTER THE LAST" % steps, "dim", 2)
     if ev_t is not None:
         k.text(20, 310, "EVENT ON FRAME %d: T + %d" % (ev, ev_t), "blue", 2, True)

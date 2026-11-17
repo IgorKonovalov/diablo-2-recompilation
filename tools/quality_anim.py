@@ -177,11 +177,11 @@ def build(T, codes, code, ilvl, ratio, seed, mf, theme):
         X0 = 330
         c = t["c"]
         rows = []
-        b = "(%d - %d / %d) X 128 = %d" % (t["bterm"], t["d"], t["div"], t["base"])
+        b = "(%d - %d / %d) * 128 = %d" % (t["bterm"], t["d"], t["div"], t["base"])
         rows.append(("BASE", b, "txt"))
         if t["minimum"] is not None:
             if t["factor"] is not None:
-                rows.append(("MAGIC FIND", "X 100 / F, F = %d: %d" % (t["factor"], t["c_mf"]), "txt"))
+                rows.append(("MAGIC FIND", "* 100 / F, F = %d: %d" % (t["factor"], t["c_mf"]), "txt"))
             elif mf == 0:
                 rows.append(("MAGIC FIND", "NONE (MAGIC FIND 0): %d" % t["c_mf"], "dim"))
             else:
@@ -190,7 +190,7 @@ def build(T, codes, code, ilvl, ratio, seed, mf, theme):
                 rows.append(("MINIMUM", "%d <= %d: RAISED TO %d" % (t["c_mf"], t["minimum"], t["minimum"]), "acc"))
             else:
                 rows.append(("MINIMUM", "%d ABOVE %d: KEPT" % (t["c_mf"], t["minimum"]), "txt"))
-            rows.append(("RATIO WORD", "W = %d: C - W X C / 1024 = %d" % (t["word"], c), "txt"))
+            rows.append(("RATIO WORD", "W = %d: C - W * C / 1024 = %d" % (t["word"], c), "txt"))
         else:
             rows.append(("MAGIC FIND", "NOT USED IN THIS TEST", "dim"))
             rows.append(("MINIMUM", "NOT USED IN THIS TEST", "dim"))
@@ -231,13 +231,13 @@ def build(T, codes, code, ilvl, ratio, seed, mf, theme):
             t["bterm"], t["d"], t["div"], t["base"])]
         if t["minimum"] is not None:
             if t["factor"] is not None:
-                calc.append("D5: magic find on: c = c x 100 / F with F = %s = %d, so c = %d." % (
+                calc.append("D5: magic find on: c = c * 100 / F with F = %s = %d, so c = %d." % (
                     "m100 = %d (no diminishing)" % (mf + 100) if name == "magic" else
                     "Diminish(%d, %d)" % (mf + 100, COLS[name][3]), t["factor"], t["c_mf"]))
             else:
                 calc.append("D5: no magic find applied, c = %d." % t["c_mf"])
             calc.append("D6: c <= the row's minimum %d is raised to it: c = %d." % (t["minimum"], t["c_min"]))
-            calc.append("D7: ratio word %d: c = c - w x c / 1024 = %d." % (t["word"], c))
+            calc.append("D7: ratio word %d: c = c - w * c / 1024 = %d." % (t["word"], c))
         if t["x"] is None:
             calc.append("%s: c = %d < 1, so the test is won with no draw; the seed is unchanged." % (
                 "D8" if t["minimum"] is not None else "E", c))
@@ -256,9 +256,9 @@ def build(T, codes, code, ilvl, ratio, seed, mf, theme):
     k.box(330, 60, 610, 120, [(fname.upper(), QCOL[fname])], QFILL.get(fname, "panel"), "txt", QCOL.get(fname, "txt"), 4,
           bold=True)
     k.text(330, 200, "%d DRAWS, QUALITY CODE %d" % (info["ndraw"], final), "txt", 2, True)
-    k.text(330, 228, "THE SEED KEEPS THE DRAWS FOR THE NEXT ROLL", "dim", 2)
-    k.caption("The roll ends with %s after %d draws. Every test that was reached has run in order; the seed carries "
-              "the draws on to the next roll." % (fname, info["ndraw"]), CAP_Y, 76)
+    k.text(330, 228, "THE RESOLVER'S NEXT DRAW USES THE SAME SEED", "dim", 2)
+    k.caption("The roll ends with %s after %d draws. Every test that was reached has run in order; the resolver's "
+              "next draw continues on the same source seed." % (fname, info["ndraw"]), CAP_Y, 76)
     frames.append(k.done())
     caps.append(dict(
         text="The roll ends with %s (quality code %d) after %d draws on the source seed." % (fname, final, info["ndraw"]),

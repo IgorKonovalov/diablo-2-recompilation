@@ -1549,3 +1549,46 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   **allow-hex:** no line needed (`0xC0FFEE` is present; texts use decimals and `{low:high}` states). **Blocks:** rows
   5–8 with draft captions and Place lines are in `workspace/phase11/blocks-batch1.md` under "Rows 5–8" (ids
   `items-quality-lsd-mf200`, `monsters-special-zombie1-hell`, `anim-schedule-cast-fcr20`, `frame-tick-passes`).
+- 2026-11-17, architect, review of lane/x11b (Opus, Tier A): **accept with fixes**, 12: misread 2, overclaim 3,
+  omission 3, other 4. Checked: frames viewed in both themes (quality 0, 1, 2, 3, 4, 5; special 1, 3, 6 and the
+  champion branch's pick 2; timing 0, 7, 12; frame 0, 2, 4, 7, 10 and at 1321 frames 14 and 17), each number against
+  the specs: quality § C–D (d = 8; F = 211, 242, 250 from `Diminish` with 250, 500, 600 at MF 200, 300 for magic;
+  23780, 8251, 4915, 1365 after `× 100 ÷ F`; minimums kept; four draws, magic on 15), special § A1/B1/B2 (draw 68 ≥ 20,
+  `Range(1)`, three unique picks of 12 candidates and total 72 in Hell, five unit-seed steps = 1 + (1 + 2) + 1; the
+  champion branch 10 < 20, five candidates of weight 1), timing § J1–J2 and § E2 with worked example 1 (B 17, X 117,
+  r 299, the do at T + 6, the end at T + 12, 11 steps), frame § B1, C, D1, J (ranks, walks, slot 1320 % 64 = 40, the
+  periodic tests). **Rulings.** (a) Row 8 is kept: the owner accepted it as "the spec's pass list, no log", ADR-0036's
+  decision asks that illustrations make no claim of their own and restate a spec, which the frames do (the test ties
+  the names and order to the B1 and D1 listings), and the only numbers are computed; its caption drops the sentence on
+  how ranks were established (seen in windows, read from the code), which is method talk the picture does not need.
+  (b) Row 6 and § D: kept. The frames show per pick the candidate count, the total, the draw and the winner's one
+  weight; the stock weights (1 and 6), the candidate counts and the mod names are on the wiki page and in § B2 already,
+  and no per-mod draw or `xfer` column is drawn. (c) `CAPTION_CUT`: accepted (a test asserts the four tools cut none).
+  **Fixes** (`tools/`): (1) misread: `timing_anim.py` drew the schedule as a scan running one step per game frame
+  ("STEP 7, ON GAME FRAME T + 7"); E1 is one call at the mode start that walks every step and queues for T + k: the
+  first frame says so, step headers and captions read "for game frame T + k", the help line and docstring too.
+  (2) misread: `frame_anim.py` tagged rank 3's seeds confirmed; § J has them `[I]` (the routes `[C]`). (3) omission:
+  rank 14's seeds dropped "the saves' seed is not read". (4) overclaim: the first frame said "the host loop, once per
+  40 ms" (a time in ms, ADR-0014; the 40 ms is the flush's throttle, A3 `[I]`) and the last "next: drain, then a
+  tick" where C4 allows several drains between two frames: now "one pass of the host loop" and "a drain or more".
+  (5) overclaim: `quality_anim.py`'s outcome said the seed carries the draws "to the next roll"; the spec says the
+  resolver's next draw continues on the same seed. (6) other: in the upper-case font a multiplication written `X` read
+  as the variable X of the rate or the draw X (`SPEED X X / 100`, `C - W X C`): `*` in both tools' frames and step
+  texts, and a test. (7) other: code names in the upper-case font (`NEWROOMSUPDATE`, `GAMERUNUNITEVENTS`) now in words,
+  the pass labels follow the wiki page's names (frame stats, frame reset, release, sweep tick), one label collided with
+  DONE and one title overran the panel; a test bounds the labels. (8) overclaim: `export_build.py` appended "Seed:
+  illustrative, an input of our own" to every illustration, rows 7 and 8 included, which draw on no seed: a block's
+  `seed: none` now gives "No seed is drawn on." (ADR-0034 labels a seed that exists; a generator with no draw has none),
+  with a test. **Blocks** (`workspace/phase11/blocks-batch1.md`, corrected there): (9) omission: row 5's caption gave
+  the diminished factor without its "above magic find 10" condition, and (10) omission: row 6's "class and version
+  tests" for `ModEligible` (now the disabled row, the expansion row in classic, the excluded type, the class's mode)
+  and the draw's range (0 to the total minus 1); row 7's caption rewritten for (1), with `×`, `÷` and `⌈ ⌉`. (11) other:
+  all eight captions named a tool path (the builder strips it) and carried their own "Every value shown is computed by
+  our model" sentence, which the builder appends again: both removed; rows 7 and 8 take `seed: none`. (12) other: the
+  Place lines of rows 5–8 name the exact paragraphs. **Cut:** all eight blocks placed in the lane's wiki pages for one
+  build (restored after), `export_build.py --out workspace/export-x11b-review`: 71 pages, ten illustration folders,
+  0 caption sentences dropped; `export_check` 0 failures (864 warnings, none from the blocks); the folder was removed.
+  Tests green: `test_schematic_kit` (28), `test_anim_schematic`, `test_export_build` (151), `test_export_check` (191);
+  gate green. **For the spec-writer:** place the eight blocks as their Place lines say; rows 7 and 8 keep `seed: none`;
+  the wiki's own schedule flowchart (animation, "The schedule") says "step k, on game frame T + k", which reads as a
+  per-frame scan where E1 is one call at the mode start; worth the same rewording when the block goes in.

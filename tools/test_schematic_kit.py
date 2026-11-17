@@ -380,7 +380,8 @@ class Timing(unittest.TestCase):
         self.assertEqual(r, 299)                                      # timing.md worked example 1: FCR 20 -> r = 299
         q = anim.schedule(0, 0, r, 14 << 8, lambda f: 1 if f == 7 else 0)
         self.assertEqual(q, [(0, 6, 1, 0), (1, 12, 0, 0)])             # the do at T + 6, the end at T + 12 (n = 12)
-        self.assertIn("r = speed x X / 100 = 256 x 117 / 100 = 299", " ".join(st[0]["calc"]))
+        self.assertIn("r = speed * X / 100 = 256 * 117 / 100 = 299", " ".join(st[0]["calc"]))
+        self.assertTrue(all(s["text"].startswith("Step %d, for game frame T + %d" % (i, i)) for i, s in enumerate(st[1:-1], 1)))
         self.assertEqual(len(st), 1 + 11 + 1)                          # N = 11 scan steps
         self.assertIn("UnitQueueEvent(kind 0, frame T + 6, a 1, b 0)", " ".join(st[6]["calc"]))
         self.assertIn("kind 1 at T + 12", " ".join(st[-1]["calc"]))
@@ -434,6 +435,25 @@ class Frame(unittest.TestCase):
         self.assertTrue(any("skipped at counter 1321" in s["text"] for s in steps(sk)))
         import frame_anim
         self.assertEqual(frame_anim.main([DATA, "--frame", "0"]), 2)
+
+
+class Labels(unittest.TestCase):
+    """Review of lane/x11b: in the upper-case font a multiplication written X reads as the variable X or the draw X."""
+    def test_no_x_for_times_in_frame_text(self):
+        for tool in ("quality_anim.py", "timing_anim.py", "special_anim.py", "frame_anim.py"):
+            with open(os.path.join(HERE, tool), encoding="utf-8") as fh:
+                src = fh.read()
+            self.assertEqual(re.findall(r"(?:%d|[0-9)]) [Xx] |[A-Z] X [A-Z] /| [Xx] (?:%d|[0-9(])", src), [], tool)
+
+    def test_frame_names_and_tags(self):
+        import frame_anim
+        self.assertEqual(frame_anim.spaced("QUESTS_TimersRun"), "QUESTS TIMERS RUN")
+        self.assertEqual(frame_anim.spaced("GameRunUnitEvents"), "GAME RUN UNIT EVENTS")
+        self.assertTrue(all(len(lab) <= 12 for _r, lab, _f in frame_anim.ROWS))   # clear of DONE and SKIP
+        sure = {p[0]: p[7] for p in frame_anim.PASSES}
+        self.assertIn("seeds inferred", sure[3])                       # frame J rank 3: [I] the seeds
+        with open(os.path.join(HERE, "frame_anim.py"), encoding="utf-8") as fh:
+            self.assertNotIn(" MS\"", fh.read())                     # time in frames (ADR-0014), no host-loop period
 
 
 class Captions(unittest.TestCase):

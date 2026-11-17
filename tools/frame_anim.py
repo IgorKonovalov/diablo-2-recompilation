@@ -20,6 +20,7 @@ with the spec's listings. Not shown: what an event does (other pages), the queue
 contents (I) and the frame windows (K). Stdlib only.
 """
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -33,21 +34,23 @@ CAP_Y = 436
 # the spec's pass list: (rank, name, short label, period or None, what it draws, seeds, frame.md anchor, how sure)
 PASSES = (
     (1, "ActsClockPass", "ACT CLOCKS", None, "NONE OF ITS OWN; A CLOCK CHANGE CAN REACH A SKILL CHANGE THAT DRAWS",
-     "THE SKILL'S, BY ITS SPEC", "G1, J", "none of its own is confirmed"),
-    (2, "GameFpsStats", "FPS STATS", None, "NONE", "NONE", "G2, J", "confirmed"),
+     "THE SKILL'S, BY ITS SPEC", "G1, J", "no draw of its own is confirmed"),
+    (2, "GameFpsStats", "FRAME STATS", None, "NONE", "NONE", "G2, J", "confirmed"),
     (3, "NewRoomsUpdate", "NEW ROOMS", None, "THE WANDERER TICK, THE POPULATION, THE RESTORE OF SAVED ITEMS",
-     "THE ROOM'S OWN, A NEIGHBOUR'S, THE GAME'S, THE LEVEL'S, THE OBJECT REGION'S", "H2, J", "confirmed"),
+     "THE ROOM'S OWN, A NEIGHBOUR'S, THE GAME'S, THE LEVEL'S, THE OBJECT REGION'S", "H2, J",
+     "the routes are confirmed, the seeds inferred"),
     (14, "ClientsRoomSync", "ROOM SYNC", None, "ROOM ACTIVATIONS, LEVEL BUILDS, PRESET ROLLS",
-     "THE ROOM'S OWN, THE LEVEL'S; NOT THE GAME SEED BY DIRECT REACH", "H3, J", "confirmed"),
-    (15, "ActUnitsFrameReset", "UNIT RESET", None, "THE FREE OF AN INVENTORY ITEM WITH ITEM FLAG 1", "THE FREE'S",
+     "THE ROOM'S OWN, THE LEVEL'S; NOT THE GAME SEED BY DIRECT REACH, THE SAVES ASIDE, WHOSE SEED IS NOT READ",
+     "H3, J", "confirmed"),
+    (15, "ActUnitsFrameReset", "FRAME RESET", None, "THE FREE OF AN INVENTORY ITEM WITH ITEM FLAG 1", "THE FREE'S",
      "G3, J", "the item-flag condition is inferred"),
     (16, "ActsRoomRemovalsClear", "REMOVALS", None, "NONE", "NONE", "G4, J", "confirmed"),
     (17, "QUESTS_TimersRun", "QUEST TIMERS", 20, "SIX QUEST CALLBACKS", "THE GAME'S, THE QUEST'S, THE LEVEL'S", "I1, J",
      "the seeds are inferred"),
-    (18, "RoomsDeactivate", "ROOM RELEASE", 12, "THE SAVE TEST OF INACTIVE UNITS, THE FREE OF AN ACTIVE ROOM", "SEE THE LIFECYCLE'S SAVE RULE",
+    (18, "RoomsDeactivate", "RELEASE", 12, "THE SAVE TEST OF INACTIVE UNITS, THE FREE OF AN ACTIVE ROOM", "SEE THE LIFECYCLE'S SAVE RULE",
      "I2, J", "confirmed"),
     (19, "ActLevelsUnloadTick", "LEVEL UNLOAD", 11, "THE BUILD OF A LEVEL", "THAT LEVEL'S", "I3, J", "the seed is inferred"),
-    (20, "ExpirySweepTick", "EXPIRY SWEEP", 1, "THE FREE OF AN EXPIRED ITEM; WORKS ONLY WHEN FRAME % 1500 = 0",
+    (20, "ExpirySweepTick", "SWEEP TICK", 1, "THE FREE OF AN EXPIRED ITEM; WORKS ONLY WHEN FRAME % 1500 = 0",
      "THE FREE'S", "I4, J", "confirmed"),
 )
 # the ten walks of D1, ranks 4 to 13: (rank, runner, unit type, mode)
@@ -63,6 +66,11 @@ HELP = """<li>Left: the passes of one tick in the order the server runs them. Th
 
 ROWS = [("21", "DRAIN", "SrvDrainMessages")] + [("%d" % p[0], p[2], p[1]) for p in PASSES[:3]] + \
        [("4-13", "TEN WALKS", "GameRunUnitEvents")] + [("%d" % p[0], p[2], p[1]) for p in PASSES[3:]]
+
+
+def spaced(name):
+    """A code name in words for the upper-case font: NewRoomsUpdate -> NEW ROOMS UPDATE, QUESTS_TimersRun -> QUESTS TIMERS RUN."""
+    return " ".join(re.findall(r"[A-Z]+(?![a-z])|[A-Z][a-z]*|[a-z]+", name.replace("_", " "))).upper()
 
 
 def build(N, theme):
@@ -112,7 +120,7 @@ def build(N, theme):
     railway(None, done, runs)
     k.rect(330, 44, 610, 340, "panel")
     k.outline(330, 44, 610, 340, "dim")
-    k.text(344, 60, "THE HOST LOOP, ONCE PER 40 MS", "acc", 2, True)
+    k.text(344, 60, "ONE PASS OF THE HOST LOOP", "acc", 2, True)
     k.text(344, 100, "1. DRAIN THE MESSAGES (QUEUES 0, 1, 2)", "txt", 2)
     k.text(344, 130, "2. EACH LIVE GAME: TICK, THEN FLUSH", "txt", 2)
     k.text(344, 170, "THE TICK FIRST RAISES THE COUNTER: %d -> %d" % (N - 1, N), "txt", 2, True)
@@ -130,7 +138,7 @@ def build(N, theme):
     # ---- the drain
     header("RANK 21: THE DRAIN, BETWEEN TWO TICKS")
     railway("21", done, runs)
-    right_text("SrvDrainMessages", [
+    right_text(spaced("SrvDrainMessages"), [
         ("WHAT IT DOES", "POPS EACH QUEUE IN ARRIVAL ORDER: SYSTEM MESSAGES, IN-GAME PACKETS, HOST CONTROL", "txt"),
         ("WHEN", "BETWEEN FRAMES, NEVER INSIDE A TICK", "txt"),
         ("SEEDS", "AS EACH PACKET HANDLER'S SPEC NAMES THEM", "txt")])
@@ -158,7 +166,7 @@ def build(N, theme):
                 railway("4-13", done, runs)
                 k.rect(330, 44, 610, 340, "panel")
                 k.outline(330, 44, 610, 340, "dim")
-                k.text(344, 56, "GameRunUnitEvents: THE TEN WALKS", "acc", 2, True)
+                k.text(344, 56, spaced("GameRunUnitEvents") + ": THE TEN WALKS", "acc", 2, True)
                 for j, (rank, runner, ut, mode) in enumerate(WALKS):
                     col, row = j // 5, j % 5
                     x, y = 344 + col * 290, 92 + row * 46
@@ -197,12 +205,12 @@ def build(N, theme):
         else:
             lines.append(("RUNS WHEN", "EVERY FRAME", "txt"))
         lines += [("DRAWS", draws, "txt"), ("SEEDS", seeds, "txt")]
-        right_text(name, lines)
+        right_text(spaced(name), lines)
         if period and period > 1 and N % period != 0:
             cap = "Rank %d, %s: it runs when the counter divides by %d; %d does not, so it is skipped this tick (frame B1)." % (
-                rank, name, period, N)
+                rank, spaced(name).lower(), period, N)
         else:
-            cap = "Rank %d, %s. Its draws: %s; the seeds are listed beside (frame %s)." % (rank, name, draws.lower(), anchor)
+            cap = "Rank %d, %s. Its draws: %s; the seeds are listed beside (frame %s)." % (rank, spaced(name).lower(), draws.lower(), anchor)
         k.caption(cap, CAP_Y, 76)
         frames.append(k.done())
         calc = ["frame.md B1: rank %d %s%s." % (rank, name, "" if not period or period == 1 else
@@ -218,8 +226,8 @@ def build(N, theme):
     railway(None, done, runs)
     k.rect(330, 44, 610, 340, "panel")
     k.outline(330, 44, 610, 340, "dim")
-    k.text(344, 60, "THEN THE FLUSH, AND THE NEXT PASS OF THE HOST LOOP", "acc", 2, True)
-    k.text(344, 100, "NEXT: DRAIN, THEN A TICK AT COUNTER %d" % (N + 1), "txt", 2, True)
+    k.text(344, 60, "THEN THE FLUSH AND THE NEXT LOOP PASS", "acc", 2, True)
+    k.text(344, 100, "NEXT: A DRAIN OR MORE, THEN THE TICK AT %d" % (N + 1), "txt", 2, True)
     k.text(344, 140, "RUNNING THIS FRAME: %s" % (", ".join("%d" % p[0] for p in PASSES if p[3] is None or N % p[3] == 0 or p[3] == 1)), "dim", 2)
     k.text(344, 170, "(AND THE WALKS 4 TO 13)", "dim", 2)
     k.text(344, 200, "SKIPPED THIS FRAME: %s" % (", ".join("%d" % p[0] for p in PASSES if p[3] and p[3] > 1 and N % p[3]) or "NONE"),
@@ -228,7 +236,7 @@ def build(N, theme):
               "pass first (frame B, J).", CAP_Y, 76)
     frames.append(k.done())
     caps.append(dict(
-        text="The tick is done; the next drain and the tick at counter %d follow." % (N + 1),
+        text="The tick is done; one drain or more, then the tick at counter %d, follow." % (N + 1),
         calc=["frame.md B1: the ranks that ran at counter %d: %s, and the walks 4 to 13." % (
                   N, ", ".join("%d" % p[0] for p in PASSES if p[3] is None or p[3] == 1 or N % p[3] == 0)),
               "frame.md J: the passes run in one order, so which pass draws first on a shared seed does not vary."]))
