@@ -202,10 +202,12 @@ def publish(a, run=default_run):
     copy_cut(cut, target)
     say(f"5 copied {len(rels)} project files and the cut ({date})")
     site = os.path.join(target, "site")
+    # From here a failure leaves the copied files in the target, and the next run refuses a dirty tree.
+    undo = f"\nthe target holds the copied files; to start over: git -C {target} reset -q && git -C {target} checkout -- . && git -C {target} clean -fdq"
     if lock_changed(target) or not os.path.isdir(os.path.join(site, "node_modules")):
         rc, tail = run(["npm", "ci"], cwd=site, log=logs)
         if rc:
-            raise Stop("npm ci failed:\n" + tail)
+            raise Stop("npm ci failed:\n" + tail + undo)
         say("6 npm ci: done")
     else:
         say("6 npm ci: skipped (lock unchanged, node_modules present)")
@@ -216,10 +218,10 @@ def publish(a, run=default_run):
         env = {"SITE_BASE": base}
         rc, tail = run(["npm", "run", "build"], cwd=site, env=env, log=logs)
         if rc:
-            raise Stop("site build failed:\n" + tail)
+            raise Stop("site build failed:\n" + tail + undo)
         rc, tail = run(["node", "scripts/check-site-links.mjs", "dist"], cwd=site, env=env, log=logs)
         if rc:
-            raise Stop("link check failed:\n" + tail)
+            raise Stop("link check failed:\n" + tail + undo)
         say("7 site build and link check: " + (tail.splitlines()[-1] if tail else "ok"))
     paths = stage_paths(target, rels)
     git(target, "add", "--", *paths)
