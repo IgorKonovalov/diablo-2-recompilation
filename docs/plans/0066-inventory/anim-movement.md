@@ -7,7 +7,7 @@
   I 46 at `main` `2ffce327`; two `[I]` of plan 0063 P3 are not in this inventory). Statement `[C]` whole: rows 1, 9,
   12, 18, 19, 27, 30, 34, 37–39, 41–44 (15; row 44's open question is closed into D2). Split, the remainder `[I]` as the
   *Route* cell names: 2, 3, 7, 10, 11, 16, 20–26, 29, 31, 32, 35, 40 (18). Kept `[I]` (H6c, H6d, deferred, d-none): 4–6,
-  8, 13–15, 17, 28, 33, 36 (11).
+  8, 13–15, 17, 28, 33, 36 (11). **Follow-up (`lane/fus`, 2026-11-17): H6d applied** ([the H6d corrections entry](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-h6d-corrections.md)). Whole from kept: 4, 13; split from kept: 6 (B_FRW's in-play separation `[I]`), 8 (the path-base sentences `[I]`), 14 (a later base row `[I]`, no stock row). Now whole 17, split 21, kept 6; front matter C 61 / I 30 / L 8.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

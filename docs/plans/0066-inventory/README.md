@@ -520,7 +520,9 @@ each cluster's re-tag.
 | monsters/ai part 2 (`lane/n66ai2`) | [monsters/ai/catalogue](monsters-ai-catalogue.md) | 520 | 62 | 112 | 8 | 338 | C 344 / I 520 / L 18 | C 521 / I 510 / L 18 |
 
 A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
-`[C]` count rises by more than the `[I]` count falls.
+`[C]` count rises by more than the `[I]` count falls. The anim/timing, anim/movement, sim/frame, stats/aggregate and
+items/inventory rows include the follow-ups applied after the close (`lane/fus`, 2026-11-17: H6d, the new-rooms-flag
+note, the archivist's S4e table checks; each file's *Phase 3* line names the rows).
 
 ## 7. Final totals (plan close, 2026-11-17)
 
@@ -528,10 +530,10 @@ Summed from § 6's 29 rows (28 spec files; [player/party](player-party.md) has t
 
 | | Rows | Whole | Split | Corrected | Kept | `[C]` | `[I]` | `[L]` |
 |---|---|---|---|---|---|---|---|---|
-| Sum of the 29 rows as printed | 2 646 | 660 | 652 | 46 | 1 287 | 2 221 → 3 544 | 2 684 → 2 104 | 211 → 205 |
-| Each spec once (player/party: its 26 rows once, the combat row's 25 kept superseded by the frame row's 21 kept and 4 whole) | 2 620 | 660 | 652 | 46 | 1 262 | 2 174 → 3 497 | 2 655 → 2 075 | 208 → 202 |
+| Sum of the 29 rows as printed | 2 646 | 668 | 657 | 46 | 1 274 | 2 221 → 3 559 | 2 684 → 2 095 | 211 → 205 |
+| Each spec once (player/party: its 26 rows once, the combat row's 25 kept superseded by the frame row's 21 kept and 4 whole) | 2 620 | 668 | 657 | 46 | 1 249 | 2 174 → 3 512 | 2 655 → 2 066 | 208 → 202 |
 
 Whole + split + corrected + kept = 2 620 (the frame row for player/party counts 25 of its 26 rows, row 12 being the
-combat row's whole). `[C]` rises by 1 323 and `[I]` falls by 580 across the specs, because a split adds a `[C]` beside the
+combat row's whole). `[C]` rises by 1 338 and `[I]` falls by 589 across the specs, because a split adds a `[C]` beside the
 `[I]` it keeps. The front-matter *before* column is each spec's count at its cluster's start, so it is not § 1's Phase 0
 total (2 626 `[I]`): the specs had been edited between.

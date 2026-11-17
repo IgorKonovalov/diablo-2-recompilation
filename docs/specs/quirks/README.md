@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [every reviewed spec listed under Coverage]
 consumed_by: [docs/wiki/quirks.md]
-tags: {C: 426, I: 121, L: 3}
+tags: {C: 428, I: 119, L: 3}
 updated: 2026-11-17
 ---
 
@@ -67,10 +67,10 @@ flowchart LR
 | [4. Bounds, comparisons and table edges](#4-bounds-comparisons-and-table-edges) | 79 | 62 | 17 |
 | [5. Draw order and dead draws](#5-draw-order-and-dead-draws) | 144 | 124 | 20 |
 | [6. Data-dependent branches](#6-data-dependent-branches) | 135 | 116 | 19 |
-| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 18 | 10 |
+| [7. Timing and frame edges](#7-timing-and-frame-edges) | 28 | 20 | 8 |
 | [8. Multiplayer edges](#8-multiplayer-edges) | 23 | 17 | 6 |
 | [9. Deliberate oddities that look like bugs](#9-deliberate-oddities-that-look-like-bugs) | 72 | 44 | 28 |
-| **Total** | 538 | 421 | 117 |
+| **Total** | 538 | 423 | 115 |
 
 ### 1. Arithmetic width and sign
 
@@ -523,7 +523,7 @@ flowchart LR
 |---|---|---|---|---|
 | Q374 | A scheduled mode's end is `n` frames after its start; the community breakpoint tables count `N = n − 1`. With the stock client a held normal action restarts at `T + N`, held Lightning at `T + n`; the server starts the next action in the frame its request arrives. | [C] | fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-27-anim | [anim/timing](../anim/timing.md#reimplementation-notes) n1; [anim/README](../anim/README.md#reimplementation-notes) n2 |
 | Q375 | A scheduled mode does not follow a rate change: its events stay where its start put them; an every-frame monster takes the new rate at its next advance. | [C] | fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-30-anim-p3b | [anim/README](../anim/README.md#reimplementation-notes) n1 |
-| Q376 | Two rate calls per server start: the first, before `+0x48` is written, sees the previous mode's length; the schedule uses the second. | [I] | fn:UNIT_AnimInit@0x00624390, fn:SUNIT_AnimInit@0x005533D0 | [anim/timing](../anim/timing.md#reimplementation-notes) n2 |
+| Q376 | Two rate calls per server start: the first, before `+0x48` is written, sees the previous mode's length; the schedule uses the second. | [C] | fn:UNIT_AnimInit@0x00624390, fn:SUNIT_AnimInit@0x005533D0 | [anim/timing](../anim/timing.md#reimplementation-notes) n2 |
 | Q377 | A monster's frame-function result is ignored: an every-frame attack or skill mode with no end call of its own lasts until another command. | [I] | fn:sub_005A7BA0_MonModeFrameEvent@0x005A7BA0 | [anim/timing](../anim/timing.md#reimplementation-notes) n5 |
 | Q378 | A frozen monster loses its scheduled events (dropped and freed), its mode end among them. | [I] | fn:sub_005A7F80_MonEventDispatch@0x005A7F80 | [anim/timing](../anim/timing.md#reimplementation-notes) n7 |
 | Q379 | A monster attack and its `MonAttackStats` are two moments: the `El` draws at the attack mode start, to-hit and build at the hit frame, with the monster's AI drawing in between. | [C] | fn:sub_005A4F50_MonAttackStats@0x005A4F50, run:2026-10-16-combat | [combat/README](../combat/README.md#reimplementation-notes) n6 |
@@ -548,7 +548,7 @@ flowchart LR
 | Q503 | `EventQueueAt` with frame −1 drops its callback, and a frame at or below the current one is raised rather than refused. | [C] | 0x005416D5, run:2026-10-30-frame-emu-2 | [sim/frame](../sim/frame.md#reimplementation-notes) n2 |
 | Q504 | An event slot holds records of later multiples of 64: a walk passes over a record whose frame is not the current one and keeps it. | [C] | fn:sub_00541060_MonEventsRun@0x00541060, run:2026-10-30-frame-emu-2 | [sim/frame](../sim/frame.md#reimplementation-notes) n4 |
 | Q505 | So a record due at `F`, queued in frame `q`, is passed over `(F − q − 1) ÷ 64` times in the frames after `q`, and once more in frame `q` itself when `F ≡ q (mod 64)` and that frame's walk reaches it. | [I] | fn:sub_005416B0_EventQueueAt@0x005416B0, 0x005414EC, 0x00541589 | [sim/frame](../sim/frame.md#reimplementation-notes) n5 |
-| Q506 | The new-rooms flag is cleared after the walk, so a room created during its own act's walk waits; do not re-walk. | [I] | 0x0052D21D | [sim/frame](../sim/frame.md#reimplementation-notes) n6 |
+| Q506 | The new-rooms flag is cleared after the walk, so a room created during its own act's walk waits; do not re-walk. | [C] | 0x0052D21D | [sim/frame](../sim/frame.md#reimplementation-notes) n6 |
 
 ### 8. Multiplayer edges
 

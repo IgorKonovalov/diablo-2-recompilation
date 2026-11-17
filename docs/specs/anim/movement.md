@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [anim/timing, stats/aggregate, stats/states, monsters/stats, drlg/collision]
 consumed_by: [anim/timing, combat/overview, skills/missiles, path/overview, path/search]
-tags: {C: 58, I: 32, L: 8}
-updated: 2026-11-16
+tags: {C: 61, I: 30, L: 8}
+updated: 2026-11-17
 ---
 
 # Movement: speeds, the per-frame step, the run drain and knockback
@@ -77,7 +77,7 @@ flowchart LR
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | server step factor `k` | `0x400` | fn:sub_00554CA0_UnitMoveStep@0x00554CA0 (0x00650899) | [C] (run:2026-10-27-anim) |
-| moving factor floor | 25 | 0x00624128–0x006241D4 | [I] |
+| moving factor floor | 25 | 0x00624128–0x006241D4 | [C] (monsters: 105 moving calls below 25, run:2026-11-16-sweep2-H6d) |
 | FR/W bonus `k` | 150 | data:g_AnimRateBonus@0x006E8E24 | [C] (run:2026-10-27-anim-rates-emu) |
 | knockback path speed | `0x1000` | 0x006240CC–0x00624110 | [C] (run:2026-10-27-anim) |
 | animation base `vbase` (player) | `0x65` run, `0xD5` otherwise | fn:sub_006213D0_AnimMoveBaseRate@0x006213D0 | [C] (run:2026-10-27-anim) |
@@ -88,9 +88,9 @@ flowchart LR
 ### A. Speeds
 
 ```
-A1. The moving branch of UNIT_AnimSetRate (anim/timing J2):       [C] (fn:UNIT_AnimSetRate@0x00623F50, fn:sub_00621360_AnimPathBaseSpeed@0x00621360, run:2026-10-27-anim, all of A1)
+A1. The moving branch of UNIT_AnimSetRate (anim/timing J2):       [C] (fn:UNIT_AnimSetRate@0x00623F50, fn:sub_00621360_AnimPathBaseSpeed@0x00621360, run:2026-10-27-anim, run:2026-11-16-sweep2-H6d, all of A1 but the lines marked)
       if the unit has no path: return                               ; +0x4C kept, no speed set; [I] no case
-      X: i32 ← max(B_FRW + stat67, 25)                              ; [I] the floor 25: no case; B_FRW = 150 s / (150 + s), anim/timing J1
+      X: i32 ← max(B_FRW + stat67, 25)                              ; the floor 25: monsters reach it (A1); [I] B_FRW = 150 s / (150 + s), anim/timing J1: no logged stat 96 above 0 separates it
       pbase: i32 ← display type 0 ? CharStats[class].WalkVelocity << 8 : MonStats[class].Velocity << 8
       +0x4C ← clamp((vbase × X) ÷ 100, 0, 0x7FFF)                   ; signed divide
       PathSetSpeed(path, (pbase × X) ÷ 100)                         ; signed; writes +0x7C and the maximum +0x84
@@ -108,7 +108,11 @@ A2. RunVelocityStat(class, unit), from UNIT_AnimInit for a player form in mode 3
   speeds); each windowed step's speed equals the last such call's (131 167 steps). Walk `v` 1 536 and run 2 304 for
   every player at `X` 100 and 150. (fn:UNIT_AnimSetRate@0x00623F50, fn:sub_00620E80_RunVelocityStat@0x00620E80,
   run:2026-10-27-anim)
-- A1. [I] **The floor 25** is reached by no logged call (P1b-14; not played in Phase 2 part 3, and part 2's record reports no outcome for it). The path base has no mode argument:
+- A1. [C] **The floor 25** is reached by monsters: 105 logged moving calls with `X` below 25 (`X` −15, −9, 5 and 8, under
+  a Holy Freeze slow in session `sp-pal-slow`), each with the rate and `PathSetSpeed`'s speed equal to the floored
+  product; the controls with a floor of 24, 26 or none differ in all 105. No player reaches it (least logged `X` 150);
+  the one instruction serves both. (0x00624128–0x006241D4, run:2026-11-16-sweep2-H6d, [anim/experiments § H6d](../../findings/anim/experiments.md#run2026-11-16-sweep2-h6d))
+  [I] The path base has no mode argument:
   a running monster's path base is its walk `Velocity`; the RN record's speed changes only its animation rate.
   `PathSetSpeed` also sets path `+0x38 = 15` when the speed changed. (fn:sub_00648690_PathSetSpeed@0x00648690,
   0x006241A9–0x006241C9)
@@ -134,9 +138,9 @@ A2. RunVelocityStat(class, unit), from UNIT_AnimInit for a player form in mode 3
   fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_00573CB0_MonStatsInit@0x00573CB0)
 
 ```
-A4. MonStatsSpeeds, for each MonStats row i at load:              [C] (fn:sub_00650F00_MonStatsSpeeds@0x00650F00, run:2026-10-27-anim, all of A4)
+A4. MonStatsSpeeds, for each MonStats row i at load:              [C] (fn:sub_00650F00_MonStatsSpeeds@0x00650F00, run:2026-10-27-anim, run:2026-11-16-sweep2-H6d, all of A4)
       b ← MonStats[i].BaseId  (out of range → i, also written back into the row's BaseId, 0x00650F37)   ; no stock row out of range
-      walk: i32 ← ANIMDATA_Lookup(mode 2, type 1, class b).speed  ; [I] the fallback record's 256 when no WL record
+      walk: i32 ← ANIMDATA_Lookup(mode 2, type 1, class b).speed  ; the fallback record's 256 when no WL record
       if b ≠ i and Velocity(b) > 0: walk ← ((i16) Velocity(i) × walk) ÷ Velocity(b)   ; unsigned
       +0x36 ← min(walk, 0x7FFF)
       if i < 410: run ← +0x36 of row b, ÷ 2 (signed)
@@ -149,9 +153,13 @@ A4. MonStatsSpeeds, for each MonStats row i at load:              [C] (fn:sub_00
   `Run(i) / Run(b)` scaling of the run base below class 410 included (54 classes). (fn:sub_00650F00_MonStatsSpeeds@0x00650F00,
   tbl:MonStats.txt:Run, run:2026-10-27-anim) [C] The `BaseId` guard (0x00650F29–0x00650F3C) as the pseudocode gives
   it, by a second read; none of the 734 stock rows is out of range. ([anim/experiments § S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l))
-- A4. [I] **A class with no walk record** (the classic `9A` traps, `compellingorb` and the `E9` rows) gets walk base
-  256, run 128 below class 410. No stock row's base comes after it, so row `b`'s `+0x36` is computed first.
-  (fn:ANIMDATA_Lookup@0x0066A9B0, 0x00650F80–0x00650F9D, 0x00650FBE–0x00650FD4)
+- A4. [C] **A class with no walk record** (the classic `9A` traps, `compellingorb` and the `E9` rows) gets walk base
+  256, run 128 below class 410: every row's `+0x36` and `+0x38`, read after the load in 11 sessions (734 rows each),
+  equals A4; 109 rows per load have no walk record, 62 of them their own base, whose word is 256 in 682 of 682 (the
+  control taking an absent record as 0 differs in all 1 199 absent-record rows). No stock row has a `BaseId` above its
+  own index (0 of 734), so row `b`'s `+0x36` is computed first. (fn:ANIMDATA_Lookup@0x0066A9B0, 0x00650F80–0x00650F9D,
+  0x00650FBE–0x00650FD4, tbl:MonStats.txt:BaseId, run:2026-11-16-sweep2-H6d, [anim/experiments § H6d](../../findings/anim/experiments.md#run2026-11-16-sweep2-h6d)) [I] A row whose base came later would scale the base's
+  unscaled word; no stock row reaches it.
 - A5. [I] **A `Velocity`-0 classic class in S1** (a classic monster's S1–S4 take the moving branch, anim/timing J3) has
   a path when it was created with create flag bit 0, so the branch writes `+0x4C = ⌊256 · X / 100⌋` (192 at `X` 75)
   and a path speed of 0: the animation runs while the unit does not move. (fn:sub_00554850_SUnitPathCreate@0x00554850,
@@ -341,7 +349,7 @@ E1. PathPlanKnockback (path type 8):                               [C] (fn:sub_0
   once: the moving branch writes the path speed at each call and the step reads `+0x7C` every frame.
   (fn:UNIT_AnimSetRate@0x00623F50, fn:COMBAT_ApplyCold@0x0057AF80, fn:sub_006502D0_PathVelocityStep@0x006502D0)
   [C] The 32 logged mid-window speed changes (cold 10, others 22) take effect at the next step; the floor 25 is not
-  reached and the "only" is not separated. (run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
+  reached in those windows (monsters reach it in H6d's calls, A1) and the "only" is not separated. (run:2026-10-30-anim-p3b, [anim/experiments § S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k))
 - F1. [C] 212 slowed monster windows and 9 slowed player windows are reproduced (the step and the speed of A1).
   (run:2026-10-27-anim)
 - F2. [I] **Slows Target** sets stats 68 and 69 only (attack and default rate), capped at 50 for players, bosses,
@@ -420,7 +428,8 @@ E1. PathPlanKnockback (path type 8):                               [C] (fn:sub_0
 
 - [L] Whether a stock source gives a moving `X` of 854 (a `Velocity`-15 monster) or 2 134 (a player) or more, where the
   step product wraps (B6).
-- [L] Whether the moving floor 25 is reached by a stock recipe (P1b-14); Charge at stat 67 ≤ 50 (P1b-15); Slows
+- [L] Whether a player's moving factor reaches the floor 25 in stock play (P1b-14; monsters reach it, A1; the least
+  logged player `X` is 150); Charge at stat 67 ≤ 50 (P1b-15); Slows
   Target on a player (P1b-13: 13 player movement windows under a slow over the 131 logs, not a 30); a player's
   knockback length (two mode-19 starts in part 1, none in parts 2 and 3). Phase 2 parts 2 and 3 left them short or
   unreported; P1b-14 and P1b-15 were not played in part 3 (run:2026-10-30-anim-p3b).

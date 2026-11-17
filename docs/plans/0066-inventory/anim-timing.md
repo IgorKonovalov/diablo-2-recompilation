@@ -10,7 +10,7 @@
   14–16, 18, 19, 21–23, 27–29, 37, 38, 47–49, 54, 57, 59, 61, 62, 64, 66, 74, 76, 77, 79, 86, 88, 89, 92, 93, 95, 101,
   104, 105, 107, 108, 110, 112, 114, 117, 119, 124–128, 131 (52). Corrected to the finding: 67, 75 (2). Kept `[I]`
   (H6a–H6d, deferred, not raised, S6g, d-none): 9, 11, 12, 26, 35, 44, 52, 78, 80–85, 87, 90, 91, 99, 102, 103, 111,
-  113, 115, 116, 118, 120, 122, 123, 129, 133, 134 (31). Rows 69 and 70 are whole with the S6c corrections.
+  113, 115, 116, 118, 120, 122, 123, 129, 133, 134 (31). Rows 69 and 70 are whole with the S6c corrections. **Follow-up (`lane/fus`, 2026-11-17): H6d applied** ([the H6d corrections entry](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-h6d-corrections.md)). Whole from kept: 9, 82; whole from split (remainders raised): 23, 128; split from kept: 11, 44, 83, 87, 90; rows 29 and 88 stay split with H6d's narrower remainders. Now whole 53, split 55, corrected 2, kept 24; front matter C 175 / I 86 / L 22.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
