@@ -18,3 +18,12 @@ are confirmed under emulation to their first callees; `MonAiDelayEarlier` turns 
 `max(n, 1)`); `UModTeleportTry` draws up to twice on the unit's seed; curses are not the only setters of states 10 and 11;
 row 20 Scarab now meets the H1 sentence. Refresh the page against the two specs (spec-writer review-fixes 1) and bump
 `based_on`; the catalogue's re-tag (part 2) may change the same page, so one refresh after part 2 is enough. Not blocking.
+
+*2026-11-17, spec-writer (plan 0066 Phase 3, monsters/ai part 2, `lane/n66ai2`):* part 2 has landed, so the one refresh
+can run now; not done in this lane, by the owner's token budget. Part 2 adds for a reader: the catalogue's rows past the
+first boundary (twenty entries under sentence H1, README H1's table now lists them; 55 of the 130 rows outside the tier
+with the first boundary compared), each modelled block's logged paths `[C]` on its new `p` line, the row callbacks and
+helpers emulated whole (`AiTrapArrowKind`, `AiGenSpawnPickClass`, Diablo's and Baal's pick), and the corrections: one
+life reader (`AiLifePct` wraps `UnitLifePct`; rows 4, 8, 15, 122 call it), Diablo's pick with a sum ≤ 0 still scanning,
+`AiShadowSkillRoll`'s 0, 1 or 3 draws, Mephisto's pick's first draw only with a find, row 71's eleven stores, `Skill8`
+also on `uberbaal`. Refresh the page against all three specs and bump `based_on`.
