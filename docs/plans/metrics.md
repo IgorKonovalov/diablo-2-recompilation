@@ -883,6 +883,7 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-17 | lane/x13r review | 0070 export units | architect | 136 496 | 64 | 14 | — | accept w/ fixes (Opus Tier A) | other 3 |
 | 2026-11-17 | lane/x13b | 0070 export readiness B | spec-writer | 338 572 | 169 | 27 | — | accept w/ fixes (Opus Tier A) | misread 1, omission 7, other 3 |
 | 2026-11-17 | lane/x13b review | 0070 export readiness B | architect | 208 871 | 117 | 19 | — | accept w/ fixes (Opus Tier A) | misread 1, omission 7, other 3 |
+| 2026-11-17 | lane/x14s | 0070 export residue | spec-writer | 95 228 | 48 | 10 | — | accept (Opus, orchestrator) | 0 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
