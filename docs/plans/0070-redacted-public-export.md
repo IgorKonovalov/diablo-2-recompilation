@@ -1338,3 +1338,17 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   date, `reviewed` status columns); register names such as "EAX at entry"; the four wiki units the new X9 words drop.
   All four are in the spec-writer's backlog entry for the next cut. Phase 11 (animations and interactive elements) is
   added above, at the owner's request.
+- 2026-11-17, archivist, lane/x70pub (ADR-0038: tools/export_publish.py). The one-command publish is built with
+  `tools/test_export_publish.py` (35 checks, 0 failed; build 149 and check 180 still green). Dry run on a copy of the
+  export checkout (main fast-forwarded, no push): build and check 0 failures, link check 7790 links in 74 pages all
+  resolve, one commit `docs: cut 2026-11-17`, and its tree equals the `cut-2026-11-17b` branch (empty diff).
+- 2026-11-17 — **Review of lane/x70pub (architect, Opus): accept with fixes 1.** Read `tools/export_publish.py`
+  whole against ADR-0038: the push guard refuses `--push` under `CLAUDECODE` or `CLAUDE_CODE_ENTRYPOINT`; the target
+  must be on a clean `main`, fast-forwarded and never diverged; every manifest page must be in `reviewed-pages.txt`;
+  the build and check stop on a non-zero exit (`export_check.py` returns 1 on any failure); the cut's two folders are
+  replaced wholesale, project files mirror deletions only in four folders, `.git`, `node_modules` and `dist` are never
+  touched; staging is by explicit paths, deleted ones included; the commit takes the target's own identity, with no
+  trailer; re-running after a commit pushes only. The dry run on a copy reproduced the `cut-2026-11-17b` tree exactly.
+  Fix: a failure after the copy (npm, site build, link check) left the target dirty with no hint, and the next run
+  refused it; those messages now print the commands that restore the target (`reset`, `checkout`, `clean -fd`, which
+  keeps the ignored `node_modules` and `dist`). Tests 35, 0 failed. Ledger: accept with fixes, 1 fix: omission 1.
