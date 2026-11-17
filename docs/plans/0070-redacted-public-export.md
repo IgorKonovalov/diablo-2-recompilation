@@ -2044,3 +2044,73 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `test_anim_schematic` failed once with 2 errors and passed on three reruns: its fixed output folder
   `workspace/render/test-anim` is shared through the symlink by lanes running at once (not this lane's). **For the
   spec-writer:** place the block as its Place line says; `values: computed`, `seed: illustrative`.
+- 2026-11-17, archivist, lane/x12b (Phase 11 batch 2: rows 9, 10). Two generators on the kit, each with `--theme`, in
+  `SCHEMATIC_TOOLS` (a new line). **Row 9, `pack_anim.py`:** one normal group of `swarm1` (MinGrp 4, MaxGrp 8, size 2, no
+  minion) on a toy room of ours (a logic box, three walls, one warp point), 14 frames on `0xC0FFEE`: the leader's tries
+  (try 1 refused by the warp distance, tries 2 and 3 by the probe, try 4 stands), the exact placement and its centre mark,
+  the group size on the leader's seed (k = 6), one frame per member with its ring walk and every refused cell (outside the
+  box, blocked), the end. **Row 10, `pool_anim.py`:** the game seed's first draw, the region seed, the levels built before
+  the shown one (draw counts, seeds), the level's candidates, one frame per pick (the draw over the remaining slots, the
+  class, kept or dropped; every redraw of a `rangedspawn` level's first pick) and the pool; `--level` (default 3, Act 1 -
+  Wilderness 2), `--difficulty`. **Model functions.** The pool's numbers come from `monpool.first_draw_low`, `build_all`
+  and the pick records of `build_pool`; the two now take optional `seed` and `traces`/`trace` arguments (no other change).
+  The placement rules lived inside the log checker's interleaved replay, so they are **refactored into pure functions both
+  call**, in the new `tools/spawn_place.py`: `ring_search` (MonSpawnTry's ring walk, spawn § H2), `near_point` (NearWarpTest's
+  distance rule, § H1 note), the seed class `S` and `MASK_BY_SPAWNCOL` moved there; `monspawn.py` and `collision.py` import
+  them. **No-change proof:** `monspawn.py check` on six logs (the three `monspawn-*` logs, two `collision-*` logs with the
+  grid snapshot, one `monpool-*` log) prints byte-identical output before and after (115 795 and 20 481 checks, 0
+  mismatches, 5 669 collision checks, the guard counters and the 98 near-warp hits equal); `monpool.py check` 361/361; a
+  hash of `build_all` over 3 seeds, 3 difficulties and both game types is equal before and after. **Not shown / restated:**
+  the toy's collision test (the plus footprint against the mask, the 0x1000 centre mark) restates § H3, H4 for one room; the
+  creation draw on the game seed, the class cell test, the region-id test, the waypoint point and minions are not drawn.
+  **Tests** (`tools/test_monster_anim.py`, 21): determinism, both themes, `verify_illustration` clean, no art decoder, clip
+  and cut lists empty, no tool names in step texts; `ring_search` reproduces members 1 and 2 of the spawn worked example
+  (cells, 39 and 4135 refusals, the seeds after) and its group-size draw; the pool equals `build_all` on every checked
+  level and the pool worked example (seed 1, levels 1 to 3: 26 draws, 17 appearance draws). Also green: `test_schematic_kit`
+  (29), `test_export_build` (154), `test_export_check` (191), `test_anim_schematic`, `test_drlg_anim` (18); gate green.
+  **Frames viewed** in both themes: pack 0, 1, 2, 5, 9, 11, 13; pool 0, 2, 3, 4, 5, 7 and the rangedspawn level 110.
+  **Blocks:** `workspace/phase11/blocks-batch2.md`, "Monsters (x12b)", Place lines into `docs/wiki/monsters.md`.
+- 2026-11-17, architect, review of lane/x12b (Opus, Tier A): **accept with fixes**, 8: misread 1, overclaim 1,
+  omission 2, wrong anchor 1, other 3. **The refactor: no change.** A detached worktree at 22d7e75b against the lane's
+  tree, on the same data: `monspawn.py check` on the three `monspawn-s*` logs (115 795 checks), the two dev logs, the
+  seven `collision-s*` logs (76 608 and 20 537 collision checks), the 39 `monspecial-s*` logs (393 693 and 31 485), the
+  four `objects-s*` logs the findings cite and the `monpool-*` logs; `collision.py check` on the `collision-s*` logs, the
+  two `monspawn-s*` logs and `objects-s2`–`s30` (300 785 and 28 177); `monpool.py check` (3 040/3 040) and `monpool.py
+  pool` on three seeds and three difficulties: all eleven outputs byte-identical, 0 mismatches each. Rerun after this
+  review's own `collision.py` change (below) on the `collision-s*`, `monspawn-s*` and `monspecial-s*` sets: identical
+  again. Read: `ring_search` is the old loop with the cell tests as the callback (`s`, `smax` recomputed from `rad`
+  as the caller did; the guard and the `spawn_on_tile` exit stay before it); `near_point` returns the old loop's
+  answer; `build_pool`/`build_all` only gain records. **The group size:** the frames show k = 6 members and a group of
+  7; F2's leader plus k, uniform in [MinGrp, MaxGrp] = [4, 8]: both right, and the caption now says both. **Ruling
+  (pack_anim's restatement of H3/H4): refactored,** not into `spawn_place.py` but onto the model itself: the toy's test
+  and mark are `collision.World.collision_test` and `pattern_op` (pattern `PATTERN_BY_SIZE[size]`, the monster bit
+  `0x100`) on a one-room world, `World.one_room` (new, additive); `collision.py`'s `dt1` import is made lazy as in
+  `drlg.py`, since the schematic test forbids an art decoder in the tool's process. Every frame byte is unchanged
+  (both classes tested) and the `values` key stays computed. **Fixes** (`tools/pack_anim.py`, `tools/pool_anim.py`,
+  `tools/collision.py`, `tools/test_monster_anim.py`, 24 tests): (1) misread: the members' step text said "radius 3,
+  no box flag"; F2 places them with the group's box (SpawnNearUnit, H's wrappers): now "with the group's box", the
+  rectangle bounding the walk and the region test passing on the toy's one region. (2) overclaim: "cells tested"
+  counted the cells outside the box, which H2 skips with no predicate call: "cells walked", "outside the box,
+  skipped", "walk order"; the block's "a cell is refused when it is outside the box" likewise. (3) wrong anchor: the
+  block's member-5 sentence cited § H4 for the ring walk: § H2. (4) omission: WarpDist 100 was not labelled ours on the
+  first frame ("TOY: WARPDIST 100") or in the caption ("a toy room of our own … a WarpDist of 100"), and the caption's
+  *Not shown* lacked the region-id test and the level's waypoint point, which the wiki's paragraph names. (5) omission:
+  row 10's caption sentence with the region seed in hex was dropped by the cut (X1); it now says the frames give both
+  seeds. (6) other: pool's "levels built before" rows drew "R AFTER" over long labels ("POOL OF 3" under "R AFTER" on
+  Act 4 - Diablo 1, Wilderness 1): the seed after is the box's second line, and a test bounds every level's label.
+  (7) other: the H3/H4 ruling above, with a test (no own footprint, the mark's `0x1100` centre and `0x0100` plus, the
+  room edge's `0x27`). (8) other: "RING WALK, RADIUS 3" beside "TAKEN ON RING 6" read as a contradiction (MonSpawnTry's
+  radius 3 means rings 3, 6 and 9): named as rings in the panel, captions and help; "CENTRE REFUSED" for a plus
+  that hits a wall beside a free centre is now "PLUS AT THE CENTRE: NOT CLEAR"; "1 cells". **Frames viewed** (both
+  themes): pack 0, 1, 2, 3, 5, 6, 8, 11, 13; pool 0, 2, 3, 4, 7 and level 110's 2 and 4, against spawn § F2, H1–H4
+  and the worked example, pool § A–C (the region seed `a28ed4c0` = 2 727 269 568, level 2's 30 draws, the three picks
+  `Range(4) = 1`, `Range(3) = 1`, `Range(2) = 0`, rarities 2 + 2 + 1, 3 + 18 draws; level 110's five draws over
+  seven, the last ranged). **Blocks** (`workspace/phase11/blocks-batch2.md`, "Monsters (x12b)", corrected there for
+  2–5): the Place lines resolve to `docs/wiki/monsters.md`'s paragraphs as written. **Cut:** both blocks placed in the
+  lane's `monsters.md` for one build (restored after), `export_build.py --out workspace/export-x12b-review`: 71 pages,
+  0 dropped, both folders; `export_check` 0 failures, 864 warnings (the previous cut's count); every caption sentence of
+  the two blocks present (11 and 7) after fix 5; the folder removed. Tests green: `test_monster_anim` (24),
+  `test_schematic_kit`, `test_anim_schematic`, `test_drlg_anim`, `test_export_build` (154), `test_export_check` (191),
+  `test_mon_sweep`, `test_chain`; gate green. **For the spec-writer:** place the two blocks as their Place lines say;
+  row 9 keeps `seed: illustrative` and `values: computed` (every cell answer is the model's collision test on our toy
+  grid); the pool caption names levels by the table's names, as the wiki's own pool paragraph does.

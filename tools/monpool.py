@@ -168,8 +168,10 @@ def variant_roll(t, seed, ent, n=3):
         sets.append(new)
 
 
-def build_pool(t, seed, lid, diff):
-    """sub_005475E0_MonRegionPool. Returns the entry list [class, rarity, sets]."""
+def build_pool(t, seed, lid, diff, trace=None):
+    """sub_005475E0_MonRegionPool. Returns the entry list [class, rarity, sets]. `trace`, a list or None: one dict per
+    pick (tools/pool_anim.py reads it; it changes nothing else): p, count (candidates left before the pick), draws
+    (the (slot, class) of the first draw and of each redraw), i, c, kept, seed (after the pick)."""
     numon = min(t.lvl_u8(lid, 0x32), 13)
     cand = t.slots(lid, 0x68 if diff else 0x36)
     picks = min(numon, len(cand))
@@ -178,25 +180,35 @@ def build_pool(t, seed, lid, diff):
     for p in range(picks):
         if len(cand) < 1:
             break
+        n0 = len(cand)
         i = seed.range(len(cand))
         c = cand[i]
+        draws = [(i, c)]
         if p == 0 and ranged_rule:
             for _ in range(20):
                 if t.ranged(c):
                     break
                 i = seed.range(len(cand))
                 c = cand[i]
+                draws.append((i, c))
         del cand[i]
-        if t.is_spawn(c):
+        kept = t.is_spawn(c)
+        if kept:
             ents.append([c, t.ms[c][0x2E], []])
+        if trace is not None:
+            trace.append({"p": p, "count": n0, "draws": draws, "i": i, "c": c, "kept": kept, "seed": str(seed)})
     return ents
 
 
-def build_all(t, low, diff, exp):
-    """sub_005479C0_MonRegionsBuild from region seed Init(low). Yields (lid, region dict, seed str)."""
-    seed = Seed(low)
+def build_all(t, low, diff, exp, seed=None, traces=None):
+    """sub_005479C0_MonRegionsBuild from region seed Init(low). Yields (lid, region dict, seed str). `seed`: a Seed
+    to draw on instead of Init(low) (tools/pool_anim.py passes one that counts its steps); `traces`, a dict or None:
+    filled with the pick records of each level, keyed by level id."""
+    seed = seed if seed is not None else Seed(low)
     for lid in range(1, len(t.lv)):
-        ents = build_pool(t, seed, lid, diff)
+        if traces is not None:
+            traces[lid] = []
+        ents = build_pool(t, seed, lid, diff, traces[lid] if traces is not None else None)
         for e in ents:
             variant_roll(t, seed, e, 3)
         r = t.lv[lid]
