@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/monsters/ai/README.md 2026-11-04
-  - docs/specs/monsters/ai/machinery.md 2026-11-04
-  - docs/specs/monsters/ai/catalogue.md 2026-11-04
+  - docs/specs/monsters/ai/README.md 2026-11-17
+  - docs/specs/monsters/ai/machinery.md 2026-11-16
+  - docs/specs/monsters/ai/catalogue.md 2026-11-17
   - docs/specs/monsters/special.md 2026-11-03
 ---
 
@@ -37,8 +37,8 @@ say how sure they are at their head and name the exceptions.
 
 ## The big picture
 
-The order is [overview § B](../specs/monsters/ai/README.md#b-the-tick)'s, read from the code. The think call is where the logs
-compare a decision.
+The order is [overview § B](../specs/monsters/ai/README.md#b-the-tick)'s, and the steps' confidence is given below the chart. The
+think call is where the logs compare a decision.
 
 ```mermaid
 flowchart TD
@@ -60,49 +60,68 @@ A stop at any step ends the event. The checks, in order:
 4. **Keep near:** [Following](#following).
 5. **The target search** by the row's kind ([below](#the-table-and-the-state)).
 6. **The walk check**, only with a target. A boss sight pause comes first: class 250, a champion or unique, or a boss, under distance 20
-   from a player target, fires a unit event, idles 20 and ends this event, once only. Then a unique mod's teleport try. Then, for an
+   from a player target, fires a unit event, idles 20 and ends this event, once only. Then a unique mod's teleport try, which draws up to twice on
+   the unit's seed: a chance of 15 in 100 before it picks a point, and a second of 25 only when the unit's life is below 30 %. Then, for an
    `isMelee` class whose mode allows it, in a level with `MonSpcWalk` set and the distance above it, an approach test: passing goes on with the
    same target; failing searches for a hostile with a teleport point, which replaces the target, or with none walks a ring of 4 and ends
    ([overview § F](../specs/monsters/ai/README.md#f-the-pre-checks-and-the-walk-check)).
+
+The stunned idle, the door check's first test and keep near ran under emulation to their calls (200 cases); the rest of the list,
+the walk check with it, is read from the code.
 
 Seen: of 32 324 logged events in the first run, 14 645 reach the think call and 17 679 end before it, with the AI state 0 at all
 of them ([overview § A](../specs/monsters/ai/README.md#a-the-event-kinds-and-their-seeds)).
 
 ## When a unit thinks
 
-All of this is read from the code ([overview § B and § C](../specs/monsters/ai/README.md#c-when-the-next-ai-event-comes)). How far a game has confirmed the frame's walks is [the server frame](server-frame.md#how-far-the-order-of-the-walks-is-confirmed).
+Each part says how sure it is ([overview § B and § C](../specs/monsters/ai/README.md#c-when-the-next-ai-event-comes)). How far a game has confirmed the frame's walks is [the server frame](server-frame.md#how-far-the-order-of-the-walks-is-confirmed).
 
-**Two entries.** The event runs from the queue, or by one of nine direct calls at a mode's end, each skipped while frozen and
-alive. From the queue it runs in the frame's monster pass, after every monster's every-frame event of that frame, in the order the
-events were queued. From a mode's end it runs inside that mode-end event, so its draws come at that event's place in the frame.
+**Two entries.** The event runs from the queue, or by one of nine direct calls at a mode's end. The nine are all mode ends,
+confirmed by three tools; that each is skipped while frozen and alive is read from the code. **Seen in the kept logs:** the frame's
+passes in their order, the monsters' every-frame list before their slot list, and the slot records in the order they were queued.
+That the AI event always lands in that slot list, after every monster's every-frame event of the frame, is the reading of its 30
+queueing sites. From a mode's end it runs inside that mode-end event, so its draws come at that event's place in the frame.
 
 **What queues the next one:**
 
 | Who | What it does |
 |---|---|
 | A mode's neutral start | When no AI event is pending later than now: 45 frames if stunned, else the `aidel` column, whose value is the first difficulty's or, under a test of two game fields, the game's difficulty's; 15 when that is 0. |
-| An idle of n | Neutral mode unless already neutral, any pending AI event cancelled, the next at now + n, at least 1. |
+| An idle of n | Neutral mode unless already neutral, any pending AI event cancelled, the next at now + n. |
 | A delay of n | The same with the mode unchanged. |
 | A delay that only brings it earlier | The same, but only when nothing is pending, the pending one is due now, or it is due at or after now + n. |
 | Others | 30 queueing sites in all, among them skills, a freeze, a restore and a knockback's end. 66 sites cancel one. |
 
+**Seen in the logs:** after 2 358 of 2 573 logged idles and 294 of 318 logged delays the next AI event came at now + n, with
+n at least 1 in every one, and no delay commanded a mode. After 68 idles another queue came first, 1 to 7 frames early; which
+one is not told apart. The neutral start, to its queue call, ran under emulation for a monster already neutral, and so did the
+delay that only brings it earlier. The 30 queueing sites and 66 cancelling sites were counted by two tools.
+
+**A count of 0 or below.** All three helpers turn a 0 into 1 and keep a negative count, so a negative count would queue the event
+before now. That rule ran under emulation for the delay that only brings it earlier and is read from the code for the idle and the
+delay; no logged call has a count of 0 or below, and what the queue does with a frame before now is not read.
+
 A think that queues nothing leaves no pending event, and such a unit next thinks at a mode's end. So a monster that commands a mode
 usually gets its next event from that mode's end, an idle one with no target from its row kind's idle delay, and a think may also
 queue one while a mode runs, in which case the next command replaces that mode. Every command goes through one mode-set routine,
-which replaces the current mode.
+which replaces the current mode. That paragraph is read from the code.
 
-**A small example:** idle 5 at frame 1 000 cancels any pending AI event and queues one for frame 1 005, and idle 0 queues one for 1 001.
+**A small example:** idle 5 at frame 1 000 gives the next AI event at frame 1 005, as the logged idles do unless another queue comes
+first. That it cancels any pending AI event first, and that idle 0 queues one for 1 001, are read from the code.
 
 ## The table and the state
 
 **The table.** 148 rows, each giving a search kind, an init, a think and an alt, and 18 more rows for AI states
 ([overview § D](../specs/monsters/ai/README.md#d-the-ai-table-and-its-dispatch)). There are 147 distinct thinks: rows 106 and 143 share
 one. A MonStats row names 146 of the rows; rows 0 and 143 are named by none. Rows 0 and 1 are bare: 0 returns at once and 1 idles 200
-with a room. A class whose `AI` is outside the table gets row 0. The row-address map, for states 0 to 9 and 13 to 17, ran under
-emulation, 554 cases. The table's words are bytes of the image, and what they do is read from the code.
+with a room. A class whose `AI` is outside the table gets row 0. The row's four words, as the two routines that use them read
+them, are confirmed by a second tool. The row-address map, for states 0 to 9 and 13 to 17, ran under emulation, 554 cases, and so
+did the gate for states 10 to 12 and the states from 18 up, which have no bound, 240 cases.
 
 **The search kind** decides when the think runs. It is the kind of the row for the *stored state*, not the class's: a unit in state
-12, when that state's gate allows it, skips the search even if its class's row searches.
+12, when that state's gate allows it, skips the search even if its class's row searches. Seen in the logs: the 8 496 decisions of
+kind-1 states all had a target, and kinds 0 and 5 thought without one (5 003 and 340 decisions). The *With no target* column, and
+what the other kinds do, are read from the code.
 
 | Kind | Rows | Search | The think runs | With no target |
 |---:|---:|---|---|---|
@@ -117,12 +136,17 @@ mode allows it. Otherwise it idles by the nearest checked player's distance `d`:
 
 **The AI state** is a word on the unit, not its mode. 0 uses the class's row, and anything else uses the state row, except that
 states 10 to 12 use it only when a class test allows it. An init routine sets the state, clears the three AI variables and frees the
-parameter records. When the row being left has an alt, the alt runs for one event as a bridge and then does the full init. All read
-from the code ([overview § E](../specs/monsters/ai/README.md#e-the-ai-state-on-the-unit)).
+parameter records. When the row being left has an alt, the alt runs for one event as a bridge and then does the full init
+([overview § E](../specs/monsters/ai/README.md#e-the-ai-state-on-the-unit)). The init ran under emulation up to its code-pointer
+check, and so did the bridge: a call while the row's own think is installed and the row has an alt sets the state and installs the
+alt, nothing more (23 cases), and any other installed think takes the full init (53). That the alt then calls the init again and
+installs the state's think, and the stores after the init routine, are read from the code.
 
 **Who sets a state**, by reading: a curse by its `auratargetstate` (states 10, 11 and 12), a flee routine (11), the cloak callback (10), a
-superunique case (13), the hireling row (5 and 6), and two more skill routines (15 and 16). No call passes 2, 3, 8, 9, 14 or 17 as an immediate, the
-sites passing a register give no new value, and states 4 and 7 meet the same scan. That is a reading: no spec calls those rows dead.
+superunique case (13), the hireling row (5 and 6), and two more skill routines (15 and 16). The curse is not the only route to states 10
+and 11: The Countess's launches in the third batch held them in 594 and 36 decisions with no curse cast. The 33 calls of the init, 21
+with a constant state, were counted by two tools, and no call passes 2, 3, 8, 9, 14 or 17 as a constant. The sites passing a register
+give no new value, and states 4 and 7 meet the same scan; that "no setter" is a reading, and no spec calls those rows dead.
 
 **Seen live.** In the second batch's 21 sessions (Normal, 7 539 decisions, 10 721 events) the state is 0 in every logged line except in
 two sessions, which hold states 10, 11 and 12, and states 1 to 9 and 13 to 17 occur in no line. In the third batch's 17 logs it is 0 in 5 894
@@ -134,12 +158,13 @@ summon uses which row is [overview E10](../specs/monsters/ai/README.md#e-the-ai-
 
 ## Finding a target
 
-All of this is read from the code unless it says otherwise ([machinery § A](../specs/monsters/ai/machinery.md#a-target-search)).
+Each paragraph says how sure it is ([machinery § A](../specs/monsters/ai/machinery.md#a-target-search)).
 
 **The lists.** The game holds ten target lists. Lists 0 to 7 are one per player slot, the player first and then its hirelings and
-summons. List 8 holds wanderers and units from two AI functions, and list 9 holds decoys.
+summons. List 8 holds wanderers and units from two AI functions, and list 9 holds decoys. The routines that fill them and their
+callers were counted by a second tool.
 
-**The search**, for a searcher of alignment 0:
+**The search**, for a searcher of alignment 0, is read from the code:
 
 1. A forced target comes first (below). Otherwise the best distance starts at the difficulty's `aidist`, 35 when that is 0.
 2. For each player list, the player counts only when in the searcher's act, in a room, and not in a town. A counted player at distance
@@ -159,31 +184,36 @@ off outdoors. Indoors it is on until the monster has had a target and nothing ha
 it off, its word toggled at each find. A searcher of alignment 2 sets neither.
 
 **The forced target.** Taunt, attract and confuse set a kind and an id. Kinds 1, 2 and 4 look up the unit. Kind 3, confusion, draws on the
-searcher's seed, flips the alignment for the search and restores it. A unit that does not qualify clears the kind and the id.
+searcher's seed, flips the alignment for the search and restores it. A unit that does not qualify clears the kind and the id. This ran
+under emulation up to its calls (200 cases); the clear on a blocked line, and which caller asks for the line test, are read from the code.
 
-**A think's own hostile.** Some thinks ask for it: the forced target, else the nearest hostile within 49 with a line test, then the
+**A think's own hostile**, read from the code. Some thinks ask for it: the forced target, else the nearest hostile within 49 with a line test, then the
 same decoy rule. After it, some of a think's distance tests read the event's distance and others the hostile's, as each entry says.
 
 **The hostile searches' test holds one draw.** A candidate must be a living player or monster out of town. A **player** with state 146, outside
 melee range, is refused on a draw below 80 of 100, and that draw is on the **candidate player's seed**, not the searcher's. A **monster**
-with state 146 is refused inside melee range.
+with state 146 is refused inside melee range. The test ran under emulation up to the melee-range call (400 cases), the draw
+included; the two refusals after that call are read from the code.
 
 **The distance.** Twice the larger axis difference plus the smaller, all halved and rounded down: 10 and 3 give 11. That map ran under
-emulation, 240 cases over the six unit types. A sized form first takes the unit's size off both axes, with a floor of 0.
+emulation, 240 cases over the six unit types. A sized form first takes the unit's size off both axes, with a floor of 0. The squared
+distance some tests use wraps at 32 bits, also emulated.
 
-**No light radius, as far as read.** The search's functions call no stat getter, and no code reads that stat by an immediate id. The 215
-getter calls with a register id are not resolved, so the walkers' and callbacks' code is not placed in or out. The one visibility term the
+**No light radius, as far as scanned.** The search's functions call no stat getter, and none of the 1 213 getter calls with a constant id
+asks for that stat (a scan, confirmed). Some 205 getter calls take their id from a register and are not resolved, so the walkers' and
+callbacks' code is not placed in or out. The one visibility term the
 server's code was found to hold is state 146.
 
 ## The command
 
-Read from the code, with the two emulated maps named ([machinery § B](../specs/monsters/ai/machinery.md#b-the-command)).
+Each part says how sure it is ([machinery § B](../specs/monsters/ai/machinery.md#b-the-command)).
 
 A think commands through a small set of helpers, all ending in the mode-set routine: **a mode** at a unit or a point, **a skill** with its
 mode (a mode of 16 or more stops there), **a sequence skill** in mode SQ, and **a move**. A refused mode falls back to the neutral start. A
 refused skill idles 10.
 
-**A refused move depends on its flags**, and this decides a draw:
+**A refused move depends on its flags**, and this decides a draw. Seen in the logs for the walk with all three flags (47 one-step
+returns and 96 ring walks) and with none (44 results of 0, no step); the other flags are read from the code:
 
 - With the flags clear it returns 0, with no idle and no draw, and nothing is queued.
 - One flag cancels the AI event, and one sets the search's one-shot line test.
@@ -197,15 +227,17 @@ refused skill idles 10.
 | The sideways approach | 1 step, which picks path type 5 or 6 by the low byte | Its map to the override ran under emulation, 120 cases |
 | The step away | none in its body | Its map to its first call ran under emulation, 200 cases |
 
-The approach to a unit at a given distance draws nothing either (read from the code).
+The approach to a unit at a given distance draws nothing either; its map to the mode set ran under emulation, 120 cases. The
+sequence-skill command ran under emulation to the mode set too, and the skill command and the mode at a unit are seen in the logs.
 
 **Seen.** The commands logged at the AI's sites of the mode set are led by WL 6 133, RN 1 533, A1 712, A2 425, SQ 289 and S1 375, with path type
 byte 101 for every-frame modes and 100 otherwise. A few of S2, S4, S3, NU and mode 7 also occur.
 
 ## The path request
 
-Read from the code unless it says seen ([machinery § D](../specs/monsters/ai/machinery.md#d-the-path-request)). The planners are
-[pathing](pathing.md)'s, and they read the live grid.
+Read from the code unless it says seen or emulated ([machinery § D](../specs/monsters/ai/machinery.md#d-the-path-request)). The planners are
+[pathing](pathing.md)'s, and they read the live grid. The override below ran under emulation, 240 cases each for its two routines, and
+the command's path-type byte (100 or 101) is seen in 19 431 logged commands.
 
 A command carries a path type: 100 means no plan, 101 means type 13, and the choice between them follows whether the mode is an
 every-frame one. A think can set a **one-shot override** of the type, a step parameter and a byte, used by the next plan and then cleared.
@@ -224,9 +256,10 @@ in a town as its target. Whether a stock town's geometry admits such a route sta
 
 ## Following
 
-Read from the code ([machinery § E](../specs/monsters/ai/machinery.md#e-following)).
+Each part says how sure it is ([machinery § E](../specs/monsters/ai/machinery.md#e-following)).
 
-**Keep near** runs in the checks before the search. A unit with a stored unit to keep near, and whose mode allows it, looks that unit up; gone or
+**Keep near** runs in the checks before the search. It ran under emulation to its calls (200 cases); what follows each call is read
+from the code. A unit with a stored unit to keep near, and whose mode allows it, looks that unit up; gone or
 dead clears it.
 
 | AI distance to it | What happens |
@@ -235,11 +268,13 @@ dead clears it.
 | 21 or more | An override and a ring of 19 around it, 4 steps of the seed, and the event ends |
 | Anything else | The AI goes on |
 
-The pair is written for a minion toward its boss, by revive and summon routines, and by Taunt.
+The pair is written for a minion toward its boss, by revive and summon routines, and by Taunt: its four calls, counted by three tools.
 
-**The owner and the group.** A leader is a unit whose owner is itself. A leader's call pushes a copy of a small record to each minion of its
-owner, and rows 6, 13 and 20 use it with a block whose kind word is the only one written, so the other four words the copies take are whatever
-the stack held. One row, 30, reads two of those words from a record of that kind. Thinks read such a record from a list held on the unit.
+**The owner and the group.** The owner's three words, who writes and who reads them, are confirmed by a second tool; that a leader is a
+unit whose owner is itself is read from the code. A leader's call pushes a copy of a small record to each minion of its owner, and rows 6, 13
+and 20 use it with a block whose kind word is the only one written, so the other four words the copies take are whatever the stack held. Seen
+in the logs: 146 such calls, rows 6, 13 and 20 passing a block of kind 1 with the other four words non-zero, and 81 blocks reappearing word for
+word in another unit's list later; that the four words are the stack's leftovers is read from the code. One row, 30, reads two of those words from a record of that kind. Thinks read such a record from a list held on the unit.
 
 ## Draws and seeds
 
@@ -363,6 +398,7 @@ known memory but one unit field and its pointer arguments, and the known words e
 |---:|---|---:|---:|---|---|---|
 | 13 | FallenShaman | 103 | 361 | 10 of 10 | 4 | |
 | 21 | Mummy | 205 | 205 | 4 of 4 | 4 | one call past the first in every decision |
+| 20 | Scarab | 205 | 346 | 9 of 10, the tenth told apart by the unit's next logged event | 6 | |
 | 30 | Fetish | 316 | 877 | 7 of 7 | 4 | 243 of the 316 on one path |
 | 89 | Megademon | 77 | 232 | 7 of 7 | 4 | |
 | 37 | SkeletonBow | 81 of 86 | | 6 of 6 in the 81 | 4 | the 81 only |
@@ -374,6 +410,9 @@ known memory but one unit field and its pointer arguments, and the known words e
 | 34 | Andariel | 51: 9 and 42 | 2 | 5 of 5 | 4 and 6 | two calls past the first in all |
 | 44 | Duriel | 309 | 310 | 3 of 3 | 6, played by hand | Normal, Duriel himself and not Über Duriel; 1 decision out of melee range, the one case on that side |
 | 10, state 13 | The Countess's state | 160 | 988 | 7 of 7 | 6, played by hand | three given words, below; Normal, the player as target, one preset file |
+
+Eighteen more catalogue entries are under the same claim, on their own logged paths: the
+[overview's table](../specs/monsters/ai/README.md#h-past-the-first-boundary) lists them with their counts.
 
 **State 13's row, three given words.** For that row alone the logged inputs include three words the stock model does not load: the length of her path list, from the preset's file; the base of the monster table, the logger's own read; and the number of skill records, from the skills table. They are not unknown: the model does not fork on them, and wrong ones fail, except that the skill count can only fail low, so only that bound is tested. The list's points stay unknown in this count and are compared with the file on their own. Without the words, that count has 1 of the 160 with no fork.
 
@@ -401,8 +440,11 @@ decides is not compared:
 | 64 SkeletonMage | 12 of 148 | |
 | 37 SkeletonBow | 5 of 284 | |
 
-**Not claimed, for other reasons.** Row 20 Scarab has 205 decisions with no fork, but one two-way site fails none when flipped alone: it clears a variable and returns with no call after it, so no comparison
-of calls can see it. Rows 2, 9 and 125 have no call past the first, so there is nothing to claim, and BloodLord's 38 decisions there are under the floor of 50 too.
+**Scarab's tenth site.** One two-way site of row 20 clears a variable and returns with no call after it, so no comparison of calls can see it.
+The unit's next logged event shows the variable instead: cleared where the draw sent it that way (59) and unchanged where not (11), 70 of 70.
+That puts row 20 under the claim.
+
+**Not claimed:** rows 2, 9 and 125 have no call past the first, so there is nothing to claim, and BloodLord's 38 decisions there are under the floor of 50 too.
 
 ## The catalogue
 
@@ -424,14 +466,18 @@ The other rows of the table and the 18 state rows are [the catalogue](../specs/m
 | [11: Diablo, Nihlathak, the Baal rows, Uber Diablo and Baal](../specs/monsters/ai/catalogue.md#batch-11-bosses-b-diablo-nihlathak-the-baal-rows-uber-diablo-and-baal) | 7 | 0 |
 | [12: towns, NPCs and the state rows](../specs/monsters/ai/catalogue.md#batch-12-towns-npcs-and-the-state-rows) | 13 | 10 |
 
-The [catalogue states the census](../specs/monsters/ai/catalogue.md#how-to-read-an-entry). Of the 130 rows outside the tier: **29 have their first call compared, 16 are logged but have no model, so their first call is not raised, and 85 have no decision logged at all.** A state row's own decisions, where
+The [catalogue states the census](../specs/monsters/ai/catalogue.md#how-to-read-an-entry). Of the 130 rows outside the tier: **55 have their first call compared, 2 are logged but have no model, so their first call is not raised, and 73 have no decision logged in the three kept batches.** A state row's own decisions, where
 it has any, are counted in its entry.
 
 **Every entry's block is a code reading.** What can sit on top of it:
 
 - **An emulated map:** 115 of the 130 name an emulated family for their think or their init. It covers that code up to its first callee, and no callee, store or command after it.
-- **A first-call count**, for the 29 above, which covers that one call.
-- **A count past the first call,** on 41 entries, 5 of them state rows. All but two are a consistency check. **Only row 44 and state 13 of the catalogue's entries are under [the claim past the first call](#past-the-first-call)**, on its logged paths, state 13 with its three given words. Past the first call nothing else in the catalogue is confirmed, and no row's role, symbol or reading is raised by being resumed.
+- **A first-call count**, for the 55 above, which covers that one call.
+- **A count past the first call,** on 41 entries, 5 of them state rows. **Twenty of the catalogue's entries are under [the claim past the first call](#past-the-first-call)**, on their logged paths: row 44 and state 13, state 13 with its three given words, and eighteen more rows and state rows; for state 11, only its 66 decisions with no fork. The rest are a consistency check.
+- **The arms a logged-path model compared**, on many entries: the decisions, the mismatches, and which branches fail alone when reversed. They confirm the arms met on the logged paths, and the untaken arms stay readings.
+- **Callbacks and helpers run whole** under emulation for some rows, among them the trap's arrow pick, a generator's class pick, and Diablo's and Baal's skill picks.
+
+Past those, nothing else in the catalogue is confirmed, and no row's role, symbol or reading is raised by being resumed.
 
 ### How far the blocks have been read
 
@@ -465,7 +511,7 @@ What the runs did not reach, each stated as it stands ([overview § Open questio
 
 - **Chaining: Andariel and BatDemon.** The chaining of decision pairs reaches 8 drawing pairs of the 20 asked for Andariel, and 1 of 300 pairs for BatDemon. For those two it stays a reading.
 - **BloodLord.** 38 decisions past the first, under the floor of 50, none with a call there, so nothing is claimed past the first call.
-- **The catalogue sample** is short for batches 5, 10 and 11, which have no row that counts. Batch 7's is Duriel's row 44 and batch 12's is state 13, both played by hand, in Normal. The logs hold no non-tier row of 5 and 11, and of batch 10 only row 130, whose map has not landed and which has no call past the first. Of batch 12's other rows, row 54 cannot fail, row 99 has no call past the first, row 32 has a fork in all 199 decisions of the revision 4 logs, and row 100 has 4 decisions. The rest of the table stays at its emulated map or its reading.
+- **The catalogue sample** is short for batches 5, 10 and 11, which have no row that counts. Batch 7's is Duriel's row 44 and batch 12's is state 13, both played by hand, in Normal. The logs hold no non-tier row of 5 and 11, and of batch 10 only row 130, whose first call is now compared and which has no call past the first. Of batch 12's other rows, row 54 cannot fail, row 99 has no call past the first, row 32 has a fork in all 199 decisions of the revision 4 logs, and row 100 has 4 decisions. The rest of the table stays at its emulated map or its reading.
 - **State 13, The Countess's state.** Played by hand: 160 of her decisions follow the catalogue's block on the branches reached, and her Firewall goes through the four points of her preset's path, in the first of its two files. What sets the state was not seen, since the logger attached after she was created. States 2, 3, 8, 9, 14 and 17 are not called dead.
 - **Duriel in melee range.** Played by hand, Normal: 308 decisions, Smite 102, Jab 116, first attack 90, each one's choice following from three fresh draws on the seed logged for it. The frequencies stay arithmetic on that, **Smite 33 %, Jab 33.5 %, first attack 33.5 %**, and a community page's **17 % first attack, 50 % Jab** fall outside what was measured. Über Duriel, the same think and the same slots, is not played.
 - **A champion corpse and the Greater Mummy.** A community page lists champions as an exception to its raising. By the reading, its search tests the unique flag only, so a champion corpse in range becomes its corpse, and the skill's own target test is not read for champions. No natural champion was logged. A built state cannot count, since a logger never writes game memory, so it needs a forced mode that writes nothing.
