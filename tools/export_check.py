@@ -100,8 +100,9 @@ RE_X3 = [
     (re.compile(r"(?<![\w.])(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}(?![\w.])"), "commit hash"),
 ]
 RE_HOME = re.compile(r"/(?:home|Users)/|\bfile:/", re.I)
-# a Markdown image target `/illustrations/<id>/<file>` is no absolute path here: X8 verifies it against the folder
-RE_ABS = re.compile(r"(?:(?<=[\s`\"'(\[])|^)/(?!illustrations/[\w.-]+/[\w.-]+\))(?:home|usr|etc|tmp|var|opt|mnt|root|srv|media|proc|dev|Users|[a-z][\w.-]*/[\w.-]+)"
+# a Markdown image target `](/illustrations/<id>/<file>)` is no absolute path here: X8 verifies it against the folder.
+# Only that shape: right after `](`, two segments that don't start with a dot, the closing parenthesis.
+RE_ABS = re.compile(r"(?:(?<=[\s`\"'(\[])|^)/(?!(?<=\]\(/)illustrations/[\w-][\w.-]*/[\w-][\w.-]*\))(?:home|usr|etc|tmp|var|opt|mnt|root|srv|media|proc|dev|Users|[a-z][\w.-]*/[\w.-]+)"
                     r"(?:/[\w.\-]*)*|\b[A-Za-z]:\\[\w.]")
 RE_X9 = [
     (re.compile(r"copy[- ]?protection|\bcd[- ]?key", re.I), "copy protection / CD key"),

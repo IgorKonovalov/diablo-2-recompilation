@@ -825,3 +825,23 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   every `src="..."` against the base). No npm here: the site build and the link check on `dist/` are not run; Phase 6
   runs them. Result: first cut rebuilt (25 pages, 0 dropped), `export_check` 0 failures (326 X12 warnings), `--repo`
   0 failures, `grep -r d2recon workspace/export/site` empty, the three test files green.
+- **2026-11-17, architect, Tier B check of lane/x70m (Opus).** Verdict **accept with fixes (1)**. Every item of the
+  [entry](../backlog/archive/2026-11-17-architect-archivist-plan-0070-before-phase-6-neutral-marker-inline.md) is done:
+  the marker `schematic-only/1` (keyword `schematic-only`) names no project, repository or person; `schematic.json` is
+  `{"marker", "args", "files"}` and a `tool` key fails X11; the TC calc text no longer names `--mlvl`; the builder writes
+  `![Animation: <id>](/illustrations/<id>/<gif>)` plus the relative step-through link. X8 passes an image only when its
+  target is `/illustrations/<id>/<file>` with `(id, file)` in the verified folder's listing, so a relative, unlisted,
+  dot-segment or elsewhere target fails, and `<img>` HTML still fails. `rehypeIllustrationBase()` (read in the
+  workspace export repository) rewrites only `img` elements whose `src` starts `/illustrations/`, prefixing `SITE_BASE`
+  without its trailing slash (`/` gives an unchanged path); Mermaid's `data:` images are untouched; the site build and
+  `check-site-links.mjs` on `dist/` stay Phase 6's. **Fix (omission 1):** `RE_ABS`'s skip matched any
+  `/illustrations/<a>/<b>)` in prose, dot segments included (`(/illustrations/../home)` passed X4); it now skips only
+  right after `](`, with segments that don't start with a dot (test added). Rebuilt here into a scratch cut: 25 pages
+  written, 0 pages dropped, 50 unit-drop report lines; `report.txt` byte-identical to the Phase 3 review's cut, and the
+  only page changes are the two image lines (no redaction regressed). `export_check` 0 failures (326 X12 warnings),
+  `--repo` 0 failures; no `d2recon`, `maze_anim`, `tc_anim` or `.py` in the cut. Tests: export_check 117/0,
+  export_build 38/0, anim_schematic OK. **For the Phase 6 review:** the illustration calc text cites working spec
+  files: `tc.md B1` style (ruled acceptable at the Phase 3 review) but also `spec drlg/maze.md G1` and
+  `drlg/README.md`, which carry a directory and read as the repository paths ADR-0035 bars; rule there. Request
+  [closed](../backlog/archive/2026-11-17-archivist-architect-review-plan-0070-neutral-marker-and-inline-gif.md).
+  Ledger: verdict accept with fixes, 1 fix: omission 1 (the X4 skip's shape).
