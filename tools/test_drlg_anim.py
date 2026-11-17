@@ -120,6 +120,23 @@ class Links(unittest.TestCase):
         self.assertEqual(links_anim.reject_reason([e for e in t2["events"] if e["i"] == 3][0])[0], "OVERLAPS 26")
         self.assertEqual(t1["events"][1]["draws"], [0x2FAADC42])
 
+    def test_step_texts_follow_the_pick_protocol(self):
+        # review of lane/x12a: the done frame states the act seed as the layout left it (B1: the builder steps only
+        # its copy), not after level 27's draw; the level 27 frame states the seed after that draw; a no-draw call
+        # says the next choice follows the current one (B1); a reject names the flip when the pick has one
+        st = steps(self.a)
+        done = [s for s in st if s["text"].startswith("The table is done")]
+        self.assertEqual(len(done), 2)
+        for s in done:
+            self.assertIn("did not step the act seed, still {a28ed4c0:00507fab}", s["calc"][-1])
+        self.assertIn("The act seed after: {7c66376b:43cd3a7d}.", st[-1]["calc"][-1])
+        calc = " ".join(" ".join(s["calc"]) for s in st)
+        self.assertNotIn("stored first choice)", calc)
+        self.assertNotIn("Side -1", calc)
+        frames, caps, _t = links_anim.build_links(DATA, 0, 0xC0FFEE, 0, "dark")
+        self.assertIn("No draw: this pick never draws.", caps[0]["calc"])
+        self.assertIn("each level with an anchor a seam both ways to it", caps[10]["text"])
+
     def test_every_reject_has_a_reason_of_the_spec(self):
         for seed in (0xC0FFEE, 2027, 52, 17, 5):
             A, tables = links_anim.trace(DATA, 0, seed, 0)
@@ -180,9 +197,13 @@ class Warps(unittest.TestCase):
         v = [2, 2, 0, 0, 0, 0, 0, 0]
         d = [0, 0, 1, 1, 0, 0, 0, 0]
         # source slot 1 names 2: k = 1, the second slot of the destination naming 1 is slot 3
-        self.assertEqual(links_anim.pair(v, d, 1, 1, lambda j: True), (1, 3, [], 3))
-        self.assertEqual(links_anim.pair(v, d, 1, 1, lambda j: j == 2), (1, 3, [2], 2))
-        self.assertEqual(links_anim.pair(v, d, 1, 1, lambda j: False), (1, 3, [2, 3], None))
+        self.assertEqual(drlg.warp_pair_slot(v, d, 1, 1, lambda j: True), (1, 3, [], 3))
+        self.assertEqual(drlg.warp_pair_slot(v, d, 1, 1, lambda j: j == 2), (1, 3, [2], 2))
+        self.assertEqual(drlg.warp_pair_slot(v, d, 1, 1, lambda j: False), (1, 3, [2, 3], None))
+        # a seam slot (Warp -1) makes the fallback walk only (F1): slot 2 first although the rank slot 3 has a room
+        self.assertEqual(drlg.warp_pair_slot(v, d, 1, 1, lambda j: True, rank=False), (1, 3, [2], 2))
+        # one copy of the rule: the tool calls the model's function (review of lane/x12a)
+        self.assertFalse(hasattr(links_anim, "pair"))
         self.assertEqual(links_anim.warp_point((10, 20, 9, 9)), ((10 + 4) * 5, (20 + 4) * 5))      # w / 2 truncates
 
 

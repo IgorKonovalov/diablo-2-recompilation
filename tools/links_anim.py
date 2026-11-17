@@ -315,25 +315,31 @@ def build_links(root, act, seed, diff, theme):
                         nice(lv), how, r[2], r[3], r[0], r[1],
                         "" if e["chk"] is None else ", and the check accepts it")
                 else:
-                    cap = ("%s on %s %d is rejected: %s. %s" % (
-                        nice(lv), sw, e["dir"], reject_reason(e)[1], AGAIN[e["va"] in REDRAW]))
+                    cap = ("%s on %s %d%s is rejected: %s. %s" % (
+                        nice(lv), sw, e["dir"], "" if e["flip"] == -1 else ", flip %d," % e["flip"],
+                        reject_reason(e)[1], AGAIN[e["va"] in REDRAW]))
                 text = ("%s: %s, %s." % (nice(lv), kind.lower() if e["dir"] == -1 or e["va"] in (0x6768C0,) else
                                          "%s, %s %s" % (kind.lower(), sw, e["dir"]),
                                          "accepted" if ok else "rejected, " + reject_reason(e)[1]))
                 calc = ["Entry %d: level %d, %s; pick: %s." % (i + 1, lv, anchor, PICKS[e["va"]][1])]
                 if e["draws"]:
                     calc.append("Draws on the copy of the act seed (low words): %s." % ", ".join(str(d) for d in e["draws"]))
+                elif e["va"] in (0x6760F0, 0x6768C0):
+                    calc.append("No draw: this pick never draws.")
                 else:
-                    calc.append("No draw on this call (the choice comes from the entry's stored first choice).")
-                calc.append("%s %d%s; rectangle (x, y, w, h) = (%d, %d, %d, %d)." % (
-                    sw.capitalize(), e["dir"], "" if e["flip"] == -1 else ", flip %d" % e["flip"], r[0], r[1], r[2], r[3]))
+                    calc.append("No draw on this call: the next choice follows from the current one, and the stored "
+                                "first choice only ends the cycle.")
+                calc.append("%s; rectangle (x, y, w, h) = (%d, %d, %d, %d)." % (
+                    "No side (the position is the table's)" if e["dir"] == -1 else "%s %d%s" % (
+                        sw.capitalize(), e["dir"], "" if e["flip"] == -1 else ", flip %d" % e["flip"]),
+                    r[0], r[1], r[2], r[3]))
                 if e["chk"] is None:
                     calc.append("This table has no check: the entry is kept.")
                 elif ok:
                     calc.append("Check: accepts.")
                 else:
                     calc.append("Check: rejects, %s; %s" % (
-                        reject_reason(e)[1], "the next call draws again." if e["va"] in REDRAW else "the next call tries the next side."))
+                        reject_reason(e)[1], "the next call draws again." if e["va"] in REDRAW else "the next call tries the next %s." % sw))
             k.box(IX, 52, IW, 188, info, "panel", "dim", sc=2, align="l")
             entries_list(entry_state(tbl, n + 1), i)
             k.legend(MX, 412 - 2, [("roomdone", "KEPT"), ("cur", "ACCEPTED NOW"), ("panel", "REJECTED NOW")], 1)
@@ -354,17 +360,18 @@ def build_links(root, act, seed, diff, theme):
         k.box(IX, 52, IW, 188, info, "panel", "dim", sc=2, align="l")
         entries_list(kept, -1)
         cap = ("The table is done: every level has its rectangle%s. The copy of the act seed is thrown away, so the next "
-               "table starts from the same act seed." % (", and each is linked both ways to its anchor as a walkable seam"
-                                                         if seam else ""))
+               "table starts from the same act seed." % (", and each level placed against an anchor is linked both ways "
+                                                         "to it as a walkable seam" if seam else ""))
         for i in range(len(t)):
             assert list(A.rect[t[i][1]]) == list(B.rect[i])
         k.caption(cap, CAP_Y, 76)
         frames.append(k.done())
         caps.append(dict(
-            text="The table is done: each level has its rectangle%s." % (" and a seam both ways to its anchor" if seam else ""),
+            text="The table is done: each level has its rectangle%s." % (
+                ", and each level with an anchor a seam both ways to it" if seam else ""),
             calc=["Rectangles: %s." % "; ".join("%d: (%d, %d, %d, %d)" % ((t[i][1],) + tuple(B.rect[i])) for i in range(len(t))),
-                  "The copy of the act seed ends at %s and is discarded; the act seed itself is %s." % (
-                      fs(B.seed.lo, B.seed.hi), fs(A.seed.lo, A.seed.hi))]))
+                  "The copy of the act seed ends at %s and is discarded; the layout did not step the act seed, still %s." % (
+                      fs(B.seed.lo, B.seed.hi), fs(tbl["seed_in"].lo, tbl["seed_in"].hi))]))
         # ---- level 27's index: the builder's one draw on the act seed (Black Marsh, level 6)
         lv6 = [i for i in range(len(t)) if t[i][1] == 6]
         if lv6:
@@ -387,7 +394,7 @@ def build_links(root, act, seed, diff, theme):
                 calc = ["Level 6 is on side %d: one step of the act seed (the builder's only draw on it)." % d,
                         "Draw (low word) = %d, so level 27's index = %s = %d." % (
                             r_, "2 - (r & 1)" if d == 1 else "(not r) & 1", A.idx27),
-                        "The act seed after: %s." % fs(A.seed.lo, A.seed.hi)]
+                        "The act seed after: %s." % fs(tbl["seed_out"].lo, tbl["seed_out"].hi)]
                 text = "Level 27's file index %d, from the one draw the builder makes on the act seed." % A.idx27
             else:
                 info = [("BLACK MARSH: SIDE %d" % d, "txt"), ("NO DRAW, NO WRITE", "txt"), ("LEVEL 27 KEEPS ITS", "dim"),
@@ -405,7 +412,7 @@ def build_links(root, act, seed, diff, theme):
 
 # ---------------------------------------------------------------- the warps output (warps E and F)
 # The rooms are those of the spec's worked example (level 9 of map seed 2027, and Cold Plains' cave mouth): inputs,
-# not a run. The points and the pairing are computed.
+# not a run. The points and the pairing are computed (the pairing by drlg.warp_pair_slot, the model's F1).
 ROOMS9 = [(35, "CAVE PREV W", (1572, 1300, 8, 8), 0), (38, "CAVE DOWN N", (1524, 1364, 8, 8), 4)]
 MOUTH = (1072, 952)      # the cave mouth of Cold Plains: an outdoor room carrying slot 6
 
@@ -414,24 +421,6 @@ def warp_point(rect):
     """warps E1: the room centre in subtiles: ((x + w / 2) * 5, (y + h / 2) * 5), w / 2 truncated."""
     x, y, w, h = rect
     return (x + w // 2) * 5, (y + h // 2) * 5
-
-
-def pair(vis_src, vis_dst, src, m, has_room):
-    """warps F1 for a warp slot m of the source level: -> (k, rank slot or None, the fallback walk's slots in the order
-    tried, slot paired or None). The walk is empty when the rank slot has a room. has_room(slot) says whether the
-    destination has a room carrying that slot's bit."""
-    dest = vis_src[m]
-    kk = sum(1 for j in range(m) if vis_src[j] == dest)
-    back = [j for j in range(8) if vis_dst[j] == src]
-    want = back[kk] if kk < len(back) else None
-    if want is not None and has_room(want):
-        return kk, want, [], want
-    walk = []
-    for j in back:
-        walk.append(j)
-        if has_room(j):
-            return kk, want, walk, j
-    return kk, want, walk, None
 
 
 def build_warps(root, theme):
@@ -464,7 +453,7 @@ def build_warps(root, theme):
     k.text(20, 40, "A ROOM WITH A WARP BIT WHOSE SLOT HAS A WARP ID MAKES A POINT", "dim", 2)
     y = 76
     for n, s, r, m, p in pts:
-        k.box(20, y, 300, 70, [("ROOM %d: %s" % (n, s), "txt"), ("%d, %d  %d * %d" % r, "dim"), ("BIT %d: SLOT %d" % (m, m), "txt")],
+        k.box(20, y, 300, 70, [("ROOM %d: %s" % (n, s), "txt"), ("%d, %d  %d * %d" % r, "dim"), ("WARP BIT OF SLOT %d" % m, "txt")],
               "panel", "dim", sc=2, align="l")
         k.text(340, y + 6, "VIS %d, WARP %d" % (v9[m], w9[m]), "txt", 2)
         k.text(340, y + 30, "POINT = ((X + W / 2) * 5, (Y + H / 2) * 5)", "dim", 1)
@@ -472,10 +461,11 @@ def build_warps(root, theme):
         k.text(660, y + 44, "(%d + %d) * 5 = %d" % (r[1], r[3] // 2, p[1]), "good", 2)
         y += 88
     k.text(20, 262, "A SEAM (WARP -1) NEVER MAKES A POINT", "dim", 2)
-    k.text(20, 326, "THE ROOMS ARE AN EXAMPLE'S INPUTS; THE POINTS ARE COMPUTED", "dim", 1)
-    k.text(20, 290, "LIST: %d POINTS, IN SUBTILES" % len(pts), "txt", 2)
+    k.text(20, 290, "A WAYPOINT ROOM MAKES ONE TOO (NONE IN THIS LEVEL)", "dim", 2)
+    k.text(20, 326, "LIST: %d POINTS, IN SUBTILES" % len(pts), "txt", 2)
+    k.text(20, 362, "THE ROOMS ARE AN EXAMPLE'S INPUTS; THE POINTS ARE COMPUTED", "dim", 1)
     k.caption("Rooms of Cave Level 1 that carry a warp bit for a slot with a warp id each add one point at their centre, in "
-              "subtiles: (%d, %d) and (%d, %d)." % (pts[0][4] + pts[1][4]), CAP_Y, 76)
+              "subtiles: (%d, %d) and (%d, %d). A waypoint room adds one too." % (pts[0][4] + pts[1][4]), CAP_Y, 76)
     frames.append(k.done())
     caps.append(dict(
         text="Cave Level 1's two warp rooms each give a warp point at the room's centre, in subtiles.",
@@ -488,7 +478,7 @@ def build_warps(root, theme):
              ("CAVE LEVEL 1 SLOT 0", 9, v9, w9, 3, v3, bit9, bit3, 0, "Cave Level 1's stairs room")]
     got_all = []
     for title, src, vs, ws, dst, vd, _bs, bd, m, _what in cases:
-        kk, want, tried, got = pair(vs, vd, src, m, lambda j, bd=bd: j in bd)
+        kk, want, tried, got = drlg.warp_pair_slot(vs, vd, src, m, lambda j, bd=bd: j in bd, rank=ws[m] != -1)
         got_all.append((src, m, kk, want, tried, got))
         hdr("WARP PAIRING: %s" % title)
         slots(20, 40, "%s LINKS" % nm(src), vs, ws, mark=m, rooms=_bs)

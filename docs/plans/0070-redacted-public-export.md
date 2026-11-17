@@ -1851,3 +1851,44 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   reviewer wants a busier picture. **Blocks:** rows 11, 13, 14 with draft captions and Place lines are in
   `workspace/phase11/blocks-batch2.md` under "DRLG (x12a)" (ids `drlg-act1-links-c0ffee`, `drlg-preset-lutw-rolls`,
   `drlg-warps-cave1-coldplains`); each caption passes `export_build.caption_sentences` with no sentence dropped.
+- 2026-11-17, architect, review of lane/x12a (Opus, Tier A): **accept with fixes**, 7: misread 2, overclaim 1,
+  omission 1, other 3. Checked: frames viewed in both themes (links Act I on 0xc0ffee 0, 3, 4, 5, 8, 10, 14, 17; warps
+  0, 1, 2; preset LutW 0, 1, 2, 3) and every step text of the three outputs, against warps § B1–B4, C1, E1, F1 and its
+  worked examples, and preset § 2, § 3 (3a, step notes 2 and 5) and its worked example. Spot check: a plain
+  `drlg.act_links` on Act I, 0xc0ffee, normal gives Rogue Encampment `(1120, 1192, 56, 40)`, Burial Grounds
+  `(1136, 968, 40, 48)`, level 27 index 0 = `(~0x7C66376B) & 1` and the act seed `7c66376b:43cd3a7d` after, as the
+  frames; level 3's `Vis`/`Warp` lists are the same for seven seeds and three difficulties (the warps output's Act I
+  run takes no seed of its own). **Tracing (row 11):** sound. `drlg.PICK` is restored in place (the dict `link_build`
+  reads) and the three checks by name in a `finally`, so an exception leaves the model as it was; `act_links` reads the
+  check names at call time, and the depth guard keeps `_chk1a`/`_chk1b`'s inner `_chk_plain` call from recording a
+  second answer; the wrappers set only the copy's `Seed.log`, which no value reads. A nested trace would restore in
+  order; nothing runs it concurrently. **Row 14 ruling: (a), refactor.** F1 is now two pure functions of the model,
+  `drlg.warp_rank_slot` and `drlg.warp_pair_slot` (with `rank`, false for a seam slot: F1 makes the rank search only
+  when `LevelWarpId(S, m) ≠ −1`, which the tool's copy lacked); `GenModel.warp_pair` calls them, and the tool's
+  `pair()` is gone. The model's own replay `drlg.py gen workspace/logs/maze/*.log` gives byte-identical output before
+  and after (181 108 checks, 0 mismatches, the same 7 warp pairing coverage lines). The block keeps `values: restated`
+  (its rooms are the worked example's inputs). Row 13's keep table (`RULES`) only labels the rule and its chance; the
+  kept/dropped answer is the model's `drop_rolls`, asserted equal per roll: kept. **Fixes** (`tools/links_anim.py`,
+  `tools/drlg.py`, `tools/test_drlg_anim.py`): (1) misread: the table-done frames' step text gave "the act seed itself"
+  as the value after level 27's draw (the end of the whole run), at table 1 and before the level 27 frame; B1: the
+  layout never steps the act seed. Now "the layout did not step the act seed, still" the table's entry seed, and the
+  level 27 frame gives the table's seed after. (2) misread: every no-draw call said "the choice comes from the entry's
+  stored first choice", and anchor picks "Side -1"; B1: the next choice follows from the current one, the stored first
+  only ends the cycle, and anchor and fixed picks never draw. (3) overclaim: "each is linked both ways to its anchor"
+  for tables whose anchors have none (Stony Field, Moo Moo Farm, Monastery Gate): now each level placed against an
+  anchor; the same in row 11's block caption. (4) omission: E1's other branch, a waypoint room's point, was missing
+  from the warps first frame and row 14's caption: both now say so, and that a seam slot adds none. (5) other: the
+  row 14 ruling above, with tests (the rank-off case, no `pair` left in the tool). (6) other: reject captions named
+  the side without the flip, so the Rogue Encampment's (2, 0) and (2, 1) rejects read the same; "BIT 0: SLOT 0" read
+  as flag bit 0 (now "WARP BIT OF SLOT 0"); a shape pick's reject said "next side". (7) other: row 13's caption said
+  "an illustrative seed started with Init" without saying that in a game Lut Gholein's rolls run on its level seed
+  while its rooms are made (preset § 2 and the worked example). **Blocks** (`workspace/phase11/blocks-batch2.md`,
+  DRLG part, corrected there for 3, 4 and 7). Place lines resolve to `docs/wiki/levels.md`'s paragraphs as written.
+  **Cut:** the three blocks placed in the lane's `levels.md` for one build (restored after), `export_build.py --out
+  workspace/export-x12a-review`: 71 pages, 0 dropped, the three folders built; `export_check` 0 failures, 875
+  warnings, the 11 new all X12 on the captions' level names (Rogue Encampment, Cold Plains, Black Marsh …), the class
+  the page's own prose already raises; every caption sentence present, with the seed and values lines as keyed; the
+  folder was removed. Tests green: `test_drlg_anim` (18), `test_schematic_kit` (29), `test_anim_schematic`,
+  `test_export_build` (154), `test_export_check` (191); gate green. **For the spec-writer:** place the three blocks as
+  their Place lines say (row 13: after the "Which seed." paragraph); row 14 keeps `seed: none` and `values: restated`;
+  the captions name levels in words, which X12 warns on (not a failure).
