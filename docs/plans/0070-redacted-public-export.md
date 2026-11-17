@@ -1437,3 +1437,61 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   most 20 per array, and gate E21 needing node (skipped with a warning without it). Next: batch 1 (archivist lane, then
   a spec-writer lane for blocks and captions) and, in parallel, the widget groundwork of ADR-0037 (check X13, gate E21,
   the builder's widget block, the export repository's host step), each reviewed on Opus.
+- 2026-11-17, archivist, lane/x11w (Phase 11 step 4a: widget groundwork, ADR-0037; first widget rng). Delivered:
+  - **Widget `rng`** (`tools/widgets/rng/`): `widget.js` (pure `compute(inputs, data)` on BigInt for the 64-bit step, `mount` with
+    DOM calls only, mounts itself into `figure[data-widget-name="rng"]` on load), `widget.json` (multiplier as
+    `6AC690C5`, init word 666, three inputs, four illustrative seeds as `{"rows": "toy", "items": [...]}`, labels), `fixture.json`
+    (13 cases: the page's worked example, n of 0 and -5, 1, 7, 8, 100, the largest n, seeds at both ends, clamped inputs),
+    written by the twin `tools/widgets/twins.py` (`write` / `check`; the twin calls `tools/rng.py`'s `rng_range`, no second
+    copy of the rule). The text fallback (`fallback_table`) is the 12345 / Range(100) / five-draw case, in decimal.
+  - **Builder** (`tools/export_build.py`): a ```` ```widget ```` block (keys `id`, `widget`, `illustrates`, `caption`,
+    `fallback`) writes `site/public/widgets/<id>/` (`widget.js`, `widget.json`, `widget.list.json` with marker `widget-only/1` and the
+    sha256 of each file, and `fallback.gif|png` copied from an illustration folder built earlier in the same cut), verifies
+    the folder with X13 and removes it on failure, and puts in the page the fallback (picture, or table for `fallback: text`),
+    the caption plus the sentence "Computed by our model...", and one link line `[Try it ...](/widgets/<id>/widget.js)`.
+    A block whose widget is missing, whose id repeats, whose fallback illustration is absent or whose folder fails X13 is a
+    report line. The caption loop of `illustration_block` is now `caption_sentences` (shared). `export_publish.py`: `CUT_DIRS`
+    gains `site/public/widgets` (test added).
+  - **X13** (`tools/export_check.py`, `verify_widget`, `js_problems`, `json_problems`): fixed file list, marker, sha list,
+    byte-equal to `tools/widgets/<name>/`, caps 48 KB / 16 KB, the ADR's banned names and forms, every string and comment through
+    X1-X5 and X9 (a mini lexer, `${` in a template and an unterminated string fail), arrays only as `items` of an object with
+    `rows` toy|page and at most 20; a page link or image into `/widgets/<id>/` must name a verified folder; `check_repo` needs
+    the host step `site/src/rehype-widgets.mjs` (new allowed path) and the CSP word for word when the cut has widgets or the
+    host file exists, and scans the host file (only `widgets/${...}` paths, no fetch, dynamic import, eval, `Function`, process or
+    network modules; whole-line comments skipped). **Obfuscation ruling** (the ADR is silent): a pattern list cannot see a name
+    built from pieces, so the routes to one are banned: the global object by every bare name (`window`, `self`, `top`, `parent`,
+    `frames`, `globalThis`, `global`, `opener`, `this`, also `with`, `arguments`), a string literal in a bracket, `.constructor`,
+    `.prototype`, `Reflect`, `Proxy`, `defaultView`, escapes (`\x`, `\u`, octal), `fromCharCode` and `atob` kin, `createElement`
+    and `setAttribute` with anything but a literal of a short safe list (and never `src`, `href`, `style`, `on...`), `document` as
+    anything but `document.<name>`, a timer whose first argument is not a function expression or arrow. Banned words are searched
+    in comments and strings too (a stricter reading than the ADR's list). The marker for widget files is `widget-only/1`; the fallback
+    keeps `schematic-only/1`. Where the ADR says the host wraps the image, the host here acts on the "Try it" line for both
+    fallback kinds (the image stays where it is; ADR silent on a text fallback).
+  - **E21** (`tools/gate.py`, `check_widgets`): runs `tools/test_widgets.py` (fixture equals the twin's output; `compute` run
+    under node per case; a stand-in DOM mounts the module, types into the inputs and reads the table and the live region; mutation
+    checks that the harness sees a changed widget, a wrong fixture and a mount that never returns), warns once when node is missing
+    (`SKIP node`). E20 also runs the new `tools/test_export_widgets.py`.
+  - **Tests**: `test_export_widgets.py` 205 checks (82 adversarial script forms, 17 allowed ones, JSON, folder tamperings,
+    cut, repo and builder, end to end), `test_widgets.py` 26, `test_export_build.py` 149, `test_export_check.py` 180,
+    `test_export_publish.py` 37, `test_anim_schematic.py` 5 (all green); `tools/gate.py` green with E21 counted.
+  - **Export repository change** (prepared under `workspace/export-repo/`, never in git; ADR-0038's script copies it):
+    (1) new `site/src/rehype-widgets.mjs`, the generic host (replaces each Try it paragraph with a `<figure class="widget-host">`
+    carrying `widget.json` as a data attribute, read at build time because the CSP refuses a request for it, and adds one
+    `<script type="module" src="<base>/widgets/<id>/widget.js">`); (2) `site/astro.config.mjs`: imports and registers it,
+    constant `CSP` and a Starlight `head` meta `Content-Security-Policy` (`connect-src 'none'`, `frame-src 'none'`,
+    `object-src 'none'`, `form-action 'none'`, scripts from self plus Starlight's inline ones and `wasm-unsafe-eval` for
+    Pagefind); (3) `site/src/styles/site.css`: `.widget-host` styles in Starlight's variables only (both themes follow them).
+    `export_check --repo workspace/export-repo` is green.
+  - **Dry run**: scratch copy of `docs/` with a `rng-stepper` widget block (text fallback) under the randomness page's worked
+    example; builder to a scratch cut (71 pages, 0 dropped), `export_check <cut> --repo workspace/export-repo` 0 failures; cut and
+    export repository copied into a scratch copy of the export repository folder (node_modules copied), `SITE_BASE=/arpg-1-14d-notes/ npm run build`
+    ok (72 pages), `check-site-links` "7787 links in 72 pages, all resolve", dist holds `widgets/rng-stepper/widget.js|json|list`
+    (`widget.js` byte-equal to the source), the page head holds the CSP meta word for word and the module script. In headless
+    Chromium (the site's own Playwright): the widget mounts, shows 87 / 015B2E77 / 0000141D for seed 12345 and range 100, follows
+    typing, a `fetch` from the page is refused by the policy, Pagefind search still returns results (its worker's requests are not
+    covered by a page's meta policy; do not add `worker-src`), dark theme looks right. The browser run found a real mount bug
+    (a helper calling itself) that the node tests did not; the stand-in DOM test was added for it. The scratch copy and cut were deleted.
+  - **Doubts / for the review**: the check bans words in strings and comments too, so a widget cannot say "location" or "file" in prose;
+    only Chromium was tried (Firefox's handling of module scripts under the policy and the worker-vs-meta rule is untested);
+    the host acts on the Try it link, not the image; no row 1 picture exists yet, so every fallback is a table; `widget.json` is read
+    by the host at build time (its code is in the export repository but loads only `/widgets/<id>/widget.js` as a script).

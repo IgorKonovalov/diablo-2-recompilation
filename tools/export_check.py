@@ -32,6 +32,14 @@ Rules (plan 0070 § Publish check):
       sha256 list, nothing else, index.html with no URL/request; the text of steps.json, index.html and
       schematic.json passes X1-X4 and X9, and no file holds an identity string or a home path). repo: a path outside the plan's table
       (plus the lockfile); a .git directory anywhere.
+  X13 cut: a widget folder site/public/widgets/<id>/ (ADR-0037): only widget.js, widget.json, widget.list.json and at
+      most one fallback.png/.gif; marker `widget-only/1` in the js, json and list (the fallback carries the
+      schematic marker); sha256 list; widget.js and widget.json byte-equal to tools/widgets/<name>/; caps 48 KB and
+      16 KB; widget.js free of network, eval-like, HTML-injection, storage, navigator/location, file-reading, URL and
+      global-object forms (see js_problems); every string and comment of widget.js and every string of widget.json
+      passes X1-X5 and X9; arrays of widget.json are `{"rows": "toy"|"page", "items": [<= 20]}`. A `/widgets/<id>/...`
+      link or image of a page must name a verified folder. repo (when the cut has widgets, or the host file exists):
+      the host file site/src/rehype-widgets.mjs, and the CSP meta word for word in astro.config.mjs.
   X12 (warning) quoted run over 12 words; capitalised name matching no table row name of the cut.
 
 The schematic marker (Phase 2b's generators must write it): the byte string `schematic-only/1` inside
@@ -53,6 +61,17 @@ import subprocess
 import sys
 
 MARKER = "schematic-only/1"
+WIDGET_MARKER = "widget-only/1"
+WIDGET_ROOT = "site/public/widgets/"
+WIDGETS_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widgets")   # the reviewed sources (tests override)
+WIDGET_JS_MAX, WIDGET_JSON_MAX, WIDGET_ROWS_MAX = 48 * 1024, 16 * 1024, 20
+HOST_FILE = "site/src/rehype-widgets.mjs"
+# The policy the host's page head carries (ADR-0037): the browser itself refuses any request a widget might make.
+# Search still works under it (checked in a browser, plan log): Pagefind fetches its index from a Web Worker, which a
+# page's meta policy does not cover. Do not add `worker-src 'none'`: it would stop search.
+CSP_POLICY = ("default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
+              "img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; "
+              "form-action 'none'; base-uri 'self'")
 TEXT_RULES = ("X1", "X2", "X3", "X4", "X5", "X9")
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico", ".tga", ".pcx", ".dc6", ".dcc",
              ".avif", ".tif", ".tiff", ".mp4", ".webm", ".ogv"}
@@ -72,7 +91,7 @@ RE_URL_ALLOW = re.compile(
 # `https://github.com/${` is a template literal in the site's JS (the account and name join at build time), not a URL
 URL_ALLOW = ("https://github.com/${", "https://creativecommons.org/", "https://wiki.creativecommons.org/")
 URL_ALLOW_LOCKFILE = ("https://registry.npmjs.org/",)
-REPO_PATHS = {"site/package.json", "site/package-lock.json", "site/astro.config.mjs", "site/src/content.config.ts",
+REPO_PATHS = {HOST_FILE, "site/package.json", "site/package-lock.json", "site/astro.config.mjs", "site/src/content.config.ts",
               "site/src/components/Footer.astro", "site/scripts/check-site-links.mjs", "site/public/favicon.svg", "site/src/styles/site.css",
               ".github/workflows/pages.yml", "README.md", "LICENSE", ".gitignore"}
 TABLE_LIMIT = 20
@@ -126,7 +145,7 @@ RE_X3 = [
 RE_HOME = re.compile(r"/(?:home|Users)/|\bfile:/", re.I)
 # a Markdown image target `](/illustrations/<id>/<file>)` is no absolute path here: X8 verifies it against the folder.
 # Only that shape: right after `](`, two segments that don't start with a dot, the closing parenthesis.
-RE_ABS = re.compile(r"(?:(?<=[\s`\"'(\[])|^)/(?!(?<=\]\(/)illustrations/[\w-][\w.-]*/[\w-][\w.-]*\))(?:home|usr|etc|tmp|var|opt|mnt|root|srv|media|proc|dev|Users|[a-z][\w.-]*/[\w.-]+)"
+RE_ABS = re.compile(r"(?:(?<=[\s`\"'(\[])|^)/(?!(?<=\]\(/)(?:illustrations/[\w-][\w.-]*/[\w-][\w.-]*|widgets/[\w-]+/(?:widget\.js|fallback\.(?:png|gif)))\))(?:home|usr|etc|tmp|var|opt|mnt|root|srv|media|proc|dev|Users|[a-z][\w.-]*/[\w.-]+)"
                     r"(?:/[\w.\-]*)*|\b[A-Za-z]:\\[\w.]")
 RE_X9 = [
     (re.compile(r"copy[- ]?protection|\bcd[- ]?key", re.I), "copy protection / CD key"),
@@ -388,6 +407,8 @@ def text_rules(unit, identity=None, allow=None, sect=False, pins=()):
 RE_RAW_HTML = re.compile(r"<\s*(?:script|iframe|link|style|object|embed|form|meta|base)\b", re.I)
 RE_IMG = re.compile(r"!\[[^\]]*\](\(([^)\s]*)[^)]*\))?|<\s*(?:img|video|picture|source)\b", re.I)
 RE_ILLUS = re.compile(r"^/illustrations/([\w.-]+)/([\w./-]+)$")   # root-absolute only: the site prefixes its base
+RE_WIDGET_IMG = re.compile(r"^/widgets/([\w-]+)/(fallback\.(?:png|gif))$")
+RE_WIDGET_REF = re.compile(r"\]\(\s*<?(/widgets/[^)\s>]*)")   # root-absolute only: the site prefixes its base
 RE_TABLE_SEP = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
 
 
@@ -463,7 +484,7 @@ def section_lines(text, path, allow):
     return lines
 
 
-def check_page(text, rel, route, allowed_tables, illus_ok, identity, path=None):
+def check_page(text, rel, route, allowed_tables, illus_ok, identity, path=None, widget_ok=()):
     """All rules that apply to one Markdown page of the cut. Returns [(rule, line, detail)]."""
     hits = list(check_text(text, identity, sect_lines=section_lines(text, path, ACTIVE_ALLOW) if path else None,
                            pins=ACTIVE_ALLOW.pins.get(path, {}) if path else ()))
@@ -483,8 +504,13 @@ def check_page(text, rel, route, allowed_tables, illus_ok, identity, path=None):
         for im in RE_IMG.finditer(line):
             target = im.group(2)
             m2 = RE_ILLUS.search(target) if target else None
-            if not (m2 and (m2.group(1), m2.group(2)) in illus_ok):
+            m3 = RE_WIDGET_IMG.search(target) if target else None
+            if not ((m2 and (m2.group(1), m2.group(2)) in illus_ok) or (m3 and m3.groups() in widget_ok)):
                 hits.append(("X8", n, f"image: {im.group(0)[:50]}"))
+        for wm in RE_WIDGET_REF.finditer(line):
+            m4 = re.fullmatch(r"/widgets/([\w-]+)/(widget\.js|fallback\.(?:png|gif))", wm.group(1))
+            if not (m4 and m4.groups() in widget_ok):
+                hits.append(("X13", n, f"link into a widget folder that does not verify: {wm.group(1)[:50]}"))
     return hits
 
 
@@ -600,6 +626,260 @@ def verify_illustration(folder, identity=()):
     return probs, ok
 
 
+# ---------------------------------------------------------------- widget folders (ADR-0037, rule X13)
+
+JS_BANNED_WORDS = (
+    # network
+    "fetch", "XMLHttpRequest", "WebSocket", "EventSource", "sendBeacon", "importScripts", "Worker", "SharedWorker",
+    "serviceWorker", "WebTransport", "RTCPeerConnection", "postMessage", "BroadcastChannel", "WebAssembly",
+    # modules and code from strings
+    "import", "require", "eval", "Function", "Reflect", "Proxy", "constructor", "prototype", "__proto__",
+    "getPrototypeOf", "setPrototypeOf", "defineProperty", "setImmediate", "execCommand",
+    # HTML and element injection
+    "innerHTML", "outerHTML", "insertAdjacentHTML", "createContextualFragment", "DOMParser", "srcdoc", "script",
+    "iframe", "embed", "object", "link", "meta", "base", "createElementNS", "importNode", "Image", "Audio",
+    # storage, identity of the browser and the page, windows
+    "cookie", "cookieStore", "localStorage", "sessionStorage", "indexedDB", "openDatabase", "caches", "navigator",
+    "location", "defaultView", "contentWindow", "contentDocument", "alert", "confirm", "prompt",
+    # file reading, downloads, clipboard
+    "FileReader", "Blob", "URL", "createObjectURL", "showOpenFilePicker", "webkitdirectory", "dataTransfer",
+    "DataTransfer", "clipboard", "paste", "drop", "ondrop",
+    # building a name from pieces
+    "fromCharCode", "fromCodePoint", "atob", "btoa", "unescape", "decodeURI", "decodeURIComponent", "TextDecoder",
+)
+# identifiers that reach the global object: banned as a bare name (`el.top`, `style.parent` pass)
+JS_GLOBAL_NAMES = ("window", "self", "top", "parent", "frames", "globalThis", "global", "opener", "frameElement", "this",
+                   "with", "arguments")
+RE_JS_BANNED = re.compile(r"(?<![\w$])(?:" + "|".join(JS_BANNED_WORDS) + r")(?![\w$])")
+RE_JS_BANNED_ANY = [
+    (re.compile(r"(?i)\bfiles?\b|\bstorage|type\s*=\s*[\"']file"), "file input or storage"),
+    (re.compile(r"\bdocument\s*\.\s*(?:write|writeln|open|close|domain)\b|\.\s*open\s*\("), "document.write/open"),
+    (re.compile(r"\\[xu0-7]"), "escape sequence that can spell a banned name"),
+    (re.compile(r"\bexport\s*(?:\*|\{)"), "export ... from"),
+    (re.compile(r"\burl\s*\(|@import", re.I), "url( or @import"),
+    (re.compile(r"(?:[A-Za-z][A-Za-z0-9+.-]*:/?/|\bwww\.|\bhttps?\b|(?<![:\w])//[\w-]+\.[a-z]{2,})", re.I), "URL"),
+]
+RE_ASSIGN_URL = re.compile(r"\.\s*(?:src|href|srcdoc|action|formAction|poster|data|srcset|ping|codebase)\s*=(?!=)")
+RE_SET_ATTR = re.compile(r"\bsetAttribute\s*\(\s*(?:([\"'])([A-Za-z][\w-]*)\1\s*[,)])?")
+RE_CREATE_EL = re.compile(r"\bcreateElement\s*\(\s*(?:([\"'])([a-z][a-z0-9]*)\1\s*[,)])?")
+SAFE_TAGS = {"div", "span", "p", "label", "input", "select", "option", "button", "table", "thead", "tbody", "tr", "th",
+             "td", "form", "output", "ul", "ol", "li", "strong", "em", "code", "fieldset", "legend", "caption",
+             "figure", "figcaption", "pre", "sup", "sub", "small", "h2", "h3", "h4", "details", "summary"}
+BAD_ATTRS = {"src", "href", "srcdoc", "action", "formaction", "data", "poster", "srcset", "ping", "style", "codebase"}
+RE_TIMER = re.compile(r"\bset(?:Timeout|Interval)\s*\(\s*(?!function\b|\([^()]*\)\s*=>)")
+
+
+def js_split(src):
+    """Split JavaScript source into (nocomment, blank, strings, comments, error): `nocomment` keeps the strings and
+    drops the comments, `blank` also empties each string to "" (a lexer good enough for source of our own: a regular
+    expression literal holding a quote makes it fail, which is the safe side; a template with ${ is an error)."""
+    i, n = 0, len(src)
+    noc, blank, strings, comments = [], [], [], []
+    while i < n:
+        c = src[i]
+        if src.startswith("//", i):
+            j = src.find("\n", i)
+            j = n if j < 0 else j
+            comments.append(src[i + 2:j])
+            i = j
+        elif src.startswith("/*", i):
+            j = src.find("*/", i + 2)
+            if j < 0:
+                return "", "", [], [], "unterminated comment"
+            comments.append(src[i + 2:j])
+            noc.append(" ")
+            blank.append(" ")
+            i = j + 2
+        elif c in "\"'`":
+            j = i + 1
+            while j < n and src[j] != c:
+                if src[j] == "\\":
+                    j += 1
+                elif c == "`" and src.startswith("${", j):
+                    return "", "", [], [], "template literal with ${"
+                elif c != "`" and src[j] == "\n":
+                    return "", "", [], [], "unterminated string"
+                j += 1
+            if j >= n:
+                return "", "", [], [], "unterminated string or template"
+            strings.append(src[i + 1:j])
+            noc.append(src[i:j + 1])
+            blank.append(c + c)
+            i = j + 1
+        else:
+            noc.append(c)
+            blank.append(c)
+            i += 1
+    return "".join(noc), "".join(blank), strings, comments, ""
+
+
+def js_problems(src, identity=()):
+    """X13 on the text of a widget.js: [str]. See the ADR: no network, eval-like, HTML-injection, storage,
+    navigator/location, file-reading, URL; every string and comment passes the text rules. Obfuscation ruling (the
+    lane's, plan 0070 Phase 11): a pattern list cannot see a name built from pieces, so the forms that build or reach
+    one are banned instead: the global object by any name (window, self, top, parent, frames, globalThis, global,
+    this; `.defaultView`, `.contentWindow`), a quote in a bracket (`x["fe"+"tch"]`), `.constructor`/`.prototype`/
+    Reflect/Proxy, escapes (backslash x, backslash u, octal), String.fromCharCode, atob and its kin, a createElement or setAttribute
+    whose name is not a literal of a short safe list, `${` in a template. With the global object unreachable a
+    built name has nothing to index; the CSP and the Tier A read are the backstop."""
+    probs = []
+    if len(src.encode("utf-8")) > WIDGET_JS_MAX:
+        probs.append(f"widget.js over {WIDGET_JS_MAX // 1024} KB")
+    if WIDGET_MARKER not in src:
+        probs.append("widget.js has no marker")
+    noc, blank, strings, comments, err = js_split(src)
+    if err:
+        return probs + [f"widget.js does not lex: {err}"]
+    for m in RE_JS_BANNED.finditer(src):
+        probs.append(f"banned name: {m.group(0)}")
+    for rx, what in RE_JS_BANNED_ANY:
+        m = rx.search(src)
+        if m:
+            probs.append(f"banned form ({what}): {m.group(0)[:30]}")
+    for m in re.finditer(r"(?<![\w$.])(?:" + "|".join(JS_GLOBAL_NAMES) + r")(?![\w$])", blank):
+        probs.append(f"global-object name: {m.group(0)}")
+    if re.search(r"""\[\s*["'`]""", blank):
+        probs.append("a string literal in a bracket (computed member access by name)")
+    if re.search(r"(?<!typeof )\bdocument\b(?!\s*\.\s*[A-Za-z_$])", blank):
+        probs.append("`document` used other than as document.<name>")
+    for t in strings:
+        m = re.match(r"\s*(?:javascript|data|blob|about|vbscript|mailto|tel|wss?|ftp|file):", t, re.I)
+        if m:
+            probs.append(f"string starts with a URL scheme: {m.group(0).strip()}")
+    for m in RE_ASSIGN_URL.finditer(noc):
+        probs.append(f"assignment of a source or link: {m.group(0).strip()}")
+    for m in RE_SET_ATTR.finditer(noc):
+        name = (m.group(2) or "").lower()
+        if not name or name in BAD_ATTRS or name.startswith("on"):
+            probs.append(f"setAttribute with a name that is not a safe literal: {name or '(not a literal)'}")
+    for m in RE_CREATE_EL.finditer(noc):
+        if m.group(2) not in SAFE_TAGS:
+            probs.append(f"createElement of {m.group(2) or '(not a literal)'}")
+    if RE_TIMER.search(noc):
+        probs.append("setTimeout/setInterval whose first argument is not a function expression or an arrow (a string held in a name runs as code)")
+    for kind, items in (("string", strings), ("comment", comments)):
+        for t in items:
+            for r_, _ln, d in check_text(t, identity)[:2]:
+                probs.append(f"{kind} fails {r_}: {d[:60]}")
+            for pat in (r"\bparam_\d+\b", r"\blocal_[0-9a-fA-F]+\b", r"\bFUN_", r"\bDAT_"):
+                if re.search(pat, t):
+                    probs.append(f"{kind} holds a decompiler artefact name")
+    for pat in (r"\bparam_\d+\b", r"\blocal_[0-9a-fA-F]+\b", r"\bFUN_", r"\bDAT_"):
+        if re.search(pat, src):
+            probs.append("decompiler artefact name in the script")
+    return list(dict.fromkeys(probs))
+
+
+def json_problems(text, identity=()):
+    """X13 on the text of a widget.json: [str], and the parsed value or None."""
+    probs = []
+    if len(text.encode("utf-8")) > WIDGET_JSON_MAX:
+        probs.append(f"widget.json over {WIDGET_JSON_MAX // 1024} KB")
+    try:
+        data = json.loads(text)
+    except ValueError:
+        return probs + ["widget.json is not valid JSON"], None
+    if not isinstance(data, dict) or data.get("marker") != WIDGET_MARKER:
+        probs.append("widget.json has no marker")
+    if not isinstance(data, dict) or not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", str(data.get("name", ""))):
+        probs.append("widget.json has no valid name")
+
+    def walk(v, path, parent):
+        if isinstance(v, dict):
+            for k, x in v.items():
+                for r_, _ln, d in check_text(str(k), identity)[:1]:
+                    probs.append(f"key {path}/{k} fails {r_}: {d[:50]}")
+                walk(x, f"{path}/{k}", v)
+        elif isinstance(v, list):
+            if len(v) > WIDGET_ROWS_MAX:
+                probs.append(f"{path}: {len(v)} entries (limit {WIDGET_ROWS_MAX})")
+            if not (isinstance(parent, dict) and parent.get("rows") in ("toy", "page") and parent.get("items") is v):
+                probs.append(f'{path}: an array must be the `items` of an object with "rows": "toy" or "page"')
+            for k, x in enumerate(v):
+                walk(x, f"{path}[{k}]", None)
+        elif isinstance(v, str):
+            for r_, _ln, d in check_text(v, identity)[:1]:
+                probs.append(f"string {path} fails {r_}: {d[:50]}")
+            if re.search(r"\bparam_\d+\b|\blocal_[0-9a-fA-F]+\b|\bFUN_|\bDAT_", v):
+                probs.append(f"string {path} holds a decompiler artefact name")
+    walk(data, "", None)
+    return probs, data
+
+
+def verify_widget(folder, identity=(), src_root=None):
+    """Check one site/public/widgets/<id>/ folder (ADR-0037, X13). Returns (problems [str], ok files set)."""
+    src_root = src_root or WIDGETS_SRC
+    probs, files = [], []
+    for dp, dns, fns in os.walk(folder):
+        for dn in list(dns):
+            probs.append(f"{dn}: subfolder, .git directory or symlink")
+            dns.remove(dn)
+        for fn in fns:
+            files.append(os.path.relpath(os.path.join(dp, fn), folder).replace(os.sep, "/"))
+    lst = None
+    try:
+        lst = json.load(open(os.path.join(folder, "widget.list.json"), encoding="utf-8"))
+        if set(lst) != {"marker", "files"} or lst["marker"] != WIDGET_MARKER or not isinstance(lst["files"], dict):
+            raise ValueError
+    except (OSError, ValueError, TypeError):
+        return probs + ["widget.list.json missing, unreadable, wrong marker or extra keys"], set()
+    for r_, ln, d in [h for h in check_text(json.dumps({"marker": lst["marker"], "files": sorted(lst["files"])}), identity)
+                      if h[0] != "X5"][:3]:
+        probs.append(f"widget.list.json: {r_} {d}")
+    names = [f for f in files if f != "widget.list.json"]
+    if "widget.js" not in names or "widget.json" not in names:
+        probs.append("widget.js or widget.json missing")
+    fallbacks = [f for f in names if f in ("fallback.png", "fallback.gif")]
+    if len(fallbacks) > 1:
+        probs.append("more than one fallback image")
+    ok = set()
+    for rel in sorted(files):
+        full = os.path.join(folder, rel)
+        if rel == "widget.list.json":
+            continue
+        if os.path.islink(full):
+            probs.append(f"{rel}: symlink")
+            continue
+        if rel not in ("widget.js", "widget.json") + tuple(fallbacks):
+            probs.append(f"{rel}: file not allowed in a widget folder")
+            continue
+        if rel not in lst["files"]:
+            probs.append(f"{rel}: not in widget.list.json (extra file)")
+            continue
+        raw = open(full, "rb").read()
+        if _sha(full) != str(lst["files"][rel]).lower():
+            probs.append(f"{rel}: sha256 differs from widget.list.json")
+            continue
+        marker = MARKER if rel.startswith("fallback.") else WIDGET_MARKER
+        if marker.encode() not in raw:
+            probs.append(f"{rel}: no marker")
+            continue
+        low_b = raw.lower()
+        if any(i and i.lower().encode() in low_b for i in identity) or RE_HOME.search(raw.decode("latin-1")):
+            probs.append(f"{rel}: identity string or home path in the file")
+            continue
+        found = []
+        if rel == "widget.js":
+            found = js_problems(raw.decode("utf-8", "replace"), identity)
+        elif rel == "widget.json":
+            found, data = json_problems(raw.decode("utf-8", "replace"), identity)
+            name = str(data.get("name", "")) if isinstance(data, dict) else ""
+            if re.fullmatch(r"[a-z0-9][a-z0-9_-]*", name):
+                for part in ("widget.js", "widget.json"):
+                    sp = os.path.join(src_root, name, part)
+                    if not os.path.isfile(sp) or open(sp, "rb").read() != open(os.path.join(folder, part), "rb").read():
+                        found.append(f"{part} is not byte-equal to the reviewed source tools/widgets/{name}/{part}")
+        probs.extend(f"{rel}: {p}" for p in found)
+        if not found:
+            ok.add(rel)
+    for rel in lst["files"]:
+        if rel not in files:
+            probs.append(f"{rel}: listed in widget.list.json but missing")
+    if probs:
+        ok = set()      # a folder with any problem serves nothing
+    return probs, ok
+
+
 def html_problems(html, files):
     out = []
     if re.search(r"(?:https?|ftp|wss?):|//[\w-]+\.[a-z]{2,}", html, re.I):
@@ -655,6 +935,16 @@ def check_cut(cut, manifest=None, identity=None):
             fails.append(("X11", f"{illus_root}{fid}/", 0, p))
         for rel in ok:
             illus_ok.add((fid, rel))
+    widget_ok, wfolders = set(), {}
+    for rel in rels:
+        if rel.startswith(WIDGET_ROOT) and rel.count("/") >= WIDGET_ROOT.count("/") + 1:
+            wfolders.setdefault(rel[len(WIDGET_ROOT):].split("/", 1)[0], []).append(rel)
+    for wid in sorted(wfolders):
+        probs, ok = verify_widget(os.path.join(cut, WIDGET_ROOT + wid), identity)
+        for p in probs:
+            fails.append(("X13", f"{WIDGET_ROOT}{wid}/", 0, p))
+        for rel in ok:
+            widget_ok.add((wid, rel))
     cut_json_seen = False
     known, pages = set(), []
     for rel in sorted(rels):
@@ -665,6 +955,8 @@ def check_cut(cut, manifest=None, identity=None):
             fails.append(("X11", rel, 0, "symlink"))
             continue
         if rel.startswith(illus_root) and rel.count("/") >= illus_root.count("/") + 1:
+            continue
+        if rel.startswith(WIDGET_ROOT) and rel.count("/") >= WIDGET_ROOT.count("/") + 1:
             continue
         ext = os.path.splitext(rel)[1].lower()
         if rel == "site/src/cut.json":
@@ -688,7 +980,7 @@ def check_cut(cut, manifest=None, identity=None):
         fails.append(("X10", "site/src/cut.json", 0, "cut.json missing"))
     for rel, text in pages:
         route = rel[len(docs_root):-3] if rel.startswith(docs_root) else rel[:-3]
-        for rule, ln, d in check_page(text, rel, route, allowed.get(route, 0), illus_ok, identity, route_path.get(route)):
+        for rule, ln, d in check_page(text, rel, route, allowed.get(route, 0), illus_ok, identity, route_path.get(route), widget_ok):
             fails.append((rule, rel, ln, d))
         for ln, d in x12(text, rel, known):
             warns.append(("X12", rel, ln, d))
@@ -727,7 +1019,7 @@ def favicon_problems(raw):
     return out
 
 
-def check_repo(repo, identity=None):
+def check_repo(repo, identity=None, need_host=False):
     fails = []
     if identity is None:
         identity = git_identity()
@@ -777,6 +1069,24 @@ def check_repo(repo, identity=None):
             u = re.match(r"\s*-?\s*uses:\s*(\S+)", line)
             if u and not u.group(1).startswith("actions/"):
                 fails.append(("X7", rel, n, f"action outside actions/*: {u.group(1)}"))
+    # widgets (ADR-0037): the host step and the CSP meta. Required when the cut carries a widget or the host file exists.
+    hp = os.path.join(repo, HOST_FILE)
+    cp0 = os.path.join(repo, "site/astro.config.mjs")
+    if need_host and not os.path.isfile(hp):
+        fails.append(("X13", HOST_FILE, 0, "the cut carries widgets and the export repository has no host step"))
+    if os.path.isfile(hp) or need_host:
+        cfg = open(cp0, encoding="utf-8").read() if os.path.isfile(cp0) else ""
+        if "Content-Security-Policy" not in cfg or CSP_POLICY not in norm_ws(cfg.replace("\n", " ")):
+            fails.append(("X13", "site/astro.config.mjs", 0, "the Content-Security-Policy meta is missing or not word for word"))
+    if os.path.isfile(hp):
+        for n, line in enumerate(open(hp, encoding="utf-8").read().split("\n"), 1):
+            if line.lstrip().startswith("//"):
+                continue        # a whole-line comment runs nothing (a trailing one is scanned with its line)
+            for m in re.finditer(r"widgets/(?!\$\{|\(\[)", line):
+                fails.append(("X13", HOST_FILE, n, "a widgets/ path the host step may not build: " + line.strip()[:60]))
+            m = re.search(r"\bfetch\b|\bimport\s*\(|\beval\b|\bFunction\b|child_process|node:(?:https?|net|dgram|tls)\b|\brequire\b", line)
+            if m:
+                fails.append(("X13", HOST_FILE, n, f"network, eval or process use in the host step: {m.group(0)}"))
     fp = os.path.join(repo, "site/src/components/Footer.astro")
     if os.path.isfile(fp):
         m = re.search(r"<p\b[^>]*>(.*?)</p>", open(fp, encoding="utf-8").read(), re.S)
@@ -817,19 +1127,21 @@ def main(argv=None):
         except ValueError as e:
             print(f"export_check: {e}", file=sys.stderr)
             return 2
-    fails, warns = [], []
+    fails, warns, has_widgets = [], [], False
     if a.cut:
         if not os.path.isdir(a.cut):
             print(f"export_check: {a.cut} is not a directory", file=sys.stderr)
             return 2
         f, w = check_cut(a.cut, manifest, identity)
+        wroot = os.path.join(a.cut, WIDGET_ROOT)
+        has_widgets = os.path.isdir(wroot) and any(os.path.isdir(os.path.join(wroot, d)) for d in os.listdir(wroot))
         fails += [("cut",) + x for x in f]
         warns += [("cut",) + x for x in w]
     if a.repo:
         if not os.path.isdir(a.repo):
             print(f"export_check: {a.repo} is not a directory", file=sys.stderr)
             return 2
-        fails += [("repo",) + x for x in check_repo(a.repo, identity)]
+        fails += [("repo",) + x for x in check_repo(a.repo, identity, has_widgets)]
     for kind, rule, path, ln, d in fails:
         print(f"FAIL {rule} {kind}:{path}:{ln}: {d}")
     for kind, rule, path, ln, d in warns:

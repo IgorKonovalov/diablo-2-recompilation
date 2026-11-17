@@ -44,6 +44,9 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
                lane/site1 review)
            E20 the publish check's self-tests fail: `python3 -I tools/test_export_check.py` (plan 0070
                Phase 2; fixtures in tools/gate/fixtures/export/). The gate does not run the check on docs/
+           E21 a scripted widget under tools/widgets/ (ADR-0037) whose widget.js `compute` differs, under node, from its
+               fixture (written by its Python twin), or whose fixture is not what the twin computes now:
+               `python3 -I tools/test_widgets.py`; skipped with a warning when node is missing, like E17
            (a rule in DEMOTED is reported as a warning until the files it flags are fixed: plan 0053)
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
@@ -1373,7 +1376,8 @@ RULES = [
     ("E17", "mermaid blocks draw, labels intact"),
     ("E18", "quirks index matches the specs (tools/quirks.py check)"),
     ("E19", "illustration blocks parse and resolve (tools/site_build.py check)"),
-    ("E20", "the export publish check's and builder's self-tests pass (tools/test_export_check.py, test_export_build.py)"),
+    ("E20", "the export publish check's and builder's self-tests pass (tools/test_export_check.py, test_export_build.py, test_export_widgets.py)"),
+    ("E21", "each widget's compute matches its Python twin's fixture under node (tools/test_widgets.py)"),
     ("E10", "no tags, anchors or addresses in the wiki"),
     ("E11", "wiki pages based_on reviewed specs"),
     ("E12", "wiki sections link a spec"),
@@ -1461,6 +1465,7 @@ def run_gate(root, cache_root=None):
     check_quirks(root, rep)
     check_illustrations(root, rep)
     check_export_tests(root, rep)
+    check_widgets(root, rep)
     # W3: a symbol is cited when its name appears in some spec or finding
     # (one pass over the corpus: the names are [A-Za-z0-9_]+, so a word-set lookup equals the
     # bounded regex search; a name with another character falls back to the search)
@@ -1521,7 +1526,7 @@ def check_illustrations(root, rep):
 def check_export_tests(root, rep):
     """E20: run tools/test_export_check.py and tools/test_export_build.py from this gate's own tools/ directory."""
     here = os.path.dirname(os.path.abspath(__file__))
-    for name in ("export_check", "export_build"):
+    for name in ("export_check", "export_build", "export_widgets"):
         tool = os.path.join(here, f"test_{name}.py")
         if not os.path.isfile(tool):
             continue
@@ -1534,6 +1539,26 @@ def check_export_tests(root, rep):
         if not m or (out.returncode and not rep.errors.get("E20")):
             rep.err("E20", f"tools/test_{name}.py", 1, f"self-tests failed (exit {out.returncode}): "
                     f"{(out.stderr or out.stdout).strip()[-200:]}")
+
+
+def check_widgets(root, rep):
+    """E21 (ADR-0037): run tools/test_widgets.py from this gate's own tools/ directory: each widget.js's `compute`
+    against its fixture, which its Python twin writes. Without node the run is skipped with one warning, like E17."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    tool = os.path.join(here, "test_widgets.py")
+    if not os.path.isfile(tool):
+        return
+    out = subprocess.run([sys.executable, "-I", tool], capture_output=True, text=True)
+    m = re.search(r"^TEST widgets: (\d+) checks, (\d+) failed", out.stdout, re.M)
+    rep.count("E21", int(m.group(1)) if m else 1)
+    for line in out.stdout.splitlines():
+        if line.startswith("FAIL "):
+            rep.err("E21", "tools/test_widgets.py", 1, line[5:])
+        elif line.startswith("SKIP node"):
+            rep.warn("E21", "tools/test_widgets.py", 0, "skipped, widget.js not run against its fixtures: " + line[10:].strip())
+    if not m or (out.returncode and not rep.errors.get("E21")):
+        rep.err("E21", "tools/test_widgets.py", 1, f"self-tests failed (exit {out.returncode}): "
+                f"{(out.stderr or out.stdout).strip()[-200:]}")
 
 
 def staged_snapshot(root, also, dest):

@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""Self-tests of the scripted widgets (ADR-0037, plan 0070 Phase 11; gate rule E21).
+
+Usage: python3 -I tools/test_widgets.py
+
+For each folder tools/widgets/<name>/ (widget.js, widget.json, fixture.json): the fixture is what the Python twin
+(tools/widgets/twins.py) computes now; and, when node is on PATH, widget.js's `compute` gives, for every fixture
+case, exactly the fixture's outputs. Without node the second part is skipped with one line `SKIP node ...` and the
+gate warns (like E17). The rng widget's first case is also compared with the randomness page's worked example
+(Init 12345, Range 100: 87, low 015B2E77, high 0000141D). Prints `TEST widgets: N checks, M failed`.
+"""
+import atexit
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+WIDGETS = os.path.join(HERE, "widgets")
+sys.path.insert(0, WIDGETS)
+import twins  # noqa: E402
+
+checks, failed = 0, []
+
+
+def ok(cond, what):
+    global checks
+    checks += 1
+    if not cond:
+        failed.append(what)
+        print(f"FAIL {what}")
+
+
+def node_run(folder, fixture_path=None, js_path=None):
+    """-> (outputs list, error). widget.js is copied to a scratch .mjs so node reads it as a module."""
+    node = shutil.which("node")
+    tmp = tempfile.mkdtemp(prefix="widget-test-")
+    try:
+        mod = os.path.join(tmp, "widget.mjs")
+        shutil.copyfile(js_path or os.path.join(folder, "widget.js"), mod)
+        cmd = [node, os.path.join(WIDGETS, "run_fixture.mjs"), mod, os.path.join(folder, "widget.json"),
+               fixture_path or os.path.join(folder, "fixture.json")]
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if p.returncode:
+            return None, (p.stderr.strip().splitlines() or ["node failed"])[-1][:200]
+        return json.loads(p.stdout), ""
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def copy_mjs(folder):
+    """widget.js copied to a scratch .mjs (a module for node); the file is removed with the interpreter's temp dir."""
+    d = tempfile.mkdtemp(prefix="widget-smoke-")
+    atexit.register(shutil.rmtree, d, True)
+    dst = os.path.join(d, "widget.mjs")
+    shutil.copyfile(os.path.join(folder, "widget.js"), dst)
+    return dst
+
+
+def main():
+    have_node = bool(shutil.which("node"))
+    if not have_node:
+        print("SKIP node: not on PATH, widget.js not run against its fixtures")
+    for name in twins.widget_dirs():
+        folder = os.path.join(WIDGETS, name)
+        data = json.load(open(os.path.join(folder, "widget.json"), encoding="utf-8"))
+        fx = os.path.join(folder, "fixture.json")
+        ok(os.path.isfile(fx), f"{name}: fixture.json exists")
+        if not os.path.isfile(fx):
+            continue
+        fixture = json.load(open(fx, encoding="utf-8"))
+        ok(open(fx, encoding="utf-8").read() == json.dumps(twins.fixture(name, data), indent=1) + "\n",
+           f"{name}: fixture.json is what the Python twin computes (python3 -I tools/widgets/twins.py write)")
+        ok(len(fixture["cases"]) >= 5, f"{name}: the fixture has edge cases")
+        if name == "rng":
+            r = fixture["cases"][0]["expect"]["rows"][0]
+            ok((r["result"], r["low"], r["high"]) == (87, 0x015B2E77, 0x0000141D),
+               "rng: the first case is the randomness page's worked example")
+            ok(any(c["inputs"]["n"] < 1 for c in fixture["cases"]), "rng: a case with n below 1 (no draw)")
+        if not have_node:
+            continue
+        outs, err = node_run(folder)
+        ok(outs is not None, f"{name}: node ran widget.js ({err})")
+        if outs is None:
+            continue
+        ok(len(outs) == len(fixture["cases"]), f"{name}: one output per case")
+        for i, (got, c) in enumerate(zip(outs, fixture["cases"])):
+            ok(got == c["expect"], f"{name}: case {i} {c['inputs']}: compute differs from the twin")
+        # mount builds its controls with DOM calls only; a stand-in page runs it (no browser) and types into the inputs
+        sm = subprocess.run([shutil.which("node"), os.path.join(WIDGETS, "smoke_mount.mjs"), copy_mjs(folder),
+                             os.path.join(folder, "widget.json")], capture_output=True, text=True, timeout=60)
+        try:
+            res = json.loads(sm.stdout)
+        except ValueError:
+            res = {}
+            print("FAIL " + name + ": mount smoke test: " + ((sm.stderr.strip().splitlines() or ["no output"])[-1][:160]))
+        ok(res.get("inputs", 0) >= 1 and len(res.get("rows", [])) >= 2 and bool(res.get("live")),
+           f"{name}: mount builds inputs, a table and the live region")
+        if name == "rng":
+            ok("Init(seed)" in " ".join(res.get("rows", [])) and "00003039" in " ".join(res.get("rows", [])),
+               "rng: mount shows Init(seed) and the typed seed in the table")
+            ok("87" in " ".join(res.get("rows", [])) and "87" in (res.get("live") or ""),
+               "rng: typing seed 12345 and range 100 shows the worked example's first draw, 87")
+        # the harness itself: a changed fixture is caught
+        tmp = tempfile.mkdtemp(prefix="widget-test-")
+        try:
+            bad = json.loads(json.dumps(fixture))
+            bad["cases"][0]["expect"]["rows"][0]["result"] += 1
+            bp = os.path.join(tmp, "fixture.json")
+            json.dump(bad, open(bp, "w"))
+            o2, _ = node_run(folder, fixture_path=bp)
+            ok(o2 is not None and o2[0] != bad["cases"][0]["expect"], f"{name}: a wrong expected value is a difference")
+            # a widget that gives another answer is caught: the multiplier changed
+            js = open(os.path.join(folder, "widget.js"), encoding="utf-8").read()
+            jp = os.path.join(tmp, "w.js")
+            open(jp, "w", encoding="utf-8").write(js.replace("low % n", "(low + 1) % n"))
+            o3, _ = node_run(folder, js_path=jp)
+            open(jp, "w", encoding="utf-8").write(js.replace('return make(document.createElement("td"), text);', "return td(text);"))
+            bm = subprocess.run([shutil.which("node"), os.path.join(WIDGETS, "smoke_mount.mjs"), jp, os.path.join(folder, "widget.json")],
+                                capture_output=True, text=True, timeout=60)
+            ok(name != "rng" or bm.returncode != 0 or '"rows":[]' in bm.stdout, "rng: a mount that recurses forever is caught by the smoke test")
+            ok(o3 is not None and o3 != [c["expect"] for c in fixture["cases"]], f"{name}: a changed widget.js differs")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    print(f"TEST widgets: {checks} checks, {len(failed)} failed")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,27 @@
+{
+  "marker": "widget-only/1",
+  "name": "rng",
+  "rule": { "multiplier": "6AC690C5", "initHigh": 666 },
+  "inputs": {
+    "seed": { "min": 0, "max": 4294967295, "default": 12345 },
+    "n": { "min": -5, "max": 2147483647, "default": 100 },
+    "draws": { "min": 1, "max": 12, "default": 5 }
+  },
+  "seeds": { "rows": "toy", "items": [12345, 1, 0, 4294967295] },
+  "text": {
+    "intro": "Type a seed and a range; the table lists the seed after each draw. The seed offered first is illustrative.",
+    "seedLabel": "Seed (an input of our own)",
+    "nLabel": "Range n (draws are low mod n; below 1 draws nothing)",
+    "drawsLabel": "Number of draws",
+    "presetLabel": "Illustrative seeds",
+    "presetNone": "choose one",
+    "columns": { "rows": "toy", "items": ["Draw", "Operation", "Result", "low after (hex)", "high after (hex)"] },
+    "initName": "Init(seed)",
+    "rangeName": "Range(n)",
+    "noDraw": "0, no draw",
+    "liveHead": "Seed",
+    "liveN": "range",
+    "liveLow": "Last low:",
+    "note": "Computed by our model of the generator, not observed in the game."
+  }
+}

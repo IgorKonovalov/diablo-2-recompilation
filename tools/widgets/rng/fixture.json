@@ -1,0 +1,777 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "seed": 12345,
+    "n": 100,
+    "draws": 1
+   },
+   "expect": {
+    "seed": 12345,
+    "n": 100,
+    "draws": 1,
+    "start": {
+     "low": 12345,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 87,
+      "low": 22752887,
+      "high": 5149
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12345,
+    "n": 100,
+    "draws": 5
+   },
+   "expect": {
+    "seed": 12345,
+    "n": 100,
+    "draws": 5,
+    "start": {
+     "low": 12345,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 87,
+      "low": 22752887,
+      "high": 5149
+     },
+     {
+      "k": 2,
+      "drew": true,
+      "result": 64,
+      "low": 2337785264,
+      "high": 9490055
+     },
+     {
+      "k": 3,
+      "drew": true,
+      "result": 71,
+      "low": 1617882871,
+      "high": 975072394
+     },
+     {
+      "k": 4,
+      "drew": true,
+      "result": 25,
+      "low": 4008788125,
+      "high": 674806599
+     },
+     {
+      "k": 5,
+      "drew": true,
+      "result": 68,
+      "low": 3081094168,
+      "high": 1672034936
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12345,
+    "n": 0,
+    "draws": 3
+   },
+   "expect": {
+    "seed": 12345,
+    "n": 0,
+    "draws": 3,
+    "start": {
+     "low": 12345,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": false,
+      "result": 0,
+      "low": 12345,
+      "high": 666
+     },
+     {
+      "k": 2,
+      "drew": false,
+      "result": 0,
+      "low": 12345,
+      "high": 666
+     },
+     {
+      "k": 3,
+      "drew": false,
+      "result": 0,
+      "low": 12345,
+      "high": 666
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12345,
+    "n": -5,
+    "draws": 3
+   },
+   "expect": {
+    "seed": 12345,
+    "n": -5,
+    "draws": 3,
+    "start": {
+     "low": 12345,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": false,
+      "result": 0,
+      "low": 12345,
+      "high": 666
+     },
+     {
+      "k": 2,
+      "drew": false,
+      "result": 0,
+      "low": 12345,
+      "high": 666
+     },
+     {
+      "k": 3,
+      "drew": false,
+      "result": 0,
+      "low": 12345,
+      "high": 666
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12345,
+    "n": 8,
+    "draws": 4
+   },
+   "expect": {
+    "seed": 12345,
+    "n": 8,
+    "draws": 4,
+    "start": {
+     "low": 12345,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 7,
+      "low": 22752887,
+      "high": 5149
+     },
+     {
+      "k": 2,
+      "drew": true,
+      "result": 0,
+      "low": 2337785264,
+      "high": 9490055
+     },
+     {
+      "k": 3,
+      "drew": true,
+      "result": 7,
+      "low": 1617882871,
+      "high": 975072394
+     },
+     {
+      "k": 4,
+      "drew": true,
+      "result": 5,
+      "low": 4008788125,
+      "high": 674806599
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12345,
+    "n": 7,
+    "draws": 4
+   },
+   "expect": {
+    "seed": 12345,
+    "n": 7,
+    "draws": 4,
+    "start": {
+     "low": 12345,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 3,
+      "low": 22752887,
+      "high": 5149
+     },
+     {
+      "k": 2,
+      "drew": true,
+      "result": 3,
+      "low": 2337785264,
+      "high": 9490055
+     },
+     {
+      "k": 3,
+      "drew": true,
+      "result": 3,
+      "low": 1617882871,
+      "high": 975072394
+     },
+     {
+      "k": 4,
+      "drew": true,
+      "result": 6,
+      "low": 4008788125,
+      "high": 674806599
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 0,
+    "n": 1,
+    "draws": 12
+   },
+   "expect": {
+    "seed": 0,
+    "n": 1,
+    "draws": 12,
+    "start": {
+     "low": 0,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 0,
+      "low": 666,
+      "high": 0
+     },
+     {
+      "k": 2,
+      "drew": true,
+      "result": 0,
+      "low": 3365183618,
+      "high": 277
+     },
+     {
+      "k": 3,
+      "drew": true,
+      "result": 0,
+      "low": 3979650335,
+      "high": 1403592407
+     },
+     {
+      "k": 4,
+      "drew": true,
+      "result": 0,
+      "low": 101162930,
+      "high": 1659881787
+     },
+     {
+      "k": 5,
+      "drew": true,
+      "result": 0,
+      "low": 2286800181,
+      "high": 42194286
+     },
+     {
+      "k": 6,
+      "drew": true,
+      "result": 0,
+      "low": 1389268791,
+      "high": 953806905
+     },
+     {
+      "k": 7,
+      "drew": true,
+      "result": 0,
+      "low": 2900825484,
+      "high": 579453411
+     },
+     {
+      "k": 8,
+      "drew": true,
+      "result": 0,
+      "low": 3468957343,
+      "high": 1209912173
+     },
+     {
+      "k": 9,
+      "drew": true,
+      "result": 0,
+      "low": 112632776,
+      "high": 1446875637
+     },
+     {
+      "k": 10,
+      "drew": true,
+      "result": 0,
+      "low": 3113884381,
+      "high": 46978271
+     },
+     {
+      "k": 11,
+      "drew": true,
+      "result": 0,
+      "low": 3463303408,
+      "high": 1298777413
+     },
+     {
+      "k": 12,
+      "drew": true,
+      "result": 0,
+      "low": 3876752885,
+      "high": 1444517423
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 1,
+    "n": 2147483647,
+    "draws": 12
+   },
+   "expect": {
+    "seed": 1,
+    "n": 2147483647,
+    "draws": 12,
+    "start": {
+     "low": 1,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 1791398751,
+      "low": 1791398751,
+      "high": 0
+     },
+     {
+      "k": 2,
+      "drew": true,
+      "result": 791599131,
+      "low": 791599131,
+      "high": 747178749
+     },
+     {
+      "k": 3,
+      "drew": true,
+      "result": 671516612,
+      "low": 671516612,
+      "high": 330169957
+     },
+     {
+      "k": 4,
+      "drew": true,
+      "result": 917157946,
+      "low": 3064641593,
+      "high": 280084454
+     },
+     {
+      "k": 5,
+      "drew": true,
+      "result": 1070044100,
+      "low": 3217527747,
+      "high": 1278238622
+     },
+     {
+      "k": 6,
+      "drew": true,
+      "result": 716489901,
+      "low": 716489901,
+      "high": 1342006271
+     },
+     {
+      "k": 7,
+      "drew": true,
+      "result": 461901089,
+      "low": 2609384736,
+      "high": 298842470
+     },
+     {
+      "k": 8,
+      "drew": true,
+      "result": 799281927,
+      "low": 2946765574,
+      "high": 1088354461
+     },
+     {
+      "k": 9,
+      "drew": true,
+      "result": 1735982140,
+      "low": 3883465787,
+      "high": 1229073434
+     },
+     {
+      "k": 10,
+      "drew": true,
+      "result": 2061464962,
+      "low": 4208948609,
+      "high": 1619763945
+     },
+     {
+      "k": 11,
+      "drew": true,
+      "result": 1818205998,
+      "low": 1818205998,
+      "high": 1755520347
+     },
+     {
+      "k": 12,
+      "drew": true,
+      "result": 1096186818,
+      "low": 3243670465,
+      "high": 758359847
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 4294967295,
+    "n": 7,
+    "draws": 12
+   },
+   "expect": {
+    "seed": 4294967295,
+    "n": 7,
+    "draws": 12,
+    "start": {
+     "low": 4294967295,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 4,
+      "low": 2503569877,
+      "high": 1791398084
+     },
+     {
+      "k": 2,
+      "drew": true,
+      "result": 0,
+      "low": 3435198893,
+      "high": 1044219891
+     },
+     {
+      "k": 3,
+      "drew": true,
+      "result": 1,
+      "low": 419232276,
+      "high": 1432795245
+     },
+     {
+      "k": 4,
+      "drew": true,
+      "result": 6,
+      "low": 2419485137,
+      "high": 174858583
+     },
+     {
+      "k": 5,
+      "drew": true,
+      "result": 1,
+      "low": 24583980,
+      "high": 1009148788
+     },
+     {
+      "k": 6,
+      "drew": true,
+      "result": 1,
+      "low": 2992775248,
+      "high": 10253790
+     },
+     {
+      "k": 7,
+      "drew": true,
+      "result": 1,
+      "low": 2519487342,
+      "high": 1248263718
+     },
+     {
+      "k": 8,
+      "drew": true,
+      "result": 2,
+      "low": 3699708364,
+      "high": 1050858944
+     },
+     {
+      "k": 9,
+      "drew": true,
+      "result": 6,
+      "low": 114575292,
+      "high": 1543120127
+     },
+     {
+      "k": 10,
+      "drew": true,
+      "result": 3,
+      "low": 1494685867,
+      "high": 47788480
+     },
+     {
+      "k": 11,
+      "drew": true,
+      "result": 6,
+      "low": 1908497751,
+      "high": 623422069
+     },
+     {
+      "k": 12,
+      "drew": true,
+      "result": 6,
+      "low": 2864737896,
+      "high": 796019848
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 4294967295,
+    "n": 4294967295,
+    "draws": 2
+   },
+   "expect": {
+    "seed": 4294967295,
+    "n": 2147483647,
+    "draws": 2,
+    "start": {
+     "low": 4294967295,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 356086230,
+      "low": 2503569877,
+      "high": 1791398084
+     },
+     {
+      "k": 2,
+      "drew": true,
+      "result": 1287715246,
+      "low": 3435198893,
+      "high": 1044219891
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 2863311530,
+    "n": 256,
+    "draws": 6
+   },
+   "expect": {
+    "seed": 2863311530,
+    "n": 256,
+    "draws": 6,
+    "start": {
+     "low": 2863311530,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 108,
+      "low": 3100702572,
+      "high": 1194265389
+     },
+     {
+      "k": 2,
+      "drew": true,
+      "result": 73,
+      "low": 548548937,
+      "high": 1293279382
+     },
+     {
+      "k": 3,
+      "drew": true,
+      "result": 195,
+      "low": 174382531,
+      "high": 228795576
+     },
+     {
+      "k": 4,
+      "drew": true,
+      "result": 199,
+      "low": 215055303,
+      "high": 72733623
+     },
+     {
+      "k": 5,
+      "drew": true,
+      "result": 218,
+      "low": 3641967578,
+      "high": 89697925
+     },
+     {
+      "k": 6,
+      "drew": true,
+      "result": 71,
+      "low": 2458273095,
+      "high": 1519036885
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": -3,
+    "n": 99999999999,
+    "draws": 40
+   },
+   "expect": {
+    "seed": 0,
+    "n": 2147483647,
+    "draws": 12,
+    "start": {
+     "low": 0,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": true,
+      "result": 666,
+      "low": 666,
+      "high": 0
+     },
+     {
+      "k": 2,
+      "drew": true,
+      "result": 1217699971,
+      "low": 3365183618,
+      "high": 277
+     },
+     {
+      "k": 3,
+      "drew": true,
+      "result": 1832166688,
+      "low": 3979650335,
+      "high": 1403592407
+     },
+     {
+      "k": 4,
+      "drew": true,
+      "result": 101162930,
+      "low": 101162930,
+      "high": 1659881787
+     },
+     {
+      "k": 5,
+      "drew": true,
+      "result": 139316534,
+      "low": 2286800181,
+      "high": 42194286
+     },
+     {
+      "k": 6,
+      "drew": true,
+      "result": 1389268791,
+      "low": 1389268791,
+      "high": 953806905
+     },
+     {
+      "k": 7,
+      "drew": true,
+      "result": 753341837,
+      "low": 2900825484,
+      "high": 579453411
+     },
+     {
+      "k": 8,
+      "drew": true,
+      "result": 1321473696,
+      "low": 3468957343,
+      "high": 1209912173
+     },
+     {
+      "k": 9,
+      "drew": true,
+      "result": 112632776,
+      "low": 112632776,
+      "high": 1446875637
+     },
+     {
+      "k": 10,
+      "drew": true,
+      "result": 966400734,
+      "low": 3113884381,
+      "high": 46978271
+     },
+     {
+      "k": 11,
+      "drew": true,
+      "result": 1315819761,
+      "low": 3463303408,
+      "high": 1298777413
+     },
+     {
+      "k": 12,
+      "drew": true,
+      "result": 1729269238,
+      "low": 3876752885,
+      "high": 1444517423
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12345,
+    "n": -99,
+    "draws": 0
+   },
+   "expect": {
+    "seed": 12345,
+    "n": -5,
+    "draws": 1,
+    "start": {
+     "low": 12345,
+     "high": 666
+    },
+    "rows": [
+     {
+      "k": 1,
+      "drew": false,
+      "result": 0,
+      "low": 12345,
+      "high": 666
+     }
+    ]
+   }
+  }
+ ]
+}
