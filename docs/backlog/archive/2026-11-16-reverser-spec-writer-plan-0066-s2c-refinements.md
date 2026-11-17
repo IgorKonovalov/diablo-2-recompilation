@@ -2,14 +2,17 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: [../plans/0066-simulation-inferred-claims-sweep.md, ../plans/0066-inventory/skills-missiles.md, ../findings/skills/0002-missiles.md]
-resolution: ""
+status: done
+context:
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/0066-inventory/skills-missiles.md
+  - ../../findings/skills/0002-missiles.md
+resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): part 1 applied the missiles, catalogue and README items; part 2 the dispatch items: constants 22 (StateDo147Attached's state-114 lookup), C's durability path (the defender's, [I]), I4's 13 mastery callers, E1–E2's bit-6 writers and readers with the client-range counts, mode 14's start MonModeStartSeq clearing bit 6 (entry table, A2, E2, M1, note 6), I1's 0x005D8B10 in SkillDo75GrimWard's range, in [skills/dispatch](../../specs/skills/dispatch.md)."
 ---
 
 Plan 0066 batch S2c (`lane/n66q`, part 1) found one correction and some refinements in the skills specs. They are for
 Phase 3, when the specs are re-tagged. None of them blocks the re-tag of the raised rows. The anchors and counts are in
-[skills/0002 § 15](../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q)
+[skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q)
 and `workspace/logs/n66q/s2c/check-s2c-p1.txt`.
 
 - **Correction, skills/missiles entry-points table (inventory row 2):** "A missile is created at a point (quests,
@@ -31,7 +34,7 @@ and `workspace/logs/n66q/s2c/check-s2c-p1.txt`.
 - skills/dispatch E1 (rows 56–57; part 2 below corrects the owner of the clear: it is `sub_005A7870_MonModeStartSeq`, 0x005A7884, not `MonModeStartKnockback`): the bit-6 clear,
   and 44 of the 124 set sites and 7 of the 17 clear sites are in client-range functions.
 
-**2026-11-16, S2c part 2 (`lane/n66q`).** More rewordings for Phase 3. The evidence is [skills/0002 § 16](../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q) and `check-s2c-p2.txt`.
+**2026-11-16, S2c part 2 (`lane/n66q`).** More rewordings for Phase 3. The evidence is [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q) and `check-s2c-p2.txt`.
 - skills/dispatch E2, its reimplementation note and the entry table (rows 57 and 193, **contradicted in part**): the
   "AI sets bit 6, its mode start does not clear it, so the do runs only through the attack-frame handler and the
   `+0x4E` = 4 case" holds for modes 4, 5, 7, 8, 9 and 16–20 (`MonModeStartSkill`, frame `MonAttackFrame`). Mode 14's

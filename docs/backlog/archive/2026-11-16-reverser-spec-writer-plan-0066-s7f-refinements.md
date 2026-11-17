@@ -7,7 +7,7 @@ context:
   - ../../findings/frame/0001-tick-and-messages.md#10-plan-0066-batch-s7f-constants-tables-and-the-net-queue-with-a-second-tool-2026-11-16-lanen66o
   - ../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o
   - ../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o
-resolution: "Done 2026-11-16 in plan 0066 Phase 3, frame cluster (lane/n66pf): sim/frame's type-list row names its five readers; drlg/lifecycle § G's +0x20 only with link type 1 and the two clears, the item record's unread +0x08; path/search L2 for any h0 and L3's type-16 draw; path/README E4's 10 and 14 with creation's 4 [log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-frame-cluster-re-tagged-spec-writer-lanen66pf)"
+resolution: "Done 2026-11-16 in plan 0066 Phase 3, frame cluster (lane/n66pf): sim/frame's type-list row names its five readers; drlg/lifecycle § G's +0x20 only with link type 1 and the two clears, the item record's unread +0x08; path/search L2 for any h0 and L3's type-16 draw; path/README E4's 10 and 14 with creation's 4 [log](../../plans/done/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-frame-cluster-re-tagged-spec-writer-lanen66pf)"
 ---
 
 Plan 0066 batch S7f (`lane/n66o`) settled 35 rows with a second tool: 27 raised, 8 raised in part, none contradicted.

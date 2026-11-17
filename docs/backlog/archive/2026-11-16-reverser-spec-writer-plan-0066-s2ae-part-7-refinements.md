@@ -2,15 +2,18 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/skills/0002-missiles.md", "../specs/skills/dispatch.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+  - ../../specs/skills/dispatch.md
+resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): items 1–4 in [skills/dispatch](../../specs/skills/dispatch.md) C7, N2 (the pseudocode rewritten: type 45 test, stackable first, ItemHasDurability, the wrapped sign test) and the § K rows 26 and 27."
 ---
 
 Plan 0066 batch S2ae part 7 (`lane/n66sa`, run:2026-11-16-sweep2-s2ae7) raised skills/dispatch row 40 (C7,
 `ItemChargesOk`) whole and rows 130, 131 (§ K, handlers 26 and 27), 156 (N2) and 181 (§ P, weapon wear) in part. For
 Phase 3 to carry when the skills cluster is re-tagged (claims and anchors in
-[skills/0002 § 23](../findings/skills/0002-missiles.md#23-plan-0066-batch-s2ae-part-7-skills_itemchargesok-skillweaponwear-and-handlers-26-and-27-emulated-2026-11-16-lanen66sa)),
+[skills/0002 § 23](../../findings/skills/0002-missiles.md#23-plan-0066-batch-s2ae-part-7-skills_itemchargesok-skillweaponwear-and-handlers-26-and-27-emulated-2026-11-16-lanen66sa)),
 the spec says less than the code in these places:
 
 1. **C7.** A null unit or entry is refused (0); no inventory, or an entry whose item guid is −1, passes. The level in

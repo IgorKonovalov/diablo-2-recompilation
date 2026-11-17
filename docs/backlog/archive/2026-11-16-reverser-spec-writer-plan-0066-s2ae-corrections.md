@@ -2,14 +2,16 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: [../plans/0066-simulation-inferred-claims-sweep.md, ../findings/skills/0002-missiles.md]
-resolution: ""
+status: done
+context:
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): items 1 and 4 in skills/missiles (part 1); items 2 (C5's null refusals and restricted test), 3 (L5's SummonSetDataBytes copy, class 363's flag and class 364's step) and 5 (I4's Kick maximum tail call, [C]) in [skills/dispatch](../../specs/skills/dispatch.md) (part 2)."
 ---
 
 Plan 0066 batch S2ae (`lane/n66sa`) settled rows of skills/dispatch and skills/missiles by emulation
 (run:2026-11-16-sweep2-s2ae) and by earlier kept runs; the claims are in
-[skills/0002 § 17](../findings/skills/0002-missiles.md#17-plan-0066-batch-s2ae-part-1-leaf-functions-emulated-earlier-runs-re-read-the-routes-2026-11-16-lanen66sa).
+[skills/0002 § 17](../../findings/skills/0002-missiles.md#17-plan-0066-batch-s2ae-part-1-leaf-functions-emulated-earlier-runs-re-read-the-routes-2026-11-16-lanen66sa).
 Besides the re-tags listed in the plan log (Phase 3's), these texts need a change. Not blocking; for the skills
 cluster's Phase 3. Part 2 of the batch will append its own items here.
 

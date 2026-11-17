@@ -820,7 +820,7 @@ directory. The rows, and what each raise covers, are in the plan 0066 inventory 
   tell which unit the path runs for; the synergy calcs; the handler's unit for a draw.
 - **Contradicted in part (missiles row 2):** no shrine function calls `MissileCreateAt`, and the row's list leaves out
   the two monster-AI callers. The refinements are in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
 
 ### 16. Plan 0066 batch S2c part 2: bit 6, the flag bits, packets and the creators (2026-11-16, `lane/n66q`)
 
@@ -899,7 +899,7 @@ rows are the plan 0066 inventory files' Route cells "S2c 2026-11-16 (part 2)". T
 
 ### 17. Plan 0066 batch S2ae part 1: leaf functions emulated, earlier runs re-read, the routes (2026-11-16, `lane/n66sa`)
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (the skills dispatch and missiles
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (the skills dispatch and missiles
 emulation batch), part 1. The emulated claims are maps of the named function on declared inputs (ADR-0015), compared with
 `tools/skills_s2ae_emu.py`'s model over the kept run ([run:2026-11-16-sweep2-s2ae](experiments.md#run2026-11-16-sweep2-s2ae),
 `check.txt`, 14 100 cases, 0 mismatches); brackets give separating control counts (`sep`, each with `passed` 0) and the
@@ -1265,7 +1265,7 @@ separating control counts (`sep`, each with `passed` 0).
   `passed` 0; over the 1 593 cases that reach the bit test, it predicts the target's state wrongly in 1 433 (`split.txt`,
   every cell except the two mode-12 ones). Only the mode-12 rows agree with D2. What the bit means is not given by this
   code (review-fixes 1): the map above is the claim. Routed to the spec-writer (backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements`](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements.md)).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements.md)).
   (0x0056CCF0–0x0056CD35, run:2026-11-16-sweep2-s2ae5)
 - [C] *m75 (H, callback `0x005D40F0`), to `PathPlan`.* `sub_005D40F0_MissCbReseedFromArg` (`ECX` the new missile,
   `EDX` the argument; plain `ret`) returns at once for a null unit [`unit_nz` 1 500]. Otherwise the range `r` (data

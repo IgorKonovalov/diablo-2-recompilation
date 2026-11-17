@@ -258,6 +258,23 @@ review section 1) and run:2026-11-04-path-2, `tools/path.py`'s `parse` and `eval
   461 at `d²` ≤ 324 (all ≤ 317) switching to type 1, 1 at `d²` > 360 not switching. No short plan has `d²` 318–360, so
   the 324/325 edge itself is not separated: `[I]`. (fn:sub_00679ED0_PathPlanGreedyNear@0x00679ED0)
 
+### 11. Leap or Leap Attack at 0x005DA00C (2026-11-17, `lane/fur`)
+
+Static only. It answers item 1 of backlog
+[`2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count`](../../backlog/archive/2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count.md).
+
+- [I] **The plans returning to 0x005DA00C are "Leap or Leap Attack", not one skill.** 0x005DA00C is the return of
+  `PathPlan`'s call at 0x005DA007 in `sub_005D9F70_LeapAttackPath`. Two calls reach that helper, and nothing else
+  does: one in do 77, skill 132 Leap (0x005DA45B), and one in do 78, skill 143 Leap Attack (0x005DA868). The reading
+  is in [skills/0012 § 7](../skills/0012-barbarian.md#7-sub_005d9f70_leapattackpath-is-shared-by-leap-and-leap-attack-2026-11-17-lanefur).
+  Three labels here are therefore too narrow: § 2's type-9 row ("Leap"), § 2's label line, and § 10's "Leap
+  Attack's `0` / `0` (400, 0x005DA00C)". Each should read "Leap or Leap Attack". § 2's label line also names
+  `SkillDo89Jump` (0x005CB940) for type 9. That is a different function, and none of the logged type-9 plans returned
+  into it (§ 2's Callers cell: 0x005DA00C for all 54). Which of the two skills made each logged plan is not
+  separated by this reading. The `path-bar` character has both skills (`tools/d2s_recipes/path-bar.json`, [experiments](experiments.md)). The
+  plans' counts and masks stand as logged. (fn:sub_005D9F70_LeapAttackPath@0x005D9F70, 0x005DA007, 0x005DA45B,
+  0x005DA868)
+
 ## Data touched
 
 `workspace/logs/path/2026-11-04-path-*` (21 logs of 60.0 MB, 21 `marks.tsv`, three `status.json` with `info.json`, the pilot transcript and screenshots under `-shots/`, `2026-11-04-path-check.txt`, `2026-11-04-path-tools.sha256`, `manifest-2026-11-04-path.sha256`);

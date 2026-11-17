@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../plans/0066-inventory/README.md
   - ../../findings/combat/0001-formulas.md
   - ../../findings/combat/experiments.md

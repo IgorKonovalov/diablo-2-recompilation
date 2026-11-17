@@ -2,17 +2,17 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../findings/ai/experiments.md
-  - ../plans/0066-inventory/monsters-ai-machinery.md
-  - ../plans/0066-inventory/monsters-ai-README.md
-resolution: ""
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/ai/experiments.md
+  - ../../plans/0066-inventory/monsters-ai-machinery.md
+  - ../../plans/0066-inventory/monsters-ai-README.md
+resolution: "Plan 0066 Phase 3, monsters/ai cluster part 1 (lane/n66ai): items 1–5 in the specs: machinery B7a (the nine helpers) and the entry-point row, an Open questions line for MonSetMode's A1/A2 draws (item 2, [I]), README H4 and machinery T20c raised with row 20 in H1's table, README E8a, README C2a and the worked example ([README](../../specs/monsters/ai/README.md), [machinery](../../specs/monsters/ai/machinery.md))."
 ---
 
 Phase 3 of plan 0066 (monsters/ai cluster): corrections and refinements found by batch S1m (`lane/n66m1`,
-[run:2026-11-16-sweep2-s1m](../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)), to take when the machinery and
+[run:2026-11-16-sweep2-s1m](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)), to take when the machinery and
 README specs are re-tagged. Not blocking.
 
 1. **Machinery entry points and B7 (inventory machinery row 3).** `MonSetMode` is called directly by nine AI helpers

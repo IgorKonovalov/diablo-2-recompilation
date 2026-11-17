@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md#implementation-log
 resolution: "Tier B check 2026-11-16: accept with fixes (1, stale cross-reference); lifecycle 11 stays class c; merged into main."
 ---
 

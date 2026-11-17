@@ -2,16 +2,20 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/skills/0002-missiles.md", "../specs/skills/dispatch.md", "../specs/skills/missiles.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+  - ../../specs/skills/dispatch.md
+  - ../../specs/skills/missiles.md
+resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): items 1–3 in [skills/dispatch](../../specs/skills/dispatch.md) D2 (the contradiction carried: the target clear by +0xC4 bit 1 and TargetCorpse as a table, the 'dead' name dropped; the three TargetableOnly tests in order; UNIT_GetTargetUnit's re-find), [C]; items 4–6 in skills/missiles H and H1 (part 1)."
 ---
 
 Plan 0066 batch S2ae part 5 (`lane/n66sa`, run:2026-11-16-sweep2-s2ae5) raised skills/dispatch row 47
 (`SKILLS_TargetCheck`, D2) whole with one **contradiction**, skills/missiles row 77 (callback `0x005CD110`) whole, and
 rows 75 (callback `0x005D40F0`) and 82 in part. For Phase 3 to carry when the skills cluster is re-tagged (claims and
 anchors in
-[skills/0002 § 21](../findings/skills/0002-missiles.md#21-plan-0066-batch-s2ae-part-5-skills_targetcheck-and-two-re-seed-callbacks-emulated-2026-11-16-lanen66sa)):
+[skills/0002 § 21](../../findings/skills/0002-missiles.md#21-plan-0066-batch-s2ae-part-5-skills_targetcheck-and-two-re-seed-callbacks-emulated-2026-11-16-lanen66sa)):
 
 1. **Contradiction, skills/dispatch D2 (`TargetCheck`'s target clear):** D2 says a dead target (`+0xC4` bit 1) is
    kept only by a `TargetCorpse` skill and otherwise cleared, other targets kept. The emulated map (0x0056CCF0–

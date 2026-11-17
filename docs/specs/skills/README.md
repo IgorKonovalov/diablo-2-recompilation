@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, data/calc, combat/overview, stats/states, monsters/spawn, monsters/stats, drlg/collision, path/overview, path/search]
 consumed_by: [combat/overview, combat/delivery, stats/states, items/economy, monsters/stats, rng/seeds, monsters/ai/overview]
-tags: {C: 26, I: 25, L: 1}
-updated: 2026-11-04
+tags: {C: 36, I: 22, L: 1}
+updated: 2026-11-16
 ---
 
 # Skills and missiles: the machinery
@@ -57,7 +57,7 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 
 | When | Function | Tag |
 |---|---|---|
-| A player asks to use a skill | fn:PLRMSG_SkillAtXY@0x00549AD0, fn:PLRMSG_SkillAtUnit@0x00549BA0 | [I] |
+| A player asks to use a skill | fn:PLRMSG_SkillAtXY@0x00549AD0, fn:PLRMSG_SkillAtUnit@0x00549BA0 | [C] 4 344 code-0 request calls from both functions' sites, each followed by the player's start of the same skill in the same frame (run:2026-10-27-skills, [skills/experiments, S2a](../../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b)) |
 | A skill mode starts | fn:SKILLS_SrvStart@0x0056F640 | [C] for the caster's seed (run:2026-10-25-skills: 1 142 start events) |
 | A skill mode reaches its action frame | fn:SKILLS_SrvDo@0x0056F7F0 | [C] for the caster's seed (run:2026-10-25-skills: 1 269 do events) |
 | A missile is created | fn:sub_0059FA30_MissileCreate@0x0059FA30 | [C] (run:2026-10-25-skills: 31 391) |
@@ -107,7 +107,7 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 | start | [dispatch § D](dispatch.md#d-the-mode-start) | the start function's: a start-built hit's to-hit and build on the caster, defence on the target | [C] the machinery adds none (run:2026-10-25-skills) |
 | do | [dispatch § E](dispatch.md#e-the-do-frame-and-skills_srvdo) | the do function's, the delivery's, the missile creations' | [C] the machinery adds none (run:2026-10-25-skills) |
 | cost and delay | [dispatch § F, § G](dispatch.md#f-costs) | none; the delay ends at `f + d` | [C] (run:2026-10-25-skills, run:2026-10-27-skills) |
-| finisher | [dispatch § J](dispatch.md#j-progressive-charges-and-the-finisher) | the entries' on the attacker, area units, local seeds | [I] (fn:COMBAT_PrgFinisher@0x005D5220) |
+| finisher | [dispatch § J](dispatch.md#j-progressive-charges-and-the-finisher) | the entries' on the attacker, area units, local seeds | [C] the attacker's and the local seeds in the 18 charged finisher calls (entry 143 one step each; entry 39 one step and 48 creations on a local seed; entry 38 the elemental roll after the delivery; run:2026-10-27-skills, [skills/experiments, S2a](../../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b)); [I] the area units' seeds and entries 36, 37, 40, 41, which no session reached (fn:COMBAT_PrgFinisher@0x005D5220) |
 | handler | [dispatch § K](dispatch.md#k-stat-event-handlers) | the handler's unit | [C] for the handlers § K marks (run:2026-10-27-skills); [I] otherwise (data:g_StatEventFuncs@0x007325B0) |
 | state 52 | [dispatch § K3](dispatch.md#k-stat-event-handlers) | none | [C] (fn:sub_0057D810_PreventHealHook@0x0057D810, run:2026-10-27-skills) |
 | summon | [dispatch § L](dispatch.md#l-summons) | game (one step), then the new unit's `MonStatsInit` draws; Raise Skeleton one step of the caster | [C] for 219 summons and the step at class 363, level 20 (run:2026-10-25-skills, run:2026-10-27-skills) |
@@ -131,15 +131,17 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 - B4. **The stat-event handlers step their unit's seed by their own draws**: 1 303 handler calls of both runs and the
   3 461 fires of earlier combat runs, 0 mismatches ([dispatch § K](dispatch.md#k-stat-event-handlers)). [C]
   (data:g_StatEventFuncs@0x007325B0, run:2026-10-27-skills)
-- B5. The finisher had no checked chained pairs (its 56 calls were oracles in run:2026-10-25-skills); its draw order is
-  the reading. [I] (fn:COMBAT_PrgFinisher@0x005D5220)
+- B5. **The finisher chains the attacker's seed through its entries**: in the 18 charged calls the seed at entry is the
+  first entry's and the seed at return the last entry's, and the 311 uncharged calls leave it unchanged. [C]
+  (fn:COMBAT_PrgFinisher@0x005D5220, run:2026-10-27-skills, [skills/experiments, S2a](../../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b)) The draw order of entries 36, 37, 40 and 41, which
+  no session reached, is the reading. [I] (fn:COMBAT_PrgFinisher@0x005D5220)
 
 ### C. Branches
 
 | Branch | Where | What changes | Tag |
 |---|---|---|---|
-| player against monster | costs, ammunition, delay, the request checks | players only; a monster reaches the start and do through its AI with bit 6 set | [C] for the payment and the request codes 0, 1, 6 and 8 (run:2026-10-25-skills, run:2026-10-27-skills); [I] otherwise (fn:SKILLS_SetDelayState@0x0056EF90) |
-| player against monster | missile to-hit | `SkillMissileCreate` passes a to-hit only for a monster owner | [I] (fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0) |
+| player against monster | costs, ammunition, delay, the request checks | players only; a monster in modes 4, 5, 7, 8 and 9 reaches the start and do through its AI with bit 6 set, while mode 14's start (`MonModeStartSeq`) clears it, so its frame runs the do on a code 1 or 2 as a player's does ([dispatch § E](dispatch.md#e-the-do-frame-and-skills_srvdo)) | [C] for the payment and the request codes 0, 1, 6 and 8 (run:2026-10-25-skills, run:2026-10-27-skills); [C] the delay players' only (613 of 613 delay lines), the request checks run for players only (4 367 calls), bit 6 set at 1 460 of 1 460 monster starts in modes 4–9 and clear at 566 of 566 in mode 14 (run:2026-10-27-skills, [skills/experiments, S2a](../../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b), [skills/experiments, S2a part 2](../../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-part-2-handler-effects-the-ai-command-ammunition-lanen66b)); [C] the clear at 0x005A7884 (fn:sub_005A7870_MonModeStartSeq@0x005A7870, [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q)); [I] ammunition, which no skills log records (fn:SKILLS_SetDelayState@0x0056EF90) |
+| player against monster | missile to-hit | `SkillMissileCreate` passes a to-hit only for a monster owner | [C] its only `or 0x1000` (0x0056ED97) and `+0x48` store (0x0056ED9E) sit behind the owner-type-1 test and a non-zero stat 19 (0x0056ED84–0x0056ED95), two decoders; no player creation of 92 094 carried one (fn:sub_0056ECB0_SkillMissileCreate@0x0056ECB0, [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q)) |
 | player against monster | town | a player's missile ends when the player is in town; a monster's only with `SrcTown` | [I] (fn:sub_005ADBB0_MissileDoFrame@0x005ADBB0) |
 | difficulty | Static Field, curse lengths, summon MonLvl stats | the difficulty record's `+0x40`, `+0x1C`; MonLvl by difficulty | [I] (fn:sub_005C9800_SorSkillStaticMin@0x005C9800, fn:sub_005C49E0_SummonSetLevel@0x005C49E0) |
 | difficulty, expansion, player count | the request, checks, start, do, costs, creation, frame and hit as read | none of their own; a monster skill hit's terms are `MonAttackStats`' | [I] (fn:SKILLS_SrvDo@0x0056F7F0, fn:sub_0064B860_MissileDamageBlock@0x0064B860) |
@@ -150,7 +152,12 @@ truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 Queued combat hits and missile packets for [combat](../combat/README.md), timed states for
 [stats/states](../stats/states.md), summoned monsters for [monsters/spawn](../monsters/spawn.md) and
 [monsters/stats](../monsters/stats.md), `0x40` cell marks for [drlg/collision](../drlg/collision.md), ammunition and
-durability changes for [items/economy](../items/economy.md). [I] (fn:SKILLS_SrvDo@0x0056F7F0, fn:MISSILE_HitUnit@0x005ADF10)
+durability changes for [items/economy](../items/economy.md). [C] the hits, missiles, timed states and summons inside
+the events ([dispatch § P](dispatch.md#p-draws-and-seeds-per-event-kind)); ammunition: 130 `PLAYER_UseAmmo` calls from
+the skill missile creation (0x0056EDB5) each take one off the thrown weapon (run:2026-10-17-economy, [skills/experiments, S2a part 2](../../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-part-2-handler-effects-the-ai-command-ammunition-lanen66b)); the
+server's `0x40` cell writers are `MissileCreate` (a `Collision` row's path mark mask, 0x0059FD54–0x0059FD64), mdo 3
+(0x005AE504) and mdo 5 (0x005AE5DD), and `MISSILE_HitUnit` (0x005AE1B1–0x005AE1CB) and mdo 31 (0x005B0325) unmark it
+(static, [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q)). [I] the durability changes (fn:SKILLS_SrvDo@0x0056F7F0, fn:MISSILE_HitUnit@0x005ADF10)
 
 ## Worked example
 
@@ -160,13 +167,22 @@ run:2026-10-25-skills. [C] (run:2026-10-25-skills, fn:sub_005C49E0_SummonSetLeve
 
 ## Reimplementation notes
 
-- **Run the frame pass in order**: missiles, players, monsters, objects, the fifth list. [I]
+- **Run the frame pass in order**: missiles, players, monsters, objects, the fifth list. [C] the missiles' walk before
+  the players' and monsters' events, the players' slot walk before the monsters' (3 007 pairs), one object event kind
+  after both (run:2026-11-03-frame-order, [sim/frame D7](../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners));
+  [I] the objects' place in general and the fifth list, which no logged walk ranks
   (fn:sub_005414D0_GameRunUnitEvents@0x005414D0)
 - **Do not merge the two critical chains.** The missile's starts with stat 337, drawn even at 0
   ([missiles](missiles.md#reimplementation-notes) note 3). [C] (fn:sub_0064A850_MissileCritRoll@0x0064A850,
-  run:2026-10-25-skills) That chain is not the melee build's. [I] (fn:sub_0064A850_MissileCritRoll@0x0064A850,
-  fn:COMBAT_BuildDamage@0x0057B7D0)
-- **Keep the request counter**: stat 328 seeds every pierce count. [I] (0x00549D50)
+  run:2026-10-25-skills) That chain is not the melee build's: `MissileCritRoll`'s two references are calls in
+  `MissileDamageBlock`, whose one caller is `MissileInitDamage`, and `COMBAT_BuildDamage`'s direct-call closure
+  (520 functions) reaches neither. [C] (static, fn:sub_0064A850_MissileCritRoll@0x0064A850,
+  fn:COMBAT_BuildDamage@0x0057B7D0, [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q))
+- **Keep the request counter**: stat 328 seeds every pierce count. [C] stat 328 rises by the request count between
+  observations (1 660 separating pairs) and seeds the pierce count (856 creations) (0x00549D50, run:2026-10-27-skills,
+  run:2026-10-25-skills, [skills/experiments, S2a](../../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b))
+  That it rises before the request checks, so that a refused request still changes later pierce counts, is
+  [dispatch](dispatch.md#reimplementation-notes) note 1's reading. [I] (0x00549D50)
 
 ## Evidence
 

@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../plans/0066-inventory/README.md
 resolution: "Tier A review 2026-11-16: accept with fixes (4: overclaim 2, stale cross-reference 1, miscount 1); skills/missiles C2 left for S2ae with combat/0001 § 22 as evidence; merged into main."
 ---

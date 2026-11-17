@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../wiki/combat.md
   - ../../wiki/characters.md
 resolution: "Refreshed wiki/combat against combat/README, to-hit, damage, reductions and delivery (raises stated at strength; the deadly-strike, defence-of-0, sanctuary, stat 120 sign, crushing-blow cap, freeze x·4 and poison-roll corrections followed) and wiki/characters' party rows (the MonAttackStats player-count bonus seen in play); skills' missile crit chain sentence aligned with combat § B."

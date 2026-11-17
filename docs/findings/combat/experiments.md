@@ -669,7 +669,7 @@ lightning flat absorb that `abs-nm-marsh` was to reach.
 
 ## run:2026-11-15-sweep2-s5b
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5b (`lane/n66j`): static second
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5b (`lane/n66j`): static second
 sources for the 24 class-c rows of the combat specs. No game, no wine, no Ghidra. The claims are in
 [combat/0001 § 18](0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b).
 
@@ -698,7 +698,7 @@ sources for the 24 class-c rows of the combat specs. No game, no wine, no Ghidra
 
 ## run:2026-11-16-sweep2-s5e
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 1 (`lane/n66t`): the combat
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 1 (`lane/n66t`): the combat
 reduction and to-hit leaf functions run under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021),
 compared with `tools/` models. No game, no wine. The claims are in
 [combat/0001 § 19](0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e).
@@ -757,7 +757,7 @@ compared with `tools/` models. No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s5e2
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 2 (`lane/n66t`): the stat
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 2 (`lane/n66t`): the stat
 events, the player's life tick and `COMBAT_BuildDamage` under Ghidra's p-code emulator on the pinned image (ADR-0015,
 ADR-0021), compared with `tools/` models. No game, no wine. The claims are in
 [combat/0001 § 20](0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2).
@@ -824,7 +824,7 @@ ADR-0021), compared with `tools/` models. No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s5e3
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 3 (`lane/n66t`): the
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 3 (`lane/n66t`): the
 defence roll with a player's shield, `UNIT_GetDefense` and the `COMBAT_ApplyDamage` prologue under Ghidra's p-code
 emulator on the pinned image (ADR-0015, ADR-0021), compared with `tools/` models, plus one recount of a kept log check.
 No game, no wine. The claims are in
@@ -890,7 +890,7 @@ No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s5fe
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5fe (`lane/n66w`): the missile
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5fe (`lane/n66w`): the missile
 critical chain and the progressive finisher's entry tests under Ghidra's p-code emulator on the pinned image
 (ADR-0015, ADR-0021), compared with a `tools/` model, plus objdump reads of the call sites the record cites. No game,
 no wine. The claims are in
@@ -940,3 +940,28 @@ no wine. The claims are in
   the entries, `UnitMsgA3`, the free), 0x00645720's used-skill path, `MissileDamageBlock` itself, who calls these
   functions with which units, and the meaning of every offset read (each keeps its own tag). The static reads cover
   the instructions listed in `static.txt` and nothing they call.
+
+## run:2026-11-17-fur-bit4000
+
+Backlog [`2026-11-15-…-s5a-result-bit-0x4000`](../../backlog/archive/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md)
+(`lane/fur`): a re-check of the kept S5a combat logs. No game, no wine, no Ghidra. The claims are in
+[combat/0001 § 23](0001-formulas.md#23-result-bit-0x4000-its-three-writers-on-the-missile-path-and-the-537-logged-ones-2026-11-17-lanefur).
+
+- **Question:** which missile rows carry result bit `0x4000` at `AD0`, and with which Missiles `GetHit`, `SoftHit`
+  and `KnockBack` bits?
+- **Setup:** `tools/fur_bit4000.py` (sha256 `949dbdfe…`) subclasses `tools/sweep2_s5a.py`'s `S5` (`104ce037…`,
+  unchanged), which runs `tools/combat.py`'s `Checker` (`da1d8afd…`) unchanged. For each md event with an `AD0` line
+  it counts the result word by the event's missile row (`mrec`), with that row's Missiles record (`Tables.mi`) byte
+  `+0x04` bits 6 and 7 and byte `+0xAE`.
+- **Procedure** (from the worktree root):
+  ```
+  systemd-run --user --scope -p MemoryMax=4G python3 -I tools/fur_bit4000.py workspace/logs/combat/c37r-run2.lst \
+    workspace/logs/combat/p47h-run.lst workspace/logs/combat/p47b-run.lst --no-shield-log <the nine p47h logs of S5a> \
+    > workspace/logs/fur/check-bit4000.txt
+  (cd workspace/logs/fur && sha256sum -c manifest.sha256)
+  ```
+- **Outputs:** `workspace/logs/fur/check-bit4000.txt` (`3ebb6fce…`, 43 lines, last line `BIT4000 total logs=74
+  events=11128 with_4000=537 mismatches=0`), listed in `manifest.sha256`, which passes from `workspace/logs/fur`.
+- **Result:** `0x4001 row=457 gethit=0 softhit=1 kb=0 | 491`, `0x4001 row=240 gethit=0 softhit=0 kb=0 | 46`,
+  `0x0001 row=240 … | 211`. No other line has `0x4000`. The per-word totals equal S5a's `AD0 result word` counts
+  (missile `0x1` 1 490, `0x5` 9 100, `0xD` 1, `0x4001` 537).

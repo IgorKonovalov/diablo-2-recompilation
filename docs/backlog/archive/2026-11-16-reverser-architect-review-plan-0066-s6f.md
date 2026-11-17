@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/anim/experiments.md
 resolution: "Tier B check 2026-11-16: accept with fixes (2); movement 22/43 to c-emu (H6d 19), timing 62 provisional in H6d pending S6g, timing 49 schedule half to S6g; merged into main."
 ---

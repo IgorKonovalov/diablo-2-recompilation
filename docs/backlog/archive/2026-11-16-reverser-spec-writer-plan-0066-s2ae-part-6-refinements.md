@@ -2,15 +2,18 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: ["../plans/0066-simulation-inferred-claims-sweep.md", "../findings/skills/0002-missiles.md", "../specs/skills/dispatch.md"]
-resolution: ""
+status: done
+context:
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/skills/0002-missiles.md
+  - ../../specs/skills/dispatch.md
+resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): all seven items in [skills/dispatch](../../specs/skills/dispatch.md) § K (handlers 8, 10, 18, 31 in the table, handler 9's formula in K2, K2's remainder list narrowed) and I4 (Kick's start [C], flag 2's meaning left to I1)."
 ---
 
 Plan 0066 batch S2ae part 6 (`lane/n66sa`, run:2026-11-16-sweep2-s2ae6) raised skills/dispatch row 93 (I4, Kick's
 start) whole and rows 117, 119, 124, 133, 135 and 178 (§ K, § P) in part, and moved rows 182 and 184 (§ P's
 Armageddon row and P2) to b. For Phase 3 to carry when the skills cluster is re-tagged (claims and anchors in
-[skills/0002 § 22](../findings/skills/0002-missiles.md#22-plan-0066-batch-s2ae-part-6-six-stat-event-handlers-and-kicks-start-emulated-the-open-routes-read-2026-11-16-lanen66sa)).
+[skills/0002 § 22](../../findings/skills/0002-missiles.md#22-plan-0066-batch-s2ae-part-6-six-stat-event-handlers-and-kicks-start-emulated-the-open-routes-read-2026-11-16-lanen66sa)).
 No contradiction. Not blocking.
 
 1. **K, handler 18** (refinement): the code adds more than "for a demon victim, life `+= stat · 256`". It returns 0

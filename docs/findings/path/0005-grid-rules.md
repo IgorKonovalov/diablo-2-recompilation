@@ -85,6 +85,16 @@ No game ran it. `tools/test_path.py`'s `Logger` class runs the file on a fake `g
 
 Order at a server monster's death: `SUNIT_SetMode(0)`, then 0x005A6520 (called at 0x005A7019), then the drop (`MonDeathDrop`, called at 0x005A7027; corrected 2026-11-04, `lane/scol` review, which read "0x005A7019 onward"). (fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0, fn:sub_005A6830_MonDeathDrop@0x005A6830) The two client `C` rows are by `tools/corpse_copy.py`; the two server rows by run:2026-11-04-path-2's `COR` lines ([path/0006](0006-holdout.md)). 0x005A65D9 includes the callers 0x005A7019 and 0x005A73A6, the second met by run:2026-10-21-chain2's dead re-creations.
 
+## Addendum 2026-11-17: the flight at 0x005D9F9C is Leap's or Leap Attack's (`lane/fur`)
+
+- [I] **L1's "Leap's flight sets the path mask to 0 (0x005D9F9C)" holds for both leaps.** 0x005D9F9C is
+  `PATH_SetMarkMask(path, 0)` inside `sub_005D9F70_LeapAttackPath`, after `PathSetCollMask(path, 0)` at 0x005D9F94.
+  That helper is called only from do 77 (Leap, 0x005DA45B) and do 78 (Leap Attack, 0x005DA868), so the site is the
+  flight of either skill
+  ([skills/0012 § 7](../skills/0012-barbarian.md#7-sub_005d9f70_leapattackpath-is-shared-by-leap-and-leap-attack-2026-11-17-lanefur)).
+  L1's two start-time marks stay per skill (Leap 0x005D9EF8, Leap Attack 0x005DA5D5).
+  (fn:sub_005D9F70_LeapAttackPath@0x005D9F70, 0x005D9F9C)
+
 ## Data touched
 
 `tbl:Objects.txt:HasCollision0`, `tbl:MonStats2.txt:deadCol`; `struct:DynPathColl+0x48`, `struct:DynPathColl+0x4C`.

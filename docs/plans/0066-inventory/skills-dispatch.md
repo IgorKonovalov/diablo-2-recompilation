@@ -3,6 +3,19 @@
 - **Spec:** [skills/dispatch](../../specs/skills/dispatch.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 195; the *Count* column sums to 195.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66sk`, 2026-11-16, the skills cluster, part 2): re-tagged.** The spec's front matter is now C 204 /
+  I 173 / L 10 (it was C 79 / I 205 / L 10 at `main` `b2fcbc3f`; plan 0068 P4 added 10 `[I]` that are not inventory
+  rows, C8's header and three bullets, four § K event-id bullets and two reimplementation notes, all kept `[I]`).
+  Statement `[C]` whole: rows 1, 2, 7–11, 18–25, 36–38, 40, 46, 48, 49, 56, 58, 60, 61, 68, 81, 82, 88, 91, 93, 116,
+  122, 124, 130, 137, 138, 142, 143, 149, 156, 173, 175, 176, 185, 194, 195 (48). Split, the `[C]` half and the
+  remainder `[I]` as the *Route* cell names: 5, 6, 26, 27, 29, 31, 39, 42–45, 50–55, 63, 65, 69, 70, 74–76, 79, 80, 85,
+  86, 90, 95, 98, 102–105, 107–109, 115, 117, 119, 129, 131, 133, 135, 139, 141, 145, 148, 151, 155, 157, 159–172,
+  177–179, 181, 186, 187, 190, 191 (74; rows 65 and 190 raise the unused payment result on S5b's read, their
+  remainders waiting on H2a). Corrected to the finding: 4, 57, 150, 193 (mode 14, whose start clears bit 6), 47 (D2's
+  target clear by `+0xC4` bit 1 and `TargetCorpse`), 125 (slow's stat 67 = −v) (6). Kept `[I]` (H2a, H2b, S2ae not
+  settled, S2c not settled, d-none, d-edit): 3, 12–17, 28, 30, 32–35, 41, 59, 62, 64, 66, 67, 71–73, 77, 78, 83, 84, 87,
+  89, 92, 94, 96, 97, 99–101, 106, 110–114, 118, 120, 121, 123, 126–128, 132, 134, 136, 140, 144, 146, 147, 152–154,
+  158, 174, 180, 182–184, 188, 189, 192 (67).
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|

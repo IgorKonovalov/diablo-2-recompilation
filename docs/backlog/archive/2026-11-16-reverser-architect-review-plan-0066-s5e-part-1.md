@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/combat/experiments.md
 resolution: "Tier B check 2026-11-16: accept with fixes (6); S5e whole merged into main; README 35 named not settled."
 ---

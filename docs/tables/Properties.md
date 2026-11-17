@@ -176,6 +176,10 @@ property columns. A **live** row passes its table's own filter: `uniqueitems` `e
   (uniq = uniqueitems, set = setitems `prop`, aprop = setitems `aprop`, mpre/msuf = magicprefix/magicsuffix, auto = automagic, qual = qualityitems.
   *min = max* counts the blocks whose `min` and `max` cells are equal; *non-numeric par* the blocks whose `par` is a
   name, such as a skill.)
+- `[C]` (plan 0066 S4e follow-up) The 36 `…/time` property codes are the 36 ItemStatCost stats with `op` 6 or 7 (of
+  359 named rows). Scanning every property-code column of `magicprefix`, `magicsuffix`, `automagic`, `uniqueitems`,
+  `setitems` (`prop`, `aprop`), `sets`, `runes` (`T1Code`), `gems` and `cubemain` (`mod`) finds one of the 36 in two
+  rows only: `magicsuffix` *of Dawn* and *of Sunlight*, both with `ac/time` in `mod1code` and a blank (0) `spawnable`.
 - `[C]` Rare paths on the drop path: func 18 (`ac/time`) is named only by two `magicsuffix` rows with `spawnable` 0,
   so no live drop-path row uses it; funcs 12, 24 and 36 have one row each, all uniques; func 13 (`dur%`) comes only
   from `qualityitems`, and func 23 (`ethereal`) only from four uniques.

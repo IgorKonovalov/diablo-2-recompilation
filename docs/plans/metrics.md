@@ -811,6 +811,21 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-16 | `lane/p70a` | 0070 | architect | 93 393 | 19 | 5 | — | accepted by owner (ADR-0035, plan approved) | 0 |
 | 2026-11-16 | `lane/n70m` | 0070 P1 | architect | 89 511 | 31 | 5 | — | mechanical done-when met; read in Phase 6 | 0 |
 | 2026-11-16 | lane/p70b | 0070 amend | architect | 96 468 | 23 | 5 | — | owner decisions recorded; ADR-0036 accepted on owner's word | 0 |
+| 2026-11-16 | lane/n66ne | 0066 S1ne p1 | reverser | 285 559 | 88 | 18 | ghidra-n66ne | Tier B accept (bdafe217) | 0 |
+| 2026-11-16 | lane/n66ne | 0066 S1ne p2 | reverser | 313 561 | 98 | 20 | ghidra-n66ne | Tier B accept (bdafe217) | 0 |
+| 2026-11-16 | lane/n66ne | 0066 S1ne p3 | reverser | 241 920 | 87 | 15 | ghidra-n66ne | Tier B accept (bdafe217) | 0 |
+| 2026-11-16 | lane/n66ne | 0066 S1ne review | architect | 56 703 | 14 | 1 | — | Tier B (Sonnet) accept | 0 |
+| 2026-11-16 | lane/n66sk | 0066 P3 skills p1 | spec-writer | 352 755 | 125 | 20 | — | accept (Sonnet, budget) | 0 |
+| 2026-11-16 | lane/n66sk | 0066 P3 skills p2 | spec-writer | 346 499 | 111 | 21 | — | accept (Sonnet, budget) | 0 |
+| 2026-11-16 | lane/n66sk | 0066 P3 skills review | architect | 69 169 | 20 | 2 | — | accept (Sonnet, downgraded from Tier A by budget) | 0 |
+| 2026-11-16 | lane/n66ai | 0066 P3 ai p1 | spec-writer | 265 799 | 103 | 17 | — | accept (Sonnet, budget) | 0 |
+| 2026-11-16 | lane/n66ai | 0066 P3 ai review | architect | 54 715 | 12 | 1 | — | accept (Sonnet, downgraded by budget) | 0 |
+| 2026-11-17 | lane/n66ai2 | 0066 P3 ai p2 | spec-writer | 257 590 | 103 | 18 | — | accept w/ fixes (Sonnet, budget) | 1 |
+| 2026-11-17 | lane/n66ai2 | 0066 P3 ai p2 review | architect | 82 601 | 17 | 3 | — | accept w/ fixes (Sonnet, budget) | 1 |
+| 2026-11-17 | lane/n66close | 0066 close | architect | 88 525 | 38 | 7 | — | inline check (orchestrator) | 0 |
+| 2026-11-17 | lane/fua | 0066 follow-ups | archivist | 83 113 | 35 | 4 | — | inline check (orchestrator) | 0 |
+| 2026-11-17 | lane/fur | 0066 follow-ups | reverser-static | 181 319 | 108 | 14 | — | accept (Sonnet) | 0 |
+| 2026-11-17 | lane/fur review | 0066 follow-ups | architect | 64 780 | 11 | 2 | — | accept (Sonnet) | 0 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

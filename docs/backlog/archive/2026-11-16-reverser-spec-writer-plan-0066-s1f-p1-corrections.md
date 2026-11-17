@@ -2,13 +2,15 @@
 from: reverser
 to: spec-writer
 date: 2026-11-16
-status: open
-context: [../plans/0066-simulation-inferred-claims-sweep.md, ../findings/ai/experiments.md]
-resolution: ""
+status: done
+context:
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/ai/experiments.md
+resolution: "2026-11-17, spec-writer (plan 0066 Phase 3, monsters/ai part 2, `lane/n66ai2`): items 2-4 in [monsters/ai/catalogue](../../specs/monsters/ai/catalogue.md): 2 Reimplementation note 3 names rows 4, 8, 15 and 122 through `AiLifePct` and `UnitLifePct`'s 38 calls (quirks Q515 with it); 3 R51a scopes `Skill8` to Diablo's records and adds 709 `uberbaal`; 4 R71a's eleven stores. Items 1, 5, 6 were part 1's."
 ---
 
 Plan 0066 batches S1f and S1o part 1 (`lane/n66x`, run:2026-11-16-sweep2-s1f in
-[findings/ai/experiments.md](../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)) found three statements of the
+[findings/ai/experiments.md](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f)) found three statements of the
 monsters/ai specs that the image does not support as written. For the Phase 3 re-tag of the AI cluster (spec-writer);
 not blocking.
 
@@ -42,3 +44,8 @@ not blocking.
    spec's 215 is not reproduced; reconcile it (getter list or walker), or write the scan's count with its scope. The sentence
    "no code in the image reads stat 89 by an immediate id" is tested for calls of those ten getters only. Inventory
    machinery row 19 (ruled raised in part at the check).
+
+*2026-11-16, spec-writer (plan 0066 Phase 3, monsters/ai cluster part 1, `lane/n66ai`):* items 1, 5 and 6 are in
+monsters/ai/machinery (T30a names row 65's writer; the § F `UModTeleportTry` row carries the two gated draws, and README
+F4 points to it; A9 is split at the scan's scope with the 205 against ai/0001's 215). Items 2, 3 and 4 are catalogue
+statements and wait for part 2 (the catalogue's re-tag); the entry stays open for them.

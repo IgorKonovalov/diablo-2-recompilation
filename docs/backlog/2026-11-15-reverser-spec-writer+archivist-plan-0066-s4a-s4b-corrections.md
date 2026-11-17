@@ -4,7 +4,7 @@ to: spec-writer, archivist
 date: 2026-11-15
 status: open
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
+  - ../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h
 resolution: ""
 ---
@@ -22,3 +22,5 @@ items/economy: F1 now names the 13 `nodurability` bases of a `Repair` type as 12
 (row 40, corrected); H3 lists the six monster-code `useAmmo` sites, values `[C]`, functions `[I]` (the spec never
 copied skills/0002's five entries; no spec, wiki page or table doc names 0x005A35D0). Item 3 (ItemTypes.md line 181)
 is the archivist's and keeps this entry open.
+
+**2026-11-17 (archivist, `lane/fua`).** Item 3 done: docs/tables/ItemTypes.md `ItemCanRepair` bullet now reads "the 13 `nodurability` bases of a `Repair` type (12 crossbows and the Phase Blade `7cr`)". The archivist half is complete; the entry stays open for nothing archivist-side (spec-writer items 1 and 2 were applied 2026-11-16, so it can be closed by the next lane that touches it).

@@ -1260,6 +1260,25 @@ drlg/lifecycle's; each bullet names the writer sites, then the reader sites.
   the restore's spawn chain (`SpawnWithId`'s flags, `SUnitPathCreate`'s marks) stays [I].
   (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, fn:sub_0052D160_NewRoomsUpdate@0x0052D160)
 
+### 16. `ItemPlaceOnGround`'s callers recounted: 12 calls in 10 functions (2026-11-17, `lane/fur`)
+
+Static only. It answers item 2 of backlog
+[`2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count`](../../backlog/archive/2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count.md).
+
+- [C] **Correction to § 13: the 12 calls lie in 10 functions, not 11.** The kept `check-s7a-p2.txt` (line 346,
+  `life12_placeonground`) lists the 12 call sites with their owners by `re/symbols.csv`. They are
+  `QUESTS_GiveItem` 0x005467B5, `DropGoldAmount` 0x0055A1CF, `DropEar` 0x0055A286, `BeltOverflow` 0x00560C82,
+  `CubeDropEmptied` 0x00563BC7, `CursorDrop` 0x00563CAD, `NPC_MenuAction` 0x0057A19A, 0x0057A46E and 0x0057A60B,
+  `CorpseOverflowDrop` 0x0057F61B, `PLAYER_CorpseCreate` 0x0057FA7D and `TargetBeltItemToGround` 0x005A3213. That
+  makes 10 distinct functions. The check's `functions=11` counts distinct `pad_entry` starts
+  (`tools/sweep2_s4cd.py`, the first byte after the nearest preceding `0xCC`), not symbol owners. It splits
+  `NPC_MenuAction` (0x00579D60, no other symbol up to 0x0057A800) in two. The `0xCC` that breaks the function is the
+  low byte of a `call` displacement, `e8 cc d9 0a 00` at 0x0057A3BF, so `pad_entry` returns 0x0057A3C1 for the second
+  and third sites and 0x00579D11 for the first (r2 `px` at 0x0057A3B0). Recounted with a second tool, a raw-byte
+  rel32/abs32 scan of the image: 12 `call`s (`E8`), no `jmp` and no 32-bit pointer to 0x00558AA0. The list and the
+  four callers § 13 adds are unchanged. What each caller drops stays the callers' reading.
+  (fn:sub_00558AA0_ItemPlaceOnGround@0x00558AA0, fn:NPC_MenuAction@0x00579D60, 0x0057A3BF)
+
 ## Data touched
 
 - tbl:Levels.txt:SaveMonsters (leveldefs `+0x94`), tbl:Levels.txt:MonWndr (`+0x2E`), Levels `+0x03` (act).

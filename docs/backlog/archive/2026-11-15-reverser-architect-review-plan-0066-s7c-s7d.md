@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-15
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md#implementation-log
   - ../../plans/0066-inventory/README.md#4-batch-list
 resolution: "Tier A audit 2026-11-16: accept with fixes (3: misread 2, omission 1); merged into main."
 ---

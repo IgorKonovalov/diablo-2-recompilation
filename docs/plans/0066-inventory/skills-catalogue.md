@@ -3,6 +3,20 @@
 - **Spec:** [skills/catalogue](../../specs/skills/catalogue.md), read at `main` `b5999f5e`.
 - **Front matter `I`:** 109; the *Count* column sums to 109.
 - Classes, batches and conventions as in [the inventory README](README.md#conventions).
+- **Phase 3 (`lane/n66sk`, 2026-11-16, the skills cluster): re-tagged.** The spec's front matter is now C 290 / I 94 / L 7 (it
+  was C 257 / I 109 / L 7 at `main` `b2fcbc3f`). Statement `[C]` whole: rows 3, 12, 14, 25, 36, 44, 57, 67, 74, 75, 98,
+  99, 104, 107, 108 (15). Split, the `[C]` half and the remainder `[I]` as the *Route* cell names: 1, 2, 4, 8, 10, 48,
+  53, 54, 58, 59, 73, 80, 87, 90, 96, 100 (16). Corrected to the finding: 43, 103 (2). Kept `[I]` (H2c, H2a, H2b, S2be
+  not settled, d-none): 5–7, 9, 11, 13, 15–24, 26–35, 37–42, 45–47, 49–52, 55, 56, 60–66, 68–72, 76–79, 81–86, 88, 89,
+  91–95, 97, 101, 102, 105, 106 (75). Row 43 (H5, do 6's `after:`) is corrected to S2be part 2's block order (the state
+  word after the stat pair, `[C]`; `ForUnitsInRange`'s hand-off and `STATE_ApplyTimed` `[I]`), row 103 (R4) to S2b's
+  check: the `srvmissile` rows 339, 340, 342, 345 and row 167 added, R4 now a `[C]` check, the unlogged steps' sources
+  `[I]`. Row 44 (H6) is `[C]` at `(n, calc3)` = (21, 2) only, as the S2b Tier B fix scoped it. Outside the rows, H9's
+  `after:` states do 13's return `[C]` beside row 47's kept `[I]` (one new `[C]`, review-fixes 8), and the open
+  question on Siege Beast Stomp's stock row is struck (rows 98, 99). The S2c refinements (the 9b tails and do-table
+  entry 37, the circle's truncation, the `SetSeedLow` writers, sandmaggot6 and 7, Smite's durability path) are written
+  in. Row 108 (note 8) raised: combat/delivery note 11's zero-count half is raised with it (one new `[C]` there), so
+  quirk Q50, which cites both notes, keeps `[I]` for the negative count each note now states at `[I]`.
 
 | # | Line | Section | Claim (excerpt) | Anchor | Class | Route or reason | Batch | Count |
 |---|---|---|---|---|---|---|---|---|
