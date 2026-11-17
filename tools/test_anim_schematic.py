@@ -6,10 +6,13 @@ Each tool runs in schematic mode in a child process with the art decoders blocke
 or maze_render raises, opening a .dt1, .dc6, .dcc or .pl2 file or anything under a palette folder raises, and the ds1
 tile-layer entry points (_Tiles, _scan_cells, ds1_files, and the "layers" key of a parsed file) raise. The preset-unit
 model (tools/drlg.py PresetUnitData.ds1) reads a DS1's object list and its floor0 cell values for the draw counts of
-the map scan, so the .ds1 file may be opened and that one caller may read the layers; no drawing code may.
+the map scan, so the .ds1 file may be opened and that one caller may read the layers; no drawing code may. The one
+other reader is ds1.room_warp_slots (the room boxes' warp marks, ADR-0036 ruling of plan 0070 Phase 7): its inner
+_scan_cells call and parse are admitted only under it, and the test checks that it returns a frozenset of ints, so no
+cell or coordinate reaches the drawing code.
 The run must succeed. Then: every output file carries the marker, schematic.json matches the files' sha256, the palette
 is ours, the full mode writes no marker and no schematic.json, and the steps (text and calculations) of the two modes
-are equal for the same arguments, apart from the lines that come from the art (warp lines, the icon line).
+are equal for the same arguments, apart from the lines that come from the art (the icon and name-card lines).
 """
 import hashlib
 import json
@@ -28,7 +31,7 @@ import anim_common  # noqa: E402
 
 BLOCKED = ("dt1", "dc6", "item_art", "palette", "maze_render")
 ART_SUFFIX = (".dt1", ".dc6", ".dcc", ".pl2")
-ART_LINES = ("Warp", "This preset holds a warp", "Inventory icon", "Name card")    # lines that come from the art
+ART_LINES = ("Inventory icon", "Name card")    # lines that come from the art
 
 
 def child(tool, args):
@@ -46,16 +49,35 @@ def child(tool, args):
 
     def no(*_a, **_k):
         raise RuntimeError("ds1 tile-layer entry point blocked")
-    for n in ("_Tiles", "_scan_cells", "ds1_files"):
+    for n in ("_Tiles", "ds1_files"):
         setattr(ds1, n, no)
-    real_parse = ds1.parse
+    real_parse, real_scan, real_slots = ds1.parse, ds1._scan_cells, ds1.room_warp_slots
+
+    def slots_caller(depth):
+        f = sys._getframe(depth)
+        return f.f_code.co_name == "room_warp_slots" and os.path.basename(f.f_code.co_filename) == "ds1.py"
+
+    def scan(f):
+        if not slots_caller(2):
+            raise RuntimeError("ds1._scan_cells outside ds1.room_warp_slots blocked")
+        return real_scan(f)
+    ds1._scan_cells = scan
+
+    def slots(data):
+        out = real_slots(data)
+        if not (isinstance(out, frozenset) and all(type(m) is int and 0 <= m < 8 for m in out)):
+            raise RuntimeError("ds1.room_warp_slots must return slot numbers only")
+        return out
+    ds1.room_warp_slots = slots
 
     def model_call(depth=2):
         """True when the caller is the preset-unit model of tools/drlg.py (PresetUnitData.ds1): it parses the DS1 for
         its object list (the map scan's keep/drop draws) and keeps a copy of floor0 in its cache. That is model input,
         not drawing; no other caller may parse a DS1 or read a layer."""
         f = sys._getframe(depth)
-        return f.f_code.co_name == "ds1" and os.path.basename(f.f_code.co_filename) == "drlg.py"
+        return ((f.f_code.co_name == "ds1" and os.path.basename(f.f_code.co_filename) == "drlg.py")
+                or (f.f_code.co_name in ("_scan_cells", "room_warp_slots")
+                    and os.path.basename(f.f_code.co_filename) == "ds1.py"))
 
     class Hidden(dict):
         """A dict whose secret keys are out of the mapping (no items, values, iteration or copy reaches them) and
