@@ -59,17 +59,17 @@ page glossary.md                  reference    2
 # which says the same two levels in plain words (Phase 6 review, 2026-11-17).
 alias wiki/how-we-know.md export/reading-the-tags.md
 
-# Cut 2: the reviewed specs that pass Phase 9 (plan 0070; review 2026-11-17), and those added at the review of
-# lane/x13a (2026-11-17, export readiness part A). One group per subsystem, after the wiki's groups. A spec
+# Cut 2: the reviewed specs that pass Phase 9 (plan 0070; review 2026-11-17), and those added at the reviews of
+# lane/x13a and lane/x13b (2026-11-17, export readiness parts A and B). One group per subsystem, after the wiki's groups. A spec
 # `README.md` takes the route stem `overview`. A reviewed spec missing here was left out at a review (the plan's log
-# names each with its reason): over 25 % of its words dropped (the builder's measure, Open questions sections counted)
-# rng/README, rng/seeds, data/strings, drlg/room-tiles, drlg/collision, monsters/spawn, monsters/ai/README,
-# objects/README (part B of the export-readiness entry); not whole: conformance/README (a guide to running our trace
-# set and checker, which the export does not ship).
+# names each with its reason): not whole: conformance/README (a guide to running our trace set and checker, which
+# the export does not ship).
+group spec-rng          10  Spec: Randomness
 group spec-data         11  Spec: Game data
 group spec-drlg         12  Spec: Level generation
 group spec-monsters     13  Spec: Monsters
 group spec-monster-ai   14  Spec: Monster AI
+group spec-objects      15  Spec: Objects
 group spec-items        16  Spec: Items
 group spec-player       17  Spec: Characters
 group spec-hirelings    18  Spec: Hirelings
@@ -84,8 +84,11 @@ group spec-save         26  Spec: Save files
 group spec-chain        27  Spec: Seed to world
 group spec-quirks       28  Spec: Quirks
 
+page specs/rng/README.md                      spec-rng          1  overview
+page specs/rng/seeds.md                       spec-rng          2
 page specs/data/README.md                     spec-data         1  overview
 page specs/data/excel.md                      spec-data         2
+page specs/data/strings.md                    spec-data         3
 page specs/data/calc.md                       spec-data         4
 
 page specs/drlg/README.md                     spec-drlg         1  overview
@@ -93,16 +96,21 @@ page specs/drlg/lifecycle.md                  spec-drlg         2
 page specs/drlg/preset.md                     spec-drlg         3
 page specs/drlg/maze.md                       spec-drlg         4
 page specs/drlg/outdoor.md                    spec-drlg         5
+page specs/drlg/room-tiles.md                 spec-drlg         6
 page specs/drlg/warps.md                      spec-drlg         7
+page specs/drlg/collision.md                  spec-drlg         8
 
 page specs/monsters/README.md                 spec-monsters     1  overview
 page specs/monsters/pool.md                   spec-monsters     2
+page specs/monsters/spawn.md                  spec-monsters     3
 page specs/monsters/special.md                spec-monsters     4
 page specs/monsters/stats.md                  spec-monsters     5
 
+page specs/monsters/ai/README.md              spec-monster-ai   1  overview
 page specs/monsters/ai/machinery.md           spec-monster-ai   2
 page specs/monsters/ai/catalogue.md           spec-monster-ai   3
 
+page specs/objects/README.md                  spec-objects      1  overview
 page specs/items/tc.md                        spec-items        1
 page specs/items/quality.md                   spec-items        2
 page specs/items/affixes.md                   spec-items        3
@@ -158,15 +166,17 @@ page specs/chain/README.md                    spec-chain        1  overview
 page specs/quirks/README.md                   spec-quirks       1  overview
 
 # Tables over 20 body rows allowed (X6), each named by its header's source line with a reason (Phase 9 rulings).
-# Left out, so dropped whole by the builder: monsters/special 381 (its Weights and xfer columns copy MonUMod's
-# rows), quirks 673 (community-claim verdicts) and 730 (the specs' coverage, repository bookkeeping), items/vendors
-# 658 (the gambling list by level: item-table content). Ruled for a page not in this cut: monsters/ai/README 536 out
-# (a per-think evidence record); objects/README 51 would be named (a column index).
+# Left out, so dropped whole by the builder: quirks 673 (community-claim verdicts) and 730 (the specs' coverage,
+# repository bookkeeping), items/vendors 658 (the gambling list by level: item-table content), monsters/ai/README 537
+# (a per-think evidence record). monsters/special § D (once 381, with Weights and xfer columns copied from MonUMod's
+# rows) holds only our handler and draw readings since lane/x13b and is named below.
 table specs/drlg/maze.md           709   the worked example's draw-by-draw steps (our own step table)
 table specs/drlg/outdoor.md        124   our index of the generators' constant tables: names and shapes, no values
 table specs/items/cube.md          1017  worked example 1's draw-by-draw steps (our own step table)
 table specs/items/properties.md    410   our decision table of the property handlers: draws and writes per func
+table specs/objects/README.md      51    our index of the table columns the objects code reads (a schema, no rows)
 table specs/monsters/pool.md       53    our index of the table columns the pool reads (a schema, no rows)
+table specs/monsters/special.md    384   our per-mod table of server handlers and draws (the MonUMod values are the table doc's)
 table specs/monsters/special.md    58    our index of the table columns special monsters read (a schema, no rows)
 table specs/path/README.md         62    the path record's fields (in-memory offsets, owner decision 2026-11-17)
 table specs/quirks/README.md       77    our quirk entries, group 1 (statements, not game rows)

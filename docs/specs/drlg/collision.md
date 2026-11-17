@@ -30,8 +30,8 @@ line of sight read the same grid. They are named here, not specified.
 | A bit-2 merge re-picks or hides a tile of an active neighbour | fn:sub_0064C860_TileCollisionUpdate@0x0064C860 (from fn:sub_0066E740_Bit2TileMerge@0x0066E740) | [C] the call, with the active room (run:2026-10-27-sweep-collision, 37 calls); [I] its write into an active neighbour, § B (fn:sub_0064C860_TileCollisionUpdate@0x0064C860) |
 | A unit is created with create flag bit 0: its path and its mark | fn:sub_00554850_SUnitPathCreate@0x00554850 → fn:PATH_DynamicCreate@0x00649D00, fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-14-collision (410 monster creations) | [C] |
 | A monster's post-create pattern refresh | fn:sub_005543B0_MonAlignSet@0x005543B0 → fn:sub_00554340_MonAlignPatternRefresh@0x00554340 → fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, run:2026-10-14-collision (410 of 410 creations) | [C] |
-| A monster dies (corpse mark), by copy of the grid: [§ F5](#f5-corpse-marks-by-copy-of-the-grid) | server: fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0 → fn:sub_005A6520_MonDeathCorpseMark@0x005A6520 → fn:sub_00649F70_UnitCorpseColl@0x00649F70 at 0x005A65D9, run:2026-11-04-path-2 (1 527 `COR` lines); client: the same callee at 0x004B05E3 and 0x004B0A05, run:2026-10-14-collision (408 `DC` lines of the tests 0x004B05DB and 0x004B09FB, over 202 unit addresses; lines, not deaths) | [C] |
-| A player dies (corpse mark), on the server | `UnitCorpseColl(unit, 1)` at 0x0057F367, which did not fire in run:2026-11-04-path-2 | [I] |
+| A monster dies (corpse mark), by copy of the grid: [§ F5](#f5-corpse-marks-by-copy-of-the-grid) | server: `MonDeathEvent` → `MonDeathCorpseMark` → `UnitCorpseColl` (fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0, fn:sub_005A6520_MonDeathCorpseMark@0x005A6520, fn:sub_00649F70_UnitCorpseColl@0x00649F70, 0x005A65D9), 1 527 `COR` lines in the second path run (run:2026-11-04-path-2); client: the same callee from two sites, 408 `DC` lines in the collision run of the two tests before them, over 202 unit addresses, lines, not deaths (run:2026-10-14-collision, 0x004B05E3, 0x004B0A05, 0x004B05DB, 0x004B09FB) | [C] |
+| A player dies (corpse mark), on the server | `UnitCorpseColl(unit, 1)` at 0x0057F367, which did not fire in the second path run (run:2026-11-04-path-2) | [I] |
 | A preset room's logic regions, by `Logicals` | fn:sub_0066CCB0_LogicBoxSingle@0x0066CCB0, fn:sub_0066D110_LogicRegionsFromDs1@0x0066D110; the selection run:2026-10-13-drlg-preset, the flood run:2026-10-14-collision (378 floods) | [C] |
 | Position tests of the population pass | fn:sub_0064D9B0_CollisionTest@0x0064D9B0, fn:sub_0061B130_LogicRegionIdAt@0x0061B130, fn:sub_005FD350_SpawnClassCellTest@0x005FD350, fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-14-collision (all calls of 360 pass rooms) | [C] |
 | `spawnCol` 1 placement (the frog demons) | fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision (195 calls) | [C] |
@@ -110,29 +110,30 @@ line of sight read the same grid. They are named here, not specified.
 
 ### Inputs and oracles
 
-The reproduction (run:2026-10-14-collision) works at boundary B, which the architect ruled at plan 0017 Phase 1. The
+The reproduction (run:2026-10-14-collision) works at boundary B (plan 0017 Phase 1). The
 tile half of the grid is modelled at activation and compared cell for cell. The marks made inside the population pass
-and the predicates are modelled on a grid snapshot taken at pass entry. The rest comes from the log as an
-[ADR-0004](../../adrs/0004-boundary-oracles-in-reproduction.md) input. A reimplementation supplies each row from its
+and the predicates are modelled on a grid snapshot taken at pass entry. The rest comes from the log as a boundary input
+([ADR-0004](../../adrs/0004-boundary-oracles-in-reproduction.md)). A reimplementation supplies each row from its
 owner. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-14-collision,
 [drlg/0005 § 13](../../findings/drlg/0005-collision.md#13-phase-2-reproduction-run2026-10-14-collision))
 
 | Input | Kind | What it holds | Owner | Tag |
 |---|---|---|---|---|
 | grid snapshot at pass entry (`0x0054EC90`) | value oracle | the cells, rectangles and near lists of the pass room and of every room within two hops. It is the activation grid of § A plus every mark made before the pass: preset units and objects, players, monsters that walked in, items, the server's corpse marks ([§ F5](#f5-corpse-marks-by-copy-of-the-grid)). The non-gating R3 check: over 360 pass rooms the snapshot differs from the activation model in 1685 cells, 1620 of them explained by the logged preset and object marks; the 65 left in 15 rooms are unit bits (`0x80`, `0x1080`, `0x100`, `0x1100`), no tile bit. Still a value input of the composition (chain/0001 oracle 20): with every chain model in, the composed grid equals the snapshot in 4 723 of 4 883 pass rooms of run:2026-10-21-chain2, the residue unit bits only ([chain/0003 § 4](../../findings/chain/0003-end-to-end-run.md#4-oracle-20s-residue-by-bit)) | this spec (§ A, § F), `objects`, `drlg/preset`, runtime units | [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, run:2026-10-14-collision, run:2026-10-21-chain2) |
-| tile entries at activation: the tile of each entry and its entry flags | modelled, [drlg/room-tiles](room-tiles.md) | which DT1 tile each floor, wall and shadow entry holds (the rarity pick) and its flags `+0x14`. 5600 tile records were checked against their DT1 files, 0 differ. The flag word follows from the room's cells by [room-tiles step 9d](room-tiles.md#algorithm), which reproduces every entry of every activation dump (3 684 791 entries on the 40 logs with `OD0` and `LSUB` lines, 1 786 086 more on run:2026-10-15-objects, 0 mismatches), so the flags are no longer a logged input of this spec | [drlg/room-tiles](room-tiles.md) | [C] (fn:COLL_StampTileList@0x0064C790, fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, run:2026-10-14-collision, run:2026-10-15-objects, [drlg/0002 § Entry flags](../../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15)) |
+| tile entries at activation: the tile of each entry and its entry flags | modelled, [drlg/room-tiles](room-tiles.md) | which DT1 tile each floor, wall and shadow entry holds (the rarity pick) and its flags `+0x14`. 5600 tile records were checked against their DT1 files, 0 differ. The flag word follows from the room's cells by [room-tiles step 9d](room-tiles.md#algorithm), which reproduces every entry of every activation dump (3 684 791 entries on the 40 logs with `OD0` and `LSUB` lines, 1 786 086 more on the objects run, 0 mismatches), so the flags are no longer a logged input of this spec | [drlg/room-tiles](room-tiles.md) | [C] (fn:COLL_StampTileList@0x0064C790, fn:sub_0066DB20_RoomTileSetFlags@0x0066DB20, run:2026-10-14-collision, run:2026-10-15-objects, [drlg/0002 § Entry flags](../../findings/drlg/0002-room-build-draws.md#entry-flags-in-full-and-the-entry-chains-plan-0027-phase-2-2026-10-15)) |
 | near list at activation | runtime state | which near rooms were active when the room was activated (§ A step 1), so the activation order | [drlg/overview](README.md), [drlg/room-tiles](room-tiles.md), the game's room activation | [C] (fn:DUNGEON_NearRoomsBuild@0x00619800, run:2026-10-14-collision) |
 | logic-box grids of the snapshot rooms | DRLG state | the box list and box grid that `LogicRegionIdAt` reads. The flood that builds them (§ G) is checked separately at its exit, 378 floods | this spec (§ G), [drlg/preset](preset.md) (`Logicals`) | [C] (fn:sub_0066CA50_LogicBoxesFromGrid@0x0066CA50, run:2026-10-14-collision) |
 | barrier grid of the flood | input | the `(w+1)·(h+1)` barrier cells of `LOGIC_BarrierGridBuild` | this spec (§ G2; the rule reproduces every logged grid, but the checker still reads it from the log) | [C] (fn:LOGIC_BarrierGridBuild@0x0066C870, run:2026-10-14-collision) |
-| level warp points | modelled, [drlg/warps § E](warps.md#e-warp-points) | the level's warp points (`level+0x1E0`, `+0x204`, count `+0x228`), predicted from the build's room flags at all 1646 `NearWarpTest` calls (levels 4, 29, 38, 44, 76, 77, 78, 106). At the 254 calls in levels 4 and 44 the outdoor room's point was logged until plan 0026; it now follows from the out room's flags ([outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)) | [drlg/warps](warps.md); outdoor rooms' bits [drlg/outdoor](outdoor.md) | [C] (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor) |
+| level warp points | modelled, [drlg/warps § E](warps.md#e-warp-points) | the level's warp points (`level+0x1E0`, `+0x204`, count `+0x228`), predicted from the build's room flags at all 1646 `NearWarpTest` calls (levels 4, 29, 38, 44, 76, 77, 78, 106). At the 254 calls in levels 4 and 44 the outdoor room's point was logged until an earlier phase (plan 0026); it now follows from the out room's flags ([outdoor.md § B](outdoor.md#b-the-cell-grid-and-its-bits)) | [drlg/warps](warps.md); outdoor rooms' bits [drlg/outdoor](outdoor.md) | [C] (fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor) |
 | type-11 point | input | the level's waypoint point that `LevelPointFind` returns, logged at each `NearWarpTest` that reaches it | [drlg/warps § D](warps.md#d-room-flags-and-level-points-from-a-preset-instance) (the point list), `objects` (the waypoint fallback) | [C] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, run:2026-10-14-collision) |
-| object marks and `COLL_WHTest` at the object call sites | modelled, this spec (§ E6, § F) and [objects](../objects/README.md) | the object marks of the presets/objects window and the results of `COLL_WHTest` at the object placers' call sites. Both are predicted on the grid model: the objects model of [objects](../objects/README.md) gives each object's class, position and mode, § F makes its mark and § E6 answers its tests. On run:2026-10-15-objects all 5859 tests (5767 placer tests with boxes `size + 2`, `+ 6`, `+ 7` and masks `0x3F11`, `0xC01`, plus 92 1×1 gold-pile tests; 4816 blocked, 1043 free) and all 1847 object marks (1835 inside a window, 12 under preset monsters) are predicted, 0 mismatches. The marks that stay logged there are the monsters' (checked by the population model); the gold drop's items (`0x200`) are modelled since plan 0048 Phase 1 ([chain/0002 § 9](../../findings/chain/0002-retirements.md#9-oracle-7-the-gold-piles-items)) | this spec, [objects](../objects/README.md) | [C] (fn:COLL_WHTest@0x0064D800, fn:UNIT_CollMarkRect@0x00620A70, fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects, [drlg/0005 § 14](../../findings/drlg/0005-collision.md#14-plan-0027-phase-2-the-objects-window-on-the-grid-model-2026-10-15)) |
+| object marks and `COLL_WHTest` at the object call sites | modelled, this spec (§ E6, § F) and [objects](../objects/README.md) | the object marks of the presets/objects window and the results of `COLL_WHTest` at the object placers' call sites. Both are predicted on the grid model: the objects model of [objects](../objects/README.md) gives each object's class, position and mode, § F makes its mark and § E6 answers its tests. On the objects run all 5859 tests (5767 placer tests with boxes `size + 2`, `+ 6`, `+ 7` and masks `0x3F11`, `0xC01`, plus 92 1×1 gold-pile tests; 4816 blocked, 1043 free) and all 1847 object marks (1835 inside a window, 12 under preset monsters) are predicted, 0 mismatches. The marks that stay logged there are the monsters' (checked by the population model); the gold drop's items (`0x200`) are modelled now ([chain/0002 § 9, plan 0048 Phase 1](../../findings/chain/0002-retirements.md#9-oracle-7-the-gold-piles-items)) | this spec, [objects](../objects/README.md) | [C] (fn:COLL_WHTest@0x0064D800, fn:UNIT_CollMarkRect@0x00620A70, fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects, [drlg/0005 § 14](../../findings/drlg/0005-collision.md#14-plan-0027-phase-2-the-objects-window-on-the-grid-model-2026-10-15)) |
 | seed of another room at its first request in a pass | chain state (plan 0048 Phase 1; a seed oracle before) | a frog demon placed by `SpawnPosOnTile` on a near room's tile draws its group and minions from that room's seed: its predicted activation seed, or its seed after its last pass ([chain § Algorithm](../chain/README.md#algorithm) D6); both calls of the world logs predicted | [rng/seeds](../rng/seeds.md) (that room's seed), [chain](../chain/README.md) | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision, [chain/0002 § 8](../../findings/chain/0002-retirements.md#8-oracle-21-another-rooms-seed-in-a-pass)) |
 
 - [C] The DT1 sub-tile bytes are not an input: the model reads them from the DT1 files ([fmt:dt1](../../formats/dt1.md)),
   and every logged tile record matched its file. (fmt:dt1#sub-tile-flags, run:2026-10-14-collision)
-- [C] The plan 0014 logs (run:2026-10-13-mon-spawn) hold no snapshot, warp points or box grids. On them the four tests stay
-  value oracles, except the 3887 `SpawnClassCellTest` calls of classes that pass without a test. (run:2026-10-14-collision,
+- [C] The logs of the spawn run hold no snapshot, warp points or box grids. On them the four tests stay
+  value oracles, except the 3887 `SpawnClassCellTest` calls of classes that pass without a test. (plan 0014,
+  run:2026-10-13-mon-spawn, run:2026-10-14-collision,
   [monsters/0002 § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan))
 
 ## Algorithm
@@ -237,8 +238,8 @@ B1. TileCollisionUpdate(activeRoom, entry, newTile):              [I] (fn:sub_00
       if newTile ≠ none: OR newTile's 25 bytes into the same cells
 ```
 
-- [C] The only caller is `Bit2TileMerge`, at three call sites, `0x0066E822`, `0x0066E8B6` and `0x0066E916`: Ghidra's
-  xrefs and a raw rel32 scan list the same three. (fn:sub_0066E740_Bit2TileMerge@0x0066E740,
+- [C] The only caller is `Bit2TileMerge`, at three call sites (0x0066E822, 0x0066E8B6 and 0x0066E916): two reference
+  scans list the same three. (fn:sub_0066E740_Bit2TileMerge@0x0066E740,
   fn:sub_0064C860_TileCollisionUpdate@0x0064C860, [drlg/0005 § Plan 0038 batch S4b](../../findings/drlg/0005-collision.md#plan-0038-batch-s4b-2026-10-16))
 - [I] It runs during a new room's tile build, and only for a neighbour that is active. The three
   call sites: an orientation-3 entry merged into another orientation, whose orientation-4 partner becomes hidden and is cleared
@@ -248,11 +249,11 @@ B1. TileCollisionUpdate(activeRoom, entry, newTile):              [I] (fn:sub_00
 - [I] The clear is a plain AND-NOT, so it also removes the same bits that another tile stamped into those cells (for example a
   floor's bit 0 under a wall). An entry that was already hidden when a later room stamps it is stamped in full.
   (fn:COLL_ClearTile@0x0064C580, fn:COLL_StampTileList@0x0064C790)
-- [C] The function is called from `Bit2TileMerge` with the active room, the entry and its old and new tiles. run:2026-10-14-collision
-  had 4 calls, each with the tile's top-left in no active room. run:2026-10-27-sweep-collision had 37 (22 in the Jail), every one
-  returning to 0x0066E91B (the re-pick site), and in each no room reachable from the hint held the entry's top-left subtile.
+- [C] The function is called from `Bit2TileMerge` with the active room, the entry and its old and new tiles. The collision run
+  had 4 calls, each with the tile's top-left in no active room. The collision sweep had 37 (22 in the Jail), every one
+  returning to the re-pick site, and in each no room reachable from the hint held the entry's top-left subtile.
   None of the 41 wrote anything, so its clear and re-stamp are unreached (Open questions).
-  (fn:sub_0064C860_TileCollisionUpdate@0x0064C860, fn:sub_0066E740_Bit2TileMerge@0x0066E740, run:2026-10-14-collision,
+  (fn:sub_0064C860_TileCollisionUpdate@0x0064C860, fn:sub_0066E740_Bit2TileMerge@0x0066E740, 0x0066E91B, run:2026-10-14-collision,
   run:2026-10-27-sweep-collision)
 
 ### C. Cell access and the out-of-room values
@@ -381,7 +382,7 @@ E3. PlusTest(hint, x, y, mask):                                   [C] (fn:COLL_P
 
 E4. RectTest(hint, Q = {left, top, right, bottom} inclusive, mask):   [C] (fn:COLL_RectTest@0x0064CEB0, fn:COLL_RectSplit@0x0064CDF0, run:2026-10-14-collision)
       r ← RoomAtSubtile(hint, Q.left, Q.top)
-      if r = none or r has no map: return 0x27                    ; 0x0064CEDE. [I] the map's cell pointer is not tested: with a null
+      if r = none or r has no map: return 0x27                    ; [I] the map's cell pointer (0x0064CEDE) is not tested: with a null
                                                                   ; one fn:COLL_RectTestInMap@0x0064CC30 reads 0 + 2·index (0x0064CCA0),
                                                                   ; a fault in the game; whether a stock map has one is not read
                                                                   ; (run:2026-11-16-sweep2-s7e, family ffn)
@@ -417,16 +418,16 @@ E6. WHTest(hint, x, y, w, h, mask) → u16:                         [C] (fn:COLL
   `SizeX` is 2 for 240, 3 for 124 and 0 for `baaltaunt`. (tbl:MonStats2.txt:SizeX, fn:sub_005B2A00_MonSpawnTry@0x005B2A00,
   [drlg/0005 § Plan 0038 batch S4b](../../findings/drlg/0005-collision.md#plan-0038-batch-s4b-2026-10-16)) [I] A size-0 monster
   marks nothing (pattern 0, F2). (fn:COLL_PatternMark@0x0064EA90)
-- [C] `WHTest` is the object placers' test ([objects](../objects/README.md)). On run:2026-10-15-objects it answered 5767
+- [C] `WHTest` is the object placers' test ([objects](../objects/README.md)). On the objects run it answered 5767
   placement tests (boxes `size + 2`, `+ 6`, `+ 7`; masks `0x3F11` and `0xC01`) and 92 1×1 gold-pile tests (`0x3F11`, the cell
   path) on the grid model, 4816 blocked and 1043 free, 0 mismatches. (fn:COLL_WHTest@0x0064D800, fn:COLL_RectTest@0x0064CEB0,
   fn:COLL_CellTestNb@0x0064CA50, run:2026-10-15-objects)
 - [C] **A rectangle test with a footprint cell in no room reachable from the hint returns `0x27` unmasked** through `WHTest`
-  too: a rectangle result with `(r & 0x27) = 0x27` and bits outside the mask. run:2026-10-15-objects held 514 of them (sites
-  `0x005504B3`, `0x0055062D`, `0x00550B89`, `0x0055029E`, levels 3–125) and run:2026-10-19-h5b-objects 734 more, all predicted
+  too: a rectangle result with `(r & 0x27) = 0x27` and bits outside the mask. The objects run held 514 of them, at four call sites in
+  levels 3–125, and the second objects run 734 more, all predicted
   by the piece logic of E4: the first piece's room by `RoomAtSubtile` from the hint, the right and bottom pieces from that room.
-  (fn:COLL_RectTest@0x0064CEB0, fn:COLL_RectSplit@0x0064CDF0, fn:COLL_WHTest@0x0064D800, run:2026-10-15-objects,
-  run:2026-10-19-h5b-objects, [drlg/0005 § Plan 0038 batch H5b](../../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects))
+  (fn:COLL_RectTest@0x0064CEB0, fn:COLL_RectSplit@0x0064CDF0, fn:COLL_WHTest@0x0064D800, 0x005504B3, 0x0055062D, 0x00550B89,
+  0x0055029E, run:2026-10-15-objects, run:2026-10-19-h5b-objects, [drlg/0005 § Plan 0038 batch H5b](../../findings/drlg/0005-collision.md#plan-0038-batch-h5b-run2026-10-19-h5b-objects))
 - [I] Movement uses a second numbering, the pattern (path `+0x48`): `COLL_PatternTest` tests pattern 0 as one cell, 1, 3 and 5 as
   the plus, 2 and 4 as the 3×3 square, and returns `0xFFFF` for any other. `COLL_PatternTestBool` is its boolean form.
   (fn:COLL_PatternTest@0x0064D870, fn:COLL_PatternTestBool@0x0064D910)
@@ -544,7 +545,7 @@ from size 1, since both give pattern 1. (fn:UNIT_GetSizeX@0x00620510)
   fn:sub_005557D0_PresetUnitDispatch@0x005557D0, fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-14-collision)
 - [C] **An object's mark.** `SUnitPathCreate` runs after `OBJ_ServerInit`, so the mode whose `HasCollision` byte
   (`+0x120 + mode`) is read is the mode after the object's InitFn and PreOperate. The mark is made only when that byte and both
-  `SizeX` and `SizeY` are non-zero. All 1847 object marks of run:2026-10-15-objects are predicted this way (1835 inside a
+  `SizeX` and `SizeY` are non-zero. All 1847 object marks of the objects run are predicted this way (1835 inside a
   window, 12 objects that preset monsters create under themselves, class 571 under the catapults), and the 742 creations whose
   mode has `HasCollision` 0 made none. (fn:sub_00554850_SUnitPathCreate@0x00554850, fn:UNIT_CollMarkRect@0x00620A70,
   fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects)
@@ -571,8 +572,8 @@ from size 1, since both give pattern 1. (fn:UNIT_GetSizeX@0x00620510)
   no mark line followed either. (fn:sub_00554850_SUnitPathCreate@0x00554850, fn:UNIT_CollMarkRect@0x00620A70, tbl:Objects.txt:SizeX,
   run:2026-10-19-h5b-objects)
 - [C] **The marks of one creation in the pass**, seen on all 410 creations of the run (run:2026-10-14-collision):
-  1. inside `SUnitCreate`, `UNIT_CollMark` runs **twice**, with the same pattern and `0x100` (both calls return to `0x006494D5`);
-  2. then, before `0x005B2EE4`, the post-create alignment setter calls the refresh: `UNIT_CollUnmark` with the creation pattern,
+  1. inside `SUnitCreate`, `UNIT_CollMark` runs **twice**, with the same pattern and `0x100` (both calls return to one site, 0x006494D5);
+  2. then, before the pass tests for minions (0x005B2EE4), the post-create alignment setter calls the refresh: `UNIT_CollUnmark` with the creation pattern,
      pattern ← `PATH_PatternFromSize(path +0x44)`, `UNIT_CollMark`.
 
   The double mark changes nothing, since OR is idempotent. `PATH_PatternFromSize` has no wraith case, so the refresh turns a wraith's
@@ -646,34 +647,34 @@ F5a. UnitCorpseColl(u, arg):                                      [I] the steps 
   `0x00643290`. No game ran. (fn:sub_00650590_PathSnapToTileCentre@0x00650590, fn:sub_0064FB90_PathSetPoint@0x0064FB90, fn:sub_0064FAD0_PathRoomUpdate@0x0064FAD0,
   [path/0008 item 3](../../findings/path/0008-corpse-remainders.md))
 
-- [C] **Server's copy, a monster's death, `deadCol` 0.** `MonDeathEvent` sets mode 0 (`SUNIT_SetMode`, 0x005A700D) and calls
-  `MonDeathCorpseMark` (0x005A7019), which tests `deadCol` (`edx` = 0x13, `+0x06` bit 3, at 0x005A65CD) and, when it is 0, calls
-  `UnitCorpseColl(unit, 1)` at 0x005A65D9: the live mark off and a 3×3 of `0x8000`, the record's mask and pattern unchanged, from
-  mode 0 on, not only at mode 12. The drop follows (`MonDeathDrop`, called at 0x005A7027). All 1 527 `COR` lines at 0x005A65D9
+- [C] **Server's copy, a monster's death, `deadCol` 0.** `MonDeathEvent` sets mode 0 (`SUNIT_SetMode`) and calls
+  `MonDeathCorpseMark`, which tests `deadCol` (`edx` = 0x13, `+0x06` bit 3) and, when it is 0, calls
+  `UnitCorpseColl(unit, 1)`: the live mark off and a 3×3 of `0x8000`, the record's mask and pattern unchanged, from
+  mode 0 on, not only at mode 12. The drop follows (`MonDeathDrop`). All 1 527 `COR` lines at that call
   hold the full 3×3 in the 5×5 at the callee's return, centre included (616 exactly those 9 cells, 911 with further corpse cells of
   neighbours), 1 505 in mode 0 and 22 in mode 12; none holds only the plus. These are lines, not deaths; the site reached 277 at
   most in a game, under the cap of 300. The record keeps its mask and pattern: the 22 mode-12 lines hold mask `0x100` at the return, and
-  section 13 of `tools/path.py check` finds 1 474 distinct mode-12 monsters of the unit lists with the 3×3, mask `0x100` and pattern 1, 2 or 3. (`workspace/logs/path/2026-11-04-path-2-check.txt`, fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0,
+  section 13 of the second path run's check finds 1 474 distinct mode-12 monsters of the unit lists with the 3×3, mask `0x100` and pattern 1, 2 or 3. (0x005A700D, 0x005A7019, 0x005A65CD, 0x005A65D9, 0x005A7027, fn:sub_005A6FF0_MonDeathEvent@0x005A6FF0,
   fn:SUNIT_SetMode@0x00553570, fn:sub_005A6520_MonDeathCorpseMark@0x005A6520, fn:sub_005A6830_MonDeathDrop@0x005A6830, 0x00649FD8,
   tbl:MonStats2.txt:deadCol, run:2026-11-04-path-2, [path/0006](../../findings/path/0006-holdout.md))
 - [I] **Server's copy, the second route to the same test.** The start of mode 12 calls `MonDeathCorpseMark` at 0x005A73A6 unless the
   unit is already in mode 0. That the 22 mode-12 lines came this way follows from the mode: a line does not hold the caller's return.
   (0x005A73A6, fn:sub_005A6520_MonDeathCorpseMark@0x005A6520, run:2026-11-04-path-2)
-- [C] **Server's copy, `deadCol` 1, classes 403 and 404.** The test at 0x005A65CD skips the call and the live mark stays: 18 distinct
-  dead (`trappedsoul1` 8, `trappedsoul2` 10), each with no `0x8000` cell, the live mark kept and no line at the uncapped 0x005A65D9.
-  (0x005A65CD, tbl:MonStats2.txt:deadCol, run:2026-11-04-path-2)
+- [C] **Server's copy, `deadCol` 1, classes 403 and 404.** The `deadCol` test skips the call and the live mark stays: 18 distinct
+  dead (`trappedsoul1` 8, `trappedsoul2` 10), each with no `0x8000` cell, the live mark kept and no line at the uncapped call.
+  (0x005A65CD, 0x005A65D9, tbl:MonStats2.txt:deadCol, run:2026-11-04-path-2)
   [I] Class 273 (`gargoyletrap`) was not seen dead in that run, so its server arm is read only. Of the 13 MonStats2 rows with `deadCol` 1
   ([MonStats2 § Footprint and collision columns](../../tables/MonStats2.md#footprint-and-collision-columns-plan-0017-phase-0)), the two
   corpse runs met 273, 403 and 404, class 273 on the client's copy only; the other 10 are in neither, by the `DC` lines of
-  run:2026-10-14-collision and section 13 of the later run's check. [drlg/lifecycle § H5](lifecycle.md#h5-the-grid-marks-of-a-re-created-monster)'s
+  the collision run and section 13 of the later run's check. [drlg/lifecycle § H5](lifecycle.md#h5-the-grid-marks-of-a-re-created-monster)'s
   re-created `deadCol` 1 cases are not split by class there. (0x005A65CD, tbl:MonStats2.txt:deadCol)
-- [C] **Client's copy, `deadCol` 0.** The client's monster state code tests `deadCol` at 0x004B05DB and 0x004B09FB and calls
+- [C] **Client's copy, `deadCol` 0.** The client's monster state code tests `deadCol` at two sites and calls
   `UnitCorpseColl(unit, 0)` (0x004B05E3, 0x004B0A05) only when it is clear: F5a's first branch, the plus of `0x8000` at pattern 5.
-  First source: 396 of the 408 `DC` lines of run:2026-10-14-collision, which are lines of the two tests over 202 unit addresses, not
+  First source: 396 of the 408 `DC` lines of the collision run, which are lines of the two tests over 202 unit addresses, not
   deaths (most units die once and hit both); all 408 sit on the copy with no `SN` line whose other copy has one. That split says which
-  copy the lines were read on, not each call's side. Second source: the side-tagged `COR` lines of run:2026-11-04-path-2 at the two sites,
+  copy the lines were read on, not each call's side. Second source: the side-tagged `COR` lines of the second path run at the two sites,
   3 419 (1 505 and 1 914), each with argument 0 and all holding the plus; 1 467 and 1 862 without a full 3×3, 38 and 52 with one, by
-  a neighbour. (fn:sub_00649F70_UnitCorpseColl@0x00649F70, tbl:MonStats2.txt:deadCol, `tools/corpse_copy.py`,
+  a neighbour. (0x004B05DB, 0x004B09FB, fn:sub_00649F70_UnitCorpseColl@0x00649F70, tbl:MonStats2.txt:deadCol,
   run:2026-10-14-collision, run:2026-11-04-path-2)
 - [C] **Client's copy, `deadCol` 1.** The call is skipped and the corpse keeps its live `0x100` mark, pattern and mask: the other 12 `DC`
   lines, of `gargoyletrap`, `trappedsoul1` and `trappedsoul2`. The later run has no break on the two tests and adds only a
@@ -722,7 +723,7 @@ F5a. UnitCorpseColl(u, arg):                                      [I] the steps 
   `0x8000`: the direct callers of `COLL_RectClearWH` are `UNIT_CollUnmarkRect` (0x006238B0) and `UNIT_CollUnmark`'s object branch (0x0064969A), and the pattern
   unmarks are reached with the unit's own mask, which is `0x100` on such a corpse. So the cells
   outlast the corpse until the grid is rebuilt; this is the likely source of the 26 034 differing `0x8000` cells of the predicted grid on
-  run:2026-11-04-path-2. (0x00649FD8, fn:sub_00649FF0_UnitReviveColl@0x00649FF0, fn:COLL_RectClearWH@0x0064DC00, [path/0008 item 4](../../findings/path/0008-corpse-remainders.md))
+  the second path run. (0x00649FD8, run:2026-11-04-path-2, fn:sub_00649FF0_UnitReviveColl@0x00649FF0, fn:COLL_RectClearWH@0x0064DC00, [path/0008 item 4](../../findings/path/0008-corpse-remainders.md))
 - [I] **Server's copy, a revival.** The corpse of a server death keeps mask `0x100`, so `UnitReviveColl`, whose callers are the client's in any case, does not meet it. The server routine read is `MonReviveInPlace`
   (self-resurrect, start 61; Resurrect, do 97, 0x005CCBF5): for a monster with a room it sets mask `0x100` (`PATH_SetMarkMask`, 0x005CC9EA), runs
   `PathPatternRefresh` (0x005CC9F0: `UNIT_CollUnmark(unit, 1)`, the pattern from size, `UNIT_CollMark`) and then `COLL_PatternMark` with that pattern and `0x100`
@@ -730,16 +731,16 @@ F5a. UnitCorpseColl(u, arg):                                      [I] the steps 
   `0x8000`, so it stays after a revival by them. That holds for a record at mask `0x100`. A monster re-created or relocated dead holds mask `0x8000` at pattern 5, and `PATH_SetMarkMask` unmarks
   under the old mask first (0x00648C7D), so this routine takes that plus off and a re-created monster keeps the 3×3's four corners. `MonSetMode` is not given as a route: it calls `UNIT_CollMark` (0x005A7CB1) only when `UnitIsDead` is 0 (0x005A7CAC),
   before its handler call (0x005A7D67), and where the mode word is written was not located, so how a dead-to-alive mode set meets that test is not stated. Not
-  followed: `MERC_Resurrect`, `AiFetishReviveCb`, `Pkt41Resurrect`, `SkillSt21Revive`, and the revive routines' callees `0x00573780`, `0x00547E90`, `0x00545CD0`.
+  followed: `MERC_Resurrect`, `AiFetishReviveCb`, `Pkt41Resurrect`, `SkillSt21Revive`, and the revive routines' callees `QUESTS_LevelHookMonster` and two unnamed ones (0x00573780, 0x00547E90, 0x00545CD0).
   No server revival with its grid is logged. (fn:sub_005CC960_MonReviveInPlace@0x005CC960, fn:sub_00649CA0_PathPatternRefresh@0x00649CA0, fn:COLL_PatternMark@0x0064EA90,
   fn:sub_005A7C20_MonSetMode@0x005A7C20, fn:sub_005C07A0_SkillReviveDo@0x005C07A0, fn:sub_005C56C0_SkillDo58Revive@0x005C56C0,
   [path/0008 item 4](../../findings/path/0008-corpse-remainders.md))
 - [I] **What this changes for the population pass:** nothing as far as read. `0x8000` is in no spawn mask (§ D) and in no immediate move mask scanned: among the
   immediates that reach a path's move mask through `PathSetCollMask` (19 direct calls) or a store at `+0x50` (34, most in unrelated records), 0 of 53 hold it, nor do the
   monsters' masks `0x1804`, `0x3401`, `0x3C01`, `0x0804`. A mask built in a register or read from a table was not scanned. (0x00649FD8, fn:sub_005B2A00_MonSpawnTry@0x005B2A00,
-  fn:PATH_MonTestMask@0x00648480, fn:sub_00648CE0_PathSetCollMask@0x00648CE0, `tools/collmask_scan.py`, [path/0008 item 5](../../findings/path/0008-corpse-remainders.md))
+  fn:PATH_MonTestMask@0x00648480, fn:sub_00648CE0_PathSetCollMask@0x00648CE0, [path/0008 item 5](../../findings/path/0008-corpse-remainders.md))
 
-`UnitCorpseColl`'s seven callers. The copy is by the code's module and neighbours; the `COR` line counts are of run:2026-11-04-path-2,
+`UnitCorpseColl`'s seven callers. The copy is by the code's module and neighbours; the `COR` line counts are of the second path run,
 where 0 of 4 981 lines came from an unlisted caller or went against this table. These are lines, not deaths.
 
 | Call | Argument | Function | Copy | `COR` lines | Tag |
@@ -771,10 +772,10 @@ The first row decides what the planner reads. The others are where a unit's cell
 | Case | Operations, in order | Tag |
 |---|---|---|
 | The plan's target, path flag `0x800` | `PathPlan` unmarks its own unit (0x00649B07). Then, when it has a target (0x00649B0C) whose `UNIT_GetSizeX` is not 0 (0x00649B10–0x00649B18) and the path has flag `0x800` (0x00649B1A), it unmarks the target, whatever its type (0x00649B25). The target's `HasCollision` state decides through `UNIT_CollUnmark`. At the tail, the target is marked again when that unmark returned non-zero (0x00649BD7), and then a plan that reached a planner marks its own unit (`UNIT_CollMark`, 0x00649BE0) | [C] a targeted object of size 1 or more: with the rule off, 274 `0x400` and 20 `0x800` cells differ and 35 more plans are wrong; with it on, 0 of those cells (0x00649B10, fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path-2). [I] The size test's 0 branch, since every target of the kept logs has a size of 1 or more, and the other unit types as targets (0x00649B18, fn:UNIT_GetSizeX@0x00620510) |
-| The player after arriving in another act: unmarked | `PlayerChangeAct` moves the player twice through the wrapper `PathTargetRoomXY`, whose one call is `PathMoveWithMark`: to room 0 at (0, 0) (0x0053ADEA), then to the arrival (0x0053AE19). The first unmarks at the old place (0x006509E5) and its room word goes to 0 (flag 1 at 0x00650A18, `PathRoomUpdate`'s store at 0x0064FB6D), which needs path flag `0x40000` clear: with it set, 0x0064FB9F returns before the room is touched and the second move would mark. The second reaches `COLL_PatternMoveAcross` with that old room, whose test at 0x0064EFA3 returns before both its unmark and its `COLL_PatternMark` (0x0064EFCA). The room and position are set and the cells hold no mark, until a later move through `PathMoveWithMark`, whose old room is now set, or the tail of a plan that reached a planner (0x00649BE0). No player's plan of run:2026-11-04-path has flag `0x40000` (0 of 1 486) | [I] (fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0, fn:sub_00650910_PathMoveWithMark@0x00650910, fn:sub_0064EFA0_COLL_PatternMoveAcross@0x0064EFA0): 7 of 7 act changes unmarked at the first other unit's plan that sees the unmoved player, and the control below 3 of 3, both short of the floors of 10 (run:2026-11-04-path-2). Nothing else in `PlayerChangeAct` after the second move marks the player, by a walk of direct calls to depth 3 from its nine callees (the two paths found, both under 0x005754B0, are a pet's mask and `MonSetMode` through `PetUnitRelease`; `tools/path_reach.py`); indirect calls are not followed |
+| The player after arriving in another act: unmarked | `PlayerChangeAct` moves the player twice through the wrapper `PathTargetRoomXY`, whose one call is `PathMoveWithMark`: to room 0 at (0, 0) (0x0053ADEA), then to the arrival (0x0053AE19). The first unmarks at the old place (0x006509E5) and its room word goes to 0 (flag 1 at 0x00650A18, `PathRoomUpdate`'s store at 0x0064FB6D), which needs path flag `0x40000` clear: with it set, the store's guard returns before the room is touched (0x0064FB9F) and the second move would mark. The second reaches `COLL_PatternMoveAcross` with that old room, whose test at 0x0064EFA3 returns before both its unmark and its `COLL_PatternMark` (0x0064EFCA). The room and position are set and the cells hold no mark, until a later move through `PathMoveWithMark`, whose old room is now set, or the tail of a plan that reached a planner (0x00649BE0). No player's plan of the first path run has flag `0x40000` (0 of 1 486; run:2026-11-04-path) | [I] (fn:sub_0053ACC0_PlayerChangeAct@0x0053ACC0, fn:sub_00650910_PathMoveWithMark@0x00650910, fn:sub_0064EFA0_COLL_PatternMoveAcross@0x0064EFA0): 7 of 7 act changes unmarked at the first other unit's plan that sees the unmoved player, and the control below 3 of 3, both short of the floors of 10 (run:2026-11-04-path-2). Nothing else in `PlayerChangeAct` after the second move marks the player, by a walk of direct calls to depth 3 from its nine callees (the two paths found, both under one callee, are a pet's mask and `MonSetMode` through `PetUnitRelease`) (0x005754B0); indirect calls are not followed |
 | A level change inside an act: the mark is kept (the control) | `PlayerChangeLevel` takes the act branch only when the acts differ (0x0053AF35). Otherwise it calls `UnitTeleport` (0x0053AF97), whose single move (0x00554F5C) has a non-zero old room: unmark there, mark here. The act change is the cause, not the waypoint | [I] (fn:sub_0053AEC0_PlayerChangeLevel@0x0053AEC0, fn:sub_00554EA0_UnitTeleport@0x00554EA0, 0x0053AF35) |
 | A pet whose act differs | The same two moves (0x00574CF2, 0x00574D05), then `PATH_SetMarkMask(path, 0x100)` at 0x00574D80, which marks, when 0x0063EA40 returns 0 | [I] (fn:sub_00574CC0_PetMoveWithOwner@0x00574CC0, fn:PATH_SetMarkMask@0x00648C30). That callee's branch is not separated by the logs |
-| A reserved landing | Four skill starts mark the landing point before the flight, with `COLL_PatternMark` and the unit's pattern, at the point in the skill record `+0x18`/`+0x1C`: Whirlwind 0x005D9123 (`0x80` for a player, else `0x100`), Leap 0x005D9EF8 (`0x80`), Leap Attack 0x005DA5D5 (`0x80`), Jump 0x005CB902 (`0x100`). The flight of Leap or Leap Attack, one helper both skills call, sets the path mask to 0 (0x005D9F9C). No such call was found in the starts of Whirlwind or Jump, whose ends restore it (0x005D94F2, 0x005CBA46). Landing unmarks the reserved cells (0x005DA1F3, 0x005DA269, 0x005D94E8, 0x005CBA3B) and sets the mask back | [C] the calls for a player at the first three sites: 128, 237 and 109 lines, all on the server's side, unit type 0 and mask `0x80`, with 474 `L1U` releases (fn:COLL_PatternMark@0x0064EA90, fn:sub_005D9D50_SkillSt40Leap@0x005D9D50, fn:sub_005DA120_LeapAttackLand@0x005DA120, fn:sub_005D9460_WhirlwindEnd@0x005D9460, run:2026-11-04-path-2). [I] That the reservation holds until its release (51 plans in the tie, 0x005DA1F3); Jump's site, which has no stock user (0x005CB902, tbl:Skills.txt); a monster's arm, which did not run, including Leap's constant `0x80` for a monster whose landing unmarks `0x100` (0x005D9EF8) |
+| A reserved landing | Four skill starts mark the landing point before the flight, with `COLL_PatternMark` and the unit's pattern, at the point in the skill record `+0x18`/`+0x1C`: Whirlwind (`0x80` for a player, else `0x100`), Leap (`0x80`), Leap Attack (`0x80`), Jump (`0x100`) (0x005D9123, 0x005D9EF8, 0x005DA5D5, 0x005CB902). The flight of Leap or Leap Attack, one helper both skills call, sets the path mask to 0 (0x005D9F9C). No such call was found in the starts of Whirlwind or Jump, whose ends restore it (0x005D94F2, 0x005CBA46). Landing unmarks the reserved cells (0x005DA1F3, 0x005DA269, 0x005D94E8, 0x005CBA3B) and sets the mask back | [C] the calls for a player at the first three sites: 128, 237 and 109 lines, all on the server's side, unit type 0 and mask `0x80`, with 474 `L1U` releases (fn:COLL_PatternMark@0x0064EA90, fn:sub_005D9D50_SkillSt40Leap@0x005D9D50, fn:sub_005DA120_LeapAttackLand@0x005DA120, fn:sub_005D9460_WhirlwindEnd@0x005D9460, run:2026-11-04-path-2). [I] That the reservation holds until its release (51 plans in the tie) (0x005DA1F3); Jump's site, which has no stock user (0x005CB902, tbl:Skills.txt); a monster's arm, which did not run, including Leap's constant `0x80` for a monster whose landing unmarks `0x100` (0x005D9EF8) |
 
 #### F7. No bit is reference-counted: the grid is the result of its operations in order
 
@@ -784,7 +785,7 @@ and the reserved landing of § F6. [path/overview § F](../path/README.md#f-the-
 - [C] **The grid at a planner call is the result of the marks and unmarks in order, not the union of the present holders.** An unmark is the same
   footprint with AND-NOT and nothing is counted, so it clears a shared bit that another holder also set (the F1 note). A reimplementation runs the
   operations. (fn:COLL_PatternUnmark@0x0064EC10, run:2026-10-14-collision)
-- [C] The planners take the live grid: given the game's own cells at the planner call (`PLG`), 20 671 plans of run:2026-11-04-path-2 reproduce with 0
+- [C] The planners take the live grid: given the game's own cells at the planner call (`PLG`), 20 671 plans of the second path run reproduce with 0
   mismatches, each compared on its return, its first point words and its exit seed. Types 0, 1, 3, 11, 12 and 16 have no request in that run.
   (fn:sub_00649970_PathPlan@0x00649970, run:2026-11-04-path-2, [path/0006](../../findings/path/0006-holdout.md))
 - [C] A prediction built as the union of the present holders is a different claim. With the rules frozen before that run (the object bits, the corpse
@@ -806,7 +807,7 @@ and the reserved landing of § F6. [path/overview § F](../path/README.md#f-the-
 - [I] In the five plans of the first two rows, the reservation's `0x80` is still in the live cell and only the centre bit is gone, so its
   release is not late. (0x005D9EF8, [path/0006](../../findings/path/0006-holdout.md))
 - [I] The other 3 of the 11 are the seventh caller, not order: a class 194 unit in mode 14 that the prediction kept live, after
-  0x005CAF8E had run (`0x1100` to `0x8000`), chosen after the result too. (0x005CAF8E, [path/0006](../../findings/path/0006-holdout.md))
+  the seventh caller's call had run (`0x1100` to `0x8000`), chosen after the result too. (0x005CAF8E, [path/0006](../../findings/path/0006-holdout.md))
 
 ### G. Logic regions
 
@@ -841,7 +842,7 @@ G2. LogicRegionsFromDs1(R, orient, floor, wall):                  [C] (fn:sub_00
         if id[x, y] & 0x10000000: continue
         next ← next + 1
         cur: u32 ← (next & 0x0FFFFFFF) | 0x10000000
-        if (floor[x, y] & 0x1E0FF00) = 0x1E00000 or floor[x, y] < 0 (as i32): cur ← cur | 0x20000000    ; kind 1
+        if (floor[x, y] & (0xF << 21 | 0xFF << 8)) = 0xF << 21 or floor[x, y] < 0 (as i32): cur ← cur | 0x20000000    ; kind 1
         FloodFill(x, y, −1)
       record.nBoxes ← next − base + 1
       level.+0x1DC ← level.+0x1DC + record.nBoxes
@@ -888,7 +889,7 @@ G3. [C] `ROW` (`g_LogicFloodOrientRow`, by orientation): 0 → −1, 1 → 0, 2 
 five dwords starting one before its base: row 0 `0x17, 0, 5, 0x15, 0x11`; row 1 `0xF, 3, 0, 9, 7`; row 2 `0x27, 0, 0, 5, 3`; rows 3
 and 4 `0x1F` five times; row −1 reads the direction table before it, `0xFFFFFFFF, 0, 0, 0xFFFFFFFF, 0`, so every bit is set for
 d = −1 and d = 2. The model reads the tables from the pinned `Game.exe`, and its flood reproduces all 1475 floods of
-run:2026-10-14-collision and run:2026-10-15-objects (id grid, box count, level counter). The floods read all 30 `(row, d)`
+the collision run and the objects run (id grid, box count, level counter). The floods read all 30 `(row, d)`
 entries (rows −1 … 4, d = −1 … 3) and met barrier tiles of 16 orientations (0–3, 5–12, 14, 16–18); flipping any one of bits 0–5
 of an entry breaks a flood for 28 of the 30 entries, and moving any of the 16 orientations to another row breaks one too.
 (data:g_LogicFloodOrientRow@0x006EEEA0, data:g_LogicFloodRules@0x006EEE3C, data:g_LogicFloodDirs@0x006EEE14,
@@ -1104,16 +1105,16 @@ flowchart TD
 
 ## Worked example
 
-Source: run:2026-10-14-collision, log `collision-s7-2026-normal-a1.log` (`-seed 2026`, Normal, expansion), level 4 *Stony
-Field*. The active room is `0x035A5600` (DRLG room `0x02DCAB00`, type 2, LvlType 2). Its subtile rectangle is (5160, 5120), 40 × 40,
+Source: the collision run, its session 7 (`-seed 2026`, Normal, expansion), level 4 *Stony
+Field* (run:2026-10-14-collision). The active room is the one at tiles (1032, 1024), a type-2 DRLG room of LvlType 2. Its subtile rectangle is (5160, 5120), 40 × 40,
 which is the tile rectangle (1032, 1024), 8 × 8. The cells, test results and room seeds below are logged values, which
-`tools/collision.py check` predicts (the log passes with 0 mismatches); the draws between the room seeds were recomputed with
-`tools/rng.py`. Positions are subtiles, cells are hex.
+our grid model predicts (the log passes with 0 mismatches); the draws between the room seeds were recomputed with
+our reference model of the primitives. Positions are subtiles, cells are hex.
 
 ### 1. One room's grid from its tiles
 
-At activation (the `CB` line 8034) the near list holds five active rooms: `0x035A7780` (tiles 1024, 1016), `0x035A5580` (1024, 1024),
-`0x035A7800` (1032, 1016), `0x035A6100` (1040, 1016) and the room itself. The right neighbour `0x035A5680` (1040, 1024) is not
+At activation the near list holds five active rooms: those at tiles (1024, 1016), (1024, 1024), (1032, 1016) and
+(1040, 1016), and the room itself. The right neighbour at (1040, 1024) is not
 active yet, and no room below is. Of all the entries of these five rooms, 89 have their top-left subtile in the room: its own
 64 floors and 25 walls. None of the neighbours contributes a tile. The finished grid has 1600 cells: 699 are `0000`, 570 `0001`,
 192 `0010`, 131 `0005` and 8 `0011`.
@@ -1149,17 +1150,17 @@ Rows 5151 … 5153 equal row 5150. The dumped grid matches the model cell for ce
 
 ### 2. A contested placement
 
-The population pass of this room starts at line 8304 (`SN`). The snapshot equals the activation grid here, except for one object
+At the start of this room's population pass the snapshot equals the activation grid here, except for one object
 the presets and objects window marked (`0x400` at (5164, 5147)). The room's logic record is a single box with id 1, rectangle
 (1032, 1024)–(1040, 1032), so the bounds are x 5160 … 5199 and y 5120 … 5159. The snapshot near list of the room is the five rooms
-above plus `0x035A5680`, and no room in it holds a subtile with y ≥ 5160.
+above plus the right neighbour at (1040, 1024), and no room in it holds a subtile with y ≥ 5160.
 
 An attempt's class pick returns `foulcrow1` (class 15), the `spawn` class of the pool's `crownest1`. Its `SizeX` is 2 and its `spawnCol` 0,
 so it tests size 2 with mask `0x3C01`. Its leader is created at (5181, 5158). That footprint is all `0010`, and `0010 & 3C01 = 0`, so bit 4 does not block. The
 creation marks a plus of `0100` around (5181, 5158) and `1000` on the centre, twice, and the refresh unmarks and marks it again with
 pattern 1. The group has two members, each placed with `MonSpawnTry{near the leader, box, class 15, radius 3}` around (5181, 5158).
 
-**Member 1** (line 8453), room seed `FD112001:20B4FEA2` at entry, ring s = 3:
+**Member 1**, room seed `FD112001:20B4FEA2` at entry, ring s = 3:
 
 | Draw | Room seed low | Result |
 |---|---|---|
@@ -1178,7 +1179,7 @@ The walk starts at (5184, 5158) and moves before each test:
 | (5178, 5159) | yes | `0027` | the same out-of-room lower cell |
 | (5178, 5158) | yes | `0000` | → created, room seed `BCDB2A05:1574AC10` |
 
-**Member 2** (line 8482), ring s = 3: draw 1 `439CD1E9` odd → dx = 3, `Range(3)` on `60BBD402` → dy = 2, then `018AA5FB` odd → dx = −3,
+**Member 2**, ring s = 3: draw 1 `439CD1E9` odd → dx = 3, `Range(3)` on `60BBD402` → dy = 2, then `018AA5FB` odd → dx = −3,
 then `A389B7EA` even → dy = +2. The start is (5178, 5160) with direction (0, 1). It moves to (5178, 5161), turns at (l, b) to (0, −1), and
 passes (5178, 5160), both outside. Member 1 now stands at (5178, 5158): cells (5177 … 5179, 5158), (5178, 5157) and (5178, 5159) hold
 `0100`, and (5178, 5158) holds `1100`.
@@ -1190,8 +1191,8 @@ passes (5178, 5160), both outside. Member 1 now stands at (5178, 5158): cells (5
 | (5178, 5157) | `1000` | the lower cell (5178, 5158) `1100` |
 | (5178, 5156) | `0000` | the lower cell (5178, 5157) is `0100`, and `0100 & 3C01 = 0` → created, room seed `A389B7EA:00A49AD5` |
 
-Member 2 is placed with one cell of member 1's footprint inside its own footprint. Only member 1's `1000` centre blocked it. This
-is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 worked example in
+Member 2 is placed with one cell of member 1's footprint inside its own footprint. Only member 1's `1000` centre blocked it. Such
+an acceptance, a footprint overlapping a placed member's, is one the run was set up to catch: it had 67 of them. The spawn spec's worked example in
 [monsters/spawn](../monsters/spawn.md#worked-example) has the same shape: there (15559, 5615) = 39 = `0x27` and (15558, 5615) =
 4096 = `0x1000`. Its log carries no snapshot, so it is not reproduced here.
 
@@ -1228,6 +1229,14 @@ is the R2 case of the plan, and the run had 67 such acceptances. The plan 0014 w
 
 ## Evidence
 
+- How the statements above were read: the three call sites of § B by Ghidra's references and a raw rel32 scan; the
+  second path run's section 13 is `tools/path.py check` (`workspace/logs/path/2026-11-04-path-2-check.txt`); the
+  client copy split of § F5 by `tools/corpse_copy.py`, the depth-3 walk of § F6 by `tools/path_reach.py`, the mask scan
+  of § F5 by `tools/collmask_scan.py`. The worked example is the log `collision-s7-2026-normal-a1.log`, predicted by
+  `tools/collision.py check` and recomputed with `tools/rng.py`: the active room is `0x035A5600` (DRLG room
+  `0x02DCAB00`), its near rooms `0x035A7780`, `0x035A5580`, `0x035A7800`, `0x035A6100` and the right neighbour
+  `0x035A5680`; activation is the `CB` line 8034, the pass starts at line 8304, members 1 and 2 at lines 8453 and 8482.
+  The spawn spec's example is plan 0014's.
 - [findings/path/0008-corpse-remainders.md](../../findings/path/0008-corpse-remainders.md): the relocated dead, `UNIT_CollUnmark`'s second argument, F5a's last call, a server revival, the immediate move masks.
 - [findings/drlg/0005-collision.md](../../findings/drlg/0005-collision.md): the whole subsystem, §§ 1–13, with the Phase 1b
   corrections (C1 `deadCol`, C2 missiles) and the Phase 2 wraith correction; § 14, the objects window on the grid model

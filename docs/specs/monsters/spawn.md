@@ -115,33 +115,34 @@ MonStats record position.
 
 ### Inputs and oracles
 
-The pass reads state that other subsystems own. Phase 2 of plan 0014 took each of them from the log as an
-ADR-0004 oracle: a **value oracle** is a predicate whose result is taken (the room and game seed were asserted unchanged
+The pass reads state that other subsystems own. The spawn run took each of them from the log as a boundary
+oracle (plan 0014 Phase 2, ADR-0004): a **value oracle** is a predicate whose result is taken (the room and game seed were asserted unchanged
 across each call, and its arguments were asserted); a **seed oracle** is a callee that steps a seed, whose
 exit seed is taken. A reimplementation supplies these from the owning subsystem. Every `[C]` below holds under
 these inputs. [C] ([monsters/0002 § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan),
-run:2026-10-13-mon-spawn) Plan 0017 replaced the four position predicates and the tile placement by the model of
-[drlg/collision](../drlg/collision.md), which runs on the grid snapshot at pass entry, the logic-box grids and the level's warp points; those
+run:2026-10-13-mon-spawn) Later the four position predicates and the tile placement were replaced by the model of
+[drlg/collision](../drlg/collision.md) (plan 0017), which runs on the grid snapshot at pass entry, the logic-box grids and the level's warp points; those
 are now the inputs, listed with their owners in [drlg/collision § Inputs and oracles](../drlg/collision.md#inputs-and-oracles). The rerun
 predicted 1764 `CollisionTest`, 2665 `LogicRegionIdAt`, 1782 `SpawnClassCellTest`, 1645 `NearWarpTest` and 195 `SpawnPosOnTile`
-calls with 0 mismatches. The plan 0014 logs carry no snapshot, so on them the predicates stay value oracles. [C]
+calls with 0 mismatches. The spawn run's logs carry no snapshot, so on them the predicates stay value oracles. [C]
 (run:2026-10-14-collision, [monsters/0002 § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan))
-Plan 0018 replaced the special-mods and mod-handler seed oracles by the model of [monsters/special](special.md): the mod
+Then the special-mods and mod-handler seed oracles were replaced by the model of [monsters/special](special.md)
+(plan 0018): the mod
 picks, the unique-minion count, the handlers of a boss and of each pack member, and the superunique and MonPlace 2/3 spawns
 inside the presets window are predicted, with 0 mismatches on the logs of this spec's run as well. [C]
 (run:2026-10-14-mon-special, fn:sub_005A0760_SpecialModsRoll@0x005A0760, fn:sub_005A2120_SpecialModsApply@0x005A2120)
 
 | Input | Kind | What the pass needs | Owner | Tag |
 |---|---|---|---|---|
-| room seed at pass entry | modelled by [objects](../objects/README.md) in logs that carry the object-region seed; else a seed oracle (the window before the pass) | `+0x6C` after the wanderer tick, the DS1 presets, the inactive-unit restore and the objects (§ A). On the plan 0014 logs: predicted from `-seed` through the tick in 516 of 516 rooms, at pass entry end to end only where the presets/objects window drew nothing, 176 of 516 rooms (11 of 169 populated). On the logs of run:2026-10-15-objects the window is the [objects](../objects/README.md) model (the room, object-region and game seeds at `RW4`), and 338 pass entries were predicted end to end from the map seed on four logs, 0 mismatches; since plan 0048 Phase 1 the window's preset monsters and `InitFn` 46 are modelled too, and the other monster-creating `InitFn`s stay seed oracles ([chain § Inputs and oracles](../chain/README.md#inputs-and-oracles)); run:2026-10-21-chain2 predicts 2 189 populations end to end from the game seed with no seed taken in the window or the pass | [objects](../objects/README.md) (presets window objects, restore, object population); `drlg/preset` (the walk); the superunique and MonPlace 2/3 spawns in the window are modelled by [monsters/special § G–H](special.md#g-superuniques) from their own entry | [C] (run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, run:2026-10-15-objects, fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-21-chain2) |
+| room seed at pass entry | modelled by [objects](../objects/README.md) in logs that carry the object-region seed; else a seed oracle (the window before the pass) | `+0x6C` after the wanderer tick, the DS1 presets, the inactive-unit restore and the objects (§ A). On the spawn run's logs: predicted from `-seed` through the tick in 516 of 516 rooms, at pass entry end to end only where the presets/objects window drew nothing, 176 of 516 rooms (11 of 169 populated). On the logs of the objects run the window is the [objects](../objects/README.md) model (the room, object-region and game seeds at `RW4`), and 338 pass entries were predicted end to end from the map seed on four logs, 0 mismatches; now (plan 0048 Phase 1) the window's preset monsters and `InitFn` 46 are modelled too, and the other monster-creating `InitFn`s stay seed oracles ([chain § Inputs and oracles](../chain/README.md#inputs-and-oracles)); the second chain run predicts 2 189 populations end to end from the game seed with no seed taken in the window or the pass | [objects](../objects/README.md) (presets window objects, restore, object population); `drlg/preset` (the walk); the superunique and MonPlace 2/3 spawns in the window are modelled by [monsters/special § G–H](special.md#g-superuniques) from their own entry | [C] (run:2026-10-13-mon-spawn, run:2026-10-14-mon-special, run:2026-10-15-objects, fn:sub_005559A0_RoomPresetUnits@0x005559A0, fn:sub_00552610_RoomObjectsPopulate@0x00552610, run:2026-10-21-chain2) |
 | game seed at pass entry | run-time state | `+0xD0` after every earlier consumer in the game | every game-seed consumer ([rng/seeds](../rng/seeds.md) step note 7a) | [C] (run:2026-10-13-mon-spawn) |
 | gate's DRLG parts | value input (read in [chain/0002 § 7](../../findings/chain/0002-retirements.md#7-oracle-19-the-gates-drlg-parts-read-inputs-kept), asserted at every gate of run:2026-10-21-chain2) | `RoomPopLevelId` (0 when DRLG room `+0x28` has bit `0x800000`), the level's DRLG room count, the Chaos Sanctuary quest test | `drlg/preset`, `drlg/overview`, [quests/progression § Word 26](../quests/progression.md#word-26-diablo-the-seals-and-the-harrogath-portal-quest-object-23) | [C] (fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0, fn:sub_00642BE0_LevelRoomCount@0x00642BE0, run:2026-10-13-mon-spawn) |
 | logic boxes | DRLG state | the list at DRLG room `+0x64` → `+0x30`: per box the tile rectangle `+0x10`, kind `+0x20`, region id `+0x28`, next `+0x2C`. Built by the room's `Logicals` builder, [drlg/collision § G](../drlg/collision.md#g-logic-regions) | `drlg/collision` | [C] (struct:LogicBox+0x10, struct:LogicBox+0x20, struct:LogicBox+0x28, struct:LogicBox+0x2C, run:2026-10-13-mon-spawn, run:2026-10-14-collision) |
-| grid snapshot at pass entry | value oracle | the u16 collision grids of the room and the rooms within two hops: the tile stamp of activation plus every mark made before the pass (preset units, objects, players, walk-ins). The object marks are modelled: [objects](../objects/README.md) gives each object's class, position and mode and [drlg/collision § F](../drlg/collision.md#f-unit-marks) makes its mark, and all 1847 object marks of run:2026-10-15-objects are predicted (plan 0027 Phase 2). What stays a value oracle is the rest of the snapshot: the marks of players, walk-ins, items and corpses ([chain/0001](../../findings/chain/0001-oracles.md) oracle 20). With every chain model in, the composed grid equals the snapshot in 4 723 of 4 883 pass rooms of run:2026-10-21-chain2 ([chain/0003 § 4](../../findings/chain/0003-end-to-end-run.md#4-oracle-20s-residue-by-bit)) | `drlg/collision`, [objects](../objects/README.md) | [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-14-collision, run:2026-10-15-objects, run:2026-10-21-chain2) |
+| grid snapshot at pass entry | value oracle | the u16 collision grids of the room and the rooms within two hops: the tile stamp of activation plus every mark made before the pass (preset units, objects, players, walk-ins). The object marks are modelled: [objects](../objects/README.md) gives each object's class, position and mode and [drlg/collision § F](../drlg/collision.md#f-unit-marks) makes its mark, and all 1847 object marks of the objects run are predicted (plan 0027 Phase 2). What stays a value oracle is the rest of the snapshot: the marks of players, walk-ins, items and corpses ([chain/0001](../../findings/chain/0001-oracles.md) oracle 20). With every chain model in, the composed grid equals the snapshot in 4 723 of 4 883 pass rooms of the second chain run ([chain/0003 § 4](../../findings/chain/0003-end-to-end-run.md#4-oracle-20s-residue-by-bit)) | `drlg/collision`, [objects](../objects/README.md) | [C] (fn:sub_0054EC90_RoomPopulate@0x0054EC90, fn:UNIT_CollMarkRect@0x00620A70, run:2026-10-14-collision, run:2026-10-15-objects, run:2026-10-21-chain2) |
 | `CollisionTest(room, x, y, size, mask)` | modelled, [drlg/collision § E](../drlg/collision.md#e-collisiontest-by-size) | 0 = free; the grid snapshot plus the marks of the monsters the pass has created ([§ F](../drlg/collision.md#f-unit-marks)) | `drlg/collision` | [C] (fn:sub_0064D9B0_CollisionTest@0x0064D9B0, run:2026-10-14-collision) |
 | `LogicRegionIdAt(room, x, y)` | modelled, [drlg/collision § G](../drlg/collision.md#g-logic-regions) step G4 | region id of the logic box at a subtile, −1 if none, 0 if no room holds it | `drlg/collision` | [C] (fn:sub_0061B130_LogicRegionIdAt@0x0061B130, run:2026-10-14-collision) |
 | `SpawnClassCellTest(class, room, x, y, 1)` | modelled, [drlg/collision § H](../drlg/collision.md#h-spawnclasscelltestclass-room-x-y-flag) | an extra cell test for five `BaseId`s, true for every other class | `drlg/collision` | [C] (fn:sub_005FD350_SpawnClassCellTest@0x005FD350, run:2026-10-14-collision) |
-| `NearWarpTest(room, x, y)` | modelled, [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects); the level's warp points from [drlg/warps § E](../drlg/warps.md#e-warp-points), the type-11 point from the log | point within `WarpDist` of one of the level's warp points or of its waypoint point. Not pure: it can activate a room and step the level seed. In the run:2026-10-14-collision logs the warp points are predicted at all 1646 calls: the outdoor rooms' points of levels 4 and 44, logged until plan 0026, now follow from the out rooms' flags. The plan 0014 logs hold no warp points, so there it stays a value oracle | `drlg/collision`; the points [drlg/warps](../drlg/warps.md), outdoor rooms' bits [drlg/outdoor](../drlg/outdoor.md#b-the-cell-grid-and-its-bits) | [C] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-14-collision, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor) |
+| `NearWarpTest(room, x, y)` | modelled, [drlg/collision § I](../drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects); the level's warp points from [drlg/warps § E](../drlg/warps.md#e-warp-points), the type-11 point from the log | point within `WarpDist` of one of the level's warp points or of its waypoint point. Not pure: it can activate a room and step the level seed. In the collision run's logs the warp points are predicted at all 1646 calls: the outdoor rooms' points of levels 4 and 44, logged until an earlier phase (plan 0026), now follow from the out rooms' flags. The spawn run's logs hold no warp points, so there it stays a value oracle | `drlg/collision`; the points [drlg/warps](../drlg/warps.md), outdoor rooms' bits [drlg/outdoor](../drlg/outdoor.md#b-the-cell-grid-and-its-bits) | [C] (fn:sub_0054DB50_NearWarpTest@0x0054DB50, fn:sub_006423D0_LevelWarpPointsBuild@0x006423D0, run:2026-10-14-collision, run:2026-10-15-drlg-maze, run:2026-10-15-drlg-outdoor) |
 | `SpawnPosOnTile(room)` | modelled, [drlg/collision § J](../drlg/collision.md#j-spawnposontileroom-spawncol-1) | the `spawnCol` 1 tile placement: one room draw, then a scan | `drlg/collision` | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision) |
 | seed of another room at its first request in a pass | chain state (plan 0048 Phase 1; a seed oracle before) | a frog demon placed on a near room's tile: its group and minions draw from that room's seed, which the chain carries ([chain § Algorithm](../chain/README.md#algorithm) D6; 2 calls) | [rng/seeds](../rng/seeds.md), [chain](../chain/README.md) | [C] (fn:sub_005B2700_SpawnPosOnTile@0x005B2700, run:2026-10-14-collision, [chain/0002 § 8](../../findings/chain/0002-retirements.md#8-oracle-21-another-rooms-seed-in-a-pass)) |
 | unit seed after `SUnitCreate` | modelled (plan 0048 Phase 1; a seed oracle in this spec's run) | the new monster's `+0x20`. The game-seed step is in scope (§ J); the unit seed is 2 steps past `Init(step(game).low)` on 914 of 916 creations, 6 and 15 on the other two (a class appended to the level's region, note J1). The chain predicts it from the region append and `MonStatsInit`'s draws ([chain § Algorithm](../chain/README.md#algorithm) E1–E3): 12 580 of 12 580 creations of run:2026-10-21-chain2 | `monsters/stats`, [monsters/pool § D](pool.md#d-appearance-sets-sub_005bdb20_monvariantroll) | [C] (fn:sub_00555230_SUnitCreate@0x00555230, fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, run:2026-10-13-mon-spawn, run:2026-10-21-chain2) |
@@ -207,7 +208,7 @@ stateDiagram-v2
     populated: bit 0 set
     [*] --> fresh: activation, flags 0 (rng/seeds 6c)
     fresh --> populated: tick, presets, restore, objects, pass
-    populated --> populated: tick, then inactive restore only when 0x0061A4D0 returns 0
+    populated --> populated: tick, then inactive restore only when RoomRestoredGet returns 0
 ```
 
 ```
@@ -221,7 +222,7 @@ A1. NewRoomsUpdate(game):                                         [C] (fn:sub_00
             RoomObjectsPopulate(game, room)                       ; objects spec §§ C–F
             RoomPopulate(game, room)                              ; §§ B–J
             room.flags ← room.flags | 1
-          else if 0x0061A4D0(room) = 0:
+          else if RoomRestoredGet(room) = 0:
             RoomInactiveUnitsRestore(game, room)
         act[+0x54] ← 0
 ```
@@ -232,12 +233,12 @@ A1. The wanderer tick runs every time a room is in a new-rooms walk, populated o
 moving after its population: 4 785 ticks logged at the tick call, 4 044 on a room with bit 0 set, each exactly one
 step. That matters only to later consumers of the same room seed. [C] (fn:sub_0052D160_NewRoomsUpdate@0x0052D160,
 fn:sub_0054F060_RoomWandererTick@0x0054F060, 0x0052D1C4, run:2026-10-16-sweep-monsters-b, [monsters/0002 § Plan 0038 batch H4b](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4b-run2026-10-16-sweep-monsters-b))
-`sub_0052D0F0_RoomUpdateOne` runs the same body for one room: objdump gives both the same three call paths, with the
-same arguments and the same bit test and set (0x0052D0FB/0x0052D125 against 0x0052D1C9/0x0052D1F2). [C]
-(fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, run:2026-10-13-mon-spawn, [monsters/0002 § Plan 0038 batch S3b](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3b-2026-10-16)) Its three callers are read: 0x00553720 (a
-unit's room change: the room at the unit's target point, added when there is none), 0x0056CF40 (the room of a level's
-type-11 preset point, before a unit is placed there) and 0x0059DFD0 (the same for a type-12 point of level 40, after a
-test on quest 13's record); none passes anything but the server game ([drlg/lifecycle § A](../drlg/lifecycle.md#a-the-frame)). [I]
+`RoomUpdateOne` runs the same body for one room: the decoded instructions give both the same three call paths, with
+the same arguments and the same bit test and set. [C]
+(fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, 0x0052D0FB, 0x0052D125, 0x0052D1C9, 0x0052D1F2, run:2026-10-13-mon-spawn, [monsters/0002 § Plan 0038 batch S3b](../../findings/monsters/0002-room-population.md#plan-0038-batch-s3b-2026-10-16)) Its three callers are read: `PortalPartnerGet` (a
+unit's room change: the room at the unit's target point, added when there is none), `PortalPartnerCreate` (the room of
+a level's type-11 preset point, before a unit is placed there) and `A2Q6_TownPortalPos` (the same for a type-12 point of
+level 40, after a test on quest 13's record); none passes anything but the server game ([drlg/lifecycle § A](../drlg/lifecycle.md#a-the-frame)). [I]
 (0x00553720, 0x0056CF40, 0x0059DFD0)
 
 A2. The room seed at pass entry is `rng/seeds` step 6c, one tick step (plus the wanderer roll's draws in the rare
@@ -419,10 +420,11 @@ gets no random champions or uniques. [C] (0x005BE037, 0x005BE0A3, tbl:Levels.txt
 run:2026-10-13-mon-spawn: 346 type rolls, 115 `MonUMin` draws, 252 `MonUMax` draws, one special at exactly `r = 5`)
 
 E2. **There is no type-1 group.** The pass turns 1 into 2 before its switch, so both values give a normal group.
-The champion branch for 1 at `0x0054EEE4` (one `sub_005BDFF0_ARoomSeedStep` draw, then `sub_0054E190_FormationGroup`)
+The champion branch for 1 (one `ARoomSeedStep` draw, then `FormationGroup`)
 is unreachable in 1.14d. The last draw of the roll still happens, and its value only decides 1 or 2, which
-changes nothing. A reimplementation draws it and ignores it. [C] (0x0054EE0B, 0x0054EE1E, fn:sub_005BDFF0_ARoomSeedStep@0x005BDFF0,
-fn:sub_0054E190_FormationGroup@0x0054E190, run:2026-10-13-mon-spawn: the breakpoint on `0x0054EEE4` never hit)
+changes nothing. A reimplementation draws it and ignores it; in the spawn run a break on that branch never hit. [C]
+(0x0054EE0B, 0x0054EE1E, fn:sub_005BDFF0_ARoomSeedStep@0x005BDFF0, fn:sub_0054E190_FormationGroup@0x0054E190, 0x0054EEE4,
+run:2026-10-13-mon-spawn)
 
 E3. **The count is live.** `nSpecial` (`+0x2C8`) is raised by `MonMarkSpecial` once for each monster not yet flagged
 `0x08`: a random special boss, each champion-pack member, a preset special and a superunique. It is lowered when a
@@ -764,14 +766,14 @@ The two usual steps are named there: the appearance pick and the HP draw of `Mon
 The extra steps come from the level's monster region. `SUnitCreate` reaches `MonsterInit`, which calls
 `MonRegionFindAdd` before `MonStatsInit`. A class not yet in the level's region, with MonStats2 `TotalPieces` above 2,
 is appended to it, and `MonVariantRoll(&unit.seed, entry, 3)` rolls its sets on the **unit** seed. So the unit seed is
-the variant roll's draws plus the usual 2 steps past `Init`. This is the rule
-[monsters/0001 § Plan 0038 batch S3a](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16) (pool 22)
+the variant roll's draws plus the usual 2 steps past `Init`. This is the variant-roll rule of the level pool
+(pool 22; [monsters/0001 § Plan 0038 batch S3a](../../findings/monsters/0001-level-pool.md#plan-0038-batch-s3a-2026-10-16))
 states for the region. [C] (fn:sub_00574250_MonsterInit@0x00574250, fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0,
 fn:sub_005BDB20_MonVariantRoll@0x005BDB20, 0x00547C87, 0x00547CA1, tbl:MonStats2.txt:TotalPieces,
 run:2026-10-13-mon-spawn) The three kept logs of the run hold 1 786 creations (towns and unwatched levels included).
 1 725 take 2 steps and 47 take 3 (a stale entry: `TotalPieces` ≤ 2, one draw per component with a count of at least 1,
 then the HP draw). The other 14 are appends at 6, 10, 11, 13, 14, 15 or 16 steps, and every one has the exact count
-`tools/monpool.py`'s variant roll predicts from its seed; the `goatman1` (6) and the `fallen1` (15) are among them.
+our pool model's variant roll predicts from its seed; the `goatman1` (6) and the `fallen1` (15) are among them.
 The confirmation rests on those 14. The region state is not modelled, so the 2- and 3-step creations fit the rule without
 showing which branch each took. [C] (fn:sub_00547BC0_MonRegionFindAdd@0x00547BC0, run:2026-10-13-mon-spawn;
 [monsters/0002 § Plan 0039 batch P1c](../../findings/monsters/0002-room-population.md#plan-0039-batch-p1c-2026-10-17))
@@ -784,11 +786,11 @@ mod picks ([special § A](special.md#a-champion-or-unique)), the unique minion c
 run:2026-10-13-mon-spawn)
 
 J3. **A skill's summon is created the same way**, outside this pass
-([skills/dispatch § L](../skills/dispatch.md#l-summons)): in 219 summons of plan 0045 (207 Ravens of Skills row 221, 12
+([skills/dispatch § L](../skills/dispatch.md#l-summons)): in 219 summons of the skills run (207 Ravens of Skills row 221, 12
 `necroskeleton` of Raise Skeleton) the game seed steps once in the summon's `SUnitCreate`, the new unit's seed is
 `Init` of that step's low word, and its life and defence are what `MonStatsInit`'s draws give on that seed
 ([stats § B](stats.md#b-monstatsinit-in-order)). [C] (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940,
-fn:sub_00552DF0_UnitSeedInit@0x00552DF0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-27-skills)
+fn:sub_00552DF0_UnitSeedInit@0x00552DF0, fn:sub_00573CB0_MonStatsInit@0x00573CB0, run:2026-10-27-skills, plan 0045)
 `SpawnOwnedMonster` itself adds no draw, and its fallback creation in mode 4 is the reading. [I]
 (fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, fn:sub_005B2F20_SpawnAtPos@0x005B2F20)
 
@@ -806,8 +808,8 @@ K1. RoomWandererTick(game, room):                                 [C] for the fi
 
 - [C] The tick's first draw happens on every tick, and the run checked it on 516 rooms. The wanderer roll never fired
   in that run (1 in 32768 ticks). (fn:sub_0054F060_RoomWandererTick@0x0054F060, run:2026-10-13-mon-spawn)
-- [C] It fired once in run:2026-10-21-sweep-monsters-a: in the Chaos Sanctuary (108, `MonWndr` 1) a tick's step left the
-  low word `0xD17D0000`, `WandererRoll` was entered on exactly that seed, stepped it once more (mod 100 = 82) and, since
+- [C] It fired once in the first monsters sweep: in the Chaos Sanctuary (108, `MonWndr` 1) a tick's step left a
+  low word whose low 16 bits were 0 (high half `0xD17D`), `WandererRoll` was entered on exactly that seed, stepped it once more (mod 100 = 82) and, since
   82 ≥ 3, drew nothing further, so that tick took two steps. Over 7 184 ticks of that run and 4 785 of the kept logs, no
   tick whose step left the low 15 bits 0 went without a roll and no roll came on any other tick. The code tests
   `low & 0x7FFF` (0x0054F089), room `+0x78` = 0 (0x0054F096) and Levels `+0x2E` ≠ 0 (0x0054F0AA), then `low mod 100`
@@ -819,12 +821,12 @@ K1. RoomWandererTick(game, room):                                 [C] for the fi
   (0x0054F041): families `wtick` and `wroll`, 300 cases each, 0 mismatches (run:2026-11-16-sweep2-s7e, [frame/experiments](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e),
   [drlg/lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick)). [I] The spawn branch in a game (a roll below 3, `WandererSpawn`'s
   draws and placement). (fn:sub_0054F060_RoomWandererTick@0x0054F060, fn:sub_0054EF50_WandererSpawn@0x0054EF50)
-  Run:2026-10-17-lifecycle checked the first draw on 11 064 more walked rooms, re-activated ones included. What room `+0x78`
+  The lifecycle run checked the first draw on 11 064 more walked rooms, re-activated ones included. What room `+0x78`
   is, and so in which rooms the gate can pass, is [drlg/lifecycle § I](../drlg/lifecycle.md#i-the-wanderer-tick).
 - [C] The class list has an entry for Act I only: one class, 270 `rogue2`. `WandererSpawn` returns for an act ≥ 5
-  (0x0054EF59), reads the act's `(start, count)` byte pair at `0x00731B30 + 2·act` and the class at `0x00731B2C + 4·(start
-  + i)`; the image holds class 270 and the pairs `(0, 1), (0, 0), (0, 0), (0, 0), (0, 0)` (read with objdump and r2), and
-  the only instructions naming these addresses are three readers (0x0054EF64, 0x0054EF71, 0x0054EF92), no write. A count
+  (0x0054EF59), reads the act's `(start, count)` byte pair at `pairs + 2·act` and the class at `classes + 4·(start
+  + i)`, two tables of the image; the image holds class 270 and the pairs `(0, 1), (0, 0), (0, 0), (0, 0), (0, 0)`, and
+  the only instructions naming these tables are three readers (0x0054EF64, 0x0054EF71, 0x0054EF92), no write. A count
   of 0 returns before any spawn (0x0054EF6E). (fn:sub_0054EF50_WandererSpawn@0x0054EF50, 0x00731B2C, 0x00731B30, [monsters/0002 § Plan 0038 batch H4a](../../findings/monsters/0002-room-population.md#plan-0038-batch-h4a-run2026-10-21-sweep-monsters-a))
 - [C] `MonWndr` reaches the game only through this gate. Two tools find two readers of Levels `+0x2E`: the region build,
   which copies it to `+0x2BE` (the only `+0x2BE` operand in `.text` is that write, so nothing reads the copy), and this
@@ -884,12 +886,11 @@ draws of G3–G5 and of [monsters/special](special.md#draw-order-on-the-unit-see
 
 ## Worked example
 
-Source: run:2026-10-13-mon-spawn, log `monspawn-s3-1-hell-a1.log`, pass at line 21181: `-seed 1`, an expansion
-hell game, level 5 *Dark Wood*, active room `0x03021700` (DRLG room `0x03130700`). It is one of the 11 populated
-rooms whose pass-entry room seed is predicted end to end. `python3 -I tools/monspawn.py check <log> -v` lists it as
-`[('normal', 64, 3), ('normal', 64, 1), ('normal', 20, 1)]`; the room passes with every other room of the log
-(29 853 checks, 0 mismatches). Every value below was re-derived with `tools/rng.py` from the seeds named, and each
-matches the log line. Seeds are `low:high` in hex. Positions are subtiles.
+Source: the spawn run, its session 3: `-seed 1`, an expansion hell game, level 5 *Dark Wood*, one room of it
+(run:2026-10-13-mon-spawn). It is one of the 11 populated rooms whose pass-entry room seed is predicted end to end. Our
+spawn model lists its groups as `[('normal', 64, 3), ('normal', 64, 1), ('normal', 20, 1)]`; the room passes with every
+other room of the log (29 853 checks, 0 mismatches). Every value below was re-derived with our reference model of the
+primitives from the seeds named, and each matches the log line. Seeds are `low:high` in hex. Positions are subtiles.
 
 **The room seed from `-seed 1`.**
 
@@ -897,8 +898,8 @@ matches the log line. Seeds are `low:high` in hex. Positions are subtiles.
 |---|---|---|
 | rng/seeds 3b | `levelSeedBase` = `Step(Init(1)).low` | `6AC6935F` |
 | rng/seeds 4 | level 5 seed | `Init(6AC69364)` |
-| rng/seeds 5, drlg/overview | DRLG room `+0x04` (predicted by `tools/drlg.py gen`) | `8E44259B` |
-| rng/seeds 6a–6b | `Init(8E44259B)`, k = 122 room-type draws (`tools/drlg.py roomk`) | `0A8F2A48:218010C7` |
+| rng/seeds 5, drlg/overview | DRLG room `+0x04` (predicted by our DRLG model) | `8E44259B` |
+| rng/seeds 6a–6b | `Init(8E44259B)`, k = 122 room-type draws (our tile model) | `0A8F2A48:218010C7` |
 | rng/seeds 6c | activation draw, `Init(low)` | active-room seed `4D241A2F:0000029A`, flags 0 |
 | A1 | wanderer tick: one draw (`low & 0x7FFF` = `0x18C5`, no roll) | `61DC98C5:202CC863` |
 | A1 | presets, inactive restore, objects | no draw: still `61DC98C5:202CC863` at pass entry |
@@ -939,7 +940,7 @@ a group of one.
 then 92 → 2. `fallen2` has `BaseId` `fallen1`, so (min, max) = (1, 1). Position (15552, 5642), probe and create
 (room `9F393120:283BBFB8`, game `02EDC268:262F9B10`), leader seed `013AE0B5:2C86C396`. Inside the creation,
 `MinionsSpawn`: `minion1` = `fallen2`, `PartyMin`/`PartyMax` 2/4, `n = 2 + Range(leader, 3) = 2` (leader seed →
-`FB397EDF:00835546`). Minion 1, radius 4, no box: `dx = 0`, `dy = +3` → tested (15553, 5645) 1, (15554, 5645) 1,
+`0xFB397EDF:0x00835546`). Minion 1, radius 4, no box: `dx = 0`, `dy = +3` → tested (15553, 5645) 1, (15554, 5645) 1,
 (15555, 5645) 0 → created (game `90F0B518:0138B80B`). Minion 2: `dx = 0`, `dy = −3` → (15553, 5639) 1, (15554, 5639) 0 →
 created (room `E1A856E7:21B1C714`, game `F0E19383:3C74171E`). Then the group size: `k = 0 + Range(leader, 1) = 0`, one
 draw (leader seed → `219966E1:68C8AB12`).
@@ -957,7 +958,7 @@ draw (leader seed → `219966E1:68C8AB12`).
 ## Reimplementation notes
 
 - **Do not implement a type-1 champion group.** `SpawnTypeRoll` can return 1, but the pass folds it into 2 before
-  dispatch; the `0x0054EEE4` branch and `FormationGroup` are dead code. Keep the roll's last draw. [C] (0x0054EE0B,
+  dispatch; the type-1 branch and `FormationGroup` are dead code. Keep the roll's last draw. [C] (0x0054EE0B, 0x0054EEE4,
   fn:sub_0054E190_FormationGroup@0x0054E190, run:2026-10-13-mon-spawn)
 - **Champion or unique is not part of the type roll.** It is `Range(boss.seed, 100) < 20` after the boss is placed. [C]
   (0x005A0817, run:2026-10-13-mon-spawn)
@@ -997,6 +998,11 @@ draw (leader seed → `219966E1:68C8AB12`).
 
 ## Evidence
 
+- How the statements above were read: the call paths of step note A1 by GNU objdump; `WandererSpawn`'s tables
+  (`0x00731B30`, `0x00731B2C`) read with objdump and r2. The worked example is the log `monspawn-s3-1-hell-a1.log`,
+  pass at line 21181, active room `0x03021700` (DRLG room `0x03130700`), checked with
+  `python3 -I tools/monspawn.py check <log> -v`, recomputed with `tools/rng.py`, the room predicted by
+  `tools/drlg.py gen` and `tools/drlg.py roomk`; the J1 variant counts by `tools/monpool.py`.
 - [findings/monsters/0002-room-population.md](../../findings/monsters/0002-room-population.md): the whole pass,
   §§ 1–9, after the Phase 2 review fixes F6–F11.
 - [findings/monsters/experiments.md § run:2026-10-13-mon-spawn](../../findings/monsters/experiments.md#run2026-10-13-mon-spawn):

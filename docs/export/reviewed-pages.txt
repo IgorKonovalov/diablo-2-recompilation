@@ -86,3 +86,13 @@ specs/stats/aggregate.md
 specs/stats/states.md
 specs/skills/catalogue.md
 specs/save/d2s.md
+#
+# Review of lane/x13b (export readiness part B), 2026-11-17:
+specs/rng/README.md
+specs/rng/seeds.md
+specs/data/strings.md
+specs/drlg/room-tiles.md
+specs/drlg/collision.md
+specs/monsters/spawn.md
+specs/monsters/ai/README.md
+specs/objects/README.md

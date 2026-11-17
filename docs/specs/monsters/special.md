@@ -375,46 +375,49 @@ count of 0 to 1, so `Range(local, 1)` returns 0 and row 0 is used. Stock data re
 
 ### D. Per-mod draws
 
-One row per MonUMod row. Weights are normal / nightmare / hell. "Flag 1" is the special itself and "flag 0" a member of
+One row per MonUMod row. Each row's pick weights (`cpick` and `upick` per difficulty), `xfer`, `fPick`, `exclude1`
+and `enabled` are MonUMod's own values, read from the table: the table doc's *Columns* define them, and its
+[§ Pick weights per difficulty](../../tables/MonUMod.md#pick-weights-per-difficulty) sums up the stock weights, `xfer`,
+`fPick` and `exclude1` of the pick mods. "Flag 1" is the special itself and "flag 0" a member of
 its group. No handler draws on the room or game seed. The effect column only names what [monsters/stats § G](stats.md#g-the-mod-handlers-stat-effects) specifies.
 
-| Row | Mod | Weights | `xfer` | Server handler | Draws, flag 1 | Flag 0 | Effect (named) | Tag |
-|---|---|---|---|---|---|---|---|---|
-| 0 | `none` | — (`enabled` 0) | 1 | null | — | — | its `constants` is the champion chance | [I] (data:g_UModHandlers@0x0073C008) |
-| 1 | `rndname` | — | 0 | fn:sub_005A0CE0_UModRndName@0x005A0CE0, always run | **1 unit-seed step**; name seed | nothing | name seed | [C] (run:2026-10-14-mon-special) |
-| 2 | `hpmultiply` | — | 0 | fn:sub_005A0DC0_UModHpMultiply@0x005A0DC0, always run | none | runs | hit points | [C] (run:2026-10-14-mon-special) |
-| 3 | `light` | — | 0 | null, always tried | — | — | — | [C] (data:g_UModAlwaysMods@0x006E2168, run:2026-10-14-mon-special) |
-| 4 | `leveladd` | — | 0 | fn:sub_005A0E40_UModLevelAdd@0x005A0E40, always run | none | runs | level + 3, experience × 5 | [C] (run:2026-10-14-mon-special) |
-| 5 | `strong` | u 6/6/6 | 1 | fn:sub_005A17E0_UModStrong@0x005A17E0 | none | runs | to-hit, damage | [C] (run:2026-10-14-mon-special) |
-| 6 | `fast` | u 6/6/6, `fPick` 3 | 1 | fn:sub_005A1910_UModFast@0x005A1910 | none | runs | velocity | [C] (run:2026-10-14-mon-special) |
-| 7 | `curse` | u 6/6/6 | 1 | null | — | — | elsewhere | [C] (run:2026-10-14-mon-special) |
-| 8 | `resist` | u 0/6/6 | 1 | fn:sub_005A1370_UModResist@0x005A1370 | none | nothing | resistances | [C] (run:2026-10-14-mon-special) |
-| 9 | `fire` | u 6/6/6 | 1 | fn:sub_005A1990_UModFire@0x005A1990 | none | runs, `resist` part skipped | enchant damage, resistance | [C] (run:2026-10-14-mon-special) |
-| 10, 11, 13, 14, 15 | `poisondead`, `durieldead`, `rage`, `spcdamage`, `partydead` | — | 0 | null | — | — | post-create mods (§ J) | [C] for 10 and 13, skipped in every window that listed them (run:2026-10-21-sweep-monsters-a); [I] for 11, 14, 15, in no logged list (data:g_UModHandlers@0x0073C008) |
-| 12 | `bloodraven` | — | 0 | null (client: the name) | — | — | Blood Raven's name | [C] (data:g_ClientUModHandlers@0x00724D78, run:2026-10-21-sweep-monsters-a: written by the preset path with no `SpecialModsApply` window; the client builder names it) |
-| 16 | `champion` | c 1/1/1 | 1 | fn:sub_005A0E80_UModChampion@0x005A0E80 | none | nothing | level − 1, experience, to-hit, damage, velocity | [C] (run:2026-10-14-mon-special) |
-| 17 | `lightning` | u 6/6/6, `exclude1` `sandleaper` | 1 | fn:sub_005A1B00_UModLightning@0x005A1B00 | none | runs, `resist` part skipped | enchant damage, resistance | [C] (run:2026-10-14-mon-special) |
-| 18 | `cold` | u 6/6/6 | 1 | fn:sub_005A1C70_UModCold@0x005A1C70 | none | runs, `resist` part skipped | enchant damage, resistance | [C] (run:2026-10-14-mon-special) |
-| 19, 21 | `hireable`, `killself` | — | 0 | null | — | — | — | [I] (data:g_UModHandlers@0x0073C008) |
-| 20 | `scarab` | — | 0 | null | — | — | post-create mod of `scarab1` classes | [C] (run:2026-10-14-mon-special) |
-| 22 | `questcomplete` | — | 0 | null | — | — | appended to every superunique | [C] (run:2026-10-14-mon-special) |
-| 23 | `poisonhit` | — | 0 | fn:sub_005A1E00_UModPoisonHit@0x005A1E00 | none | runs, `resist` part skipped | enchant damage | [I] (fn:sub_005A1E00_UModPoisonHit@0x005A1E00) |
-| 24 | `thief` | — (`enabled` 0) | 1 | null | — | — | never written (§ G) | [I] (0x005A4AF0–0x005A4B22) |
-| 25 | `manahit` | u 6/6/6 | 1 | fn:sub_005A1F90_UModManaHit@0x005A1F90 | none | runs, `resist` part skipped | enchant damage | [C] (run:2026-10-14-mon-special) |
-| 26 | `teleport` | u 6/6/6, `fPick` 1 | 1 | fn:sub_005A1600_UModTeleport@0x005A1600 | none on unit, room or game seed (skill setup asserted) | nothing | teleport skill | [C] (run:2026-10-14-mon-special) |
-| 27 | `spectralhit` | u 6/6/6 | 1 | fn:sub_005A1370_UModResist@0x005A1370 | none | nothing | resistances | [C] (run:2026-10-14-mon-special) |
-| 28 | `stoneskin` | u 6/6/6 | 1 | fn:sub_005A1370_UModResist@0x005A1370 | none | nothing | resistances | [C] (run:2026-10-14-mon-special) |
-| 29 | `multishot` | u 6/6/6, `fPick` 2 | 1 | null | — | — | elsewhere | [C] (run:2026-10-14-mon-special) |
-| 30 | `aura` | u 6/6/6 | 0 | fn:sub_005A1650_UModAura@0x005A1650 | **`Range(Init(nameSeed), n)`** on a local seed | nothing | aura skill and level | [C] (run:2026-10-14-mon-special) |
-| 31–35, 40, 42 | `goboom`, `firespike_explode`, `suicideminion_explode`, `ai_after_death`, `shatter_on_death`, `worms_on_death`, `lightningdeath` | — | 0 | null | — | — | — | [C] for 34 and 35, in 17 applied lists with no call (run:2026-10-15-mon-stats); [I] for 31–33, 40, 42, in no logged list (data:g_UModHandlers@0x0073C008) |
-| 36 | `ghostly` | c 1/1/1, expansion | 1 | fn:sub_005A1080_UModGhostly@0x005A1080 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
-| 37 | `fanatic` | c 1/1/1, expansion | 1 | fn:sub_005A11F0_UModFanatic@0x005A11F0 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
-| 38 | `possessed` | c 1/1/1, expansion | 1 | fn:sub_005A1230_UModPossessed@0x005A1230 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
-| 39 | `berserk` | c 1/1/1, expansion | 1 | fn:sub_005A1280_UModBerserk@0x005A1280 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
-| 41 | `always_run_ai` | — | 0 | fn:sub_005A1330_UModAlwaysRunAi@0x005A1330 | none on the three seeds (AI event, not reached) | runs | AI timer | [I] (fn:sub_005A1330_UModAlwaysRunAi@0x005A1330) |
+| Row | Mod | Server handler | Draws, flag 1 | Flag 0 | Effect (named) | Tag |
+|---|---|---|---|---|---|---|
+| 0 | `none` | null | — | — | its `constants` is the champion chance | [I] (data:g_UModHandlers@0x0073C008) |
+| 1 | `rndname` | fn:sub_005A0CE0_UModRndName@0x005A0CE0, always run | **1 unit-seed step**; name seed | nothing | name seed | [C] (run:2026-10-14-mon-special) |
+| 2 | `hpmultiply` | fn:sub_005A0DC0_UModHpMultiply@0x005A0DC0, always run | none | runs | hit points | [C] (run:2026-10-14-mon-special) |
+| 3 | `light` | null, always tried | — | — | — | [C] (data:g_UModAlwaysMods@0x006E2168, run:2026-10-14-mon-special) |
+| 4 | `leveladd` | fn:sub_005A0E40_UModLevelAdd@0x005A0E40, always run | none | runs | level + 3, experience × 5 | [C] (run:2026-10-14-mon-special) |
+| 5 | `strong` | fn:sub_005A17E0_UModStrong@0x005A17E0 | none | runs | to-hit, damage | [C] (run:2026-10-14-mon-special) |
+| 6 | `fast` | fn:sub_005A1910_UModFast@0x005A1910 | none | runs | velocity | [C] (run:2026-10-14-mon-special) |
+| 7 | `curse` | null | — | — | elsewhere | [C] (run:2026-10-14-mon-special) |
+| 8 | `resist` | fn:sub_005A1370_UModResist@0x005A1370 | none | nothing | resistances | [C] (run:2026-10-14-mon-special) |
+| 9 | `fire` | fn:sub_005A1990_UModFire@0x005A1990 | none | runs, `resist` part skipped | enchant damage, resistance | [C] (run:2026-10-14-mon-special) |
+| 10, 11, 13, 14, 15 | `poisondead`, `durieldead`, `rage`, `spcdamage`, `partydead` | null | — | — | post-create mods (§ J) | [C] for 10 and 13, skipped in every window that listed them (run:2026-10-21-sweep-monsters-a); [I] for 11, 14, 15, in no logged list (data:g_UModHandlers@0x0073C008) |
+| 12 | `bloodraven` | null (client: the name) | — | — | Blood Raven's name | [C] (data:g_ClientUModHandlers@0x00724D78, run:2026-10-21-sweep-monsters-a: written by the preset path with no `SpecialModsApply` window; the client builder names it) |
+| 16 | `champion` | fn:sub_005A0E80_UModChampion@0x005A0E80 | none | nothing | level − 1, experience, to-hit, damage, velocity | [C] (run:2026-10-14-mon-special) |
+| 17 | `lightning` | fn:sub_005A1B00_UModLightning@0x005A1B00 | none | runs, `resist` part skipped | enchant damage, resistance | [C] (run:2026-10-14-mon-special) |
+| 18 | `cold` | fn:sub_005A1C70_UModCold@0x005A1C70 | none | runs, `resist` part skipped | enchant damage, resistance | [C] (run:2026-10-14-mon-special) |
+| 19, 21 | `hireable`, `killself` | null | — | — | — | [I] (data:g_UModHandlers@0x0073C008) |
+| 20 | `scarab` | null | — | — | post-create mod of `scarab1` classes | [C] (run:2026-10-14-mon-special) |
+| 22 | `questcomplete` | null | — | — | appended to every superunique | [C] (run:2026-10-14-mon-special) |
+| 23 | `poisonhit` | fn:sub_005A1E00_UModPoisonHit@0x005A1E00 | none | runs, `resist` part skipped | enchant damage | [I] (fn:sub_005A1E00_UModPoisonHit@0x005A1E00) |
+| 24 | `thief` | null | — | — | never written (§ G) | [I] (0x005A4AF0–0x005A4B22) |
+| 25 | `manahit` | fn:sub_005A1F90_UModManaHit@0x005A1F90 | none | runs, `resist` part skipped | enchant damage | [C] (run:2026-10-14-mon-special) |
+| 26 | `teleport` | fn:sub_005A1600_UModTeleport@0x005A1600 | none on unit, room or game seed (skill setup asserted) | nothing | teleport skill | [C] (run:2026-10-14-mon-special) |
+| 27 | `spectralhit` | fn:sub_005A1370_UModResist@0x005A1370 | none | nothing | resistances | [C] (run:2026-10-14-mon-special) |
+| 28 | `stoneskin` | fn:sub_005A1370_UModResist@0x005A1370 | none | nothing | resistances | [C] (run:2026-10-14-mon-special) |
+| 29 | `multishot` | null | — | — | elsewhere | [C] (run:2026-10-14-mon-special) |
+| 30 | `aura` | fn:sub_005A1650_UModAura@0x005A1650 | **`Range(Init(nameSeed), n)`** on a local seed | nothing | aura skill and level | [C] (run:2026-10-14-mon-special) |
+| 31–35, 40, 42 | `goboom`, `firespike_explode`, `suicideminion_explode`, `ai_after_death`, `shatter_on_death`, `worms_on_death`, `lightningdeath` | null | — | — | — | [C] for 34 and 35, in 17 applied lists with no call (run:2026-10-15-mon-stats); [I] for 31–33, 40, 42, in no logged list (data:g_UModHandlers@0x0073C008) |
+| 36 | `ghostly` | fn:sub_005A1080_UModGhostly@0x005A1080 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
+| 37 | `fanatic` | fn:sub_005A11F0_UModFanatic@0x005A11F0 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
+| 38 | `possessed` | fn:sub_005A1230_UModPossessed@0x005A1230 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
+| 39 | `berserk` | fn:sub_005A1280_UModBerserk@0x005A1280 | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] (run:2026-10-14-mon-special) |
+| 41 | `always_run_ai` | fn:sub_005A1330_UModAlwaysRunAi@0x005A1330 | none on the three seeds (AI event, not reached) | runs | AI timer | [I] (fn:sub_005A1330_UModAlwaysRunAi@0x005A1330) |
 
 - [C] A `[C]` row is a mod that was in some logged special's list (or always run), with its handler calls seed-asserted:
-  in run:2026-10-14-mon-special, and for rows 10, 12, 13, 34 and 35 in the later runs named in their rows. The `[I]` rows
+  in the special-monsters run (run:2026-10-14-mon-special), and for rows 10, 12, 13, 34 and 35 in the later runs named in their rows. The `[I]` rows
   (and the `[I]` parts of the split rows) were never in a logged list. For those the "none" rests on the static call
   graph: no LCG step and no RNG call in the stat handlers, the single step of `rndname`, the local draw of `aura`, and RNG
   only deep inside the skill and AI callees of `teleport`, `aura` and `always_run_ai`. (run:2026-10-14-mon-special,
@@ -636,7 +639,7 @@ H2. MonPlace case 3, a champion at the point:                      [C] (0x0054E8
   [monsters/0003 § 7](../../findings/monsters/0003-special-monsters.md#7-monplace-presets-2-and-3-and-0x110x20))
 - [I] **Every MonPlace row, from the switch.** The MonPlace branch switches on `index − 2` with the bound `0x1E`
   (0x0054E76F–0x0054E782). Rows 0, 1 and 33–36 fail the bound, and rows 6, 7, 9, 12–16 and 19–21 have byte-table entry 8;
-  both go to 0x0054EAFE, which returns 0 with no call. **These rows place nothing in `PresetMonSpawn`**:
+  both go to an exit that returns 0 with no call (0x0054EAFE). **These rows place nothing in `PresetMonSpawn`**:
   `place_nothing`, `place_npc_pack`, the river monsters, `place_amphibian`, the nests, the talking and dumb guards,
   `place_maggot`, `place_maggotegg`, `place_mosquitonest` and `place_group25` to `place_group100`. A `place_group25`–`75`
   unit that the DRLG preset pass keeps on its room-seed draw ([drlg/preset § 3](../drlg/preset.md#3-the-keepdrop-rolls))
@@ -768,13 +771,13 @@ fn:sub_00653E20_UNameTablesFree@0x00653E20, tbl:UniqueTitle.txt:Name, run:2026-1
   | 243 `diablo`, `diabloclone` | 22; `uberdiablo` (705): 22, 8, 6 | quest hook 23 | [C] the first call only: `diablo` and `diabloclone` mod 22, class 705 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 256 `izual` | 22; `uberizual` (706): 6, 18 | quest hook 22 | [C] the first call only: `izual` mod 22, class 706 mod 6 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 544 `baalcrab` | 22; `uberbaal` (709): 22, 18, 8, 6 | quest hook 36 | [C] the first call only: `baalcrab` and class 570 quest hook 36, class 709 mod 22 (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber); [I] the later calls (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
-  | 267 `bloodraven` | 12, 22 | quest hook 2; `0x00639DB0(unit, 0x76, 1)` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 267 `bloodraven` | 12, 22 | quest hook 2; `STATE_Set(unit, 0x76, 1)` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, fn:STATE_Set@0x00639DB0) |
   | 284 `maggotqueen1`..`5` | 23, 22 | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 292 `firegolem` | 31 (flag 0) | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 366 `compellingorb` | 22 | quest hook 19, unit flag `0x20000` | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 402 `smith` | 22 | — | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
   | 526 `nihlathakboss` | 22 | quest hook 34 | [C] the mod (run:2026-10-21-sweep-monsters-a); [I] the hook (0x005B2002) |
-  | 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); `0x005B1C50`, the gear call (540); `0x005447A0` (175) | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0) |
+  | 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); the gear call (540); an unnamed call (175) | [I] (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, 0x005B1C50 for 540, 0x005447A0 for 175) |
 
 - [C] **The first call of `MonPostCreateBoss`, for six `BaseId`s.** For `BaseId`s 156, 211, 242, 243, 256 and 544, the table's rows above: by class, the first `ModAppendApply(game, unit, mod, 1)` or `QUESTS_HookMonster` is the one each row names, so `mephisto` and `baalcrab` reach their quest hook before their mod 22, and `duriel` its hook 13 first. Each case ends at that first callee (ADR-0021). This covers neither the callee, nor the later mods (704 → 22, 30, 17, 8, 6; 705 → 22, 8, 6; 709 → 22, 18, 8, 6, which stay `[I]`), nor reach: a p-code run says nothing about whether a unit of an uber class exists. (fn:sub_005B1CF0_MonPostCreateBoss@0x005B1CF0, run:2026-11-03-ai-uber,
   [ai/0016 § 6](../../findings/ai/0016-uber-event.md#6-what-the-classes-do-get))
@@ -905,14 +908,13 @@ sequenceDiagram
 
 ## Worked example
 
-Every value below is from the logs of run:2026-10-14-mon-special. The draws were re-derived with `tools/rng.py` from the
-seeds named and each one matches the log; `python3 -I tools/monspawn.py check <log>` reproduces the whole log with 0
-mismatches. Seeds are `low:high` in hex. A "step" is one `Step` of the named seed.
+Every value below is from the logs of the special-monsters run (run:2026-10-14-mon-special). The draws were re-derived
+from the seeds named and each one matches the log, and the model reproduces the whole log with 0 mismatches. Seeds are `low:high` in hex. A "step" is one `Step` of the named seed.
 
 ### Example 1: a champion pack (expansion nightmare)
 
-Source: `workspace/logs/monspecial-s6-2106-nightmare.log`, line 3700 (`-seed 2106`, expansion nightmare, level 112 Arreat
-Plateau). A random boss of class 620 `blunderbore6` (`NameStr` `Mauler`, no `minion1`), unit id 9. Its unit seed after
+The session of game seed 2106, expansion nightmare, level 112 Arreat
+Plateau. A random boss of class 620 `blunderbore6` (`NameStr` `Mauler`, no `minion1`), unit id 9. Its unit seed after
 `SUnitCreate` (input) is `2F323723:44E307EC`; it has no mods.
 
 | # | Draw | Seed after | Result |
@@ -936,7 +938,7 @@ is made. The live special count went from 0 to 3.
 
 ### Example 2: a unique group (expansion nightmare)
 
-Source: the same log, line 9960. A random boss of class 620 `blunderbore6`, unit id 97, in the same level. Unit seed after
+The same session. A random boss of class 620 `blunderbore6`, unit id 97, in the same level. Unit seed after
 `SUnitCreate` (input) `4E0156CB:21241A4D`, no mods.
 
 | # | Draw | Seed after | Result |
@@ -964,7 +966,7 @@ docs).
 
 ### Example 3: a superunique (expansion hell)
 
-Source: `workspace/logs/monspecial-s11-2111-hell.log`, line 3855 (`-seed 2111`, expansion hell, level 4 Stony Field).
+The session of game seed 2111, expansion hell, level 4 Stony Field.
 Rakanishu, record 3: class 20 `fallen2`, `Mod1` 17, `Mod2` 6, `Mod3` 0, `MinGrp` = `MaxGrp` = 8, `AutoPos` 0, `Stacks` 0,
 not yet placed. The exact placement at the preset point (5099, 5219) costs 3 room draws (room `39E33144:354998C5` →
 `824B6B7C:26EFD6FB`) and one game step. The unit seed after `SUnitCreate` (input) is `552E1840:49D16526`.
@@ -982,7 +984,7 @@ The client shows the record's `Name`; no client draw.
 
 ### Example 4: a name with an appellation
 
-Source: `workspace/logs/monspecial-s11-2111-hell.log`, line 6512. A unique of class 53, unit id 48, server name seed
+The same session as example 3. A unique of class 53, unit id 48, server name seed
 54871 (`0xD657`). The client keeps 87 (`0x57`).
 
 | # | Client draw on `Init(87)` = `00000057:0000029A` | Seed after | Result |
@@ -1034,6 +1036,10 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
 
 ## Evidence
 
+- How the worked examples were checked: each draw re-derived with `tools/rng.py`; `python3 -I tools/monspawn.py check
+  <log>` reproduces each log with 0 mismatches. Example 1 is `workspace/logs/monspecial-s6-2106-nightmare.log` line 3700,
+  example 2 the same log's line 9960, example 3 `workspace/logs/monspecial-s11-2111-hell.log` line 3855, example 4 the
+  same log's line 6512 (run:2026-10-14-mon-special).
 - [findings/monsters/0003-special-monsters.md](../../findings/monsters/0003-special-monsters.md): §§ 1–8 (the reading),
   § 10 (the reproduction), *Leads used* (the Phase 1b cross-check: 37 verdicts, the three contradicted claims).
 - [findings/monsters/experiments.md § run:2026-10-14-mon-special](../../findings/monsters/experiments.md#run2026-10-14-mon-special):

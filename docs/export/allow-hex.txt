@@ -116,6 +116,8 @@ pin 0090CE8A specs/drlg/README.md :: worked-example row 9's level seed E18C3A55:
 pin 004BC4A3 specs/items/affixes.md :: example 3's seed after draw 1, 004bc4a3:517d17c7, one step of c35f85d3:0d511944
 pin 007C890F specs/items/economy.md :: example 8's attacker seed after one step, 007c890f:575b5184, from d1712f2d:0b0beb6e
 pin 006E9C81 specs/combat/damage.md :: the worked example's row 2 seed after RangeB(71104), 0be642ca:006e9c81, one step of 0109323f:20d5284f
+pin 0090CE87 specs/rng/README.md :: the high word after step 4 of the worked example on seed 12345 (review of lane/x13b, recomputed)
+pin 00835546 specs/monsters/spawn.md :: the leader seed's high word after the minion-count draw of the worked example (review of lane/x13b, recomputed from 013AE0B5:2C86C396)
 
 # Pure arithmetic of the specs (owner decision 2026-11-17, plan 0070 Phase 9): limits and masks, powers of two,
 # compiler division reciprocals and the two well-known LCG constants, admitted as plain values. A domain value (a

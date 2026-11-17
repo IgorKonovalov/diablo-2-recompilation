@@ -119,13 +119,13 @@ sequenceDiagram
   least 20 drawing pairs: Fetish has 22, and the other 15 have 58 or more. (run:2026-11-03-ai, run:2026-11-04-ai-r5)
 - A3. [I] **Chaining short by name:** Andariel has 8 drawing pairs of the 20 asked and BatDemon 1 of 300 pairs, so the
   chaining of those two kinds stays a reading. (run:2026-11-04-ai-r5)
-- A4. [C] **The H1 gaps, new ones.** With the AI logger beside the skills logger, 41 of the 49 monster gaps of six
+- A4. [C] **The H1 gaps, new ones.** With the AI log lines beside the skills log lines, 41 of the 49 monster gaps of six
   replayed sessions close: every entry seed on the way agrees with the walking seed, and the next skill event starts
   inside the unit's own decision, at 0 steps from that decision's last boundary line. All 41 are AI row 13, and the
   resumed model reproduces every decision between the two events (91). Logged paths only: the seed movement is the
   decision's, and the callee that starts the skill is a boundary. (run:2026-11-04-h1, fn:sub_005F1440_AiFallenShaman@0x005F1440)
 - A5. [C] **The rest of H1.** The other 8 stop at an `AD0` whose attacker is the gap's monster, its seed 1 step (5 gaps),
-  3 (2) or 4 (1) past the walking seed ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); which draws those are is not examined. The 331 gaps of plan 0045 cannot be re-walked, as their logs
+  3 (2) or 4 (1) past the walking seed ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); which draws those are is not examined. The 331 gaps of the earlier skills runs (plan 0045) cannot be re-walked, as their logs
   hold no AI line and a replay does not reproduce them; they have the same shape, which is all their logs can say: 330
   are of classes 58 and 59, and the first disagreement is `MAS0` in 257 and `AD0` in 70. The frame model's walk re-chains none of
   the 331 ([frame/0004 § 6](../../../findings/frame/0004-order-on-kept-logs.md#6-the-resynchronised-entries), run:2026-11-03-frame-order).
@@ -231,12 +231,13 @@ C4. MonAiDelayEarlier(n):                                                  [C] t
   agreeing; the 30 are the sites below with `MonAiIdle`, `MonAiDelay`, `MonAiDelayEarlier` and two of
   `MonModeStartNeutral` (C1 to C4), and the frame offsets the walker resolves hold: `T + 2` twice, 15, 25, 15, 13 twice,
   1, 20 and 20 ([run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f), 0x005417D0). [I] The other sites' offsets, as read: `MonAiTargetOrWait` (`T + 20`); `MonKnockbackEnd` (`T + 1`,
-  `T + 15`), 0x005A74E0 (`T + 15`), freeze (`T + length + 1`), 0x0057B170 (`T + ebx`), 0x0058594B (`T + eax + 1`),
-  0x005A3A6C (`T + 51`); `SpawnOwnedMonster` (`T + 25`), `RoomInactiveUnitsRestore` (a saved delay), 0x00573780 (`T + 2`,
-  twice), `UnitInteract` and 0x0054CA10 (`T + 1`); `SkillReviveDo` (`T + 25`), `SummonFinish` (`T + 15`), 0x005D1320 and
-  `SkillDo126ImpInferno` (`T + 13`), `SkillDo44BladeSentinel`, `SkillDo71Taunt`, `MonFleeFrom` (`T + 1`), `SkillDo49Shadow`
-  and `SkillDo16Valkyrie` (`T + 20`), and two AI helpers 0x005E8140, 0x005E8340 (`T + 1`).
-  (fn:sub_005A8520_MonKnockbackEnd@0x005A8520, fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, 0x005417D0)
+  `T + 15`), an unnamed site (`T + 15`), freeze (`T + length + 1`), three unnamed sites (`T + ebx`, `T + eax + 1` and
+  `T + 51`); `SpawnOwnedMonster` (`T + 25`), `RoomInactiveUnitsRestore` (a saved delay), an unnamed function (`T + 2`,
+  twice), `UnitInteract` and an unnamed site (`T + 1`); `SkillReviveDo` (`T + 25`), `SummonFinish` (`T + 15`), an unnamed
+  site and `SkillDo126ImpInferno` (`T + 13`), `SkillDo44BladeSentinel`, `SkillDo71Taunt`, `MonFleeFrom` (`T + 1`),
+  `SkillDo49Shadow` and `SkillDo16Valkyrie` (`T + 20`), and two AI helpers, `AiSt11` and `AiSt12` (`T + 1`).
+  (fn:sub_005A8520_MonKnockbackEnd@0x005A8520, fn:sub_0056D940_SpawnOwnedMonster@0x0056D940, 0x005417D0, 0x005A74E0,
+  0x0057B170, 0x0058594B, 0x005A3A6C, 0x00573780, 0x0054CA10, 0x005D1320, 0x005E8140, 0x005E8340)
 - C6. [C] **What this means.** After a last-call `Idle(n)` or `Delay(n)` the next AI event comes at `T + n` (C2, C3;
   [run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)). [I] A monster that commands a mode usually gets its next AI event from that mode's end
   (`MonModeStartNeutral` at `T + aidel`, or a direct call at one of the nine mode ends); an idle monster with no target
@@ -255,7 +256,7 @@ flowchart TD
   A["MonAiEntryGet(unit, state)"] --> Q{"state = 0?"}
   Q -->|"no"| G{"state in 10..12?"}
   G -->|"no"| SR["state row"]
-  G -->|"yes"| GG{"gate 0x00623470 allows?"}
+  G -->|"yes"| GG{"gate for states 10–12 allows?"}
   GG -->|"yes"| SR
   GG -->|"no"| CR
   Q -->|"yes"| CR{"AI in 0..147?"}
@@ -340,7 +341,7 @@ E1. MonAiInit(game, unit, ctl, state: i32):                                [C] t
       r.init(game, unit, &blk)     ; blk laid out as an AiCtx: ctl, six zeros, MonStats, MonStats2;
                                    ; returns without setting anything more when a record is missing
       AiCtl.state ← state
-      AiCtl.think ← r.think, or 0x005B0CD0 when 0
+      AiCtl.think ← r.think, or AiIdle when 0
       if IsBadCodePtr(AiCtl.think) ≠ 0: fatal               ; KERNEL32, not run
 ```
 
@@ -397,10 +398,10 @@ E1. MonAiInit(game, unit, ctl, state: i32):                                [C] t
   The words of the table are bytes of the image ([MonAI § The second table](../../../tables/MonAI.md#the-second-table-at-0x0073d358-found-at-the-lanea52-review)); what they do is the reading above.
   (data:g_MonAiStateRows@0x0073D358, fn:sub_005C34B0_CurseSetAiState@0x005C34B0, fn:sub_005DDD00_MonFleeFrom@0x005DDD00,
   fn:sub_005D18E0_ImpAttach@0x005D18E0, fn:sub_005C35C0_CurseApplyCb@0x005C35C0, 0x005D6612, 0x005D1EC0)
-- E6. [C] **States seen live.** In the logged lines of the 21 sessions of run:2026-11-03-ai-3 (Normal, 34 980 frames, 27
+- E6. [C] **States seen live.** In the logged lines of the 21 sessions of the third AI run (Normal, 34 980 frames, 27
   caps; 7 539 decisions, 10 721 events) the state is 0 everywhere except two sessions: `s-necro-curse` has 10 in 38
   decisions and 11 in 78, and `s-barb-howl` 11 in 20 decisions and 41 events and 12 in 56 decisions. States 1 to 9 and
-  13 to 17 occur in 0 of those lines. Over the 17 logs of run:2026-11-04-ai-r5 the states are 0 in 5 894 decisions, 10 in
+  13 to 17 occur in 0 of those lines. Over the 17 logs of the rev 5 AI run the states are 0 in 5 894 decisions, 10 in
   594 and 11 in 36, with 12 absent. This is a statement about those logged lines: the word is read only at a decision or
   an event, and the curses not cast, Nightmare and Hell are outside it. (run:2026-11-03-ai-3, run:2026-11-04-ai-r5, 0x005B186F)
 - E7. [C] No immediate call passes 2, 3, 8, 9, 14 or 17 (both walkers), and `SpawnOwnedMonster` has 15 direct calls
@@ -412,8 +413,8 @@ E1. MonAiInit(game, unit, ctl, state: i32):                                [C] t
   skill whose `auratargetstate` (Skills `+0x82`) is 23, 27 or 56, else 0. The states' think functions are the catalogue's.
   (fn:sub_005C34B0_CurseSetAiState@0x005C34B0, 0x005C34D8, 0x005C3503, tbl:Skills.txt:auratargetstate)
 - E8a. [C] **Not the only setter.** States 10 (594 decisions) and 11 (36) occur in the Countess launches of
-  run:2026-11-04-ai-r5 with no curse cast, so E8 is one route among E5's setters, not the only one. ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m),
-  fn:sub_005C34B0_CurseSetAiState@0x005C34B0)
+  the rev 5 AI run with no curse cast, so E8 is one route among E5's setters, not the only one. ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m),
+  fn:sub_005C34B0_CurseSetAiState@0x005C34B0, run:2026-11-04-ai-r5)
 - E9. [I] **The inactive save and restore** keep, of all this, only the saved point of parameter record 10 for
   `isSpawn`/`isMelee`/`interact`-class rows and three named classes, the owner link of classes 68 and 543, and a
   `MonsterData+0x0E` byte for classes 311 and 312; the state word and think function are rebuilt by `MonAiInit` on
@@ -437,8 +438,8 @@ F1. MonAiPreChecks:                                                        [C] t
 F2. MonAiOpenDoor:                                                         [I] (fn:sub_005B0F50_MonAiOpenDoor@0x005B0F50, 0x00621A70, 0x00584540)
       for a MonStats opendoors row (+0x0C bit 3 of ctx's record, ctx+0x1C, tested first)
       whose cell has collision bit 0x800:
-        o ← search kind 8                      ; the nearest object with 0x00621A70 set in mode 0
-        if o's Objects record +0x16D ≠ 0: operate it (0x00584540(2, guid)); MonAiIdle(5); stop
+        o ← search kind 8                      ; the nearest object passing an unnamed mode-0 test (0x00621A70)
+        if o's Objects record +0x16D ≠ 0: operate it (arguments 2, guid); MonAiIdle(5); stop    ; the operate call 0x00584540
 F3. MonAiBossSightPause:                                                   [I] (fn:sub_005B1140_MonAiBossSightPause@0x005B1140, 0x005B11B8, 0x005B11CB, fn:sub_00553380_UnitSetEvent@0x00553380)
       for class 250, a champion or unique, or a boss,
       at distance below 20 (unsigned) from a player target, with AiCtl flag 0x10 clear:
@@ -480,14 +481,14 @@ argument addresses. It stops there: what the callee returns and everything after
   construction, and the melee control fails 767 of 4 476 and separates nothing in 16 rows. 1 163 decisions have a choice
   of first call. By row, 9 tier AIs have one outcome there (rows 6, 13, 28, 29, 30, 35, 37, 61, 64) and 7 more than one.
   (run:2026-11-04-ai-r5, 0x005B186F)
-- G4. [C] **The logger's own fault, found and bounded.** The first rev 5 logs of the Far Oasis had 36 first-boundary
-  mismatches, all Scarab, all the call of `GameFindUnit` at 0x0058F0FF inside a pending `MonsterOwner`, which rev 5's
-  pending rule hid. They are exactly the rev 5 decisions with `MonsterOwner` at 0x005F258A; rev 6 logs that one line again,
+- G4. [C] **The log's own fault, found and bounded.** The first rev 5 logs of the Far Oasis had 36 first-boundary
+  mismatches, all Scarab, all the call of `GameFindUnit` inside a pending `MonsterOwner`, which rev 5's
+  pending rule hid. They are exactly the rev 5 decisions with the `MonsterOwner` call at one site; rev 6 logs that one line again,
   and no model changed. On the logs written after the fix the model's words at that call held in all 43 decisions that
   reach it, 24 from a seed that did not exist at the fix. (run:2026-11-04-ai-r5, fn:sub_0058F0D0_MonsterOwner@0x0058F0D0,
-  fn:sub_00552F60_GameFindUnit@0x00552F60)
+  fn:sub_00552F60_GameFindUnit@0x00552F60, 0x0058F0FF, 0x005F258A)
 - G5. [I] **A hand map stays a reading.** For rows 6, 13, 28, 29's think and 35, G1's map is the first-callee map read from the
-  finding and objdump, not emulated. The logged first call equals it, and that equality is what G1 confirms; the map
+  code, not emulated. The logged first call equals it, and that equality is what G1 confirms; the map
   as a rule of the code is not raised. (run:2026-11-04-ai-r5, [ai/0015 § 1](../../../findings/ai/0015-phase2-first-run.md#1-what-is-logged-and-compared))
 
 The per-AI table, decisions and distinct predicted first boundaries of the first run (the logs of `AI_CAP_ROW` 200 per
@@ -568,7 +569,7 @@ forks. A model that forks on unknowns cannot fail there, so the number of calls 
   | 114 | ReanimatedHorde | 243 | 221 | 8 of 8 | the 84 logs | plan 0069 Phase 4; calls past the first in 221 |
   | 124 | FrozenHorror | 135 | 406 | 6 of 6 | the 84 logs | plan 0069 Phase 4 |
 
-- H1b. [C] **State 13's row, three given words.** For that row alone the "logged inputs" include three words the stock model does not load: the list's count at `AiCtl+0x38`, 4, the points of LvlPrest `Def` 159's `File1` path; DataTables `+0xA78`, the logged `ms` minus class × 0x1A8, which is the logger's own read of that word; DataTables `+0xBA0`, 357, the records of skills.bin. They are not unknown: the model does not fork on them, and wrong ones fail, a count of 3 in 6 decisions, a count of 5 in 138, a Skills count of 321 or below in 21. A Skills count above 321 cannot fail, so only that bound is tested. The list's points stay unknown in this census; [S13e](catalogue.md#s13-state-row-13-fnsub_005e5c50_aist130x005e5c50) compares them with the file. Without the words the census has 1 of 160 with no fork. (run:2026-11-04-r72, 0x005E5B93, 0x005E5BC8, 0x005E5BE0)
+- H1b. [C] **State 13's row, three given words.** For that row alone the "logged inputs" include three words the stock model does not load: the list's count at `AiCtl+0x38`, 4, the points of LvlPrest `Def` 159's `File1` path; DataTables `+0xA78`, the logged `ms` minus class × 0x1A8, which is the log's own read of that word; DataTables `+0xBA0`, 357, the records of skills.bin. They are not unknown: the model does not fork on them, and wrong ones fail, a count of 3 in 6 decisions, a count of 5 in 138, a Skills count of 321 or below in 21. A Skills count above 321 cannot fail, so only that bound is tested. The list's points stay unknown in this census; [S13e](catalogue.md#s13-state-row-13-fnsub_005e5c50_aist130x005e5c50) compares them with the file. Without the words the census has 1 of 160 with no fork. (run:2026-11-04-r72, 0x005E5B93, 0x005E5BC8, 0x005E5BE0)
 - H2. [C] **What the resumed 0 tests.** On the rev 6 batch 6 438 decisions are resumed with 0 mismatches and 86 stopped
   (row 32's `call esi` 80, a return site not armed 5, a log's end 1), 46 832 boundary calls matched past the first. Of the
   resumed, 3 055 have no branch on an unknown value; the other 3 383 hold 42 304 of the 46 564 calls past the first of
@@ -607,7 +608,7 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 ## Reimplementation notes
 
 - [C] **The AI has two entries, the queue and a mode end.** At a mode end it runs inside that mode-end event, so its draws
-  come at that event's place in the frame, not at the kind-2 record's: S7b counts the AI's draws by event kind, 447 in
+  come at that event's place in the frame, not at the kind-2 record's: the two frame runs count the AI's draws by event kind, 447 in
   monsters' kind-0 events and 992 in kind-2 ([sim/frame n8](../../sim/frame.md#reimplementation-notes), run:2026-11-04-frame2,
   run:2026-11-04-frame3, [frame/0007 § S7b](../../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o)). [I] Those mode-end entries are the nine call sites of B5, each skipped while the
   unit is frozen and alive. The per-unit order on a shared seed is [sim/frame § D and § E](../../sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners)'s.
@@ -623,6 +624,7 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 
 ## Evidence
 
+- How the statements above were read: G5's hand map from the finding and GNU objdump.
 - [ai/0001](../../../findings/ai/0001-machinery.md): the tick, the table, the state, the search, the command, the request.
 - [ai/0015](../../../findings/ai/0015-phase2-first-run.md), [ai/0017](../../../findings/ai/0017-phase2-second-run.md),
   [ai/0018](../../../findings/ai/0018-phase2-third-run.md): the three runs; [experiments](../../../findings/ai/experiments.md).

@@ -73,11 +73,10 @@ All tables are the compiled `.bin` records, indexed by record position ([data/ex
 | tbl:Shrines.txt:LevelMin | u32 `+0xB4`, compared with the Levels **Id** (§ H) |
 
 Not read by any code of this spec: ObjGroup `SHRINES` and `WELLS`, Shrines `rarity`, Objects `SpawnMax`, `TrapProb`,
-`Act`. In the bodies of the 109 functions this spec names, an objdump operand scan at those columns' offsets (`+0x30`,
+`Act`. In the bodies of the 109 functions this spec names, an operand scan of the decoded instructions at those columns' offsets (`+0x30`,
 `+0x31`, `+0x11`, `+0xC3`, `+0xCC`, `+0x170`) finds 10 operands and none is a table-record read (stack arguments,
 inactive-unit save records, stores, a function pointer stored at `+0xCC`). [C] (tbl:ObjGroup.txt:SHRINES,
-tbl:Shrines.txt:rarity, tbl:Objects.txt:TrapProb, [objects/0001 § Plan 0038 batch S4b](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16)
-row 1)
+tbl:Shrines.txt:rarity, tbl:Objects.txt:TrapProb, [objects/0001 § Plan 0038 batch S4b row 1](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16))
 [I] Beyond this spec: `SpawnMax` (`+0xC3`) and `Act` (`+0x170`) have no reader in the whole image as far as an operand
 scan can tell (no `+0xC3` displacement at all; the one byte operand at `+0x170` is a stack array at 0x00694D9E), and
 none of the 89 functions that fetch an Objects record or read the table pointer reads `TrapProb` (`+0xCC`). A reader
@@ -105,7 +104,7 @@ tbl:Objects.txt:SpawnMax, tbl:Objects.txt:Act, tbl:Objects.txt:TrapProb,
 |---|---|---|---|
 | slot count | 8 | fn:sub_00552610_RoomObjectsPopulate@0x00552610 | [C] |
 | forced-slot threshold | `roomsVisited·128 ÷ roomCount > 96` (signed) | 0x005526CC | [C] |
-| gore limit | byte 2, no writer: the address occurs once in the image, the read at 0x00552791 ([objects/0001 § Plan 0038 batch S4b](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16) row 2) | data:g_ObjGoreLimit@0x00731BBC | [C] |
+| gore limit | byte 2, no writer: the address occurs once in the image, the read at 0x00552791 ([objects/0001 § Plan 0038 batch S4b row 2](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16)) | data:g_ObjGoreLimit@0x00731BBC | [C] |
 | placement attempts per placer call | 5 | fn:OBJ_PlaceRandom@0x00550380 | [C] |
 | position-test masks | `0x3F11` (box test), `0xC01` (padded box) | fn:OBJ_PosTestPadded@0x00550220 | [C] |
 | shrine spacing, well spacing | 50, 100 subtiles on **each** axis | fn:OBJRGN_ShrineDistOk@0x00547430, fn:OBJRGN_WellDistOk@0x005473A0 | [C] |
@@ -117,7 +116,7 @@ tbl:Objects.txt:SpawnMax, tbl:Objects.txt:Act, tbl:Objects.txt:TrapProb,
 
 ### Inputs and oracles
 
-The reproduction of run:2026-10-15-objects models this whole spec on the four seeds, with the object-region seed
+The reproduction of the objects run (run:2026-10-15-objects) models this whole spec on the four seeds, with the object-region seed
 predicted from game creation and carried across every room, operate and timer event; the window RW1 → RW4 of each room
 is predicted from its entry, 1265 windows with 0 mismatches in 142 540 checks. The rows below are what it took from the
 log ([ADR-0004](../../adrs/0004-boundary-oracles-in-reproduction.md)), except the two collision rows, which plan 0027
@@ -127,11 +126,11 @@ owners. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-15-o
 
 | Input | Kind | What it holds | Owner | Tag |
 |---|---|---|---|---|
-| the gate's DRLG parts | value oracle (read in [chain/0002 § 7](../../findings/chain/0002-retirements.md#7-oracle-19-the-gates-drlg-parts-read-inputs-kept) and asserted at every gate of run:2026-10-21-chain2) | room flags `0x30000`, `RoomPopLevelId`, the preset test, the town test, `LevelRoomCount` on first read | `drlg/preset`, `drlg/overview` | [C] (fn:OBJ_PopulateGate@0x00552560, run:2026-10-15-objects, run:2026-10-21-chain2) |
+| the gate's DRLG parts | value oracle, read and asserted at every gate of the second chain run ([chain/0002 § 7](../../findings/chain/0002-retirements.md#7-oracle-19-the-gates-drlg-parts-read-inputs-kept), run:2026-10-21-chain2) | room flags `0x30000`, `RoomPopLevelId`, the preset test, the town test, `LevelRoomCount` on first read | `drlg/preset`, `drlg/overview` | [C] (fn:OBJ_PopulateGate@0x00552560, run:2026-10-15-objects, run:2026-10-21-chain2) |
 | `COLL_WHTest` results at the seven object call sites and at the gold piles | modelled, [drlg/collision § E6](../drlg/collision.md#e-collisiontest-by-size) | 0 = free; predicted on the room grids (the activation stamp, the object marks below, the logged monster and gold-item marks): 5767 placer calls and 92 gold-pile calls, 4816 blocked and 1043 free, 0 mismatches | [drlg/collision](../drlg/collision.md#inputs-and-oracles) | [C] (fn:COLL_WHTest@0x0064D800, run:2026-10-15-objects, [objects/0001 § 14](../../findings/objects/0001-object-population.md#14-the-position-tests-and-the-object-marks-on-the-grid-model-plan-0027-phase-2-2026-10-15)) |
 | object marks in the collision grid | modelled, § G and [drlg/collision § F](../drlg/collision.md#f-unit-marks) | the mark each created object makes (G1, G4): all 1847 predicted (1835 inside a window, matched with their CM lines; 12 under preset monsters, compared inside the monster's seed oracle); 742 creations with `HasCollision` 0 in their mode made none, as predicted; 433 creations of the revisit restore are applied without a line to compare | `drlg/collision` | [C] (fn:UNIT_CollMarkRect@0x00620A70, fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects) |
 | preset monsters of the presets window | modelled (plan 0048 Phase 1; a seed oracle in this spec's run) | `PresetUnitDispatch` of type 1 (the class case, the MonPlace fixed rows, the objects under catapults 432 and 433), and the superunique and MonPlace spawns, through the monsters chain ([chain § Algorithm](../chain/README.md#algorithm) D2); MonPlace rows 5, 10 and 11 stay seed oracles | [monsters/spawn](../monsters/spawn.md), [monsters/special](../monsters/special.md), [chain](../chain/README.md) | [C] (fn:sub_0054E600_PresetMonSpawn@0x0054E600, fn:sub_0054E490_PresetClassSpawn@0x0054E490, run:2026-10-15-objects, [chain/0002 § 4](../../findings/chain/0002-retirements.md#4-oracle-16-the-preset-monsters-of-the-presets-window)) |
-| monster and quest `InitFn`s | seed oracle, but `InitFn` 46 | `InitFn` 46 is modelled since plan 0048 Phase 1 (§ H row 46; [chain/0002 § 5](../../findings/chain/0002-retirements.md#5-oracle-17-initfn-46-city-of-the-damned)); 47, 54, 55, 62, 66, 68, 69, Zoo 79, pseudo-object 582, and 18, 19, 25, 43, 49, 50, 52, 60 and 71 ([objects/0001 § Plan 0038 batch S4b](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16) row 25) stay seed oracles; in run:2026-10-19-h5b-objects 66 and 71 each made one monster creation and no `O` draw, 47 and 25 neither (§ H) | monsters, quests | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects, run:2026-10-21-chain2, run:2026-10-19-h5b-objects) |
+| monster and quest `InitFn`s | seed oracle, but `InitFn` 46 | `InitFn` 46 is modelled now (§ H row 46) ([chain/0002 § 5, plan 0048 Phase 1](../../findings/chain/0002-retirements.md#5-oracle-17-initfn-46-city-of-the-damned)); 47, 54, 55, 62, 66, 68, 69, Zoo 79, pseudo-object 582, and 18, 19, 25, 43, 49, 50, 52, 60 and 71 ([objects/0001 § Plan 0038 batch S4b row 25](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16)) stay seed oracles; in the second objects run (run:2026-10-19-h5b-objects) 66 and 71 each made one monster creation and no `O` draw, 47 and 25 neither (§ H) | monsters, quests | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects, run:2026-10-21-chain2, run:2026-10-19-h5b-objects) |
 | state `InitFn`s | value oracle | the mode or `interact` value that `InitFn`s without draws set from game state (4, 6, 8, 9, 12, 14, 16, 17, 22, 26 in the run); the unit-seed draw of the mode change is predicted | game state | [C] (data:g_ObjInitFns@0x00731BC0, run:2026-10-15-objects) |
 | `TC_ResolveDrops` | seed oracle in the run; modelled by [items/tc](../items/tc.md), chained since plan 0048 Phase 1 | draws the dropping object's **unit seed**; it left the object-region seed alone in all 59 calls. In the chain the object's unit seed after the drop is the resolver's exit seed and the game seed after it is two steps per item ([chain/0002 § 10](../../findings/chain/0002-retirements.md#10-oracle-6-an-objects-drop)) | `items/tc` | [C] (fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects) |
 | gold drop of `InitFn` 28 | modelled (plan 0048 Phase 1; a seed oracle in the run) | one item per drop: two game-seed steps, the item's unit seed, its `0x200` mark, no object-region draw (71 of 71); the spot read from the code and predicted for 69 of 71 ([chain/0002 § 9](../../findings/chain/0002-retirements.md#9-oracle-7-the-gold-piles-items)) | items | [C] (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:sub_00559300_DropGoldPile@0x00559300, run:2026-10-15-objects) |
@@ -141,7 +140,7 @@ owners. Every `[C]` of this spec holds under these inputs. [C] (run:2026-10-15-o
 | trap effects, types 1 to 7 | modelled up to the effect (K2) | `g_ObjTrapFns[t]`, run by object event 4: the function chosen (the level remap included) and the seeds around it; the trap monsters of types 1–4 and 6 are seed oracles that leave `O` unchanged (6 events), and the two `fire` creations of `OBJTRAP_ObjectCreate` (types 5, 7) are predicted with the game seed after them (4 events). What the effect then does is game simulation | game simulation | [C] (fn:OBJ_TrapEvent@0x005817A0, fn:OBJTRAP_ObjectCreate@0x00582380, fn:sub_00582420_TrapMonsterAt@0x00582420, run:2026-10-19-h5b-objects) |
 | trap effects, types 8 and 9 | not reached | `OBJTRAP_MonsterSpawn`'s draw and spawns (K2): no container of type 8 was operated below level 75 | game simulation | [I] (fn:OBJTRAP_MonsterSpawn@0x005822F0) |
 | room and game seeds at each revisit re-creation | logged | the monster and item restores that run before the objects (§ B5) are specified in [drlg/lifecycle § H](../drlg/lifecycle.md#h-the-restore), not in this spec's model; the object re-creations' own draws are this spec's | `drlg/lifecycle` | [I] (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40) |
-| populate windows inside an operate | — | a portal-like operate handler that activates a room runs that room's window (§ B) inside the operate; those draws are the window's. Not reached: the 19 operates of the Arcane Sanctuary's pads (`OperateFn` 27) in run:2026-10-19-h5b-objects activated no room before their exit | this spec | [I] (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0) |
+| populate windows inside an operate | — | a portal-like operate handler that activates a room runs that room's window (§ B) inside the operate; those draws are the window's. Not reached: the 19 operates of the Arcane Sanctuary's pads (`OperateFn` 27) in the second objects run (run:2026-10-19-h5b-objects) activated no room before their exit | this spec | [I] (fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0) |
 
 ## Algorithm
 
@@ -217,7 +216,7 @@ B1. per room of the act's new-rooms walk, after the wanderer tick, if room.flags
   non-monsters, then all monsters) and the per-level walk filters are [drlg/preset § 6](../drlg/preset.md#6-handover-to-the-server-spawners-boundary).
   (fn:sub_005557D0_PresetUnitDispatch@0x005557D0, fn:sub_005559A0_RoomPresetUnits@0x005559A0, run:2026-10-15-objects)
 - B2. [C] On a first activation the inactive-unit restore leaves the room, game and object-region seeds unchanged (2090
-  first activations of the three earlier runs, and every window of run:2026-10-15-objects).
+  first activations of the three earlier runs, and every window of the objects run).
   (fn:sub_00542B40_RoomInactiveUnitsRestore@0x00542B40, run:2026-10-14-objects-window, run:2026-10-15-objects)
 - B3. [C] **Revisit.** When a room that went inactive is activated again (flags bit 0 already set, so outside the
   window above), the restore re-creates each saved object through `PresetUnitDispatch` with **every creation draw**
@@ -253,29 +252,29 @@ B5. RoomInactiveUnitsRestore(game, room), on a revisit:           [C] (fn:sub_00
         if rec.type = 1 or rec.flagsC8 & 0x100: continue           ; a kept unit (portal) is only moved back
         u ← PresetUnitDispatch(rec.type, rec.class, rec.x, rec.y, mode ← rec.mode)   ; every creation draw of §§ G, H
         restore, no draw:
-          a shrine with a saved frame: re-queue its event, interact ← the saved code, 0x00621BB0(Shrines[code])
+          a shrine with a saved frame: re-queue its event, interact ← the saved code, unnamed(Shrines[code])   ; unnamed: 0x00621BB0
           a well (SubClass & 0x20): charges from the frames elapsed, refill events queued
           any other object: interact ← rec+0x28, sparkle ← rec+0x24, unit+0xB8 ← rec+0x2C when that is ≠ 0
 ```
 
 - B4. [C] The save test, with its level flag named `Levels.SaveMonsters`, held on the 3 023 objects of
-  run:2026-10-17-lifecycle (`Restore` 0: 15; `RestoreVirgins` on a used object: 30), and the records it wrote came back
+  the lifecycle run (run:2026-10-17-lifecycle) (`Restore` 0: 15; `RestoreVirgins` on a used object: 30), and the records it wrote came back
   through B5 ([drlg/lifecycle § F](../drlg/lifecycle.md#f-the-save-rule)). The starting flag was set on all of them
   (653 by the preset flag alone). (run:2026-10-17-lifecycle, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0, tbl:Levels.txt:SaveMonsters)
-- B4. [C] The same rule decides every object of the 190 restores of run:2026-10-15-objects: each object created
+- B4. [C] The same rule decides every object of the 190 restores of the objects run (run:2026-10-15-objects): each object created
   earlier inside the room's rectangle, taken at its last state, was put through the test. Of the preset objects 484
   pass and come back and 16 fail and do not; of the populated objects 98 pass and come back and 14 fail and do not.
   The populated ones that came back stood in levels 3, 4, 6, 27, 42, 43, 44, 76, 79, 80, 106, 111 and 113, so the level
   flag was set in all of them. (fn:sub_0052D240_RoomsDeactivate@0x0052D240, fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0,
   fn:sub_00542E30_InactiveUnitSave@0x00542E30, tbl:Objects.txt:Restore, tbl:Objects.txt:RestoreVirgins, run:2026-10-15-objects,
-  [objects/0001 § Plan 0038 batch S4a](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16) row 7)
+  [objects/0001 § Plan 0038 batch S4a row 7](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16))
 - B4. [I] Not met, so read from the code only: the refusal for a level flag and preset flag both clear, the sparkle bit
   `0x02` (never set on a tested object), and classes 59 and 60 (kept). (fn:sub_005433F0_InactiveUnitSaveTest@0x005433F0)
 - B4. [C] Saving walks a newest-first list and prepends, so it reverses the order: the record list is oldest first.
-  Inside each restore of run:2026-10-15-objects the objects came back in their earlier creation order, 392 consecutive
+  Inside each restore of the objects run (run:2026-10-15-objects) the objects came back in their earlier creation order, 392 consecutive
   pairs of 392 counted from the lines. (fn:sub_0064C2C0_RoomUnitAdd@0x0064C2C0, fn:sub_00554850_SUnitPathCreate@0x00554850,
   fn:sub_00542E30_InactiveUnitSave@0x00542E30, run:2026-10-15-objects,
-  [objects/0001 § Plan 0038 batch S4a](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16) row 8)
+  [objects/0001 § Plan 0038 batch S4a row 8](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16))
 - B4. [I] Items and monsters are saved to other lists (`0x00541B10`, `0x005421A0`). (fn:sub_00542E30_InactiveUnitSave@0x00542E30)
 - B5. [C] The saved objects are re-created oldest first: in the run every re-creation that followed another one of the
   same restore came after it in the earlier creation order (362 of 362 pairs among the 548 re-created objects). The
@@ -316,19 +315,19 @@ C2. ThemeRoll(game, room, L, themes) → i32:                       [C] (fn:OBJ_
   to the **population** level `pop`. (fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0, fn:sub_006426A0_LevelIsTown@0x006426A0,
   struct:ObjRgnLevel+0x4, run:2026-10-14-objects-window, run:2026-10-15-objects)
 - C1. [C] **The order of the tests.** Each window's `OG` line logs a test's input only when the test runs. In all 1265
-  windows of run:2026-10-15-objects the tests ran in C1's order (room flags, population level, preset test, town) and
+  windows of the objects run (run:2026-10-15-objects) the tests ran in C1's order (room flags, population level, preset test, town) and
   each window closed at its first failing test with result 0: the room flags 46 (all waypoint rooms; the test's value
   equals the DRLG room's flags `& 0x30000` in every window), no population level 315, the preset test 35, a town 110;
   759 passed. (fn:OBJ_PopulateGate@0x00552560, fn:sub_0061A1F0_RoomPopLevelId@0x0061A1F0,
   fn:sub_006426A0_LevelIsTown@0x006426A0, run:2026-10-15-objects,
-  [objects/0001 § Plan 0038 batch S4a](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16) row 9)
+  [objects/0001 § Plan 0038 batch S4a row 9](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16))
 - C2. [C] The stock `Themes` values are 8, 48 and 60; each lists only theme numbers ≥ `n` except 60, whose theme 3 has
   no handler, so **no theme ever runs on stock data** and the roll costs 1 or 2 object-region draws per gated room of
   the 39 levels with `Themes` set (20 rolls in the run, 2 of them drew an index). The theme handlers are named only:
   1 an empty room, 2 a barrel grid, 4 an item grid, 5 and 6 bookshelf or weapon-rack rows. (tbl:Levels.txt:Themes,
   data:g_ObjThemeFns@0x00731E68, run:2026-10-15-objects)
 - C2. [C] **Theme 3 is drawn and does not run.** `g_ObjThemeFns` holds 8-byte `{enabled, fn}` entries: themes 1, 2, 4,
-  5 and 6 are enabled, 0 and 3 are `{0, 0}`. In run:2026-10-19-h5b-objects 4 rolls (Catacombs Level 3, `Themes` 60)
+  5 and 6 are enabled, 0 and 3 are `{0, 0}`. In the second objects run (run:2026-10-19-h5b-objects) 4 rolls (Catacombs Level 3, `Themes` 60)
   drew theme 3, below the count 4; nothing ran, and every draw after each matched with no theme run.
   (fn:OBJ_RoomThemeRoll@0x00552400, data:g_ObjThemeFns@0x00731E68, tbl:Levels.txt:Themes, run:2026-10-19-h5b-objects)
 
@@ -343,7 +342,7 @@ flowchart TD
     r100 --> t
     t -->|"no"| k
     t -->|"yes"| r2["r2 = Range(S, 100)"]
-    r2 --> w["walk ID0..7 to the first 0, sum PROB:<br/>first member with r2 < sum and Gore ok"]
+    r2 --> w["walk ID0..7 to the first 0, sum PROB:<br/>first member where r2 < sum and Gore ok"]
     w -->|"found"| h["PopulateFn handler(DENSITY, class, 100)"]
     w -->|"sum <= r2"| k
     h --> k
@@ -373,7 +372,7 @@ D1. RoomObjectsPopulate(game, room):                              [C] (fn:sub_00
 ```
 
 - D1. [C] This order accounts for every room-seed draw of the 1405 drawing windows of the three earlier runs and of
-  every window of run:2026-10-15-objects: one draw per slot whether or not the group is 0, `r ≤ ObjPrb` passes (so the
+  every window of the objects run (run:2026-10-15-objects): one draw per slot whether or not the group is 0, `r ≤ ObjPrb` passes (so the
   chance is `(ObjPrb + 1)/100`), one pick draw per passing slot, and nothing placed when the `PROB` sum is at most
   `r2` (259 of 2307 passing slots). `PROB` is a percentage against 100, not a weight over the members' sum.
   (tbl:ObjGroup.txt:PROB0, tbl:Levels.txt:ObjPrb0, run:2026-10-14-objects-window)
@@ -384,11 +383,11 @@ D1. RoomObjectsPopulate(game, room):                              [C] (fn:sub_00
   run:2026-10-15-objects)
 - D3. [C] Group 0 and the memberless groups 30 and 72 cost their draws and place nothing; a `PROB` 0 member is never
   picked; group 69 starts with an empty member slot and never places. The `Gore` test never excludes on stock data
-  (`Gore` is 0 or 1, the limit 2). In run:2026-10-15-objects group 0 was drawn by 2364 slots and never led to a member
+  (`Gore` is 0 or 1, the limit 2). In the objects run (run:2026-10-15-objects) group 0 was drawn by 2364 slots and never led to a member
   pick; groups 30 (124 slots, 23 member picks) and 69 (156, 36) led to no handler; the one `PROB`-0 member of
   `objgroup.bin` was never handled. Group 72 was not drawn: like group 30 it has no member (34 groups have none).
   (tbl:Objects.txt:Gore, data:g_ObjGoreLimit@0x00731BBC, run:2026-10-15-objects,
-  [objects/0001 § Plan 0038 batch S4a](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16) row 11)
+  [objects/0001 § Plan 0038 batch S4a row 11](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16))
 - D4. [C] Every handler receives the member's `DENSITY`, its class (the Objects **record index**) and the
   probability 100. The handlers draw their own probability against 100: that draw always passes, but it is made.
   (data:g_ObjPopulateFns@0x00731D00, run:2026-10-15-objects)
@@ -458,7 +457,7 @@ E1. Clusters(class, DENSITY):                                     [C] (fn:OBJPOP
   called with, and never reloads it. So `sx`, `sy` in the first object's two draws, its padded test and every
   follower test (`PosTestTight` or `PosTestPadded` per the table) are the member's `SizeX`, `SizeY`; the class drawn
   from the list only goes to `SUnitCreate`. A follower after a `Casket` (79, 4 × 6) in a group whose member is class
-  1 (5 × 3) is tested with 5 × 3. In run:2026-10-19-h5b-objects 32 follower walks came after a created class whose
+  1 (5 × 3) is tested with 5 × 3. In the second objects run (run:2026-10-19-h5b-objects) 32 follower walks came after a created class whose
   size differs from the member's (79 is 4 × 6; 53 and 1 are 5 × 3; Catacombs Levels 2–4), and every follower test's
   logged box is the member's size plus the list's margin, which the created class's size would not give.
   (fn:OBJPOP_Clusters@0x00550C20, 0x00550C37, 0x0055103E, fn:OBJECTS_GetRecord@0x00640E90, fn:OBJ_PosTestPadded@0x00550220,
@@ -488,10 +487,10 @@ E2. Shrine(class, prob = 100):
 - E2. [C] `HealthShrineDue` holds once more than 75 % of the level's rooms have been gated and no code-2 shrine
   stands: it returns `roomCount > 0` and `(roomsVisited << 7) ÷ roomCount > 96` (signed) and `healthShrines = 0`, on
   the population level's record. `RoomObjectsPopulate` inlines the same comparison for its forced slot
-  (0x005526CE–0x005526E7, D1), which held in 4 slots of run:2026-10-15-objects with the slot draws and counters
+  (0x005526CE–0x005526E7, D1), which held in 4 slots of the objects run (run:2026-10-15-objects) with the slot draws and counters
   reproduced. (fn:OBJRGN_HealthShrineDue@0x00547330, fn:sub_00552610_RoomObjectsPopulate@0x00552610,
   struct:ObjRgnLevel+0x4, run:2026-10-15-objects,
-  [objects/0001 § Plan 0038 batch S4a](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16) row 14)
+  [objects/0001 § Plan 0038 batch S4a row 14](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16))
 - E2. [C] **The due rule inside the handler, and the forced conversion.** In the City of the Damned (level 106, 75
   rooms) the handler ran twice with the rule true (rooms visited 58 and 64, no code-2 shrine, two shrines placed
   before each), 30 tries each. The first call placed nothing. The second placed class 231 (code 14) and converted it to
@@ -529,7 +528,7 @@ data:g_ObjStickPatterns@0x00731EB4, run:2026-10-15-objects)
 
 `OBJ_FliesAdd` (also handler 6, on the last placement of its handler-3 run) draws `P100(O)` and creates object 103
 (`flies`) at the corpse's position when the value is above 70 (chance 29/100). The patterns are written at start-up by
-the initialiser `0x006CAF30` (the file image holds zero counts):
+an unnamed initialiser (0x006CAF30); the file image holds zero counts:
 
 | p | Offsets (dx, dy) |
 |---|---|
@@ -590,7 +589,7 @@ F5. PosTestTight(x, y, sx, sy):                                   [C] (fn:OBJ_Po
       COLL_WHTest(room, x, y, sx + 2, sy + 2, 0x3F11) = 0
 ```
 
-- F1. [C] Accepted attempts in run:2026-10-15-objects fell at attempts 1 to 5 (153, 87, 67, 51, 29), and 911 placer
+- F1. [C] Accepted attempts in the objects run (run:2026-10-15-objects) fell at attempts 1 to 5 (153, 87, 67, 51, 29), and 911 placer
   calls found no spot. When no spot is found the object is not created. (fn:OBJ_PlaceRandom@0x00550380,
   run:2026-10-15-objects)
 - F3. [C] The margin and tests are the same for every orientation: `OBJ_PlaceRandom`'s one-subtile margin, then the
@@ -647,8 +646,7 @@ G4. SUnitPathCreate(unit), after ServerInit:                      [C] (fn:sub_00
 - G1. [C] The class is the Objects **record index**: apart from load and unload, the Objects table pointer is read only
   by `OBJECTS_GetRecord`, which computes `base + i · 0x1C0` (0x00640EC8), and `Id` is never read. `Id` differs from the
   record index only at records 410–412 (Ids 408–410), so those records are classes 410–412. (fn:OBJECTS_GetRecord@0x00640E90,
-  tbl:Objects.txt:Id, [objects/0001 § Plan 0038 batch S4b](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16)
-  row 22)
+  tbl:Objects.txt:Id, [objects/0001 § Plan 0038 batch S4b row 22](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16))
 - G2. [C] The animation draw touches only the object's own unit seed. Any later mode change (a state `InitFn`, the
   `PreOperate` roll, the operate) makes it again. (fn:UNIT_AnimInit@0x00624390, tbl:Objects.txt:Sync,
   tbl:Objects.txt:FrameDelta0, run:2026-10-15-objects)
@@ -656,11 +654,11 @@ G4. SUnitPathCreate(unit), after ServerInit:                      [C] (fn:sub_00
   0, 0x7FFF)` when `Sync` is 0, `FrameDelta` otherwise, with `+0x44 = Start << 8` and `+0x48 = FrameCnt` (725 logged
   starts, 490 with a draw). No server code reads the rate back ([anim/timing § C](../anim/timing.md#c-the-mode-start)).
   (fn:UNIT_AnimInit@0x00624390, 0x00624563, run:2026-10-27-anim)
-- G4. [C] Every object mark of run:2026-10-15-objects is predicted this way (*Inputs and oracles*), by mask `0x400`
+- G4. [C] Every object mark of the objects run (run:2026-10-15-objects) is predicted this way (*Inputs and oracles*), by mask `0x400`
   1813, `0x404` 13, `0x806` 7 and `0x8000` 2. (fn:UNIT_GetCollMask@0x006209D0, run:2026-10-15-objects)
 - G4. [C] **A door with neither `BlocksVis` nor `BlockMissile` marks `0x400`:** 60 marks of classes 13 and 14 (`IsDoor`
-  1, `BlocksVis` 0, `BlockMissile` 0) matched their `CM` lines in run:2026-10-19-h5b-objects, and the logs of
-  run:2026-10-15-objects held 13 more. **An object with `HasCollision` set and a zero size makes no mark:** class 523
+  1, `BlocksVis` 0, `BlockMissile` 0) matched their `CM` lines in the second objects run (run:2026-10-19-h5b-objects), and the logs of
+  the objects run (run:2026-10-15-objects) held 13 more. **An object with `HasCollision` set and a zero size makes no mark:** class 523
   (0 × 0) in Harrogath's DS1 and the fissure 399 in the City of the Damned were created in mode 0 inside a logged window
   with no `CM` line after either. (fn:UNIT_GetCollMask@0x006209D0, fn:sub_00554850_SUnitPathCreate@0x00554850,
   tbl:Objects.txt:BlocksVis, tbl:Objects.txt:BlockMissile, tbl:Objects.txt:SizeX, run:2026-10-19-h5b-objects)
@@ -679,12 +677,12 @@ G4. SUnitPathCreate(unit), after ServerInit:                      [C] (fn:sub_00
 ### H. Draws at creation, per `InitFn`
 
 A callee scan of all 76 distinct `InitFn` handlers to depth 3 found draws only in the rows below. A full-depth walk of
-the 80 slots (objdump, plan 0038 S4b) finds every listed handler drawing and nine more that create monsters, `InitFn`
+the 80 slots (the decoded instructions) finds every listed handler drawing and nine more that create monsters, `InitFn`
 18 and 19 (`jerhyn`), 25 (`gidbinn`), 43 (`darkwanderer`), 49, 50, 52, 60 (`compellingorb`) and 71: these draw as
 monster spawns (room and game seeds) when their condition holds. Every draw of the rows is on the object-region seed
 `O` unless the row says otherwise. [I] (data:g_ObjInitFns@0x00731BC0, fn:sub_005B2F20_SpawnAtPos@0x005B2F20,
 fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0, [objects/0001 § 7](../../findings/objects/0001-object-population.md#7-the-initfn-draws),
-[§ Plan 0038 batch S4b](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16) row 25)
+[§ Plan 0038 batch S4b row 25](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16))
 
 | InitFn | Objects | Draws, in order | Tag |
 |---|---|---|---|
@@ -697,9 +695,9 @@ fn:sub_005A43E0_SpecialMonSpawn@0x005A43E0, [objects/0001 § 7](../../findings/o
 | 57 | 397 `sparklychest`, 455 `specialchest` | `InitFn` 3, then the sparkle flag | [C] (fn:OBJINIT_SparklyChest@0x0054FD90, run:2026-10-19-h5b-objects: class 397 in Cave Level 2's treasure room, 3 creations, 3 `O` draws each) |
 | 58 | fissure | one draw for a timer | [C] (data:g_ObjInitFns@0x00731BC0, run:2026-10-19-h5b-objects: the fissure 399, 2 creations, one `O` draw each) |
 | 79 | Zoo | `RandLoHi` on a quest-held seed, not `O` | [I] (data:g_ObjInitFns@0x00731BC0) |
-| 46 | 369 (City of the Damned) | random points and monster spawns 403/404: room, game and `O` draws; modelled since plan 0048 Phase 1, the walk and its draws in [objects/0001 § Plan 0048 Phase 1](../../findings/objects/0001-object-population.md#plan-0048-phase-1-initfn-46-modelled-2026-10-20) (the direction draw is not stored) | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects: 16 calls) |
+| 46 | 369 (City of the Damned) | random points and monster spawns 403/404: room, game and `O` draws; modelled now, with the walk and its draws ([objects/0001 § Plan 0048 Phase 1](../../findings/objects/0001-object-population.md#plan-0048-phase-1-initfn-46-modelled-2026-10-20)) (the direction draw is not stored) | [C] (fn:OBJINIT_CityDamnedSpawns@0x005506D0, run:2026-10-15-objects: 16 calls) |
 | 47, 54, 55, 62, 66, 68, 69; 18, 19, 25, 43, 49, 50, 52, 60, 71 | quest objects; the nine monster-creating handlers of the full-depth walk | monster spawns through `SpawnAtPos`, `SpecialMonSpawn` or `PresetMonSpawn` when the handler's condition holds; seed oracles | [C] the cases reached, none drawing `O`: 47 (class 371, level 25) and 25 (class 252, the Gidbinn altar) no draw and no creation in their quest state, 66 (class 459, Harrogath) and 71 (class 543, Harrogath) one monster creation each (run:2026-10-19-h5b-objects); 18 no draw in its 3 calls (run:2026-10-15-objects). [I] the others, and each handler's other branch (data:g_ObjInitFns@0x00731BC0) |
-| every other | — | no draw; some (4, 6, 8, 9, 12, 14, 16, 17, 22, 26 in the run) set mode or `interact` from game state, whose mode change draws the unit seed (G2) | [C] no draw for the 13 reached, calls per `InitFn` 4 (1), 5 (6), 6 (5), 8 (499), 9 (1), 12 (1), 13 (1), 14 (4), 16 (14), 17 (122), 22 (164), 26 (12), 51 (13): the room, object-region, game and unit seeds match after each with no draw modelled (run:2026-10-15-objects, [objects/0001 § Plan 0038 batch S4a](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16) row 28); [I] no draw for those not reached (data:g_ObjInitFns@0x00731BC0); [C] the state values as inputs (run:2026-10-15-objects) |
+| every other | — | no draw; some (4, 6, 8, 9, 12, 14, 16, 17, 22, 26 in the run) set mode or `interact` from game state, whose mode change draws the unit seed (G2) | [C] no draw for the 13 reached, calls per `InitFn` 4 (1), 5 (6), 6 (5), 8 (499), 9 (1), 12 (1), 13 (1), 14 (4), 16 (14), 17 (122), 22 (164), 26 (12), 51 (13): the room, object-region, game and unit seeds match after each with no draw modelled (run:2026-10-15-objects, [objects/0001 § Plan 0038 batch S4a row 28](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16)); [I] no draw for those not reached (data:g_ObjInitFns@0x00731BC0); [C] the state values as inputs (run:2026-10-15-objects) |
 
 Together with § G, one object's creation draws, in order: one game-seed step; G2's unit-seed draw for mode 0 (when
 `Sync` is 0); the `InitFn` row above; for a `PreOperate` row the 1/14 roll on `O`, and its mode change's unit-seed draw.
@@ -718,7 +716,7 @@ H1. InitFn 1, shrines (object, room):                              [C] (fn:OBJIN
         c ← 2 if Parm0 = 1; 3 if Parm0 = 2; else (R(O, 10) = 0 ? 1 : 4)     ; one draw only in the last case
         code ← ShrinePick(c, lid)                                  ; H1a
       if code = 4: code ← 2;  if code = 5: code ← 3;  if code = 16: code ← 18    ; every Parm0
-      interact: u8 ← code;  0x00621BB0(Shrines[code])
+      interact: u8 ← code;  unnamed(Shrines[code])          ; unnamed: 0x00621BB0
 
 H1a. ShrinePick(c: u8, lid: u32) → code:                          [C] (fn:OBJ_ShrinePick@0x0054F770, run:2026-10-15-objects)
       if c = 0 or c > 4: c ← 2                                     ; [I] callers pass 1..4 (0x0054F779)
@@ -789,9 +787,9 @@ I1. PresetSuperChest(id 580, x, y, game, room):                   [C] (fn:OBJ_Pr
   (level 62) and drew in exactly this order. (fn:OBJ_PresetSuperChest@0x0054F370, fn:UNIT_SetSparkle@0x005540A0,
   run:2026-10-15-objects)
 - I2. [C] The closing `SetMode(u, 0)` returns before the animation start when the mode is already 0, so it draws
-  nothing: the 7 DS1 580 super chests created in the logs of run:2026-10-15-objects reproduce their draws with the call
+  nothing: the 7 DS1 580 super chests created in the logs of the objects run (run:2026-10-15-objects) reproduce their draws with the call
   made as a no-op. (fn:UNIT_SetMode@0x00624690, fn:OBJ_PresetSuperChest@0x0054F370, run:2026-10-15-objects,
-  [objects/0001 § Plan 0038 batch S4a](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16) row 37)
+  [objects/0001 § Plan 0038 batch S4a row 37](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16))
 - I2. [I] It would set mode 0 back (and draw the unit seed if `Sync` is 0) only after a `PreOperate` roll had opened
   the chest, and no class that 581 can pick, nor 371, has `PreOperate`: no stock case. (fn:UNIT_SetMode@0x00624690,
   tbl:Objects.txt:PreOperate)
@@ -888,7 +886,7 @@ J3. ObjectChestDrop(object, player, q):                           [C] the drop's
   calls the area level): the level of the object's room, then the act's two reference levels of the two-level-per-act
   table at 0x006E1988. The span between the two reference values is cut into thirds as in J3's lines, the arithmetic of
   [items/tc § J](../items/tc.md#j-object-drops-named-only) J1: A, B or C = 0, 1, 2. The model reproduces the TC of all 59
-  object calls of run:2026-10-15-objects (three difficulties, classic and expansion, tiers 0–2), the level is the chest's
+  object calls of the objects run (run:2026-10-15-objects) (three difficulties, classic and expansion, tiers 0–2), the level is the chest's
   own room's level in all 59, and both boundaries occur (`v = a + t` in 14 calls, `v = a + 2t` in 5).
   (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:sub_0061DCA0_LevelMonLvl@0x0061DCA0, run:2026-10-15-objects,
   [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
@@ -900,10 +898,10 @@ J3. ObjectChestDrop(object, player, q):                           [C] the drop's
   ([items/quality](../items/quality.md) C1), while the created item's own level is taken from the source.
   (fn:sub_00585B90_ObjectChestDrop@0x00585B90, fn:TC_ResolveDrops@0x0055A6D0, run:2026-10-15-objects,
   [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points))
-- J4. [C] The other handlers that draw `O` themselves do so as follows (37 urns, jars and baskets, 11 barrels, 1
-  casket in run:2026-10-15-objects; 58 caskets, 1 bookshelf, 9 trapped souls and 1 evil urn in
-  run:2026-10-19-h5b-objects, so rows 26, 48 and 68 are confirmed on the branch each operate took and inferred on
-  the other):
+- J4. [C] The other handlers that draw `O` themselves do so as follows. The operates behind it: 37 urns, jars and baskets, 11 barrels and 1
+  casket in the objects run; 58 caskets, 1 bookshelf, 9 trapped souls and 1 evil urn in the second objects run; so rows
+  26, 48 and 68 are confirmed on the branch each operate took and inferred on the other (run:2026-10-15-objects,
+  run:2026-10-19-h5b-objects):
 
 | OperateFn | Objects | Sequence | Tag |
 |---|---|---|---|
@@ -918,9 +916,9 @@ J3. ObjectChestDrop(object, player, q):                           [C] the drop's
   35–38, 60 and 74–100 are null, so the Objects rows with `OperateFn` 35–38 (classes 337–340) have no operate, and no
   row names slot 60 or a slot above 73. In the handler bodies exactly seven step the context seed directly (a load of
   `[reg+0xC]`): 1, 3, 4 and 5 (J2, J4) and 26, 48 and 68 (J4). Seven more step `QUESTS_GetSeed`'s seed: 24, 39, 40,
-  41, 57, 58 and 59 (§ L). Read from the image and walked a second time with objdump (data:g_ObjOperateFns@0x00732D18,
+  41, 57, 58 and 59 (§ L). Read from the image and walked a second time over the decoded instructions (data:g_ObjOperateFns@0x00732D18,
   fn:QUESTS_GetSeed@0x005438B0, fn:OBJ_OperateDispatch@0x00584420,
-  [objects/0001 § Plan 0038 batch S4b](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16) row 43).
+  [objects/0001 § Plan 0038 batch S4b row 43](../../findings/objects/0001-object-population.md#plan-0038-batch-s4b-2026-10-16)).
 - J5. [I] The others reach `O` only in these ways (data:g_ObjOperateFns@0x00732D18, 0x005844EC):
   - **through an object creation**: the seals (54, 55, 56; classes 392, 394, 396) create class 131 through
     `SealObjectCreate`; its `InitFn` 59 draws nothing and it has no `PreOperate`, so each costs one game-seed step
@@ -929,12 +927,13 @@ J3. ObjectChestDrop(object, player, q):                           [C] the drop's
   - **through the trap, later**: `OBJ_TrapFire` (called by 1, 3, 4, 14, 51 and 68) queues object event 4, and only
     types 8 and 9 draw `O` there (K2);
   - **through a room activation**: 15 (portals 59, 60), 16, 27, 34, 43, 46, 47 (and 50, which jumps to it), 70 and
-    72 move a unit to another room through `0x00553720` and reach `RoomUpdateOne`; a room they activate gets the
+    72 move a unit to another room through `PortalPartnerGet` and reach `RoomUpdateOne`; a room they activate gets the
     window of § B inside the operate (*Inputs and oracles*).
 
   Armor stands (19) and weapon racks (20) call other item creators (`0x005594C0`, `0x00559630`), not the chest TC.
   (fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18, fn:sub_005B6AD0_SealObjectCreate@0x005B6AD0,
-  fn:OBJ_TrapFire@0x00582510, fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, data:g_ObjInitFns@0x00731BC0)
+  fn:OBJ_TrapFire@0x00582510, fn:sub_0052D0F0_RoomUpdateOne@0x0052D0F0, fn:sub_00553720_PortalPartnerGet@0x00553720,
+  data:g_ObjInitFns@0x00731BC0)
 - J6. [C] The other handlers make no draw as read. Three of them were operated in the run, 7 (exploding barrel 11,
   once), 8 (doors, once) and 23 (waypoints, 23 times), and in all 25 operates the object-region seed was unchanged
   from entry to exit. (fn:sub_00584E30_WaypointOperate@0x00584E30, 0x00584330, 0x00581D40, run:2026-10-15-objects)
@@ -953,13 +952,13 @@ J3. ObjectChestDrop(object, player, q):                           [C] the drop's
   the timer functions themselves queue event 7. (fn:OBJ_EventDispatch@0x00586AD0, fn:sub_00581A10_ObjEvent7Thunk@0x00581A10,
   fn:QUESTS_ObjectEvent@0x005449E0, data:g_ObjEventFns@0x006E19B0,
   [items/0010 § 9](../../findings/items/0010-quest-drops.md#9-how-an-object-reaches-the-quest-scripts-the-operate-slot-and-object-event-7-backlog-2026-10-16-static))
-- [C] **The route, for the classes met.** The Hellforge's waves run on it (§ L, run:2026-10-16-quest-drops). In
-  run:2026-10-27-sweep-quest-items each of 19 entries of `QUESTS_ObjectEvent` with event index 7 (18 on Wirt's body,
-  class 268; one on the Kurast sewer lever, class 367) came from the `call eax` at 0x00586B19 in `OBJ_EventDispatch`,
-  whose `eax` is entry 7, `0x00581A10`, a single `jmp 0x005449E0` that adds no frame; the dispatch was called by
+- [C] **The route, for the classes met.** The Hellforge's waves run on it (§ L) (run:2026-10-16-quest-drops). In
+  the quest-items sweep (run:2026-10-27-sweep-quest-items) each of 19 entries of `QUESTS_ObjectEvent` with event index 7 (18 on Wirt's body,
+  class 268; one on the Kurast sewer lever, class 367) came from the `call eax` in `OBJ_EventDispatch`,
+  whose `eax` is entry 7, `ObjEvent7Thunk`, a single `jmp QUESTS_ObjectEvent` that adds no frame; the dispatch was called by
   `sub_00541160_ObjEventsRun`, called by `sub_005414D0_GameRunUnitEvents`. The class picked the target: 268 →
   `WirtGold`, 367 → `sub_005B85E0_A3Q2_SewerLeverEvent7`. The targets of the other event-7 classes, and who queues each
-  event, stay as read. (fn:OBJ_EventDispatch@0x00586AD0, fn:sub_00581A10_ObjEvent7Thunk@0x00581A10,
+  event, stay as read. (fn:OBJ_EventDispatch@0x00586AD0, 0x00586B19, fn:sub_00581A10_ObjEvent7Thunk@0x00581A10,
   fn:QUESTS_ObjectEvent@0x005449E0, fn:sub_00541160_ObjEventsRun@0x00541160, fn:sub_005414D0_GameRunUnitEvents@0x005414D0,
   fn:sub_00594630_A1Q4_WirtGold@0x00594630, fn:sub_005B85E0_A3Q2_SewerLeverEvent7@0x005B85E0, run:2026-10-27-sweep-quest-items,
   [items/0010 § Plan 0038 batch H6e2](../../findings/items/0010-quest-drops.md#object-event-7-at-run-time-inventory-qd-1))
@@ -1037,11 +1036,11 @@ the game-wide **quest seed** (`Game+0x10F4` + 0x18), not the object-region seed 
 draws, is specified in [items/quest-drops](../items/quest-drops.md); this table only places them.
 [I] (fn:OBJ_OperateDispatch@0x00584420, data:g_ObjOperateFns@0x00732D18, fn:QUESTS_ObjectEvent@0x005449E0,
 fn:QUESTS_GetSeed@0x005438B0, [items/0010 § 9](../../findings/items/0010-quest-drops.md#9-how-an-object-reaches-the-quest-scripts-the-operate-slot-and-object-event-7-backlog-2026-10-16-static))
-[C] For the Hellforge, the quest-seed draw is met: the `QGS` recount of run:2026-10-16-quest-drops found 25 of its 28
+[C] For the Hellforge, the quest-seed draw is met: the `QGS` recount of the quest-drops run (run:2026-10-16-quest-drops) found 25 of its 28
 `QUESTS_GetSeed` fetches in `ForgeWave`, the forge's event-7 waves, each returning the seed the model held, and that
 run reproduces every gem and rune draw of the waves on it. The other quest objects are the rows below.
 (fn:QUESTS_GetSeed@0x005438B0, fn:sub_005B6710_A4Q3_ForgeWave@0x005B6710, run:2026-10-16-quest-drops,
-[objects/0001 § Plan 0038 batch S4a](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16) row 47)
+[objects/0001 § Plan 0038 batch S4a row 47](../../findings/objects/0001-object-population.md#plan-0038-batch-s4a-2026-10-16))
 
 | Object | Operate | What it creates, and the draws | Tag |
 |---|---|---|---|
@@ -1074,13 +1073,13 @@ run reproduces every gem and rune draw of the waves on it. The other quest objec
 
 ## Worked example
 
-Source: run:2026-10-15-objects, checked by `python3 -I tools/objects.py check -v <log>` (0 mismatches). Seeds are
+Source: the objects run (run:2026-10-15-objects), checked by our objects model with 0 mismatches. Seeds are
 `low:high`, hex; draw values are recomputed with the [rng](../rng/README.md) step from the logged seeds. Positions are
 in subtiles; `COLL_WHTest` results and the marks are predicted on the grid model and equal the logged values.
 
 ### 1. One room's object population (Cold Plains)
 
-Log `objects-s2-2302-normal.log` (seed 2302, Normal, expansion). Level 3 (Cold Plains), room rectangle
+The objects run's session 2 (seed 2302, Normal, expansion). Level 3 (Cold Plains), room rectangle
 (5080, 5600, 40, 40). At `RW3`: `S = F203F612:445A3ECF`, `O = E5E436E7:37A0A321`, `G = C8BE2664:542FC4C8`. The gate is
 open (no flag, population level 3, no preset test, not a town; `Themes` 0, so no theme roll); `roomsVisited` 9 after
 the increment, `roomCount` 71, so the forced rule does not apply (`9·128 ÷ 71 = 16`). Slots: 0 group 4 `ObjPrb` 3,
@@ -1107,7 +1106,7 @@ as logged. [C] (fn:sub_00552610_RoomObjectsPopulate@0x00552610, fn:OBJ_PlaceRand
 
 ### 2. A shrine creation (Jail Level 1)
 
-Log `objects-s24-2324-normal.log` (seed 2324, Normal, expansion). Level 29 (Jail Level 1, `Themes` 8, `MonLvl1` 10),
+The objects run's session 24 (seed 2324, Normal, expansion). Level 29 (Jail Level 1, `Themes` 8, `MonLvl1` 10),
 room rectangle (17500, 5060, 60, 60). At `RW3` (after the presets window): `S = 3E9F9A6B:140070BB`,
 `O = 0163CA78:0EEC6069`, `G = 44AAD1B0:109C952C`.
 
@@ -1199,6 +1198,9 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
 
 ## Evidence
 
+- How the statements above were read: the operand scan of § Tables, the full-depth walk of § H and the second walk of
+  J5 by GNU objdump; the worked example checked by `python3 -I tools/objects.py check -v <log>` on the logs
+  `objects-s2-2302-normal.log` and `objects-s24-2324-normal.log`.
 - [findings/objects/0001-object-population.md](../../findings/objects/0001-object-population.md): §§ 1–10 (the window,
   gate, slot loop, handlers, placement, creation, `InitFn`s, presets, operate, restore), § 11 (the boundary), § 12
   (Phase 2 results), § 13 (the details read for this spec: handler 1's sizes, `OBJ_PlaceByOrientation`, `ShrinePick`,
@@ -1208,7 +1210,7 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   (run:2026-10-19-h5b-objects: the trap chain, caps, the forced conversion, handler 1's sizes, `InitFn` 57 and 58,
   the level-25 super chest, door and zero-size marks, `OperateFn` 1, 26, 48 and 68).
 - [findings/objects/experiments.md § run:2026-10-19-h5b-objects](../../findings/objects/experiments.md#run2026-10-19-h5b-objects):
-  22 logs, 234 315 checks, 1 logger error and no model mismatch; the 29 logs of run:2026-10-15-objects re-checked
+  22 logs, 234 315 checks, 1 logger error and no model mismatch; the 29 logs of the objects run (run:2026-10-15-objects) re-checked
   (150 314 checks, 0 mismatches).
 - [findings/objects/experiments.md § run:2026-10-15-objects](../../findings/objects/experiments.md#run2026-10-15-objects):
   29 logs, 142 540 checks, 0 mismatches; 1265 windows predicted, 316 populated rooms, 65 shrines, 609 containers,
@@ -1259,7 +1261,7 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   running position kept), and units that move between their room's activation and its window (players, wandering
   monsters; their moves are not logged, and none of the 5859 tests needed one). The door mask `0x400` is reached since
   run:2026-10-19-h5b-objects (G4); `0x804` has no stock case. (fn:OBJINIT_GoldPiles@0x0054F8C0, fn:UNIT_GetCollMask@0x006209D0)
-- [L] **A chest's interact byte between its creation and its operate.** Seven chests of run:2026-10-21-chain2
+- [L] **A chest's interact byte between its creation and its operate.** Seven chests of the second chain run (run:2026-10-21-chain2)
   reached `OperateFn` 4 with a byte their `InitFn` did not leave (the lock bit set, cleared, or the byte cleared to 0),
   with no logged line writing it; the chain takes the byte at the operate and counts it. Its writer is unread
   ([chain § Open questions](../chain/README.md#open-questions)). (fn:OBJINIT_Chest@0x0054FCB0, run:2026-10-21-chain2)
@@ -1278,4 +1280,4 @@ fn:sub_00585B90_ObjectChestDrop@0x00585B90, run:2026-10-15-objects)
   [quests/progression § Creation-path readers](../quests/progression.md#creation-path-readers).
 - ~~**The chest tier's exact cut** (J3).~~ Answered: the arithmetic of 0x00585C01–0x00585C87 is in
   [items/0001 § 2](../../findings/items/0001-tc-resolution.md#2-entry-points), and the tier and the tier-as-`ilvl`
-  hand-off are confirmed on the 59 chest calls of run:2026-10-15-objects (J3).
+  hand-off are confirmed on the 59 chest calls of the objects run (run:2026-10-15-objects) (J3).
