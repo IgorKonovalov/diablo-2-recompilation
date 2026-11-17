@@ -7,14 +7,18 @@
 #                                                               value in any spelling (0x..., bare, leading zeros)
 #   section <docs path> <heading start> :: <reason>              a worked example: any hex of 6+ digits under that
 #                                                               heading (to the next heading of its level or higher)
+#   pin <hex value> <docs path> :: <reason>                      one value in the code image's range, allowed on
+#                                                               that page only (computed by an example, not an address)
 #
-# Never allowed, whatever is written here: a value in the code image's range 0x00400000-0x007FFFFF (the loader
-# refuses such an entry), a `sub_`/`DAT_` name, a `+0x` offset, a hex after `_` or `+`. ADR-0031 lists constants of
-# the code image (tables and their contents); nothing below is one: each entry is arithmetic the game does on its
-# own seeds, or a value our own examples choose. A value in the code image's range inside a worked example still
-# fails and is dropped by the simplifier.
+# Never allowed, whatever is written here: a `sub_`/`DAT_` name, a `+0x` offset, a hex after `_` or `+`. A value in
+# the code image's range, 0x00400000-0x009B9FFF (the pinned Game.exe's whole mapped image), passes only by a `pin`
+# line: the loader refuses it as a plain value entry, a section does not admit it, and a pin that re/symbols.csv names
+# is refused. A reviewer checks each pin's derivation. ADR-0031 lists constants of the code image (tables and their
+# contents); nothing below is one: each entry is arithmetic the game does on its own seeds, or a value our own
+# examples choose or compute.
 # Draw values in the calculation panels of a schematic illustration folder pass by a scoped rule in the check
-# (the shapes `{hi:lo}`, `lo = 0x...`, `seed 0x...`), not by this file.
+# (the shapes `{hi:lo}` and `{start, 666}`, which admit any value, and `lo = 0x...`, `seed 0x...`, which admit a
+# value outside the image's range), not by this file.
 
 # Named constants
 6AC690C5   the RNG multiplier (the seed step is a multiply-and-add on it)
@@ -33,3 +37,9 @@ section wiki/characters.md Worked examples :: seeds derived by hand from an illu
 section wiki/quests.md The quest seed and the player's seed :: seed arithmetic on an illustrative seed
 section wiki/quests.md Town portals :: seed arithmetic on an illustrative seed
 section wiki/saves.md A worked example :: the checksum of an example save, computed byte by byte
+
+# Pinned values in the code image's range (computed by a worked example; none is a named address)
+pin 0090CE87 wiki/randomness.md :: the high word after step 4 of the worked example on seed 12345
+pin 0090CE8A wiki/levels.md :: the high word of the level seed after the first maze room of the Den of Evil example
+pin 6D6D80 wiki/saves.md :: the running checksum after byte 15 of the example save
+pin 800010 wiki/saves.md :: the example item's 32-bit flags field as stored (bits 4 and 23)

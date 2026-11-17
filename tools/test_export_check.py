@@ -109,7 +109,9 @@ def main():
     ok(any(h[0] == "X1" for h in ta("at 0x00556F60")) and any(h[0] == "X1" for h in ta("sub_00556F60")),
        "image-range addresses fail with an allowlist present")
     bad = os.path.join(tempfile.mkdtemp(prefix="export_allow_"), "allow.txt")
-    for line in ("0x00556F60 an address\n", "00507fab seed that looks like one\n", "c0ffee\n"):
+    for line in ("0x00556F60 an address\n", "00507fab seed that looks like one\n", "c0ffee\n",
+                 "0096D66C a .data address\n", "pin 0x00405450 wiki/x.md :: a named address\n",
+                 "pin 0090CE87 wiki/x.md\n"):
         with open(bad, "w") as f:
             f.write(line)
         try:
@@ -123,11 +125,36 @@ def main():
     shutil.rmtree(os.path.dirname(bad), ignore_errors=True)
     real = os.path.join(HERE, "..", "docs", "export", "allow-hex.txt")
     if os.path.isfile(real):
-        ok(len(ec.load_allow(real).values) > 0, "docs/export/allow-hex.txt loads (no image-range entry)")
+        ra = ec.load_allow(real)
+        ok(len(ra.values) > 0 and not any(ec.in_image(v) for v in ra.values),
+           "docs/export/allow-hex.txt loads (no image-range value entry)")
+        ok(all(ec.in_image(v) for d in ra.pins.values() for v in d), "every pin is an image-range value (else a value entry)")
     sc = lambda s: ec.check_text(s, (), allow=ec.Allow(), scoped=True)
     ok(sc("draw lo = 0x7f8b96aa; seed after {ceb6f65b:3ac5bf6e}; {start, 666} = {6bf39f86, 666}") == [],
        "scoped: the draw shapes pass")
-    ok(sc("lo = 0x00507fab; seed {a28ed4c0:00507fab}") == [], "scoped: a draw value that is numerically in the image range passes in its shape")
+    ok(sc("seed {a28ed4c0:00507fab}; {00507fab, 666}") == [], "scoped: a draw value in the image range passes in a brace seed state")
+    ok(any(h[0] == "X1" for h in sc("lo = 0x00507fab")) and any(h[0] == "X1" for h in sc("seed 0x0096d66c")),
+       "scoped: an image-range value in a `lo =` or `seed` shape fails")
+    ok("X2" in ec.text_rules("a lead. [L]", ()) and "X2" not in ec.text_rules("[C] and [I]", ()), "an [L] tag fails X2")
+    # the image range is the whole mapped image, .data/.bss included (architect review 2026-11-17)
+    ok(any(h[0] == "X1" for h in ec.check_text("at 0x0096D66C", (), allow=ec.Allow(), sect=True))
+       and any(h[0] == "X1" for h in ec.check_text("at 00912345", (), allow=ec.Allow())),
+       "a .data address (0x0096D66C) fails in a section; a bare all-digit 009xxxxx fails")
+    # sections: any non-image hex passes under the heading, image-range values and names do not
+    sa = ec.Allow(sections={("wiki/x.md", "A worked example"): "illustrative"})
+    page = ("# T\n\n## A worked example: seed 12345\n\nlow `015B2E77`, high `0000141D`.\n\n### Step\n\n"
+            "`8B57C5B0`\n\n## Next\n\nlow `015B2E77`.\n")
+    sl = ec.section_lines(page, "wiki/x.md", sa)
+    hits = ec.check_text(page, (), allow=sa, sect_lines=sl)
+    ok([h[1] for h in hits] == [13], f"a section admits its hex, subsections included, and ends at its level: {hits}")
+    ok(any(h[0] == "X1" for h in ec.check_text("`0090CE87` and sub_0090CE87 and x+0x1B24", (), allow=sa, sect=True)),
+       "a section does not admit an image-range value, a sub_ name or a +0x offset")
+    ok(ec.section_lines(page, "wiki/y.md", sa) == set(), "a section entry admits nothing on another page")
+    # pins: one image-range value, one page
+    ok(ec.check_text("`0090CE87`", (), allow=sa, sect=True, pins={0x0090CE87: "r"}) == []
+       and any(h[0] == "X1" for h in ec.check_text("`0090CE88`", (), allow=sa, sect=True, pins={0x0090CE87: "r"}))
+       and any(h[0] == "X1" for h in ec.check_text("sub_0090CE87", (), allow=sa, pins={0x0090CE87: "r"})),
+       "a pin admits its value only; never as a sub_ name")
     ok(any(h[0] == "X1" for h in sc("see 0x00556F60")) and any(h[0] == "X1" for h in sc("the sub_00556F60 call")),
        "scoped: an address outside a draw shape fails")
     ok(any(h[0] == "X1" for h in ec.check_text("lo = 0x7f8b96aa", (), allow=ec.Allow())),

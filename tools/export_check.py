@@ -77,11 +77,14 @@ RE_X1 = [
     # bare hex, also after `_` (DAT_00556F60, a name with an address in it); architect review 2026-11-17
     (re.compile(r"(?<![A-Za-z0-9.])(?=[0-9A-Fa-f]*[0-9])(?=[0-9A-Fa-f]*[A-Fa-f])[0-9A-Fa-f]{6,}(?![\w.])"),
      "hex of 6+ digits"),
-    (re.compile(r"(?<![A-Za-z0-9.])00[4-7][0-9]{5}(?![\w.])"), "bare address of the code image"),
+    (re.compile(r"(?<![A-Za-z0-9.])00[4-9][0-9]{5}(?![\w.])"), "bare address of the code image"),
 ]
 RE_X2 = [
     (re.compile(r"(?<![\w])(?:fn|data|struct|tbl|fmt|src):(?=[A-Za-z0-9_])"), "anchor"),
     (re.compile(r"(?<![\w])run:(?=[A-Za-z0-9_])"), "run id"),
+    # a lead tag never reaches the export (it lives under Open questions); the check guards it, not only the
+    # builder's XL rule (architect review 2026-11-17)
+    (re.compile(r"\[L\]"), "lead tag [L]"),
 ]
 RE_X3 = [
     (re.compile(r"findings/"), "findings/ path"),
@@ -92,6 +95,8 @@ RE_X3 = [
     # `../docs/` fails; only the export repository's own `content/docs/` passes (architect review 2026-11-17)
     (re.compile(r"(?<![A-Za-z0-9])(?<!content/)(?:docs|re|tools|workspace)/"), "repository path"),
     (re.compile(r"[\w-]+\.(?:py|csv)\b"), ".py/.csv name"),
+    # the working docs' trees, written as a path (`specs/items/tc`); architect review 2026-11-17
+    (re.compile(r"(?<![\w/.-])(?:specs|tables|formats|findings|plans|adrs|backlog)/[\w-]"), "working-docs path"),
     (re.compile(r"(?<![\w.])(?=[0-9a-f]*[0-9])(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}(?![\w.])"), "commit hash"),
 ]
 RE_HOME = re.compile(r"/(?:home|Users)/|\bfile:/", re.I)
@@ -153,11 +158,14 @@ def git_identity():
 # Game math that is written in hex is not a code address: RNG seeds used as illustrative examples, the RNG
 # multiplier and similar named constants (a short reviewed list, docs/export/allow-hex.txt, each entry with a
 # reason), and the draw values in the calculation panels of a schematic illustration folder (a scoped rule).
-# Never allowed, anywhere: a value in the code image's range 0x00400000-0x007FFFFF, a `sub_`/`DAT_` name, a
-# `+0x` offset, a hex after `_` or `+`. (ADR-0031: it lists constants of the code image; the allowlist holds no
-# entry in that range and names only values that are our model's own inputs or game-math constants, never a
+# Never allowed by a wildcard (a section, a `lo =`/`seed`/`draw` shape): a value in the code image's range, the
+# pinned Game.exe's whole mapped image 0x00400000-0x009B9FFF (image base 0x400000 + SizeOfImage 0x5BA000; .text,
+# .rdata, .data/.bss, .rsrc, .reloc), a `sub_`/`DAT_` name, a `+0x` offset, a hex after `_` or `+`. A value in
+# that range passes only by name: a `pin` entry (one value, one page, a reason; architect review 2026-11-17) or a
+# brace seed state `{hi:lo}` / `{start, 666}` printed by a schematic generator. (ADR-0031: it lists constants of the
+# code image; the allowlist names only values that are our model's own inputs or game-math constants, never a
 # table's contents or an address.)
-IMAGE_LO, IMAGE_HI = 0x00400000, 0x007FFFFF
+IMAGE_LO, IMAGE_HI = 0x00400000, 0x009B9FFF
 RE_HEXTOK = re.compile(r"(?:0x)?[0-9A-Fa-f]+$")
 HEX_WHATS = ("address / hex of 6+ digits", "hex of 6+ digits", "commit hash")
 # the shapes the schematic generators print for a draw: a seed state {hi:lo}, `{start, 666} = {hex, 666}`,
@@ -178,11 +186,13 @@ def in_image(v):
 
 
 class Allow:
-    """values: {int: reason}; sections: {(docs path, heading prefix): reason} of the allowlist file."""
+    """values: {int: reason}; sections: {(docs path, heading prefix): reason}; pins: {docs path: {int: reason}}
+    (values in the code image's range, each allowed on one page only) of the allowlist file."""
 
-    def __init__(self, values=None, sections=None):
+    def __init__(self, values=None, sections=None, pins=None):
         self.values = dict(values or {})
         self.sections = dict(sections or {})
+        self.pins = {k: dict(v) for k, v in (pins or {}).items()}
 
 
 class SectionTracker:
@@ -204,8 +214,10 @@ class SectionTracker:
 
 def load_allow(path):
     """Read docs/export/allow-hex.txt: `<hex value> <one-line reason>` per line, `#` comments. Raises ValueError
-    on a malformed line, an entry without a reason, or an entry in the code image's range."""
-    vals, secs = {}, {}
+    on a malformed line, an entry without a reason, or a value entry in the code image's range. A value in that range
+    may be named only by `pin <hex> <docs path> :: <reason>` (that page only), and never one re/symbols.csv names."""
+    vals, secs, pins = {}, {}, {}
+    syms = symbol_values()
     for n, raw in enumerate(open(path, encoding="utf-8"), 1):
         line = raw.split(" # ", 1)[0].strip()
         if not line or line.startswith("#"):
@@ -216,6 +228,15 @@ def load_allow(path):
                 raise ValueError(f"{path}:{n}: want `section <docs path> <heading start> :: <reason>`")
             secs[(m.group(1), m.group(2))] = m.group(3)
             continue
+        if line.startswith("pin "):
+            m = re.fullmatch(r"pin\s+(\S+)\s+(\S+)\s+::\s+(.+)", line)
+            if not m or not RE_HEXTOK.match(m.group(1)) or len(re.sub(r"^0[xX]", "", m.group(1))) < 6:
+                raise ValueError(f"{path}:{n}: want `pin <hex of 6+ digits> <docs path> :: <reason>`")
+            v = hex_value(m.group(1))
+            if v in syms:
+                raise ValueError(f"{path}:{n}: {m.group(1)} is a named address in re/symbols.csv; refused")
+            pins.setdefault(m.group(2), {})[v] = m.group(3)
+            continue
         f = line.split(None, 1)
         if len(f) < 2 or not RE_HEXTOK.match(f[0]) or len(re.sub(r"^0[xX]", "", f[0])) < 6:
             raise ValueError(f"{path}:{n}: want `<hex of 6+ digits> <reason>`")
@@ -223,7 +244,15 @@ def load_allow(path):
         if in_image(v):
             raise ValueError(f"{path}:{n}: {f[0]} is in the code image's range; refused")
         vals[v] = f[1].strip()
-    return Allow(vals, secs)
+    return Allow(vals, secs, pins)
+
+
+def symbol_values():
+    """The addresses re/symbols.csv names (empty when the file is not there): a pin may not name one."""
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "re", "symbols.csv")
+    if not os.path.isfile(p):
+        return set()
+    return {int(m.group(1), 16) for m in re.finditer(r"^0x([0-9A-Fa-f]{6,8}),", open(p, encoding="utf-8").read(), re.M)}
 
 
 ACTIVE_ALLOW = Allow()
@@ -234,7 +263,7 @@ def set_allow(allow):
     ACTIVE_ALLOW = allow if allow is not None else Allow()
 
 
-def _allowed_hex(line, m, what, allow, scoped, sect=False):
+def _allowed_hex(line, m, what, allow, scoped, sect=False, pins=()):
     """True when the hex-shaped match m of rule text `what` is game math the allowance admits."""
     if what not in HEX_WHATS:
         return False
@@ -242,20 +271,22 @@ def _allowed_hex(line, m, what, allow, scoped, sect=False):
     if not RE_HEXTOK.match(tok):
         return False
     before = line[m.start() - 1] if m.start() else ""
-    if before in "_+":
+    if before and before in "_+":
         return False
-    if scoped:
-        for rx in RE_DRAW_CTX:
-            for cm in rx.finditer(line):
-                if cm.start() <= m.start() and m.end() <= cm.end():
-                    return True
     v = hex_value(tok)
+    if scoped:
+        for k, rx in enumerate(RE_DRAW_CTX):
+            for cm in rx.finditer(line):
+                if cm.start() <= m.start() and m.end() <= cm.end() and (k < 2 or not in_image(v)):
+                    return True
+    if v in pins:
+        return True
     if in_image(v):
         return False
     return sect or v in allow.values
 
 
-def check_text(text, identity=None, line0=1, allow=None, scoped=False, sect_lines=None, sect=False):
+def check_text(text, identity=None, line0=1, allow=None, scoped=False, sect_lines=None, sect=False, pins=()):
     """X1-X5 and X9 on one unit of text. Returns [(rule, line, detail)]; line counts from line0.
     A fenced block in the unit is tracked: X5 applies to its lines unless the fence is `mermaid`.
     `allow` (default: the one set with set_allow) admits listed game-math hex values; `scoped` also admits the
@@ -281,7 +312,7 @@ def check_text(text, identity=None, line0=1, allow=None, scoped=False, sect_line
                     break
         for rule, table in (("X1", RE_X1), ("X2", RE_X2), ("X3", RE_X3), ("X9", RE_X9)):
             for rx, what in table:
-                mm = next((x for x in rx.finditer(line) if not _allowed_hex(line, x, what, allow, scoped, sect or (sect_lines is not None and n in sect_lines))), None)
+                mm = next((x for x in rx.finditer(line) if not _allowed_hex(line, x, what, allow, scoped, sect or (sect_lines is not None and n in sect_lines), pins)), None)
                 if mm:
                     hits.append((rule, n, f"{what}: {mm.group(0)[:40]}"))
                     break
@@ -297,10 +328,10 @@ def check_text(text, identity=None, line0=1, allow=None, scoped=False, sect_line
     return hits
 
 
-def text_rules(unit, identity=None, allow=None, sect=False):
+def text_rules(unit, identity=None, allow=None, sect=False, pins=()):
     """The set of rule ids (X1-X5, X9) that one unit of text fails. For the builder's simplifier; `sect` when the
-    unit sits in an allowed worked-example section."""
-    return {h[0] for h in check_text(unit, identity, allow=allow, sect=sect)}
+    unit sits in an allowed worked-example section, `pins` the page's pinned values."""
+    return {h[0] for h in check_text(unit, identity, allow=allow, sect=sect, pins=pins)}
 
 
 # ---------------------------------------------------------------- page rules
@@ -384,7 +415,8 @@ def section_lines(text, path, allow):
 
 def check_page(text, rel, route, allowed_tables, illus_ok, identity, path=None):
     """All rules that apply to one Markdown page of the cut. Returns [(rule, line, detail)]."""
-    hits = list(check_text(text, identity, sect_lines=section_lines(text, path, ACTIVE_ALLOW) if path else None))
+    hits = list(check_text(text, identity, sect_lines=section_lines(text, path, ACTIVE_ALLOW) if path else None,
+                           pins=ACTIVE_ALLOW.pins.get(path, {}) if path else ()))
     over = [(ln, n) for ln, n in tables(text) if n > TABLE_LIMIT]
     for ln, n in over[allowed_tables:]:
         hits.append(("X6", ln, f"table of {n} body rows (limit {TABLE_LIMIT}) not named in the manifest"))

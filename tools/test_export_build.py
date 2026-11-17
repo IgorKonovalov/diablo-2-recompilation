@@ -92,6 +92,17 @@ def main():
     ok("fn:" not in t and "[C]" in t and "Next." in t, f"evidence parenthetical dropped, tag kept ({t!r})")
     ok(eb.redact_text("Calls (see the table) twice.") == "Calls (see the table) twice.", "an ordinary parenthetical stays")
     ok(eb.redact_text("sub_00556F60_ItemRollQualityCreate runs") == "ItemRollQualityCreate runs", "sub_ prefix stripped")
+    # architect review 2026-11-17: an offset-only parenthetical goes; a "See <path link>." pointer goes
+    ok(eb.redact_text("Its seed (`unit+0x20`) drives the picks.") == "Its seed drives the picks.",
+       "an in-memory offset parenthetical dropped")
+    ok(eb.redact_text("Its seed (`unit+0x20`, the source) drives.") == "Its seed (`unit+0x20`, the source) drives.",
+       "an offset parenthetical with words stays (the simplifier drops the unit)")
+    t = eb.redact_text("- **Seed**: a state. See [specs/rng](specs/rng/README.md) and [findings/rng/0001](f.md).")
+    ok(t == "- **Seed**: a state.", f"a See sentence of path-labelled links dropped ({t!r})")
+    ok(eb.redact_text("See [the randomness page](randomness.md).") == "See [the randomness page](randomness.md).",
+       "a See sentence with a worded link stays")
+    ok("X3" in ec.text_rules("as in specs/items/tc", ()) and "X3" not in ec.text_rules("site/src/content/docs/x", ()),
+       "a working-docs path fails X3")
     rows = eb.redact_table(["| a | b | c |", "|---|---|---|", "| x | 1 | fn:X@0x0045C370 |", "| y | 2 | data:T |"])
     ok(all(r.count("|") == 3 for r in rows), f"anchor-only column dropped ({rows})")
     rows = eb.redact_table(["| a | b |", "|---|---|", "| x | fn:X@0x0045C370 |", "| y | plain words |"])

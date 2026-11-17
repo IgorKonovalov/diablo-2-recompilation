@@ -50,6 +50,8 @@ the page as complete.
 
 [`allow-hex.txt`](allow-hex.txt) (architect-owned, a reason on every line) names the game-math hex values that pass
 the check's X1 and X3: named constants and illustrative seeds by value, and worked-example sections by page and
-heading. A value in the code image's range, a `sub_` or `DAT_` name and a `+0x` offset never pass. The draw values in a
-schematic illustration folder's calculation panels pass by a scoped rule in the check, not by this file (plan 0070,
-owner decision 2026-11-17).
+heading. A `sub_` or `DAT_` name and a `+0x` offset never pass. A value in the code image's range (the pinned
+`Game.exe`'s whole mapped image, `0x00400000` to `0x009B9FFF`) passes only by a `pin` line: one value, one page, a
+reason, never an address `re/symbols.csv` names. The draw values in a schematic illustration folder's calculation
+panels pass by a scoped rule in the check, not by this file (plan 0070, owner decision 2026-11-17; pins and the
+range, architect review 2026-11-17).

@@ -1,6 +1,6 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2, 2b, 4 and 5 done 2026-11-17; re-cut 2026-11-16 for three later owner decisions (simplification,
+> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2, 2b, 3, 4 and 5 done 2026-11-17; re-cut 2026-11-16 for three later owner decisions (simplification,
 > schematic illustrations per ADR-0036, the cheapest residue option); approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
 > 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
@@ -290,7 +290,8 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   `--schematic`, and makes no network request; every page has a `title` and a `sidebar.order`; every drop is a report
   line (page, heading, rule, text); the two wiki illustrations reach `site/public/illustrations/<id>/` with their
   caption on the page; the check is green on the first cut, apart from the export-only pages if Phase 5 has not
-  landed; the log holds the trial's counts, with each page's share of dropped sentences. Tier B check.
+  landed; the log holds the trial's counts, with each page's share of dropped sentences. Tier B check. **Done
+  2026-11-17** (Tier A review, accept with fixes).
 
 ### Phase 4 — The export repository's files
 - **Owner skill:** archivist
@@ -330,6 +331,13 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
 
 ### Phase 9 — The second cut's redaction review
 - **Owner skill:** architect
+- **Before the cut (Phase 3 review, 2026-11-17).** The archivist adds one redactor rule first, so that rows and bullets
+  carrying an anchor are rewritten, not dropped (the trial dropped 44% of the specs' units, mostly for that): inside any
+  unit, `fn:Name@0x…`, `data:Name@0x…` and `tbl:Name` become `` `Name` `` when `Name` itself holds no hex, `sub_` or
+  `DAT_`; a `struct:Name+0x…` token, a `run:` id, a finding id or link and a `src:` id are removed as tokens; a cell left
+  empty becomes `—`; a list or parenthetical left empty goes. Every rewrite is a report line (`REWRITE`, page, heading,
+  before, after), and the simplifier then runs on the rewritten unit, so a residue still drops it. The check is
+  unchanged. Rerun the trial and log the new share per spec before Phase 9 starts. Tier B check.
 - **What:** add the reviewed specs to the manifest, cut afresh, and run the Tier A redaction review above. Read every
   drop line of the six sampled specs and the drop counts of every spec. A spec that loses more than a quarter of its
   sentences, or one whose remaining text no longer reads as whole, stays out of the manifest.
@@ -754,3 +762,46 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   columns only, never an anchor inside a row), so a cheaper redactor rule (strip `fn:Name@0x…` inside a cell or bullet
   to `Name`) would recover many; that is a design choice for the architect before Phase 8/9, not made here. Also noted:
   X12 warnings 703 on the trial. Next: the architect's Tier A review, then Phase 6.
+- 2026-11-17 — **Phase 3 review: accept with fixes (6); Phase 3 done** (architect, Opus Tier A, lane/x70b). Read the
+  builder, both test files, the allowance in the check, the allowlist, gate E20 and the `tc_anim.py` caption change; cut
+  afresh into `workspace/export-review/` and checked it. **Fixes (applied in the review commit):** (1) *The image range
+  was too narrow* (blocking grade): `0x00400000`-`0x007FFFFF` covers `.text` and part of `.rdata` only; the pinned
+  `Game.exe` maps to `0x009B9FFF` (SizeOfImage `0x5BA000`; `.data`/`.bss` from `0x705000`, 125 symbols above
+  `0x7FFFFF`, the highest `0x00994C88`), so a `.data` address passed inside a worked-example section. `IMAGE_HI` is now
+  `0x009B9FFF`, and X1's bare all-digit address shape covers `00[4-9]…`. (2) *The log's "a draw-shape value in the range
+  still fails" was false*: the folder rule returned before the range test. Now only the brace seed states (`{hi:lo}`,
+  `{start, 666}`) admit an in-range value (the TC illustration's `{a28ed4c0:00507fab}` is one); `lo =`, `seed`, `draw`
+  shapes refuse it. (3) *Pins*: with the true range, three worked-example values fell in it (`0090CE87` randomness step
+  4, `0090CE8A` the Den of Evil's first maze room, `0x800010` the saves example's flags) besides `0x6D6D80`. A new
+  allowlist form `pin <hex> <docs path> :: <reason>` admits one in-range value on one page; the loader refuses a pin
+  that `re/symbols.csv` names. The four are pinned, so the saves row of `0x6D6D80` is back; a section still admits no
+  in-range value. (4) *A `[L]` tag fails X2* in the check, not only the builder's `XL`. (5) *X3 fails a working-docs
+  path* (`specs/…`, `tables/`, `formats/`, `findings/`, `plans/`, `adrs/`, `backlog/`): the glossary carried 126
+  `See specs/…` pointers, repository paths under ADR-0035's no-tie rule. The redactor now drops a `See <links>.`
+  sentence whose links are all labelled by a path, and (6) a parenthetical made only of in-memory offsets
+  (`` (`unit+0x20`) ``). Tests: check 112, builder 36, all pass. **Rulings.** The allowlist is the owner's decision and
+  no wider: five values (none in the image's range), seven sections (each a wiki worked example, its heading scope ending
+  at the next heading of its level; read: illustrative seeds and values computed from them), four pins. *The multiplier
+  `6AC690C5`* stays: ADR-0031 governs constants a rule can't give and asks for the rule where one exists; the
+  multiplier is the rule itself, a reimplementation can't do without it, it holds no table content, and the specs and
+  the randomness page already state it. *`0x6D6D80`*: the drop was the conservative reading; it is a computed checksum,
+  now pinned. (a) *Anchors inside a unit*: rewrite, don't drop; written as a Phase 9 prerequisite above. (b) *GIF linked
+  vs embedded*: embed, with a rehype step in Phase 4's config; before Phase 6 ([entry](../backlog/2026-11-17-architect-archivist-plan-0070-before-phase-6-neutral-marker-inline.md)).
+  (c) *`XL`*: accepted, and now also a check rule (fix 4). (d) *The 11 X6 tables*: second-cut matter; at Phase 9 each is
+  named in the manifest with a reason (our own step or decision tables) or left out (a list of game-table rows). The
+  link layout (`../../illustrations/…`, routes as directories) and the caption's added sentence are accepted. **First
+  cut, rebuilt** (`export_build.py --out workspace/export-review`, then `export_check.py`): 25 pages, **0 failures**,
+  326 X12 warnings; 50 drop lines (X1 27, X3 4, X9 19); the glossary 29 of 161 units (18%), monster-ai 20 of 354. Hand
+  greps of the cut for tool names, method words, the working repository's name, the owner's paths, anchors and
+  addresses: none, except below. **Readability (Phase 6 reads these):** the front page and randomness read whole. The
+  glossary keeps every entry's sense but loses the core seed vocabulary the wiki links to (Map seed, Game seed, Item
+  seed and five more) and keeps a repository note in its preamble and five method-only entries; [entry](../backlog/2026-11-17-architect-spec-writer-glossary-export-readiness-plan-0070.md)
+  to the spec-writer. monster-ai's *The first call* and *Past the first call* are about our method and no longer read
+  whole after the drops ("So the 12 614 …" points at a dropped row; "They are exactly the decisions …" at a dropped
+  sentence); Phase 6 decides between a spec-writer rewrite and a manifest directive that drops a named section. The two
+  illustration pages read whole; their calc text names spec sections (`tc.md D`), acceptable. **A tie missed at the
+  Phase 2 review:** the schematic marker `d2recon-schematic/1` is the working repository's project name, in every
+  published illustration file, and `schematic.json` names our tools; renamed before Phase 6 (the archivist entry
+  above). Request [closed](../backlog/archive/2026-11-17-archivist-architect-review-plan-0070-phase-3-builder-redactor-simplifi.md).
+  Ledger: verdict accept with fixes, 6 fixes: misread 1 (the image range), overclaim 1 (the draw-shape claim),
+  omission 3 (pins for the true range, `[L]` in the check, working-docs paths), other 1 (the offset parenthetical).

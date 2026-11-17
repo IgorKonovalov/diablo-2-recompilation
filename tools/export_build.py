@@ -70,6 +70,7 @@ EVIDENCE = [
     re.compile(r"\baddendum\b|\bsee\b|\band\b|\bat\b", re.I),
     re.compile(r"\b\d{4}-\d\d-\d\d\b"),
     re.compile(r"\bsub_[0-9A-Fa-f]+\w*"),
+    re.compile(r"`[\w.>*-]*\+0x[0-9A-Fa-f]+(?:\s*\+\s*0x[0-9A-Fa-f]+)?`"),   # an in-memory offset, `ItemData+0x10`
 ]
 
 
@@ -202,8 +203,16 @@ def drop_evidence_parens(text):
     return "".join(out)
 
 
+# a "See <link>." sentence whose links are all labelled by a repository path (`specs/items/tc`, `findings/rng/0001`):
+# an evidence pointer like a parenthetical, dropped whole (architect review 2026-11-17)
+RE_SEE_PATHS = re.compile(r"(?:(?<=\s)|^)See\s+(?:\[[^\]\s]*/[^\]]*\]\([^)]*\)\s*(?:,\s*|and\s+)?)+\.")
+
+
 def redact_text(text):
-    return RE_SUB.sub("", drop_evidence_parens(text))
+    t = drop_evidence_parens(text)
+    if RE_SEE_PATHS.search(t):
+        t = re.sub(r"[ \t]+$", "", RE_SEE_PATHS.sub("", t), flags=re.M)
+    return RE_SUB.sub("", t)
 
 
 def is_evidence_cell(cell):
@@ -264,8 +273,8 @@ def slug(text):
     return re.sub(r"\s", "-", re.sub(r"[^\w\s-]", "", t, flags=re.U).strip())
 
 
-def unit_fails(text, allow, sect=False):
-    rules = ec.text_rules(strip_links(text), allow=allow, sect=sect)
+def unit_fails(text, allow, sect=False, pins=()):
+    rules = ec.text_rules(strip_links(text), allow=allow, sect=sect, pins=pins)
     if "[L]" in text:
         rules = rules | {"XL"}
     return rules
@@ -278,6 +287,7 @@ def simplify(page, blocks, allow):
     skip_level = None
     dropped_indent = None
     tr = ec.SectionTracker(allow, page.path)
+    pins = allow.pins.get(page.path, {})
     for b in blocks:
         k = b["kind"]
         if k == "heading":
@@ -285,7 +295,7 @@ def simplify(page, blocks, allow):
                 continue                      # inside a dropped section
             skip_level = None
             heading = b["text"]
-            r = unit_fails(b["text"], allow, tr.heading(b["level"], b["text"]))
+            r = unit_fails(b["text"], allow, tr.heading(b["level"], b["text"]), pins)
             if r:
                 page.drops.append((heading, ",".join(sorted(r)), "section", b["text"][:200]))
                 skip_level = b["level"]
@@ -304,7 +314,7 @@ def simplify(page, blocks, allow):
             kept = []
             for s in sents:
                 page.units += 1
-                r = unit_fails(s, allow, tr.on)
+                r = unit_fails(s, allow, tr.on, pins)
                 if r:
                     page.dropped += 1
                     page.drops.append((heading, ",".join(sorted(r)), "sentence", s[:200]))
@@ -319,7 +329,7 @@ def simplify(page, blocks, allow):
                 page.drops.append((heading, "parent", "item", "child of a dropped item: " + b["lines"][0].strip()[:120]))
                 continue
             dropped_indent = None
-            r = unit_fails("\n".join(b["lines"]), allow, tr.on)
+            r = unit_fails("\n".join(b["lines"]), allow, tr.on, pins)
             if r:
                 page.dropped += 1
                 dropped_indent = b["indent"]
@@ -329,7 +339,7 @@ def simplify(page, blocks, allow):
         elif k == "table":
             lines = b["lines"]
             nrows = max(1, len(lines) - 2)
-            head = unit_fails("\n".join(lines[:2]), allow, tr.on)
+            head = unit_fails("\n".join(lines[:2]), allow, tr.on, pins)
             if head:
                 page.units += nrows
                 page.dropped += nrows
@@ -338,7 +348,7 @@ def simplify(page, blocks, allow):
             keep, nbody = lines[:2], 0
             for row in lines[2:]:
                 page.units += 1
-                r = unit_fails(row, allow, tr.on)
+                r = unit_fails(row, allow, tr.on, pins)
                 if r:
                     page.dropped += 1
                     page.drops.append((heading, ",".join(sorted(r)), "row", row[:200]))
@@ -349,7 +359,7 @@ def simplify(page, blocks, allow):
                 out.append({"kind": "table", "lines": keep})
         elif k in ("quote", "fence"):
             page.units += 1
-            r = unit_fails("\n".join(b["lines"]), allow, tr.on)
+            r = unit_fails("\n".join(b["lines"]), allow, tr.on, pins)
             if r:
                 page.dropped += 1
                 page.drops.append((heading, ",".join(sorted(r)), k, " ".join(x.strip() for x in b["lines"])[:200]))
@@ -454,7 +464,7 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
     cap = []
     for s in split_sentences(d["caption"]):
         page.units += 1
-        r = unit_fails(s, allow)
+        r = unit_fails(s, allow, pins=allow.pins.get(page.path, {}))
         if r:
             page.dropped += 1
             page.drops.append((heading, ",".join(sorted(r)), "caption sentence", s[:200]))
