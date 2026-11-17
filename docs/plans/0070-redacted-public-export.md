@@ -2489,3 +2489,66 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   "In the second seed-tree run 114 server unit seeds had the parent `game+0xD0` every time" moved a parenthetical count
   into a sentence before the same tag; § D's `[C]`/`[I]` row tags still cover the dropped weights only through the table
   doc. Gate green.
+- 2026-11-17, architect, Tier A review of lane/x13b and the redaction review of its specs (Opus). Verdict **accept
+  with fixes (11: misread 1, omission 7, other 3)**. *Tier A.* (1) No claim changed: per spec the tag counts are equal
+  before and after (gate E6), every `run:`/`fn:`/`data:`/`tbl:`/`struct:` id and finding link is kept (three ids
+  seen once less in text were duplicates of their statement's parenthetical; rng/seeds gained `MissSubNearReseed` and
+  `UnitSeedFromEntry`, objects/README `PortalPartnerGet`, each the name of the address it replaced), and every
+  address taken out of the text is still in its spec. 29 call targets named in place of an address matched to
+  `re/symbols.csv` by script (`OutRoomAlloc`, `ClientRoomAt`, `RoomRestoredGet`, `ActiveRoomFree`, `Bit2TileNew`,
+  `PortalPartnerGet`, `PortalPartnerCreate`, `ObjEvent7Thunk`, `QUESTS_ObjectEvent`, `ARoomSeedStep`, `AiIdle`,
+  `UnitInit`, `MissSubNearReseed`, the five `MissCbReseed*`, `g_Orient89Levels`, …), all right; the 30 others were
+  instruction sites with no symbol, each moved into its statement's evidence. The shifts recomputed:
+  `0x3F << 20 | 0x1FF << 7` = `0x3F0FF80`, `0x3F << 20 | 0xFF << 8` = `0x3F0FF00`, `0xF << 21 | 0xFF << 8` =
+  `0x1E0FF00`, `0xF << 21` = `0x1E00000`, `(0xF << 21) + 0x100` = `0x1E00100`, `0x12 << 16`, `0xA << 20`,
+  `0x16 << 20`, `0x6 << 20` the old fill values; 34844169 = `0x0213AE09`; spawn K's "low 16 bits 0 (high half
+  `0xD17D`)" is `0xD17D0000`. Seeds 7a keeps its claim, count and tag (the 114 seeds now in the sentence, the id in
+  the tag's parenthetical). *Run names* (part A's ruling): "the H5b objects run" names a plan batch, not the run: now
+  "the second objects run" (objects/README, 6; the spec already says "either objects run"); the same kind of label
+  was left as a name elsewhere: data/strings' "H3b calls/hovers/run" (now the data-load sweep, 3), rng/seeds' "the
+  H1a session" (the save-load sweep) and "that run" (the second seed-tree run), monsters/ai/README's "S7b counts"
+  (the two frame runs) (omission). "The rev 5 AI run" stays: it names the logger revision the run used, which is what
+  sets it apart from the third AI run. *Item 5:* § D's table holds only our handler and draw readings; its row tags
+  rest on the handler and run anchors they always had. The paragraph said every row's weights and `xfer` were
+  "listed" in the table doc; the doc's § Pick weights sums up the pick mods only (misread): now "read from the table:
+  the *Columns* define them, and § Pick weights sums up the stock weights, `xfer`, `fPick` and `exclude1` of the pick
+  mods". *Item 7:* collision's example still named the pass by its `SN` line and called its case "the R2 case of the
+  logging plan": both reworded (omission). *Item 4 (special's other dropping units), fixed:* the § D bullet (a run id
+  as subject), § H's MonPlace bullet (an address as subject), the two § J rows (`STATE_Set` named; the 540 and 175
+  calls described, their addresses in the tag), the worked example's tool sentence and four "Source:" sentences (the
+  log paths and lines moved to a new first Evidence bullet) (omission); left for a later pass: the *Inputs and
+  oracles* sentence on plans 0018 and 0014. *Fixes from reading the cut* (omission): rng/seeds' *Entry points* cells,
+  `fn:sub_…` chains that the builder removes whole (the function column read `—` or `→ →`), now names before a
+  parenthetical of anchors; seeds' step note 2 (a comma line left by a code-span parenthetical), note 3's
+  "stores the act ." (an address as object), the pierce-count and Armageddon parentheticals ("for the client/server
+  pair", "dated note" outside their link labels); collision's "the architect ruled", its "run:… held 514 of them";
+  room-tiles' sentence-initial `Run:2026-10-16-sweep-roomk`, which the check's case-sensitive run rule let through.
+  *Redaction review.* Cut `workspace/export-x13b-review` (full, illustrations on): 89 pages, 0 dropped; specs words
+  dropped 16.2 % (67 308 of 415 915); `export_check … --repo workspace/export-repo/`: **0 failures**, 1070 warnings
+  (X12). Span equality (the x13f review's script): 31 342 spans, 3 differ (path/README and path/search's known `|`
+  cells); 14 202 fence lines, 100 differ, each an evidence parenthetical or address label gone. Added, words dropped
+  and blocks kept: rng/README 12.7 % 3/3, rng/seeds 15.7 % 7/7, data/strings 11.1 % 11/11, drlg/room-tiles 14.5 %
+  13/13, drlg/collision 13.7 % 20/20, monsters/spawn 11.0 % 19/19, monsters/ai/README 18.5 % 11/11 (its per-think
+  table, line 537, stays out by the ruling), objects/README 14.0 % 19/19; monsters/special, already in, 11.2 % 13/13.
+  Every drop line of the nine read: Evidence and Open questions, the ai/README table, special's plan sentence. Read
+  whole in the cut: rng/seeds and drlg/collision. Left out: none. *Manifest:* groups spec-rng 10 and spec-objects 15;
+  pages rng/README (spec-rng 1 overview), rng/seeds (2), data/strings (spec-data 3), drlg/room-tiles (spec-drlg 6),
+  drlg/collision (8), monsters/spawn (spec-monsters 3), monsters/ai/README (spec-monster-ai 1 overview),
+  objects/README (spec-objects 1 overview): the lane's 5, 8, 9 and 6 left the overview tables' order and its gaps
+  (other); no route collision. Tables named: special 384 (our per-mod handler and draw table), objects/README 51 (a
+  column index); left out: monsters/ai/README 537. *allow-hex:* `pin 0090CE87 specs/rng/README.md` (step 4's high
+  word, recomputed from `Init(12345)`); `pin 00835546 specs/monsters/spawn.md` (the leader seed's high word after the
+  minion-count draw, recomputed: `013AE0B5:2C86C396` steps to `FB397EDF:00835546`, low:high). **Ruling on
+  `53454953`:** it is the four-character code `SEIS`, a domain value the owner's note keeps out of the allowlist; not
+  admitted. rng/seeds now writes "the constant 1397049683, whose four bytes spell `SEIS` high byte first" (exact, and
+  no hex) (other); skills/missiles B1 is asked to do the same. **Ruling on `00835546`:** the smaller change is the
+  spec's: the example writes that seed `0xFB397EDF:0x00835546`, whose `0x` spelling the pin test covers; `HEX_WHATS`
+  is not widened (other). *Hand grep of the cut:* `sub_`, `DAT_`, `FUN_`, `findings/`, `ADR-`, plan numbers, `.py`,
+  `.log`, `.claude`, Ghidra, harness, objdump, debugger, the repository name, `/home`, `workspace/`, `lane/`: 0; `run:`
+  ids 1, items/inventory K1's sentence-initial `Run:` (published since x13a); image addresses 2, the pins of spawn and
+  save/d2s; "architect" 2 (monsters/stats, combat/README, both published before). `reviewed-pages.txt`: the eight
+  added. *Backlog:* [archivist: export builder sub_ anchor cells and the run-id case](../backlog/2026-11-17-architect-archivist-export-builder-sub-anchor-cells-and-run-case.md)
+  (179 *Entry points* rows on published pages read `—` or bare arrows; X2's `run:` rule is case-sensitive);
+  [spec-writer: export cut residue after x13b](../backlog/2026-11-17-architect-spec-writer-export-cut-residue-after-x13b.md)
+  (special's plan sentence, collision's log-line names, the published residue above, skills/missiles B1's constant).
+  Gate green.
