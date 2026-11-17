@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [stats/overview, items/properties, items/uniques-sets, player/creation, monsters/stats, data/calc]
 consumed_by: [stats/states, combat/overview, player/creation, monsters/stats, data/calc]
-tags: {C: 102, I: 27, L: 4}
-updated: 2026-11-16
+tags: {C: 104, I: 26, L: 4}
+updated: 2026-11-17
 ---
 
 # Stat aggregation: the list tree, the cache, the `op` terms, the maxima, items and set bonuses
@@ -323,8 +323,11 @@ Step notes:
   op 2's gates and adds `MulDiv(b0, (p × b) >> opParam, 100)` (1 347 terms); ops 10 and 12 (and any op above 13) go
   to the next entry (670, 643); no stock row has op 3, 10 or 12 (the 359 rows' `op` cells). (0x0062632D–0x0062639B,
   0x00626658, fn:sub_00626200_StatEvaluate@0x00626200, run:2026-11-16-sweep2-s4e-emu, [stats/0001 § 11](../../findings/stats/0001-aggregate.md#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu)) Ops 6 and 7 as code are
-  run:2026-10-27-p51s-emu's ([stats/0001 § 10](../../findings/stats/0001-aggregate.md#10-op-6-and-7-under-emulation-run2026-10-27-p51s-emu-plan-0051-phase-1b)). [I] Ops 6 and 7 appear only on the unspawnable *of Dawn* and *of Sunlight*: the
-  affix-table check was not made. (fn:STAT_ByTimeValue@0x0065CA30)
+  run:2026-10-27-p51s-emu's ([stats/0001 § 10](../../findings/stats/0001-aggregate.md#10-op-6-and-7-under-emulation-run2026-10-27-p51s-emu-plan-0051-phase-1b)). [C] Ops 6 and 7 appear only on the unspawnable *of Dawn* and *of Sunlight*: the 36
+  `…/time` property codes, the 36 stats with op 6 or 7, are named in every property-code column of the affix, unique,
+  set, runeword, gem and cube tables by those two `magicsuffix` rows only (`ac/time`, `spawnable` 0).
+  (fn:STAT_ByTimeValue@0x0065CA30, tbl:ItemStatCost.txt:op, tbl:MagicSuffix.txt:spawnable,
+  [Properties § Survey](../../tables/Properties.md#survey-the-codes-the-item-tables-use))
 - D1. [C] `b0` starts as the own-plus-children sum and only ops 1 and 13 on an item replace it with the item's base
   stat, so on a player op 11 (`item_maxhp_percent`, `item_maxmana_percent`) is a percentage of the **flat sum**, not
   of the running total: a running-total control mispredicts 86 of 5 952 checked writes, the stock model none
@@ -636,9 +639,14 @@ Step notes:
   (fn:SKILLS_RefreshPassive@0x00646D60, fn:SKILLS_RefreshPassivesInState@0x00646F20, run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
 - K3. [C] The skills' `aura` bit has 9 readers, the `+0x04` tests of mask byte 0x006CE27C (raw scan and objdump,
   [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)): `EVENT_SelectedAuraTick`, `AuraSelect`, `PlayerSetSkill` twice, `MissileCreate`, `ITEMAURA_Start`,
-  `ITEMAURA_Stop`, `SummonInitStats`, `MERCAI_PickSkill` ([stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). [I] The masteries 127–129 carry the bit with no
-  `aurastate`; no reader gives it an effect for them: each needs a stock-data reason they never reach it, and those
-  table checks were not made. (fn:SKILLS_RefreshPassive@0x00646D60, fn:ITEMAURA_Start@0x005BF510)
+  `ITEMAURA_Stop`, `SummonInitStats`, `MERCAI_PickSkill` ([stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). [C] No stock row hands skills 127–129 to a
+  hireling (`Skill1`..`Skill6`), a monster or summon (MonStats' skill columns) or an item through an `aura` property:
+  the only two cells naming them are the `skill` properties (func 22) of the uniques *Bloodtree Stump* (`par6` 129) and
+  *Bloodletter* (`par7` 127). (tbl:Hireling.txt:Skill1, tbl:MonStats.txt:Skill1, tbl:UniqueItems.txt:par6,
+  [Skills § Passive and aura columns](../../tables/Skills.md#passive-and-aura-columns-plan-0041-phase-0)) [I] The masteries 127–129 carry the bit with no
+  `aurastate`; no reader gives it an effect for them: the item-aura, summon and hireling readers meet no stock row
+  naming them (reading the two cells as skill ids is the table doc's inference), and the player's selection readers
+  and `MissileCreate` need a reason in the code, not read. (fn:SKILLS_RefreshPassive@0x00646D60, fn:ITEMAURA_Start@0x005BF510)
 
 ### Draw order
 

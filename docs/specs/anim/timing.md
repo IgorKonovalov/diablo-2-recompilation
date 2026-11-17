@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, stats/aggregate, stats/states, monsters/stats, skills/dispatch, combat/overview, combat/delivery, objects]
 consumed_by: [anim/movement, skills/dispatch, skills/missiles, combat/overview, combat/delivery, objects, sim/frame]
-tags: {C: 168, I: 91, L: 22}
-updated: 2026-11-16
+tags: {C: 175, I: 86, L: 22}
+updated: 2026-11-17
 ---
 
 # Animation timing: modes, records, the schedule, the frame advance, rates, breakpoints and the gates
@@ -101,10 +101,10 @@ flowchart LR
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| fallback record | 2 048 frames, speed 256, no event byte | fn:ANIMDATA_Load@0x0066A770 (0x0066A80A, 0x0066A814) | [I] |
+| fallback record | 2 048 frames, speed 256, no event byte | fn:ANIMDATA_Load@0x0066A770 (0x0066A80A, 0x0066A814) | [C] (4 834 returns in play, run:2026-11-16-sweep2-H6d) |
 | event-byte scan bound | frames `< 0x90` (144) | fn:SUNIT_ScheduleModeEvents@0x005539B0 (0x00553A40) | [C] (run:2026-11-16-sweep2-s6e, family `sched`: 158 cases with events past 0x90) |
 | rate bonus `k` | 120 (stats 93, 99, 102, 105), 150 (stat 96) | data:g_AnimRateBonus@0x006E8E24 | [C] (run:2026-10-27-anim-rates-emu) |
-| attack and default factor clamp | 15..175 | fn:UNIT_AnimSetRate@0x00623F50 | [C] the attack's 175 (run:2026-10-27-anim); [I] the floor 15 |
+| attack and default factor clamp | 15..175 | fn:UNIT_AnimSetRate@0x00623F50 | [C] the attack's 175 (run:2026-10-27-anim); the attack's 15 at `X` 10 and the default's 15 (run:2026-11-16-sweep2-H6d); [I] the attack floor's threshold for `X` 11–14, the default's 175 |
 | cast factor cap | 175 | fn:UNIT_AnimSetRate@0x00623F50 (0x00623FDA–0x00623FE1) | [C] (run:2026-10-27-anim) |
 | player sequence attack term | −30 | 0x00624290–0x0062429B | [C] (run:2026-10-27-anim) |
 | block gate | `⌊stat 102 / 8⌋ + 15` frames | 0x0057D282–0x0057D2D6 | [C] (run:2026-10-27-anim) |
@@ -159,7 +159,7 @@ B1. UNIT_AnimSetRecord(unit, type, class, mode):                  [C] (fn:UNIT_A
       (type, class, mode) are the display values (B3)
       name ← token(type, class) ‖ modeToken(type, mode) ‖ weaponClass(unit, type, class, mode)   ; spaces removed
       unit.+0x50 ← ANIMDATA_Find(name) or, when none, the fallback record (2 048 frames, speed 256, no event)
-          ; [C] none for an absent name (run:2026-11-16-sweep2-s6e); [I] the fallback's values: no case
+          ; [C] none for an absent name (run:2026-11-16-sweep2-s6e); the fallback's values: 4 834 returns in play (run:2026-11-16-sweep2-H6d)
 
 B2. ANIMDATA_Find(name):                                          [C] (fn:ANIMDATA_Find@0x0066A8F0, run:2026-11-16-sweep2-s6e, all of B2)
       uppercase name in place ('a'..'z')
@@ -186,8 +186,12 @@ B2. ANIMDATA_Find(name):                                          [C] (fn:ANIMDA
   tested first); with none, the right hand is written as primary at inventory `+0x1C` and used.
   (fn:COMPOSIT_WeaponClass@0x0064F060, 0x0064F1E5–0x0064F2D5, 0x0063D1D0, run:2026-11-16-sweep2-s6f,
   [anim/0001 § 2](../../findings/anim/0001-modes-frames.md#2-records-the-token-the-lookup-and-the-fallback))
+- B1. [C] **The fallback record is returned in play:** 4 834 times in 11 sessions (`MonStatsSpeeds` at the load 4 202,
+  `UNIT_AnimSetRecord` 632 for classes FS, BN and MO in mode 14), each with frames 2 048, speed 256 and the name and
+  144 event bytes zero, its name absent from `animdata.d2`. (fn:ANIMDATA_Lookup@0x0066A9B0, 0x0066AA02, 0x00650F4D,
+  0x00650FB3, 0x00620F40, run:2026-11-16-sweep2-H6d, [anim/experiments § H6d](../../findings/anim/experiments.md#run2026-11-16-sweep2-h6d))
 - B1. [I] Which Items codes carry the class indices 2 and 3 (`1hs` and `1ht` by the stock code map) is
-  `g_ItemWeaponClassIndex`'s runtime content, and the fallback record is read from the code; no case separates them.
+  `g_ItemWeaponClassIndex`'s runtime content; no case separates them.
   A right hand that is not an item unit returns 0 with the index unwritten (0x0064F121). An object's name is its
   ObjType token, the ObjMode token and `hth`, but the server never looks an object's record up (C3).
   (fn:COMPOSIT_WeaponClass@0x0064F060, data:g_ItemWeaponClassIndex@0x007446A0, fn:ANIMDATA_Lookup@0x0066A9B0,
@@ -230,12 +234,12 @@ C1. UNIT_SetMode(unit, mode) → bool:                              [C] (fn:UNIT
       unit.mode ← mode;  drop the stat lists flagged to end on a mode change   ; [I] the drop (fn:UNIT_SetMode@0x00624690)
       UNIT_AnimInit(unit);  return 1
 
-C2. UNIT_AnimInit(unit):                                          [C] (fn:UNIT_AnimInit@0x00624390, run:2026-10-30-anim-p3b, run:2026-11-16-sweep2-s6e-3, all of C2 but the line marked)
+C2. UNIT_AnimInit(unit):                                          [C] (fn:UNIT_AnimInit@0x00624390, run:2026-10-30-anim-p3b, run:2026-11-16-sweep2-s6e-3, run:2026-11-16-sweep2-H6d, all of C2)
       +0x4E ← 0;  +0x44 ← UNIT_AnimStartFrame(unit) << 8;  (type, class, mode) ← display values
       type 0 (player form):  if mode ∈ {3, 19}: RunVelocityStat (anim/movement A2)
                              if mode ≠ 18: +0x30 ← 0; UNIT_AnimSetRate; +0x48 ← rec.frames << 8
                              else:         UNIT_SeqInit; UNIT_AnimSetRate
-      type 1 (monster form): a player shown in mode 13 or 15: RunVelocityStat    ; [I] shapeshifted: not compared (fn:UNIT_AnimInit@0x00624390)
+      type 1 (monster form): a player shown in mode 13 or 15: RunVelocityStat    ; shapeshifted: 833 rate calls equal (H6d)
                              if mode ≠ 14: UNIT_AnimSetRate; +0x30 ← 0; +0x48 ← rec.frames << 8
                              else:         UNIT_SeqInit; UNIT_AnimSetRate
       type 2 (object, mode < 8 else fatal):
@@ -292,8 +296,10 @@ C3. SUNIT_AnimInit(unit):                                         [C] (fn:SUNIT_
   (run:2026-11-16-sweep2-s6e-3, 335 path cases); the schedule reads the start frame from `UNIT_AnimStartFrame` itself
   (§ E; 45 913 schedules). C3's second rate call, after C2 has written the new `+0x48`, is the one that sets the rate a
   schedule uses (all 168 starts whose two rates differ). (fn:SUNIT_AnimInit@0x005533D0,
-  fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-30-anim-p3b, [anim/experiments § S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)) [I] That the rate call leaves `+0x44` at 0
-  up to the schedule (the rate call is not run in that emulation). (fn:UNIT_AnimSetRate@0x00623F50)
+  fn:SUNIT_ScheduleModeEvents@0x005539B0, run:2026-10-30-anim-p3b, [anim/experiments § S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)) [C] The rate call leaves `+0x44`
+  as at its entry (48 118 of 48 118 logged calls), and at `SUNIT_AnimInit`'s 17 005 calls `+0x44` is 0 at entry and
+  exit. (fn:UNIT_AnimSetRate@0x00623F50, run:2026-11-16-sweep2-H6d, [anim/experiments § H6d](../../findings/anim/experiments.md#run2026-11-16-sweep2-h6d)) [I] That it is still 0 when the schedule reads it: the
+  schedule's entry value is not logged.
 
 ### D. The start frame
 
@@ -436,8 +442,10 @@ F2. UNIT_AnimAtEnd(unit) → bool:                                   [C] (fn:UNI
   rate, 0 mismatches; 1 114 of the 1 120 changed pairs would mismatch at the old rate). (fn:UNIT_AnimAdvance@0x00623E00,
   run:2026-10-27-anim-rates-emu) So an every-frame monster re-computed mid-mode advances at the new rate from its
   next advance on (the slowed monster windows of the run among them). [C] (run:2026-10-27-anim)
-- F2. [I] The every-frame monster frame functions call F2 after advancing; the length `+0x48` stays the start's, so a
-  rate change shortens such a mode only through the frame position. (fn:UNIT_AnimAtEnd@0x006217C0)
+- F2. [C] A rate call leaves `+0x48` as at its entry (48 118 of 48 118 logged calls, 25 059 of them with a changed
+  record and a non-zero length; J2). (run:2026-11-16-sweep2-H6d, [anim/experiments § H6d](../../findings/anim/experiments.md#run2026-11-16-sweep2-h6d)) [I] The every-frame monster frame functions call F2 after advancing;
+  the length `+0x48` stays the start's, so a rate change shortens such a mode only through the frame position (no
+  monster call outside `UNIT_AnimInit`'s own changed its record in the logged sessions). (fn:UNIT_AnimAtEnd@0x006217C0)
 
 ### G. Sequences
 
@@ -725,7 +733,7 @@ J1. AnimRateBonus(unit, i) → i32:                                  [C] (fn:sub
       s: i32 ← UnitGetStat(unit, stat, 0)
       return s = 0 ? 0 : (k × s) ÷ (k + s)                        ; signed imul, idiv toward zero
 
-J2. UNIT_AnimSetRate(unit):                                        [C] (fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-27-anim, all of J2)
+J2. UNIT_AnimSetRate(unit):                                        [C] (fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-27-anim, run:2026-11-16-sweep2-H6d, all of J2 but the lines marked)
       if unit is null or unit.type ≥ 4: return
       (type, class, mode) ← display values;  UNIT_AnimSetRecord(unit, type, class, mode);  spd: u32 ← rec.speed
       if IsCast(type, mode):              X ← min(100 + B_FCR, 175);  q ← (spd × X) mod 2³² ÷ 100 (unsigned)
@@ -737,7 +745,7 @@ J2. UNIT_AnimSetRate(unit):                                        [C] (fn:UNIT_
                                           q ← vbase(type, class, mode);  PathSetSpeed(path, 0x1000)
       else if IsMove(type, mode, class):
                                           if no path: return                                ; +0x4C kept; [I] no case
-                                          X ← max(B_FRW + stat67, 25)                         ; [I] the floor 25: no case
+                                          X ← max(B_FRW + stat67, 25)                         ; the floor 25: monster calls only
                                           q ← (vbase × X) ÷ 100 (signed);  PathSetSpeed(path, (pbase × X) ÷ 100)   ; anim/movement A1
       else if IsAttack(type, mode, class):
                                           WeaponListsRelink2(unit, 1)
@@ -745,7 +753,7 @@ J2. UNIT_AnimSetRate(unit):                                        [C] (fn:UNIT_
                                           if UNIT_CanDualWield(unit) and both hands hold a usable weapon (type 45):
                                             X ← X + (stat68(R) + stat68(L)) ÷ 2 − stat68(R)       ; R body location 4, L 5
                                           if unit.type = 0 and unit.mode = 18: X ← X − 30        ; the real type and mode
-                                          X ← clamp(X, 15, 175)                               ; [I] the floor 15: no case
+                                          X ← clamp(X, 15, 175)                               ; the floor 15 met at X 10; [I] X 11–14
                                           base ← (HasStateFlag(unit, 38) and w ← WereformAttackBase(unit), w ≠ 0) ? w : spd
                                           q ← (base × X) mod 2³² ÷ 100 (unsigned)
       else if IsFixed(type, mode, class): q ← spd
@@ -769,14 +777,22 @@ J2. UNIT_AnimSetRate(unit):                                        [C] (fn:UNIT_
   (173, 3 526), knockback (2, 1 331), moving (3 191, 123 060), attack (7 532, 27 664), fixed (72, 7 698), default
   (9 129, 108 907). The attack clamp's 175 is reached by 31 player and 74 monster calls (Burst of Speed with two fast
   katars, Double Swing). (fn:UNIT_AnimSetRate@0x00623F50, run:2026-10-27-anim)
-- J2. [I] The moving floor 25, the attack floor 15, block's floor 1 and the `0x7FFF` cap are reached by no logged call.
+- J2. [C] **The floors met.** Under a Holy Freeze slow (session `sp-pal-slow`) the moving floor 25 is reached by 105
+  monster calls (`X` −15, −9, 5 and 8) and the attack floor 15 by 111 monster calls, all at `X` 10; the default
+  branch's floor 15 by 139 monster and 14 player calls (stat 69 at −4 and 0). Each rate equals the model, and the
+  controls (a floor of 24 or 26, 14 or 16, or none) differ in all of them. No player reaches the moving or the attack
+  floor (least logged `X` 150 and 80). (0x00624128–0x006241D4, run:2026-11-16-sweep2-H6d, [anim/experiments § H6d](../../findings/anim/experiments.md#run2026-11-16-sweep2-h6d))
+- J2. [I] The attack floor's threshold for `X` 11–14 (one input value met), the default branch's 175, block's floor 1
+  and the `0x7FFF` cap are reached by no logged call (48 118 rate calls in H6d), nor is a moving call with no path.
   Cast, get-hit, block, attack and default divide unsigned, so a negative factor would wrap to the cap (FCR ≤ −55,
   FHR or FBR ≤ −36, FBR ≤ −55 under Holy Shield); moving divides signed. (0x00623FF6–0x00624016, 0x00624369–0x00624381,
   0x00623FE9–0x00624007)
 - J2. [C] **The record is set again at every call**, so a mid-mode call can change `+0x50`: the record changes at
   logged mid-mode calls (players 52 from `ITEMS_AttachToOwner` and 54 from `SKILLS_ApplyAuraStats`, monsters 1 390),
-  its frame count with it at 1 355. (0x00623FAF, run:2026-10-30-anim-p3b, [anim/experiments § S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)) [I] It never changes `+0x48`, which
-  only the mode starts write (no logged window crosses such a call). Objects and missiles never reach J2 (their start
+  its frame count with it at 1 355. (0x00623FAF, run:2026-10-30-anim-p3b, [anim/experiments § S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)) [C] It never changes `+0x48`, which
+  only the mode starts write: kept in 25 059 of 25 059 logged record-changing calls with a non-zero length, 72 of them
+  outside `UNIT_AnimInit`'s own calls, all players. (run:2026-11-16-sweep2-H6d, [anim/experiments § H6d](../../findings/anim/experiments.md#run2026-11-16-sweep2-h6d)) [I] The monster half: no monster call outside
+  `UNIT_AnimInit`'s own changed its record in those sessions. Objects and missiles never reach J2 (their start
   branches do not call it). (fn:sub_006214A0_AnimRateIsMove@0x006214A0)
 - J3. [C] **Which branch a mode takes** is the mode-class tables (players; monsters below class 410; from 410): player
   A1, A2, TH, KK attack; SC cast (SQ too when its `seqtrans` is SC); BL block; GH get-hit; KB knockback; WL, RN, TW
@@ -799,15 +815,17 @@ J2. UNIT_AnimSetRate(unit):                                        [C] (fn:UNIT_
 - J4. [C] **The dual-wield term** `(R + L) ÷ 2 − R` (toward zero) replaces the right hand's stat 68 by the two hands'
   mean, over the dual-wield calls of Double Swing, Frenzy, A1 and S3/S4; **the sequence term**
   `− 30` applies to a player whose real mode is 18 with an attack-rate skill (Jab, Double Swing, Frenzy, Fists of
-  Fire); Charge and Leap Attack take the default branch (no `UseAttackRate`). The right hand's stat 68 is the one
-  replaced also when the left weapon is the linked one (the term subtracts the right hand's whichever is linked), read
-  from the code: `[I]`. (0x00624211–0x0062428E,
-  0x00624290–0x0062429B, run:2026-10-27-anim)
+  Fire); Charge and Leap Attack take the default branch (no `UseAttackRate`). 186 dual-wield attack calls equal the
+  term (152 with the hands' stat 68 differing; the control without it differs in 141 of the 152). The right hand's
+  stat 68 is the one replaced also when the left weapon is the linked one (the term subtracts the right hand's whichever
+  is linked), read from the code: `[I]` (which hand the skill links is not logged). (0x00624211–0x0062428E,
+  0x00624290–0x0062429B, run:2026-10-27-anim, run:2026-11-16-sweep2-H6d)
 - J4. [C] **The shapeshift base.** Under state flag 38 (`meleeonly`) a transformed player's attack base is `w = (+0x48 &
   ~0xFF) ÷ D` (signed), `D` 19 without a weapon, else `HumanAttackFrames(unit, weapon) = (F_h << 8) ÷ ((spd_h · (100 +
   stat93(weapon) + stat68(weapon))) ÷ 100)` from the player's own A1 record with that weapon's class; `+0x48` is the
   previous mode's length at `UNIT_AnimInit`'s calls and the new one at `SUNIT_AnimInit`'s (235 calls; 50 separate the
-  two lengths). (fn:sub_00646170_WereformAttackBase@0x00646170, fn:sub_0062A710_HumanAttackFrames@0x0062A710,
+  two lengths). The previous mode's length is the live `+0x48` its start wrote, not its current record's: at 3 074 init
+  attack calls the rate equals the model fed that value, which differs from the previous record's length in 34 (run:2026-11-16-sweep2-H6d). (fn:sub_00646170_WereformAttackBase@0x00646170, fn:sub_0062A710_HumanAttackFrames@0x0062A710,
   tbl:States.txt:meleeonly, run:2026-10-27-anim)
 - J4. [I] `HumanAttackFrames` takes speed 45 when the name has no record, and a zero divisor faults.
   (0x0062A7EB–0x0062A822)
@@ -844,7 +862,8 @@ bonus map (J1). `tools/anim_rates.py bp` checks the closed forms against E1's lo
 45 913 non-sequence schedules, K2 at the 39 550 plain-rate ones and K3 at 9 919 cast, get-hit and block ones
 (run:2026-10-30-anim-p3b, [anim/experiments § S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)); K3's attack form equals a brute force through J1 and J2 at 1 297 362 targets
 (run:2026-11-16-sweep2-s6e-3). (fn:SUNIT_ScheduleModeEvents@0x005539B0, fn:UNIT_AnimSetRate@0x00623F50) `[I]` At the
-factor floors no case reaches (15, 25, block's 1) they stay derived only.
+factor floors (15, 25, block's 1) no logged schedule checks them: they stay derived only (the rates at 15 and 25 are
+J2's monster calls).
 
 ```mermaid
 flowchart LR
@@ -1139,8 +1158,9 @@ run:2026-10-27-anim's schedules hold `n(r)` at every logged rate (E2), but these
 - [C] **Two rate calls per server start.** `UNIT_AnimInit` calls the rate before it writes the new `+0x48`, and
   `SUNIT_AnimInit` calls it again after (44 415 logged starts with both, `UNIT_AnimInit`'s first); the schedule uses the
   second call's rate (all 168 starts whose two rates differ). (fn:UNIT_AnimInit@0x00624390, fn:SUNIT_AnimInit@0x005533D0,
-  run:2026-10-30-anim-p3b, [anim/experiments § S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)) [I] The shapeshift base reads `+0x48`, so the first call sees the previous mode's
-  length. (fn:sub_00646170_WereformAttackBase@0x00646170)
+  run:2026-10-30-anim-p3b, [anim/experiments § S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)) [C] The shapeshift base reads `+0x48`, so the first call sees the previous mode's
+  live length, the one its start wrote (3 074 init attack calls; in 34 it is not the previous record's length; J4).
+  (fn:sub_00646170_WereformAttackBase@0x00646170, run:2026-11-16-sweep2-H6d, [anim/experiments § H6d](../../findings/anim/experiments.md#run2026-11-16-sweep2-h6d))
 - [I] **Unsigned divides.** Cast, get-hit, block, attack and default take `(spd × X) mod 2³² ÷ 100` unsigned; only the
   moving branch divides signed. A negative factor gives the fastest rate, not a slow one (unreachable on stock data).
   (fn:UNIT_AnimSetRate@0x00623F50)
@@ -1210,7 +1230,7 @@ run:2026-10-27-anim's schedules hold `n(r)` at every logged rate (E2), but these
   in part 3; the clamp stands on part 1's 31 player calls, J2); player knockbacks (none new in part 3: Blood Raven,
   class 267, never seen in three Hell sessions); `VASCHTH` (no stock state transforms a player into the vampire);
   P1b-13 (13 player movement windows under a slow over the 131 logs, not a 30; 327 for monsters), P1b-14 and P1b-15
-  (not played in part 3; part 2's record reports no outcome for them). Their statements stay `[I]`; none is waiting
+  (not played in part 3; part 2's record reports no outcome for them; P1b-14's moving floor 25 is since met by monsters, J2). Their statements stay `[I]`; none is waiting
   on a mismatch (0 over 131 logs). The run's turn to a walk at 0 stamina, reached in part 3, is settled in
   [anim/movement § D](movement.md#d-the-run-drain) (D2).
 

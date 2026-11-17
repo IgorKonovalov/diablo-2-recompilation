@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, rng/seeds, anim/timing, drlg/lifecycle, monsters/ai/overview, skills/dispatch, skills/missiles, combat/overview, combat/to-hit, items/tc, items/quality, items/economy, objects, quests]
 consumed_by: [drlg/lifecycle, chain]
-tags: {C: 144, I: 98, L: 5}
-updated: 2026-11-16
+tags: {C: 145, I: 97, L: 5}
+updated: 2026-11-17
 ---
 
 # The server frame: the tick, its passes, the unit events, the queue, the timers and the message drain
@@ -995,7 +995,7 @@ sequenceDiagram
 - [C] **The code's map (ADR-0015): a freed record returns to the first block's free list, last freed first,** whichever block it came from. Allocation order, not time, then decides which record a later queue reuses; that is invisible unless a reimplementation exposes record addresses. (fn:sub_00540CD0_EventFree@0x00540CD0, run:2026-10-30-frame-emu-2)
 - [C] **The code's map (ADR-0015): a slot holds records of later multiples of 64:** a walk passes over a record whose frame is not the current one and keeps it. (fn:sub_00541060_MonEventsRun@0x00541060, run:2026-10-30-frame-emu-2)
 - [I] So a record due at `F`, queued in frame `q`, is passed over `(F − q − 1) ÷ 64` times in the frames after `q`, and once more in frame `q` itself when `F ≡ q (mod 64)` and that frame's walk of its list reaches it. (fn:sub_005416B0_EventQueueAt@0x005416B0, 0x005414EC–0x00541589)
-- [I] **The new-rooms flag is cleared after the walk,** so a room created during its own act's walk waits (§ H2c): do not "fix" this by re-walking. (0x0052D21D)
+- [C] **The new-rooms flag is cleared after the walk,** so a room created during its own act's walk waits (§ H2c; the windows' 4 such rooms, each first walked at its act's next walk): do not "fix" this by re-walking. (0x0052D21D, run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3, [frame/0007 § S7b](../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o))
 - [C] **The wanderer tick runs on every room of a walked act,** not only on new ones; a frame that creates one room steps every room seed of its act once (23 walks, 371 older rooms). (0x0052D1C4, run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3, [frame/0007 § S7b](../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o))
 - [C] **The AI has two entries:** at a mode end it runs inside that mode-end event, so its draws come at that event's place in the frame and not at the kind-2 record's ([monsters/ai](../monsters/ai/README.md#reimplementation-notes)): 447 AI draws in monsters' kind-0 events, 992 in kind-2. (fn:sub_005B1740_MonAiEvent@0x005B1740, run:2026-11-04-frame, run:2026-11-04-frame2, run:2026-11-04-frame3, [frame/0007 § S7b](../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o))
 - [C] **Do not reset `g_HitClassCounter` per game:** its one store is the increment. (0x0057CE4F, [frame/0001 § 8](../../findings/frame/0001-tick-and-messages.md#8-plan-0066-batch-s7a-part-1-second-tool-graphs-and-scans-2026-11-16-lanen66n))

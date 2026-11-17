@@ -2,11 +2,11 @@
 from: reverser
 to: spec-writer, archivist
 date: 2026-11-15
-status: open
+status: done
 context:
-  - ../plans/done/0066-simulation-inferred-claims-sweep.md
-  - ../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h
-resolution: ""
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h
+resolution: "Items 1-2 verified in items/economy F1 and H3 (applied 2026-11-16, lane/n66si); item 3 done by the archivist (lane/fua). Closed 2026-11-17 (lane/fus) [../specs/items/economy.md]"
 ---
 
 Plan 0066 batches S4a and S4b (lane/n66h) found two corrections for Phase 3, and one table-doc line.
