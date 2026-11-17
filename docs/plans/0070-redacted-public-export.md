@@ -1976,3 +1976,71 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `test_schematic_kit` (29), `test_export_build` (154), `test_export_check` (191), `test_anim_schematic` (5); gate
   green. Ledger: verdict accept with fixes, 8 (misread 1, omission 2, other 5). **For the spec-writer:** place the five
   blocks as their Place lines say; row 21 caption could add that the path stops in the same frame (the frames say so).
+- 2026-11-17, archivist, lane/x12c (Phase 11 batch 2: row 12). One generator on the kit, `tools/outdoor_anim.py`
+  (`<root> 0xc0ffee [--diff D] [--theme dark|light]`; `--schematic` accepted; in `SCHEMATIC_TOOLS` and
+  `test_export_build`'s tuple assertion, one line each). It animates the Burial Grounds (level 17, Act I), the one
+  outdoor level of the wiki's list whose generator is only the seam mark, the border pass and one preset, so every
+  draw of the window shows (9). 11 frames: the cell grid (rectangle, 5 * 6 cells, the level seed at the window start,
+  the neighbour on the border list); the outline ring with its extra vertex; the seam mark (cell bit 0x1, warp-slot
+  flag 0x10 << slot); one frame per ring segment of the border pass (edge piece, its first-use draw, file indexes, the
+  seam opening, the corner or the edge piece again at a straight turn); the corner flood; the preset (piece 108 at
+  cell (1, 1)); the final cell bits. **The model** is `drlg.Act`, `drlg.act_links` and `drlg.Outdoor` run as they are:
+  the instance's `place`, `ring_build`, `seam_mark`, `border_build` and `corner_flood` are wrapped for the run (removed
+  after, tested) to record each placement with the grids before and after and the draws it made; the tool computes
+  nothing but the grouping of the recorded placements by ring segment (asserted to account for every border placement).
+  The level seed is `Seed(A.base + 17)`, the spec's `Init(base + id)`; for map seed 3103, normal, the run is the spec's
+  worked example 1 to the word (nine draws, `0x40601` at (1, 5), grid0 `0x40` on cells (0..2, 5), seed out
+  `28B0827C:60189741`). No refactor of the model. Only level 17 is offered: Act II's seam pairs, the special areas and
+  Act I's wilderness levels (thousands of draws, rivers, roads) have no single readable run; Act III has no border
+  pass. **Tests:** new `tools/test_outdoor_anim.py` (11): determinism, both themes and four seeds under
+  `verify_illustration` (allow-hex), clip and cut empty over six runs, no tool word or section sign in the step texts,
+  the recorded run equals a plain run of the model for six seeds and difficulties (grids, seed, draws, no wrapper
+  left), the segment grouping, worked example 1, step texts against the model, no art decoder imported (the model's own
+  `ds1` import aside), bad arguments. Green with `test_schematic_kit` (29), `test_anim_schematic`, `test_export_build`
+  (154), `test_export_check` (191); gate green. **Frames viewed** (dark and light): 0, 1, 2, 3, 6, 7, 8, 9, 10. Fixed
+  after looking: the section sign is not in the 5x7 font (it printed "?"): left out of frame captions; the opening's
+  "OPEN" label over the index; the corner and preset fills told apart; "D108" at scale 1; a straight turn at the seam
+  vertex was labelled a corner (the spec's E3: the edge piece again). **Block:** "Outdoor (x12c)" in
+  `workspace/phase11/blocks-batch2.md` (`drlg-outdoor-burial-grounds-c0ffee`, `values` computed, Place: `levels.md`
+  "Outdoor levels", after the bullet list); the caption passes `export_build.caption_sentences` with no drop.
+  **Doubts:** (1) the "cell (C, R)" labels and D/I letters are in the frames' key, not the caption. (2) A second level
+  (Valley of Snakes, seam pairs and a special area) would add Act II's pair; not built. (3) The neighbour box is drawn
+  at its true offset and clipped; for other seeds the neighbour can lie on another side and is clipped to the free area.
+- 2026-11-17, architect, review of lane/x12c (Opus, Tier A): **accept with fixes**, 6: misread 2, overclaim 1, other 3.
+  Checked: frames viewed in both themes (0xc0ffee 0, 1, 2, 6, 7, 8, 9, 10; map seed 3103 0, 1, 2, 6, 7, 9; seeds 2, 3
+  and 8 for the neighbour on the east, west and north sides) and every step text of 0xc0ffee and 3103, against outdoor
+  § B (cell and grid0 bits), C3–C5 (ring from v0 up the W side, the seam vertex), D1–D2 (rotation, first use draws,
+  one past the draw), E1 (seam mark: `0x1`, `0x10 << k`, end cell included, no draw), E2 (edge pieces from `v + d` to
+  `n`, the opening at `min + len ÷ 2`, `0x40400` on level 17), E3 (a straight turn: the edge piece's row again), E4 and
+  H7 (`Place(1, 1, 108, −1)`). Map seed 3103 normal is worked example 1 to the word: the nine draws, rect, seed in and
+  out, `0x40601` at (1, 5), grid0 `0x40` on (0 … 2, 5) (the lane's test asserts them). **Tracing:** the five wrappers
+  hold only the instance's methods; the recorded run equals a plain run for six seeds and difficulties (grids, seed,
+  draws). **Rulings.** (a) Level 17 only: kept. Row 12 asks one act; it is the one window whose draws are the border pass
+  and one preset, readable whole; Valley of Snakes is not required. (b) Doubt 1: kept, the key is in every frame and
+  the caption says it in words. (c) Doubt 3: fixed, below. **Fixes** (`tools/outdoor_anim.py`,
+  `tools/test_outdoor_anim.py`): (1) misread: the straight turn's step text said "row 2 of the style table" on every
+  seed; row 2 is the edge piece going north, and level 17's seam turn on the south side goes west (row 1, piece 4). The
+  row is now `1 + DIRIDX[d]`, named with its direction; a test reads `g_BorderCornerIdx` for the four straight turns
+  and the 3103 text. (2) overclaim: the seam segment's caption and step text put the opening "after its rotation draw"
+  ("the draw was made") on a segment whose piece was used before and drew nothing: now "after the rotation gave it one",
+  "the rotation still counted the cell"; the block caption likewise. (3) misread: the final frame said "none of the
+  occupied-mask bits 0x1B81 is clear" (inverted: a cell is free when none is set) and drew the no-out-room conclusion
+  from the placement mask; it now counts the cells without the footprint bit `0x200` (0: every cell holds a border
+  piece or the preset, as worked example 1 says) and keeps the free count in the step text. (4) other: the wrappers were
+  removed after `O.run()` with no `finally`; now a `finally`, and a test raises inside the run. (5) other: the seam
+  mark's panel had 12 lines and its last ran over the frame; one blank dropped, the opening put on one line, and the
+  panel asserts its 11 lines (the clip test builds ten runs). (6) other: the neighbour box at its true offset hid the
+  key column when the neighbour is west (seed 3), overran into the panel gap when east (seed 2) and vanished when north
+  (seed 8): over 1 197 runs the neighbour is north in 384, south 366, east 228, west 219. It is now a band beside the grid along the
+  neighbour's stretch, with its name and side under the grid; a test for the four sides. **Block**
+  (`workspace/phase11/blocks-batch2.md`, "Outdoor (x12c)", corrected there for 2). The Place line resolves to
+  `docs/wiki/levels.md` "Outdoor levels", after the bullet ending at outdoor § M, before "When the act generator is
+  done". **Cut:** the block placed in the lane's `levels.md` for one build (restored after), `export_build.py --out
+  workspace/export-x12c-review`: 71 pages, 0 dropped, the folder built; `export_check` 0 failures, 866 warnings, none
+  on `world/levels.md`; every caption sentence present with the seed and values lines; the folder passes
+  `verify_illustration` with the allow-hex list (the step texts' `0x40601`, `0x1B81` are spec values under six hex
+  digits; draws are low words in decimal); the build was removed. Tests green: `test_outdoor_anim` (14),
+  `test_schematic_kit`, `test_anim_schematic`, `test_export_build` (154), `test_export_check` (191); gate green.
+  `test_anim_schematic` failed once with 2 errors and passed on three reruns: its fixed output folder
+  `workspace/render/test-anim` is shared through the symlink by lanes running at once (not this lane's). **For the
+  spec-writer:** place the block as its Place line says; `values: computed`, `seed: illustrative`.

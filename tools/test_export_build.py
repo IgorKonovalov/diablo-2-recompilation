@@ -323,7 +323,8 @@ def main():
     ok(not any(w in src for w in ("import socket", "urllib", "http.client", "requests", "ftplib")), "no network module")
     ok("--schematic" in src and eb.SCHEMATIC_TOOLS == ("maze_anim.py", "tc_anim.py", "rng_anim.py", "seedtree_anim.py", "quality_anim.py",
                                                       "special_anim.py", "timing_anim.py", "frame_anim.py", "links_anim.py", "preset_anim.py",
-                                                      "path_anim.py", "runeword_anim.py", "move_anim.py"), "schematic tools only")
+                                                      "path_anim.py", "runeword_anim.py", "move_anim.py",
+                                                      "outdoor_anim.py"), "schematic tools only")
     ok(eb.tool_has_schematic("maze_anim.py") and eb.tool_has_schematic("tc_anim.py")
        and not eb.tool_has_schematic("site_build.py") and not eb.tool_has_schematic("../x.py"), "tool_has_schematic")
     # end to end on a small docs tree
