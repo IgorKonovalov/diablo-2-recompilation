@@ -121,8 +121,8 @@ Constant data in `Game.exe`:
 
 ### Inputs and oracles
 
-Phase 2 of plan 0018 replaced every special-path oracle of plan 0014 by the model of this spec (`tools/monspecial.py`, run
-inside `tools/monspawn.py`): 70 special-mods rolls, 169 picks, 606 handler calls on specials and 1667 on group members,
+The model of this spec takes the place of every special-path oracle the earlier spawn model read from the logs:
+70 special-mods rolls, 169 picks, 606 handler calls on specials and 1667 on group members,
 130 `rndname` steps, 12 aura draws, 277 transferred minion lists, 11 superuniques, 4 + 4 MonPlace presets and 94 client
 name rolls, in all three difficulties, classic and expansion, `monspawn: 390144 checks, 0 mismatches`. [C]
 (run:2026-10-14-mon-special, [monsters/0002 § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan))
@@ -1046,7 +1046,7 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   twelve sessions, normal, nightmare and hell, classic and expansion; 20 champion packs, 54 unique groups, 11
   superuniques, 4 + 4 MonPlace presets, 94 client name rolls; `monspawn: 390144 checks, 0 mismatches`.
 - [findings/monsters/0002-room-population.md § 9](../../findings/monsters/0002-room-population.md#9-boundary-decision-and-the-phase-2-logging-plan):
-  the oracles plan 0018 replaced.
+  the oracles plan 0018 replaced, by the model of this spec (`tools/monspecial.py`, run inside `tools/monspawn.py`).
 - Plan 0038 sweep ([plan 0038](../../plans/done/0038-inferred-claims-sweep.md)): the batch sections of
   [monsters/0003](../../findings/monsters/0003-special-monsters.md): [S3a](../../findings/monsters/0003-special-monsters.md#plan-0038-batch-s3a-2026-10-16) (kept logs: the always-run mods, the null rows met,
   the aura row count, the group walk, the post-create mods, the quest test),

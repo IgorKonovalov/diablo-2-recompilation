@@ -926,8 +926,8 @@ K2. For each window, reader rev 2 (tools/frame_xs.py) keeps each chained seed's 
 
 - K7. [I] **Between the ticks the main loop runs client code on client copies of the seeds, outside the frame.** The 5 404 client steps at listed rows
   (`UnitInit`, `ClientMonCreate`, `ClientMonIsChampion`, `ClientCritters`, `UNIT_AnimInit`) are applied to no chained seed and counted apart; 217 have a low word
-  equal to a chained seed's at that moment, and those 78 are what "not applied" separates. **They are no evidence of the server's frame order,** and the rows' `fn:`
-  names are the neighbouring symbol's for a location past a function's end, not a read function: of the 8 extents' 48 locations 38 lie past it, 9 of those hit in the first batch. Function 0x00473090 gets no claim: its
+  equal to a chained seed's at that moment, and those 78 are what "not applied" separates. **They are no evidence of the server's frame order,** and the function
+  names the rows carry are the neighbouring symbol's for a location past a function's end, not a read function: of the 8 extents' 48 locations 38 lie past it, 9 of those hit in the first batch. Function 0x00473090 gets no claim: its
   135 260 lines in the three pack windows lie between the ticks on no chained seed. (0x00473111, 0x004731FE, fn:sub_00465FD0_UnitInit@0x00465FD0,
   fn:sub_00466360_ClientMonCreate@0x00466360, run:2026-11-04-frame2, run:2026-11-04-frame3)
 
