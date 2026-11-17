@@ -10,6 +10,7 @@ Markdown tree shaped for the export repository's Starlight project:
   <out>/site/src/content/docs/<route>.md   one page per `page` line; `title` and `sidebar.order` front matter
   <out>/site/src/cut.json                  {"date": ..., "groups": [{"slug", "label"}, ...]}
   <out>/site/public/illustrations/<id>/    each ```illustration block, run by its tool in --schematic mode only
+  <out>/site/public/widgets/<id>/          each ```widget block (ADR-0037): widget.js, widget.json, widget.list.json, fallback picture
   <out>/report.txt                         every drop and every residue item (never published)
 Nothing else is written. --out is refused unless it is workspace/export or workspace/export-<name>; the builder
 renders no HTML and makes no network request (the export repository's CI draws the Mermaid fences).
@@ -52,6 +53,7 @@ Stdlib only.
 """
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -70,12 +72,15 @@ WS = os.path.join(REPO, "workspace")
 ILLUS_TIMEOUT = 600
 SCHEMATIC_TOOLS = ("maze_anim.py", "tc_anim.py", "rng_anim.py", "seedtree_anim.py")
 ILLUS_KEYS = ("id", "tool", "args", "seed", "illustrates", "caption")
+WIDGET_KEYS = ("id", "widget", "illustrates", "caption", "fallback")
+WIDGETS_SRC = os.path.join(HERE, "widgets")        # tools/widgets/<name>/: the reviewed sources (tests override)
 
 RE_HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 RE_FENCE = re.compile(r"^(\s*)(```+|~~~+)\s*([\w-]*)")
 RE_ITEM = re.compile(r"^(\s*)([-*+]|\d+[.)])\s+")
 RE_SEP = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
 RE_LINK = re.compile(r"(?<!!)\[((?:[^\[\]]|\[[^\]]*\])*)\]\(\s*<?([^)\s>]*)>?(?:\s+\"[^\"]*\")?\s*\)")
+RE_WIDGET_LINK = re.compile(r"^/widgets/[\w-]+/widget\.js$")
 RE_ILLUS_LINK = re.compile(r"^(?:\.\./)*(?:\./)?illustrations/[\w.-]+/[\w.-]+$")
 RE_SUB = re.compile(r"\bsub_[0-9A-Fa-f]{8}_")
 RE_ADDR_COL = re.compile(r"^(\s*)(?:0x)?[0-9A-Fa-f]{8}\s*[:|]?\s+")
@@ -560,7 +565,7 @@ class Page:
         w = f = 0
         for b in blocks:
             if b["kind"] == "fence":
-                if b["info"] != "illustration" and not b.get("illus"):
+                if b["info"] not in ("illustration", "widget") and not b.get("illus"):
                     f += 1
             elif b["kind"] != "blank" and not b.get("illus"):
                 w += prose_words("\n".join(b["lines"]))
@@ -750,6 +755,27 @@ def run_illustration(d, root, out):
     return gifs[0], ""
 
 
+def caption_sentences(page, heading, caption, allow):
+    """The caption's sentences that pass the redactor and the text rules, drops logged (illustrations, widgets)."""
+    cap = []
+    for s in split_sentences(caption):
+        r0 = RE_SUB.sub("", rewrite_text(s))
+        if r0 != s:
+            note_rewrite(page, heading, s, r0)
+            if not has_words(r0):
+                note_empty(page, heading, "caption sentence", s, r0)
+                continue
+            s = r0
+        page.units += 1
+        r = unit_fails(s, allow, pins=allow.pins.get(page.path, {}))
+        if r:
+            page.dropped += 1
+            page.drops.append((heading, ",".join(sorted(r)), "caption sentence", s[:200]))
+        else:
+            cap.append(s)
+    return cap
+
+
 def illustration_block(page, b, root, out, allow, heading, run=True):
     """-> the blocks that replace an illustration block (possibly none)."""
     d, err = parse_illustration("\n".join(b["lines"][1:-1]))
@@ -772,28 +798,113 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
     up = "../" * len(page.route.split("/")) if page.route != "index" else ""
     base = f"{up}illustrations/{d['id']}/"
     root_abs = f"/illustrations/{d['id']}/{gif}"      # root-absolute: the site's rehype step prefixes its base
-    cap = []
-    for s in split_sentences(d["caption"]):
-        r0 = RE_SUB.sub("", rewrite_text(s))
-        if r0 != s:
-            note_rewrite(page, heading, s, r0)
-            if not has_words(r0):
-                note_empty(page, heading, "caption sentence", s, r0)
-                continue
-            s = r0
-        page.units += 1
-        r = unit_fails(s, allow, pins=allow.pins.get(page.path, {}))
-        if r:
-            page.dropped += 1
-            page.drops.append((heading, ",".join(sorted(r)), "caption sentence", s[:200]))
-        else:
-            cap.append(s)
+    cap = caption_sentences(page, heading, d["caption"], allow)
     cap.append("Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed "
                "in the game.")
     blank = {"kind": "blank", "lines": [""]}
     return [{"kind": "para", "lines": [f"![Animation: {d['id']}]({root_abs})"], "illus": True}, blank,
             {"kind": "para", "lines": [f"[Step through {d['id']}]({base}index.html)"], "illus": True}, blank,
             {"kind": "para", "lines": [" ".join(cap)], "illus": True}]
+
+
+# ---------------------------------------------------------------- widgets (ADR-0037)
+
+def parse_widget(text):
+    d, err = {}, []
+    key = None
+    for ln in text.split("\n"):
+        m = re.match(r"^([a-z]+):\s*(.*)$", ln)
+        if m and not ln.startswith((" ", "\t")):
+            key = m.group(1)
+            d[key] = m.group(2).strip()
+        elif key and ln.strip() and ln.startswith((" ", "\t")):
+            d[key] += " " + ln.strip()
+        elif ln.strip():
+            err.append("line not 'key: value'")
+    for k in WIDGET_KEYS:
+        if not d.get(k):
+            err.append(f"missing key {k}")
+    if d.get("id") and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", d["id"]):
+        err.append("bad id")
+    if d.get("widget") and not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", d["widget"]):
+        err.append("bad widget name")
+    if d.get("fallback") and d["fallback"] != "text" and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", d["fallback"]):
+        err.append("bad fallback")
+    return d, "; ".join(err)
+
+
+def _sha_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        h.update(f.read())
+    return h.hexdigest()
+
+
+def widget_block(page, b, out, allow, heading):
+    """-> the blocks that replace a ```widget block (possibly none). Copies tools/widgets/<widget>/widget.js and
+    widget.json into <out>/site/public/widgets/<id>/ with the list file and the fallback image (the first picture of
+    the illustration `fallback` names, built earlier in this cut) or, for `fallback: text`, writes the fixture's
+    shown case as a table. The folder is verified with the publish check's X13 and removed when it fails."""
+    d, err = parse_widget("\n".join(b["lines"][1:-1]))
+    page.units += 1
+    page.dropped += 1
+
+    def gone(why, rule="widget"):
+        page.drops.append((heading, rule, "widget", why))
+        return []
+    if err:
+        return gone("block does not parse: " + err)
+    wid, name = d["id"], d["widget"]
+    src = os.path.join(WIDGETS_SRC, name)
+    if not all(os.path.isfile(os.path.join(src, f)) for f in ("widget.js", "widget.json", "fixture.json")):
+        return gone(f"{wid}: tools/widgets/{name}/ has no widget.js, widget.json and fixture.json")
+    dest = os.path.join(out, "site", "public", "widgets", wid)
+    if os.path.exists(dest):
+        return gone(f"{wid}: id used twice in this cut")
+    os.makedirs(dest)
+    for f in ("widget.js", "widget.json"):
+        shutil.copyfile(os.path.join(src, f), os.path.join(dest, f))
+    table = None
+    if d["fallback"] == "text":
+        sys.path.insert(0, WIDGETS_SRC)
+        import twins                                   # tools/widgets/twins.py: the fallback table of each widget
+        fx = json.load(open(os.path.join(src, "fixture.json"), encoding="utf-8"))
+        table = twins.fallback_table(name, fx)
+        if not table:
+            shutil.rmtree(dest)
+            return gone(f"{wid}: no text fallback for the widget {name}")
+        ext = None
+    else:
+        fdir = os.path.join(out, "site", "public", "illustrations", d["fallback"])
+        pics = sorted(f for f in os.listdir(fdir) if f.endswith((".gif", ".png"))) if os.path.isdir(fdir) else []
+        if not pics:
+            shutil.rmtree(dest)
+            return gone(f"{wid}: fallback illustration {d['fallback']} is not in the cut (place the widget block after it)")
+        ext = os.path.splitext(pics[0])[1]
+        shutil.copyfile(os.path.join(fdir, pics[0]), os.path.join(dest, "fallback" + ext))
+    files = ["widget.js", "widget.json"] + (["fallback" + ext] if ext else [])
+    with open(os.path.join(dest, "widget.list.json"), "w", encoding="utf-8") as f:
+        json.dump({"marker": ec.WIDGET_MARKER, "files": {x: _sha_file(os.path.join(dest, x)) for x in files}}, f, indent=2)
+        f.write("\n")
+    probs, _ok = ec.verify_widget(dest, ec.git_identity(), WIDGETS_SRC)
+    if probs:
+        shutil.rmtree(dest)
+        return gone(f"{wid}: fails X13: {probs[0][:160]}", "X13")
+    page.dropped -= 1
+    cap = caption_sentences(page, heading, d["caption"], allow)
+    cap.append("Computed by our model of the rule, not observed in the game; the starting values are illustrative.")
+    blank = {"kind": "blank", "lines": [""]}
+    res = []
+    if ext:
+        res += [{"kind": "para", "lines": [f"![Widget fallback: {wid}](/widgets/{wid}/fallback{ext})"], "illus": True}, blank]
+    else:
+        head, rows, note = table
+        res += [{"kind": "para", "lines": [note], "illus": True}, blank,
+                {"kind": "table", "lines": ["| " + " | ".join(head) + " |", "|" + "---|" * len(head)]
+                 + ["| " + " | ".join(str(x) for x in r) + " |" for r in rows], "illus": True}, blank]
+    res += [{"kind": "para", "lines": [" ".join(cap)], "illus": True}, blank,
+            {"kind": "para", "lines": [f"[Try it: change the inputs (needs JavaScript)](/widgets/{wid}/widget.js)"], "illus": True}]
+    return res
 
 
 # ---------------------------------------------------------------- link rewriting
@@ -807,7 +918,7 @@ def rewrite_links(text, page, by_path):
 
     def sub(m):
         label, target = m.group(1), m.group(2)
-        if RE_ILLUS_LINK.match(target):
+        if RE_ILLUS_LINK.match(target) or RE_WIDGET_LINK.match(target):
             return m.group(0)
         if not target or re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", target) or target.startswith("//"):
             return label
@@ -889,7 +1000,7 @@ def redact(pg, blocks):
             b = dict(b, text=t, lines=["#" * b["level"] + " " + t])
         elif skip_level is not None:
             continue
-        elif k == "fence" and b["info"] != "illustration":
+        elif k == "fence" and b["info"] not in ("illustration", "widget"):
             ls = b["lines"]
             if b["info"] != "mermaid":
                 ls = [ls[0]] + [RE_ADDR_COL.sub(r"\1", x) for x in ls[1:-1]] + ls[-1:]
@@ -981,6 +1092,8 @@ def build(out, manifest, root, date, allow, run_illus=True):
                 heading = b["text"]
             if b["kind"] == "fence" and b["info"] == "illustration":
                 mid.extend(illustration_block(pg, b, root, out, allow, heading, run_illus))
+            elif b["kind"] == "fence" and b["info"] == "widget":
+                mid.extend(widget_block(pg, b, out, allow, heading))
             else:
                 mid.append(b)
         kept = simplify(pg, mid, allow)

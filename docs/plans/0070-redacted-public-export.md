@@ -1512,3 +1512,132 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   wiki pages for one build (restored after), `export_build.py --out workspace/export-x11a-review`: 71 pages, the six
   illustration folders, `export_check` 0 failures (864 warnings, none new from the blocks); the folder was removed.
   Tests green: `test_schematic_kit` (15), `test_anim_schematic`, `test_export_build`, `test_export_check`; gate green.
+- 2026-11-17, archivist, lane/x11w (Phase 11 step 4a: widget groundwork, ADR-0037; first widget rng). Delivered:
+  - **Widget `rng`** (`tools/widgets/rng/`): `widget.js` (pure `compute(inputs, data)` on BigInt for the 64-bit step, `mount` with
+    DOM calls only, mounts itself into `figure[data-widget-name="rng"]` on load), `widget.json` (multiplier as
+    `6AC690C5`, init word 666, three inputs, four illustrative seeds as `{"rows": "toy", "items": [...]}`, labels), `fixture.json`
+    (13 cases: the page's worked example, n of 0 and -5, 1, 7, 8, 100, the largest n, seeds at both ends, clamped inputs),
+    written by the twin `tools/widgets/twins.py` (`write` / `check`; the twin calls `tools/rng.py`'s `rng_range`, no second
+    copy of the rule). The text fallback (`fallback_table`) is the 12345 / Range(100) / five-draw case, in decimal.
+  - **Builder** (`tools/export_build.py`): a ```` ```widget ```` block (keys `id`, `widget`, `illustrates`, `caption`,
+    `fallback`) writes `site/public/widgets/<id>/` (`widget.js`, `widget.json`, `widget.list.json` with marker `widget-only/1` and the
+    sha256 of each file, and `fallback.gif|png` copied from an illustration folder built earlier in the same cut), verifies
+    the folder with X13 and removes it on failure, and puts in the page the fallback (picture, or table for `fallback: text`),
+    the caption plus the sentence "Computed by our model...", and one link line `[Try it ...](/widgets/<id>/widget.js)`.
+    A block whose widget is missing, whose id repeats, whose fallback illustration is absent or whose folder fails X13 is a
+    report line. The caption loop of `illustration_block` is now `caption_sentences` (shared). `export_publish.py`: `CUT_DIRS`
+    gains `site/public/widgets` (test added).
+  - **X13** (`tools/export_check.py`, `verify_widget`, `js_problems`, `json_problems`): fixed file list, marker, sha list,
+    byte-equal to `tools/widgets/<name>/`, caps 48 KB / 16 KB, the ADR's banned names and forms, every string and comment through
+    X1-X5 and X9 (a mini lexer, `${` in a template and an unterminated string fail), arrays only as `items` of an object with
+    `rows` toy|page and at most 20; a page link or image into `/widgets/<id>/` must name a verified folder; `check_repo` needs
+    the host step `site/src/rehype-widgets.mjs` (new allowed path) and the CSP word for word when the cut has widgets or the
+    host file exists, and scans the host file (only `widgets/${...}` paths, no fetch, dynamic import, eval, `Function`, process or
+    network modules; whole-line comments skipped). **Obfuscation ruling** (the ADR is silent): a pattern list cannot see a name
+    built from pieces, so the routes to one are banned: the global object by every bare name (`window`, `self`, `top`, `parent`,
+    `frames`, `globalThis`, `global`, `opener`, `this`, also `with`, `arguments`), a string literal in a bracket, `.constructor`,
+    `.prototype`, `Reflect`, `Proxy`, `defaultView`, escapes (`\x`, `\u`, octal), `fromCharCode` and `atob` kin, `createElement`
+    and `setAttribute` with anything but a literal of a short safe list (and never `src`, `href`, `style`, `on...`), `document` as
+    anything but `document.<name>`, a timer whose first argument is not a function expression or arrow. Banned words are searched
+    in comments and strings too (a stricter reading than the ADR's list). The marker for widget files is `widget-only/1`; the fallback
+    keeps `schematic-only/1`. Where the ADR says the host wraps the image, the host here acts on the "Try it" line for both
+    fallback kinds (the image stays where it is; ADR silent on a text fallback).
+  - **E21** (`tools/gate.py`, `check_widgets`): runs `tools/test_widgets.py` (fixture equals the twin's output; `compute` run
+    under node per case; a stand-in DOM mounts the module, types into the inputs and reads the table and the live region; mutation
+    checks that the harness sees a changed widget, a wrong fixture and a mount that never returns), warns once when node is missing
+    (`SKIP node`). E20 also runs the new `tools/test_export_widgets.py`.
+  - **Tests**: `test_export_widgets.py` 205 checks (82 adversarial script forms, 17 allowed ones, JSON, folder tamperings,
+    cut, repo and builder, end to end), `test_widgets.py` 26, `test_export_build.py` 149, `test_export_check.py` 180,
+    `test_export_publish.py` 37, `test_anim_schematic.py` 5 (all green); `tools/gate.py` green with E21 counted.
+  - **Export repository change** (prepared under `workspace/export-repo/`, never in git; ADR-0038's script copies it):
+    (1) new `site/src/rehype-widgets.mjs`, the generic host (replaces each Try it paragraph with a `<figure class="widget-host">`
+    carrying `widget.json` as a data attribute, read at build time because the CSP refuses a request for it, and adds one
+    `<script type="module" src="<base>/widgets/<id>/widget.js">`); (2) `site/astro.config.mjs`: imports and registers it,
+    constant `CSP` and a Starlight `head` meta `Content-Security-Policy` (`connect-src 'none'`, `frame-src 'none'`,
+    `object-src 'none'`, `form-action 'none'`, scripts from self plus Starlight's inline ones and `wasm-unsafe-eval` for
+    Pagefind); (3) `site/src/styles/site.css`: `.widget-host` styles in Starlight's variables only (both themes follow them).
+    `export_check --repo workspace/export-repo` is green.
+  - **Dry run**: scratch copy of `docs/` with a `rng-stepper` widget block (text fallback) under the randomness page's worked
+    example; builder to a scratch cut (71 pages, 0 dropped), `export_check <cut> --repo workspace/export-repo` 0 failures; cut and
+    export repository copied into a scratch copy of the export repository folder (node_modules copied), `SITE_BASE=/arpg-1-14d-notes/ npm run build`
+    ok (72 pages), `check-site-links` "7787 links in 72 pages, all resolve", dist holds `widgets/rng-stepper/widget.js|json|list`
+    (`widget.js` byte-equal to the source), the page head holds the CSP meta word for word and the module script. In headless
+    Chromium (the site's own Playwright): the widget mounts, shows 87 / 015B2E77 / 0000141D for seed 12345 and range 100, follows
+    typing, a `fetch` from the page is refused by the policy, Pagefind search still returns results (its worker's requests are not
+    covered by a page's meta policy; do not add `worker-src`), dark theme looks right. The browser run found a real mount bug
+    (a helper calling itself) that the node tests did not; the stand-in DOM test was added for it. The scratch copy and cut were deleted.
+  - **Doubts / for the review**: the check bans words in strings and comments too, so a widget cannot say "location" or "file" in prose;
+    only Chromium was tried (Firefox's handling of module scripts under the policy and the worker-vs-meta rule is untested);
+    the host acts on the Try it link, not the image; no row 1 picture exists yet, so every fallback is a table; `widget.json` is read
+    by the host at build time (its code is in the export repository but loads only `/widgets/<id>/widget.js` as a script).
+- 2026-11-17, architect, review of `lane/x11w` (Opus, Tier A: a safety device; ADR-0037 read as the reference).
+  **Verdict: accept with fixes (6: overclaim 2, omission 4).** Fixes, in `fix(tools): … (review of lane/x11w)`:
+  - **X13's ban list was leaky (overclaim: "with the global object unreachable a built name has nothing to index").**
+    51 escape scripts written at the review, none in the lane's 82; 32 of the first 38 passed `js_problems`: a name
+    built from pieces read with `x[k]` (`(() => 0)[k]` is `Function`), `e.view` (an event's window), bare `open(`,
+    `name =` (window.name keeps a value across pages), `history`, `createElement.call(d, "i" + "mg")`,
+    `setAttribute.call`, `style.backgroundImage`, `composedPath()`, `getRootNode()`, `.click()`, `.bind`,
+    destructuring `{ [k]: w } = …`, `toString(36)` (spells words from numbers), `FontFace`, `CSS.paintWorklet`,
+    `Option`, `process` (the gate's node), a `background` attribute, and code hidden from the lexer by a regular
+    expression literal holding a quote (also after `if (…)`), a lone carriage return or U+2028 ending a `//` comment.
+    **Ruling: an allowlist of names, the bans kept as a second layer.** A real lexer (`js_tokens`) for the subset a
+    widget needs: a regular expression literal, an ambiguous slash, a backslash, `#`, `@`, a non-ASCII character
+    outside a string, a control or line-separator character or an HTML comment marker fails. On its tokens
+    (`js_name_problems`): a bare name is a keyword, one of `JS_GLOBAL_ALLOW` (Math, Number, BigInt, JSON, document,
+    timers, `matchMedia`, typed arrays, …) or a name the browser's global object does not have; a member name (after
+    `.`/`?.`, and every key of an object literal or pattern, since a destructuring key reads) is one of
+    `JS_MEMBER_ALLOW` or a name no browser object has; `x[…]` takes only an integer literal (`.at(i)` for a variable
+    index); no computed key; `toString` radix 2, 10 or 16 only; a hex literal passes the text rules; the strings
+    joined (spaces and case aside) spell no identity string or home path; `setAttribute` names from an allowlist
+    (`aria-*`, `data-*`, `role`, `id`, …). Why names and not more bans: no ban list can name every route, while a
+    name the browser does not know can only be the widget's own variable or data. The two name lists
+    (`tools/widgets/browser-globals.txt`, 1 026 names; `browser-members.txt`, 4 775) are written by the new
+    `tools/widgets/browser_names.mjs` from Chromium (the export site's Playwright) plus a hand list of other engines'
+    and node's names; a name only another engine has and the list misses is the residue, with the CSP and the Tier A
+    read behind it. One probe still passes, harmless: `input.type = "ima" + "ge"` (no `src` can be set). The rng `widget.js` changed with it: `0xFFFFFFFFn` masks became `BigInt.asUintN(32, …)` (the hex
+    literal failed X1) and `rows[rows.length - 1]` became `rows.at(-1)`; fixture unchanged, E21 green, browser-checked.
+    Tests: 51 escape forms and 13 allowed forms added to `test_export_widgets.py`, with the joined-identity case and the
+    lists' load.
+  - **The CSP, tightened (overclaim: "`wasm-unsafe-eval` for Pagefind").** Checked on a scratch build in Chromium:
+    Pagefind runs in its own worker, whose requests and WebAssembly follow the worker's policy, so the page needs
+    neither `connect-src` nor `wasm-unsafe-eval` for search. Now, in `workspace/export-repo/site/astro.config.mjs` and
+    `CSP_POLICY` word for word: `default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self'
+    'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self'; manifest-src 'self';
+    frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'`. `'unsafe-inline'` scripts stay
+    (Starlight's own inline scripts), which is why HTML injection stays banned in X13. A meta policy can't cover
+    navigation (`open`, `location`, a link's click): X13's allowlist is the only bar there, and it holds.
+  - **The host step's check (omission).** `check_repo` scanned only for `widgets/` paths, so a host adding
+    `/widgets/${id}/other.js` passed. It now requires exactly one `'script'`, one `src:`, the template
+    `` `${prefix}/widgets/${id}/widget.js` `` and the link shape `/^\/widgets\/([\w-]+)\/widget\.js$/`; 4 tests, and the
+    prepared host passes.
+  - **E21 ran any `widget.js` under node unchecked and unsandboxed (omission).** `test_widgets.py` now runs X13
+    (`js_problems`, `json_problems`) on the sources first (so the gate also catches a refused widget at commit time, not
+    only at publish) and never hands a failing one to node; node runs with `--permission`, read access to the widgets
+    folder and its scratch folder only, and `--disallow-code-generation-from-strings`; 4 tests that the sandbox refuses
+    a process, a write, a read outside and code from a string.
+  - **Text-rule gaps (omission):** a hex literal in code and strings joined across `+` were outside the text rules
+    (both closed above, counted once here).
+  - **`widget.json` string `file` (omission):** fails (an input type a widget may not create); test added.
+  - **Rulings.** The lane's departure from ADR-0037 (the host acts on the "Try it" link, not on the fallback image):
+    **accepted**. The ADR's guarantees hold (without JavaScript the reader keeps the fallback picture or table and the
+    caption; the host loads only `/widgets/<id>/widget.js`), the link is builder-written and X13-verified, and one rule
+    serves both fallback kinds where wrapping the image leaves `fallback: text` with nothing to wrap; with JavaScript the
+    picture stays above the widget. Banning the words in strings and comments too (the lane's stricter reading) stays.
+  - **Checked and right:** `compute` against `tools/rng.py` (`rng_range` with the u32 pattern of n, the 64-bit step on
+    BigInt, `low mod n` unsigned, n below 1 no draw) and the randomness worked example (12345, Range 100: 87,
+    `015B2E77`, `0000141D`); the fixture is the twin's (`twins.py check` OK); widget.json rows `toy`, ≤ 20, strings
+    through the text rules; byte-equality to `tools/widgets/<name>/`; X13 on every widget folder of the cut; the link
+    and image rule for `/widgets/`; E21 skips with one warning without node (and still runs X13 on the sources), fails
+    on a changed fixture or a refused widget; gate 40 s.
+  - **Browser** (scratch copy of the export checkout, cut with a `rng-stepper` text-fallback block under the worked
+    example, `SITE_BASE=/arpg-1-14d-notes/` build, link check "all resolve"; Chromium headless): the widget mounts in
+    dark and light, shows 87 / `015B2E77` / `0000141D`, follows typing and the arrow key, labels bound to their inputs,
+    Tab order seed → range → draws → preset, live region updates, no page overflow at 375 px, no animation (nothing for
+    `prefers-reduced-motion` to stop); without JavaScript the table, caption and "needs JavaScript" figure show. A probe
+    `widget.js` swapped into the scratch build was refused by the policy for `new Function`, `eval`, a string
+    `setTimeout`, `fetch`, XHR, WebSocket, EventSource, `import()` (external and `data:`), an external image, audio,
+    `FontFace`, a blob worker and a `<base>`; search answered under the policy; no policy error on three pages. Firefox
+    was not run (no engine installed): the residue of the meta-policy rules in other engines stays with the redaction
+    review of the first cut that carries a widget (ADR-0037: it opens each widget in both themes).
+  - **At merge:** the export repository files in `workspace/export-repo/` (`astro.config.mjs` CSP changed here, the
+    host and styles as the lane left them) are copied by the publish script; nothing to apply by hand.

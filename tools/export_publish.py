@@ -10,7 +10,7 @@ Steps, one line each; the first failure stops the run with a non-zero exit:
   2 target checks: a git repo on `main`, clean tree, fast-forwarded from origin
   3 every manifest page is in docs/export/reviewed-pages.txt
   4 build the cut into workspace/export (export_build.py), then export_check.py with --repo (0 failures)
-  5 copy workspace/export-repo/ project files, then the cut (content, illustrations, cut.json), into the target
+  5 copy workspace/export-repo/ project files, then the cut (content, illustrations, widgets, cut.json), into the target
   6 `npm ci` in site/ when package-lock.json changed or node_modules is missing
   7 site build and link check (logs under workspace/export-publish-logs/)
   8 commit `docs: cut <date>` by explicit paths; nothing changed means "nothing to publish", exit 0
@@ -34,7 +34,7 @@ DEFAULT_TARGET = "~/Work/arpg-1-14d-notes"
 # Folders of the export repository's project files whose deletions are mirrored (never node_modules, dist, .git).
 MIRROR = ("site/src/components", "site/src/styles", "site/scripts", ".github/workflows")
 # What is copied from the cut, relative to workspace/export/.
-CUT_DIRS = ("site/src/content/docs", "site/public/illustrations")
+CUT_DIRS = ("site/src/content/docs", "site/public/illustrations", "site/public/widgets")
 CUT_FILES = ("site/src/cut.json",)
 
 

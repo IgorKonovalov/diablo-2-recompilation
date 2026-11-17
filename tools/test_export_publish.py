@@ -75,6 +75,7 @@ class Env:
             put(os.path.join(cut, "site", "src", "cut.json"), '{"date": "2026-01-02"}')
             put(os.path.join(cut, "site", "src", "content", "docs", "a.md"), self.body)
             put(os.path.join(cut, "site", "public", "illustrations", "i.svg"), "<svg/>")
+            put(os.path.join(cut, "site", "public", "widgets", "w1", "widget.js"), "// widget\n")
             put(os.path.join(cut, "report.txt"), "r")
         if name == "export_check.py":
             return self.check_rc, "CHECK export: 1 failures"
@@ -170,6 +171,8 @@ def main():
         ok(read("site/src/content/docs/a.md") == "one\n" and os.path.exists(os.path.join(e.t, "site/public/illustrations/i.svg"))
            and os.path.exists(os.path.join(e.t, "site/src/cut.json")), "cut copied")
         ok(not os.path.exists(os.path.join(e.t, "report.txt")), "report.txt not copied")
+        ok(read("site/public/widgets/w1/widget.js") == "// widget\n", "widget folders copied from the cut")
+        ok("site/public/widgets/w1/widget.js" in g(e.t, "show", "--name-only", "--format=", "HEAD"), "widget folders committed")
         ok(os.path.exists(os.path.join(e.t, "site/node_modules/x/i.js")), "node_modules left alone")
         ok(os.path.isdir(os.path.join(e.t, ".git")), ".git left alone")
         ok(g(e.t, "log", "-1", "--format=%s") == "docs: cut 2026-01-02", "commit message")
