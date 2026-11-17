@@ -460,6 +460,21 @@ types, one of its included types), has a non-zero `frequency`, does not clash wi
 bases). The draw runs over the total weight **plus one**, so the last candidate in table order gets one extra unit of
 weight. A class-specific row is not kept off classless items by its class column; only its type list does that.
 
+```illustration
+id: affix-pick-lsd-30-prefix
+tool: affix_anim.py
+args: lsd 30 12345
+seed: illustrative
+illustrates: ../specs/items/affixes.md#b-the-affix-level-alvl ../specs/items/affixes.md#c-one-magic-affix-pick--items_pickmagicaffix
+caption: One prefix pick on a magic long sword of item level 30 in an expansion game, for an illustrative item seed.
+  The affix level comes first: the larger of item level and base level, less half the base level when the base has no
+  magic lvl, kept to 1..99 (affixes § B). Draw 1 is made on every pick, and a low bit of 1 lets the pick roll. The filter
+  then tests each row of the prefix table in order; the picture shows only how many rows each test refuses (the level
+  window against the affix level, the item type test and the test of a group already on the item among them) and lists
+  at most five of the candidates with their weights. Draw 2 is a number from 0 to the total weight; the walk subtracts weights until one goes
+  below 0, and that candidate wins (§ C). The affix's properties are not shown.
+```
+
 **Magic** ([affixes § D](../specs/items/affixes.md#d-the-magic-builder--items_buildmagic)): a prefix pick, then a suffix
 pick that must roll when no prefix was set. When both tables have candidates the shares are a quarter both, a quarter
 prefix only, a half suffix only. Each pick rolls its own property values before the next pick.

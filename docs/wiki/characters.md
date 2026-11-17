@@ -388,6 +388,22 @@ tables those ranges are:
 The names are [string indices](../glossary.md); the counts are those of the English string tables. The range is that
 of the seller's Normal row in every difficulty, so a seller offers the same names in Nightmare and Hell.
 
+```illustration
+id: hire-list-kashya-toy
+tool: hire_anim.py
+args: kashya 30 12345
+seed: illustrative
+illustrates: ../specs/hirelings/README.md#b-the-store-seed ../specs/hirelings/README.md#d-the-stock-build-hire_buildstock ../specs/hirelings/README.md#e-an-entry-hireling_rollentry
+caption: One build of Kashya's hire list in an expansion game on Normal, for a level 30 player and an illustrative store
+  seed. The build is the size n of the name range plus 10 draws on the store seed: every name first takes a step and
+  keeps the low word as its own seed, then ten picks draw over the range, and a pick that lands on a name already listed
+  moves on to the next free one with no further draw (hirelings § D); in this build no pick lands on a listed name.
+  Each listed name then rolls from its own seed: one
+  draw among the rows of the act and difficulty gives the hireling id, a second gives a level 1 to 5 below the player and
+  never below 2, and the price follows from the level (§ E). Names are string indices, shown as numbers. The same roll is
+  made again at the hire with the player's level then.
+```
+
 Because vendors and hirelings share the store seed
 ([hirelings § B](../specs/hirelings/README.md#b-the-store-seed)), opening a trade or gamble window before you first
 talk to a seller changes that seller's list, and the reverse. When a hire empties the list, the table is rebuilt

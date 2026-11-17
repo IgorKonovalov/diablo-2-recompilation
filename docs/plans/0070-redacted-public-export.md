@@ -2172,3 +2172,32 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   fixes, 11 (overclaim 1, misread 1, omission 4, other 5). **For the spec-writer:** place the three blocks as their
   Place lines say; row 17's caption now names delivery § E, so the combat page's sentence after the diagram may say
   the stat-event order is the unit's registration order.
+- 2026-11-17, spec-writer, lane/x12s (Phase 11 batch 2 placed). **Blocks** (from `workspace/phase11/blocks-batch2.md`,
+  as their Place lines say; text, `seed` and `values` keys kept):
+
+  | Row | Block id | Page | Section, place |
+  |---|---|---|---|
+  | 11 | `drlg-act1-links-c0ffee` | wiki/levels | "Laying out the act: level links", after the first paragraph |
+  | 12 | `drlg-outdoor-burial-grounds-c0ffee` | wiki/levels | "Outdoor levels", after the building-block bullets |
+  | 13 | `drlg-preset-lutw-rolls` | wiki/levels | "What a preset places", after "**Which seed.**" |
+  | 14 | `drlg-warps-cave1-coldplains` | wiki/levels | "Warps, stairs and seams", after "**Pairing**" |
+  | 9 | `monsters-pack-toy-room` | wiki/monsters | "Placement: where each monster stands", after the bullets |
+  | 10 | `monsters-pool-wilderness2` | wiki/monsters | "Which monsters a level can have: the pool", after the bullets |
+  | 15 | `path-search-toy-room` | wiki/pathing | "The search: types 0 and 16", after its first paragraph |
+  | 16a | `path-walk-toy-room` | wiki/pathing | "The random walk: type 10", after the 31.7 % paragraph |
+  | 16b | `path-spiral-toy-room` | wiki/pathing | "The spiral: type 14", end of section |
+  | 20 | `items-runeword-sanctuary-match` | wiki/items-other-paths | "When the children make a runeword", after the flowchart |
+  | 21 | `anim-move-walk-3-subtiles` | wiki/animation | "The step", after its first paragraph |
+  | 17 | `combat-melee-hit-toy` | wiki/combat | "Draw order and chaining", after the player-attack diagram |
+  | 18 | `hire-list-kashya-toy` | wiki/characters | "Hirelings: the hire list", after "The names are …" |
+  | 19 | `affix-pick-lsd-30-prefix` | wiki/items | "Magic and rare items: affixes", after "**One affix pick**" |
+
+  **Caption changes:** one, row 21: "With no point left, the path stops in that same frame (§ B5)." added after the
+  frame count, as the x12d review offered (movement B5 `[C]`: the arrival follows in the step's frame). No caption was
+  wrong against its page. **Combat page:** after the diagram, one sentence: open wounds and crushing blow run newest
+  registered first, so their order is the attacker's own registration order, the logged characters running open
+  wounds first (delivery B3 `[C]`), as the x12e review offered. **Cut:** `export_build.py --out workspace/export-x12s`:
+  71 pages, 0 dropped, the 14 new illustration folders built; all 86 caption sentences of the 14 blocks and the two
+  new sentences present in the cut; `export_check workspace/export-x12s --repo workspace/export-repo/` 0 failures, 877
+  warnings (864 at the x12e review, the x12a captions' X12 level names among the new); the folder was removed. Gate
+  green (E19 parses the blocks); wiki/animation's W4 stays as the x11s lane left it.
