@@ -29,7 +29,7 @@ fixed to the final level's bounds. Drawn like the game builds a room's tiles (dr
 variants. Stdlib only.
 
 --schematic (ADR-0036, the public export's mode): rooms as labelled boxes with their doors and the entry and exit
-marks on the room boxes that hold a warp (the slot numbers of the room's preset, ds1.room_warp_slots: no cell position);
+marks in the corner of the room boxes that hold a warp (the slot numbers of the room's preset, ds1.room_warp_slots: no cell position);
 no tile, no DS1 layout, no game palette.
 It draws with our fixed palette and the 5x7 font, never imports or opens an art decoder (ds1 tile layers, dt1, dc6,
 palette, maze_render), and the steps, calculations and captions are those of the full mode. Every file carries the schematic marker (PNG tEXt chunk, GIF comment, HTML comment,
@@ -620,18 +620,18 @@ def build_schematic(root, level, seed):
                 anim_common.text(cv, CW, CH, x + 6, y + 36, ("F%d" % (int(rooms[i]["how"].rsplit("File", 1)[1]))), C["dim"], 1)
         for a, b in (all_links if conv else st["links"]):
             door(cv, a, b)
-        if conv and lead is None:                   # final frame: the warp rooms' entry and exit marks (box centre, no cell)
+        if conv and lead is None:       # final frame: the warp rooms' entry and exit marks (box corner, no cell position)
             seen = {}
             for qi, m, dest, _fx, _fy in warps:
                 x, y, w, h = px(rooms[qi]["rect"])
                 j = seen[qi] = seen.get(qi, -1) + 1
-                cx, cy = x + w // 2, y + h // 2 + 26 * j
-                r_ = max(8, min(w, h) // 4)
+                r_ = max(5, min(w, h) // 7)             # lower right corner, clear of the R, DEF and F lines
+                cx, cy = x + w - r_ - 6 - (2 * r_ + 4) * j, y + h - r_ - 6
                 for t in range(-r_, r_ + 1):
                     w_ = r_ - abs(t)
                     box(cv, cx - w_, cy + t, 2 * w_ + 1, 1, C["warp"])
                 lab = wlabel(lv, level, dest)
-                lw, lx, ly = len(lab) * 6 + 6, min(max(cx - len(lab) * 3 - 3, 2), CW - len(lab) * 6 - 8), max(y - 12 - 12 * j, 24)
+                lw, lx, ly = len(lab) * 6 + 6, min(max(x + w // 2 - len(lab) * 3 - 3, 2), CW - len(lab) * 6 - 8), max(y - 12 - 12 * j, 24)
                 box(cv, lx, ly, lw, 11, C["panel"])
                 anim_common.text(cv, CW, CH, lx + 3, ly + 2, lab, C["warp"], 1)
             anim_common.text(cv, CW, CH, 14, LH - 14, "CYAN DIAMOND: ROOM HOLDING A WARP (SLOT AND LEVELS VIS), POSITION IN ROOM NOT SHOWN",

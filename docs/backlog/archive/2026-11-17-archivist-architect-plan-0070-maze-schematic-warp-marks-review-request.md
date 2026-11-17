@@ -2,9 +2,9 @@
 from: archivist
 to: architect
 date: 2026-11-17
-status: open
+status: done
 context: []
-resolution: ""
+resolution: "Accepted with fixes 1 (architect Tier A, 2026-11-17): the room_warp_slots read is within ADR-0036 (slot numbers only, no layout); warp diamond moved to the box corner. See plan 0070 log."
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.
@@ -12,8 +12,8 @@ The request: what is needed, from whom, and why. Not blocking / blocking <what>.
 **Review request (Opus, Tier A): ADR-0036 ruling on a second DS1 read in the schematic mode.** Branch `lane/x70w`,
 plan 0070 log entry of 2026-11-17 (Phase 7 owner feedback: the maze's last frame lacked entry and exit marks).
 
-Source of "which room holds warp slot m". No room-level fact exists in the specs: [warps.md § D](../specs/drlg/warps.md)
-and [LvlPrest § Warp slots](../tables/LvlPrest.md#warp-slots-plan-0022-phase-2) give the slot per placed record by
+Source of "which room holds warp slot m". No room-level fact exists in the specs: [warps.md § D](../../specs/drlg/warps.md)
+and [LvlPrest § Warp slots](../../tables/LvlPrest.md#warp-slots-plan-0022-phase-2) give the slot per placed record by
 DS1 survey, and the model's own room-flag grid (`drlg.py` `warp_grid`) is keyed by cell. A hand-copied Def-to-slot
 table would be a data dump of that survey and would drift. So the lane chose the narrow helper:
 `ds1.room_warp_slots(data)` reads the wall layer through `_scan_cells` and returns a `frozenset` of slot numbers
