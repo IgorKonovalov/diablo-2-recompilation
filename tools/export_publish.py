@@ -12,7 +12,8 @@ Steps, one line each; the first failure stops the run with a non-zero exit:
   4 build the cut into workspace/export (export_build.py), then export_check.py with --repo (0 failures)
   5 copy workspace/export-repo/ project files, then the cut (content, illustrations, widgets, cut.json), into the target
   6 `npm ci` in site/ when package-lock.json changed or node_modules is missing
-  7 site build and link check (logs under workspace/export-publish-logs/)
+  7 clear Astro's content cache (site/node_modules/.astro, site/.astro), then site build and link check (logs under
+    workspace/export-publish-logs/)
   8 commit `docs: cut <date>` by explicit paths; nothing changed means "nothing to publish", exit 0
   9 with --push only: `git push origin main` and print the Pages URL
 The owner runs --push in their own terminal; re-running after a commit is a no-op except the push.
@@ -157,6 +158,18 @@ def copy_cut(cut, target):
         shutil.copy2(os.path.join(cut, f), dst)
 
 
+def clear_astro_cache(site):
+    """Remove Astro's content cache before a build: it re-renders only entries whose text changed, so a changed rehype step or
+    config would otherwise publish stale HTML for the pages whose text did not. Both places the cache lives; -> the ones removed."""
+    gone = []
+    for rel in (os.path.join("node_modules", ".astro"), ".astro"):
+        d = os.path.join(site, rel)
+        if os.path.isdir(d):
+            shutil.rmtree(d)
+            gone.append(rel)
+    return gone
+
+
 def lock_changed(target):
     lock = "site/package-lock.json"
     p = git(target, "diff", "--quiet", "HEAD", "--", lock, check=False)
@@ -216,6 +229,8 @@ def publish(a, run=default_run):
     else:
         base = a.base or "/" + os.path.basename(target) + "/"
         env = {"SITE_BASE": base}
+        gone = clear_astro_cache(site)
+        say("7 astro cache: " + (", ".join(gone) + " removed" if gone else "none present"))
         rc, tail = run(["npm", "run", "build"], cwd=site, env=env, log=logs)
         if rc:
             raise Stop("site build failed:\n" + tail + undo)

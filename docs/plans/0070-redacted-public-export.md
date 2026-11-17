@@ -1741,7 +1741,7 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   flowchart now say one call at the mode start on frame `T` walks the steps ahead and queues step k's events due on
   `T + k`, and the end due one frame after the last step (timing § E1), in place of "step k, on game frame T + k".
   **Local site:** `site_build.py` renders a `widget` fence as a plain code block (no break);
-  [backlog](../backlog/2026-11-17-spec-writer-archivist-local-site-widget-block-fallback.md) to the archivist. **Cut:**
+  [backlog](../backlog/archive/2026-11-17-spec-writer-archivist-local-site-widget-block-fallback.md) to the archivist. **Cut:**
   `export_build.py --out workspace/export-x11s`: 71 pages, 0 dropped, eleven illustration folders, the widget folder
   `site/public/widgets/rng-stepper/` (`widget.js`, `widget.json`, `widget.list.json`, `fallback.png`); no caption
   sentence of the new blocks dropped (the report's only wiki drops on these pages are two older X9 text sentences);
@@ -1774,7 +1774,7 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   review's browser run used a text fallback, so no picture fallback had been built under the base); the link check
   on `dist/` reported it. The base step now prefixes `/(illustrations|widgets)/` (in `workspace/export-repo/`, which
   the publish script copies), and `check_repo` fails X13 when the config lacks that step (`WIDGET_BASE_STEP`, a test
-  in `test_export_widgets.py`). **Filed:** [backlog](../backlog/2026-11-17-architect-archivist-export-publish-astro-cache.md)
+  in `test_export_widgets.py`). **Filed:** [backlog](../backlog/archive/2026-11-17-architect-archivist-export-publish-astro-cache.md)
   to the archivist: the Astro content cache (`node_modules/.astro/data-store.json`) kept the old HTML of an unchanged
   page after the config change until removed; `export_publish.py` should clear it (not blocking: the randomness page's
   text changed in this cut, so it re-renders).
@@ -1804,3 +1804,42 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   message; keyboard not driven there (residue). **Manifest:** `docs/export/reviewed-pages.txt` unchanged (no new
   page). Scratch builds and copies deleted. Tests: `test_schematic_kit` (29), `test_export_build` (154),
   `test_export_widgets` (274); gate green. Ledger: verdict accept with fixes, 5 (overclaim 1, omission 1, other 3).
+- 2026-11-17, archivist, lane/x12d (Phase 11 batch 2: rows 15, 16, 20, 21; publish cache; local widget fallback). Three
+  generators on the kit, each with `--theme dark|light`, the data root first, `--schematic` accepted, in
+  `SCHEMATIC_TOOLS` (and `test_export_build`'s tuple assertion); tests in the new `tools/test_path_anim.py` (16). **Rows
+  15 and 16, `tools/path_anim.py`** (`--mode search|walk|spiral`): a hand-drawn toy room of 16 by 9 subtiles with a wall
+  and a gap, a start (2, 4) and a target (13, 4). `search`: search § L2 and § L3 for type 0 with the spec's tables
+  (turn rows, steps, `g_DirOctant` column 0, as `docs/tables/PathDirTables.md` lists them): bound 22 (h0), 27 and 32
+  with the cell store kept across passes (28, 308 and 113 tries, route 5 corners, start not in it); 6 frames. **The
+  model:** `tools/path.py` has no search (it compares logs); the model is `tools/path_emu2.py`'s `Search`, which reads
+  its tables from `game.exe`, so `path_anim.search` is a traced restatement of § L3 and the test runs `path_emu2.Search`
+  on the same toy room with the spec's tables (stub image, room shifted by 100 to clear the u16 wrap of the margin)
+  and asserts the tries, passes, node count and corner list equal over four rooms; no second copy of a rule that a
+  test does not tie. The plan's row says "the open set": § L has none (iterative deepening depth first), so the frames
+  show the first descent, each pass's cell store with its g values and the reduced route; flagged for the review.
+  `walk`: search § I on `rng.step` (seed 0xC0FFEE, limit 12: 6 draws, 7 points, add table of § I step 1, the first
+  direction from `PathDirRow` toward the target), one frame per draw, 8 frames. `spiral`: search § J from the middle
+  of the room (the start (2, 4) leaves most of it off the grid): the first iteration, the first one that keeps a point
+  (iteration 5, (8, 5)) and progress at 32, 64 and 94 iterations (77 points, 26 on the grid); the sine is `math.sin`
+  (the table is within 1.8e-07 of it; stated in the step texts and the block's caption). **Row 20,
+  `tools/runeword_anim.py`** (`--base lrg --runes ko,ko,mal`, Sanctuary in a large shield, the page's own example):
+  `sockets.match` over the real Runes, base and ItemTypes rows; one frame per insert (the match stops while the count
+  differs), the full item's tests, the scan (41 complete rows before record 41: 40 differ at rune 1, one at rune 2,
+  recomputed and asserted against the match's row), the row's runes against the children, the item-type test through
+  the Equiv chain (shie to shld), the result; the model's row is asserted for Sanctuary, Steel (`lsd`, Tir El), the
+  wrong order, a magic base and a base of another type. **Row 21, `tools/move_anim.py`** (`--speed walk|run|knockback|N
+  --dist D`): `anim.step_model` (movement B1, B3) called once per game frame (the subtile the step enters is learned
+  from the model's own `ct-mismatch` report, so no collision rule is restated), `anim.path_step` for the axis step;
+  walk 8 frames, run 6 (the last step 12288), knockback 3, the closed form of B3 asserted over four speeds and three
+  distances. **Blocks:** five in `workspace/phase11/blocks-batch2.md` under "Path, runeword, movement (x12d)" (row 16 is
+  two blocks, walk and spiral); the builder's caption pass drops no sentence from any (checked with `caption_sentences`).
+  **Frames viewed** (dark and light): search 0, 1, 3, 4, 5; walk 2, 7; spiral 2, 5; runeword 0, 4, 5, 6 and the
+  no-row frame; move 0, 5, 8 and the run's last. Fixed after looking: captions of three lines cut at the old strip
+  height (strip now 80 pixels: three lines), two texts past the right edge, a label over the T marker, a "kept" first
+  spiral iteration that kept nothing, a "decides" line about item types that D4 does not say. **Publish cache:**
+  `export_publish.py` removes `site/node_modules/.astro` and `site/.astro` before the site build (not with
+  `--skip-site-build`), tested in `test_export_publish` (42 checks). **Local widget fallback:** `site_build.py` draws a
+  `widget` fence as its fallback (the illustration's GIF, or the twin's table) with the caption and a note, no script;
+  E19 (`site_build.py check`) parses widget blocks; new `tools/test_site_build.py` (5); both backlog entries closed.
+  Tests green: `test_path_anim`, `test_schematic_kit` (29), `test_export_build` (154), `test_export_check` (191),
+  `test_export_publish`, `test_site_build`; gate green.

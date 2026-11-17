@@ -57,7 +57,7 @@ class Env:
         sh("git", "init", "-q", "-b", "main", self.t)
         for k, v in (("user.name", "t"), ("user.email", "t@t")):
             g(self.t, "config", k, v)
-        put(os.path.join(self.t, ".gitignore"), "node_modules/\ndist/\n")
+        put(os.path.join(self.t, ".gitignore"), "node_modules/\ndist/\n.astro/\n")
         put(os.path.join(self.t, "site", "src", "components", "Old.astro"), "old\n")
         put(os.path.join(self.t, "site", "src", "content", "docs", "gone.md"), "gone\n")
         g(self.t, "add", ".")
@@ -199,6 +199,33 @@ def main():
         sh("rm", "-rf", os.path.join(e.t, "site", "node_modules"))
         e.go()
         ok(any(c[:2] == ["npm", "ci"] for c in e.calls), "npm ci when node_modules missing")
+    # Astro's content cache is cleared before the build (backlog 2026-11-17, plan 0070 Phase 11)
+    with tempfile.TemporaryDirectory() as tmp:
+        e = Env(tmp)
+        caches = [os.path.join(e.t, "site", "node_modules", ".astro", "data-store.json"),
+                  os.path.join(e.t, "site", ".astro", "content.json")]
+        for c in caches:
+            put(c, "{}")
+        seen = []
+        base_run = e.run
+
+        def watch(cmd, cwd=None, env=None, log=None):
+            if cmd[:3] == ["npm", "run", "build"]:
+                seen.append([os.path.exists(c) for c in caches])
+            return base_run(cmd, cwd=cwd, env=env, log=log)
+        rc, out, _ = e.go(run=watch)
+        ok(rc == 0 and seen == [[False, False]], "both Astro cache dirs are gone when the build starts")
+        ok("7 astro cache: node_modules/.astro, .astro removed" in out, "the step says what it removed")
+        ok(os.path.isdir(os.path.join(e.t, "site", "node_modules", "x")), "the rest of node_modules is kept")
+        os.makedirs(tmp + "/b")
+        e2 = Env(tmp + "/b")
+        put(os.path.join(e2.t, "site", "node_modules", ".astro", "data-store.json"), "{}")
+        rc, out, _ = e2.go("--skip-site-build")
+        ok(rc == 0 and os.path.exists(os.path.join(e2.t, "site", "node_modules", ".astro", "data-store.json")),
+           "a run that skips the site build leaves the cache alone")
+        os.makedirs(tmp + "/c")
+        rc, out, _ = Env(tmp + "/c").go()
+        ok(rc == 0 and "7 astro cache: none present" in out, "no cache present: said so")
     print(f"TEST export_publish: {checks} checks, {len(failed)} failed")
     return 1 if failed else 0
 
