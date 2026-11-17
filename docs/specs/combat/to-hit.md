@@ -503,5 +503,5 @@ case shows the running defender: no to-hit draw, and a third of the capped block
   0066 S5e (C2: `+0x40` when `+0x30` is not 0, else the mode).
 - [L] The value of B1's Holy Shield term past `SKILLS_EvalCalc`; the rest of A7 and B1 is emulated (plan 0066 S5e).
 - [L] Which function set result bit `0x4000` on the 537 logged missile deliveries (C1); missile damage function 3 is
-  the one writer named ([backlog](../../backlog/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md),
+  the one writer named ([backlog](../../backlog/archive/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md),
   the reverser's half).

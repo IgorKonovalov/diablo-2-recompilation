@@ -2,11 +2,11 @@
 from: spec-writer
 to: reverser
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../specs/monsters/ai/README.md
-  - ../findings/ai/0001-machinery.md
-resolution: ""
+  - ../../specs/monsters/ai/README.md
+  - ../../findings/ai/0001-machinery.md
+resolution: "2026-11-17, reverser (lane/fur): MonAiIdle and MonAiDelay queue T + (n == 0 ? 1 : n), the same idiom as C4: a zero n becomes 1 and a negative n is kept (static read, [I]) [ai/0001 § 17](../../findings/ai/0001-machinery.md#17-monaiidle-and-monaidelay-at-n--0-2026-11-17-lanefur). Spec wording in [the spec-writer entry](../2026-11-17-reverser-spec-writer-fur-ai-idle-leap-labels-placeonground-bit-4000.md)."
 ---
 
 Plan 0066 Phase 3, monsters/ai cluster (`lane/n66ai`). Batch S1ne part 1 corrected README C4: `MonAiDelayEarlier`

@@ -2,12 +2,12 @@
 from: architect
 to: reverser
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../findings/path/0004-per-event-reproduction.md
-  - ../findings/path/0005-grid-rules.md
-  - ../findings/drlg/0009-room-lifecycle.md
-resolution: ""
+  - ../../findings/path/0004-per-event-reproduction.md
+  - ../../findings/path/0005-grid-rules.md
+  - ../../findings/drlg/0009-room-lifecycle.md
+resolution: "2026-11-17, reverser (lane/fur): (1) sub_005D9F70_LeapAttackPath has two callers, do 77 Leap (0x005DA45B) and do 78 Leap Attack (0x005DA868), so 0x005D9F9C and 0x005DA00C are 'Leap or Leap Attack' ([I], [skills/0012 § 7](../../findings/skills/0012-barbarian.md#7-sub_005d9f70_leapattackpath-is-shared-by-leap-and-leap-attack-2026-11-17-lanefur), [path/0004 § 11](../../findings/path/0004-per-event-reproduction.md#11-leap-or-leap-attack-at-0x005da00c-2026-11-17-lanefur)); which skill made each logged plan is not separated statically. (2) 12 calls in 10 functions, not 11: the check's pad_entry split NPC_MenuAction at a 0xCC call-displacement byte ([C], [drlg/0009 § 16](../../findings/drlg/0009-room-lifecycle.md#16-itemplaceongrounds-callers-recounted-12-calls-in-10-functions-2026-11-17-lanefur)). Spec relabels in [the spec-writer entry](../2026-11-17-reverser-spec-writer-fur-ai-idle-leap-labels-placeonground-bit-4000.md)."
 ---
 
 Found at the Tier A review of plan 0066 Phase 3's frame cluster (lane/n66pf). Two finding-side questions; static, small.

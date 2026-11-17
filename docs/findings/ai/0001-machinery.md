@@ -933,6 +933,28 @@ is 0; the tool adds that case to part 1's size map in its own process only.
   (fn:sub_005DD7F0_MonAiFindTarget@0x005DD7F0, fn:sub_005DDC30_MonAiFindHostile@0x005DDC30,
   fn:sub_005B13E0_MonSpcWalkCheck@0x005B13E0)
 
+### 17. `MonAiIdle` and `MonAiDelay` at n ≤ 0 (2026-11-17, `lane/fur`)
+
+Static only (r2 `pD` on the pinned image). It answers backlog
+[`2026-11-16-spec-writer-reverser-monsters-ai-idle-delay-n-at-or-below`](../../backlog/archive/2026-11-16-spec-writer-reverser-monsters-ai-idle-delay-n-at-or-below.md).
+
+- [I] **The frame `MonAiIdle(n)` and `MonAiDelay(n)` queue is `T + (n == 0 ? 1 : n)`, not `T + max(n, 1)`.** Both
+  helpers open with the idiom the S1ne emulation confirmed in `MonAiDelayEarlier` (§ 14, 0x005DE134–0x005DE141): `mov
+  ebx, [ebp+8]; test ebx, ebx; jne; mov ebx, 1`. That idiom replaces only a zero `n` with 1; a negative `n` falls
+  through unchanged. `MonAiIdle` does it at 0x005DE087–0x005DE094 and `MonAiDelay` at 0x005DE0F4–0x005DE101, and
+  neither writes `ebx` again before the add. The frame is the 32-bit `add` of `ebx` to `Game+0xA8` (`T`): `add edx,
+  ebx` at 0x005DE0D5 in `MonAiIdle`, `add eax, ebx` at 0x005DE119 in `MonAiDelay`. Each pushes it to
+  `UnitQueueEvent(game, unit, 2, T + n, 0, 0)` (0x005DE0DE, 0x005DE122) after `UNIT_CancelEvents(game, unit, 2, 0)`
+  (0x005DE0C6, 0x005DE10A). A negative `n` therefore queues the AI event at a frame below `T`. What
+  `UnitQueueEvent` does with such a frame is not read here (*Open questions*). The three helpers share one n rule.
+  Only `MonAiDelayEarlier` was emulated, so this half stays `[I]`.
+  (fn:sub_005DE080_MonAiIdle@0x005DE080, fn:sub_005DE0F0_MonAiDelay@0x005DE0F0,
+  fn:sub_005DE130_MonAiDelayEarlier@0x005DE130, fn:sub_005417D0_UnitQueueEvent@0x005417D0)
+- [I] **Refinement of § 2's `MonAiIdle` line.** The mode command is skipped only for a non-null unit whose mode
+  (`+0x10`) is already 1 (`test esi, esi; je`, then `cmp [esi+0x10], 1; je`, 0x005DE099–0x005DE0A1). A null unit still
+  takes the mode path, `sub_005A7E60_MonCmdInit(unit, 1, &cmd)` then `sub_005A7C20_MonSetMode(game, &cmd, 1)`. The n
+  rule does not depend on this. (fn:sub_005DE080_MonAiIdle@0x005DE080)
+
 ## Data touched
 
 - tbl:MonStats.txt:AI (`+0x1E`), tbl:MonStats.txt:aidel (`+0x4F`), tbl:MonStats.txt:aidist (`+0x52`),
@@ -956,5 +978,7 @@ is 0; the tool adds that case to part 1's size map in its own process only.
 - `MonsterData+0x54` (the 3-or-19 test) has no named writer here; the catalogue batch that sets it names it.
 - The third `MonsterInit` block (`MonsterData+0x30`, 0x00572BA0) is not read by the machinery.
 - `Game+0x6A`'s meaning in the `aidel` choice stays anim/0001's.
+- What `UnitQueueEvent` (0x005417D0) does with a frame below `T` (a negative `n` to `MonAiIdle`, `MonAiDelay` or
+  `MonAiDelayEarlier`, § 17): unread; no logged call has n < 0.
 - The two type-16 setters (0x00663E00, 0x00663ED0) have no reference in the image; a wine run that breaks on them
   would settle whether anything reaches them.

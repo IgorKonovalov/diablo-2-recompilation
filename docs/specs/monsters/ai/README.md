@@ -647,7 +647,7 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 - [L] **The Uber forced cases** G1, G2, G3 and G5 of [ai/0016](../../../findings/ai/0016-uber-event.md) are named
   shortfalls, for owner play.
 - [I] **C2's and C3's form at n ≤ 0.** C4 turns 0 into 1 and keeps a negative `n`; whether `MonAiIdle` and `MonAiDelay`
-  clamp with `max(n, 1)` (C2b) is unread ([backlog](../../../backlog/2026-11-16-spec-writer-reverser-monsters-ai-idle-delay-n-at-or-below.md)).
+  clamp with `max(n, 1)` (C2b) is unread ([backlog](../../../backlog/archive/2026-11-16-spec-writer-reverser-monsters-ai-idle-delay-n-at-or-below.md)).
   (fn:sub_005DE080_MonAiIdle@0x005DE080, fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
 - [L] **`0x00623470`'s** column at MonStats `+0x0E` bit 0, `MonsterData+0x54`'s writer, the third `MonsterInit` block and
   `Game+0x6A`'s meaning in the `aidel` choice are unnamed here. (0x00623470, fn:sub_00574250_MonsterInit@0x00574250)

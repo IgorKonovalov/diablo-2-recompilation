@@ -954,7 +954,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   the kept DU/GH seed steps are in `check-combat.txt`), README 35, 38, damage 1, 29, 30, 33 and player/party 12 (the
   `MonAttackStats` output model), delivery 28 (`manahit`: 493 monster attacks with stats 62/63 set, `check-combat.txt`).
 - **New, not a contradiction:** 537 missile deliveries carry result bit 0x4000 (0x4001), which to-hit C1's list does
-  not name. Backlog [`2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000`](../../backlog/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md)
+  not name. Backlog [`2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000`](../../backlog/archive/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md)
   (with combat/README line 433's stale "no two-client run yet").
 - **Totals** after `main` `aa6ceb9c` (the lane's base; nothing to merge): a-logs 628, a-run 340, b 446, c 390, c-emu
   494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 512, Phase 2 786, blocked 328. § 1, § 4 (S5a,
@@ -3115,7 +3115,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (judgment call 6) wrote "0 at Leap Attack's plans" into a row anchored to `SkillSt40Leap`: 0x005DA00C and the row's
   own 0x005D9F9C both lie in `LeapAttackPath`, which path/0004 § 10 calls Leap Attack's and search F the player's
   Leap. The cell now names the address and the function, not the skill; the label question goes to the reverser
-  ([entry](../../backlog/2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count.md), with
+  ([entry](../../backlog/archive/2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count.md), with
   drlg/0009 § 13's "11 functions" for the 10 its list names). *Omission (1):* sim/frame E1's pseudocode (`[C]`, all
   of E1) showed the raise without the case D9 now states; its comment points there.
 - **Judgment calls.** (1) The six filed-raised rows split: accepted. (2) monsters/spawn K1 raised beside lifecycle
