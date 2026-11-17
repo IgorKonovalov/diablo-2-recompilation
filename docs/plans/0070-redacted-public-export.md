@@ -2348,8 +2348,73 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `.claude`, Ghidra, harness, objdump, debugger, the repository name, `/home`: 0; `run:` ids 0; image addresses 2,
   both the pinned flag values of save/d2s; `fn:`/`src:` 4, all code text (`src: boss`, `hitfn:`). Manifest and
   `reviewed-pages.txt` updated (2026-11-17). *Found for the builder* (backlog
-  [2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column](../backlog/2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column.md)):
+  [2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column](../backlog/archive/2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column.md)):
   an image-range value removed from inside a code span leaves a changed formula or seed in units the builder keeps,
   on published pages too (drlg/README and maze seed words, drlg/outdoor's four `[ + …]` reads, items/affixes and
   economy seed words, items/properties, monsters/stats `hp ≥` …); and an Inputs table whose cells are all `tbl:`
   anchors loses its name column (15 published specs). The export-readiness entry stays open for part B.
+- 2026-11-17, archivist, lane/x13f (builder: code-span removals break the unit; tbl: columns kept; → ranges). Backlog
+  entry from the lane/x13a review, items 1–3, in `tools/export_build.py`. *Rules.* (1) A removal inside a backtick
+  span that holds anything else (an address, run id, anchor, path or plan reference taken out of it) makes the unit
+  `broken` (it drops, reported as such); a span of only removed tokens goes whole as before; spans are paired left to
+  right, so a removal between two spans is not inside one. A table cell broken this way becomes a dash. In a pseudocode
+  line's code part a removed value beside an operator or an arrow (`if hp ≥ : hp ←`, `& `) leaves the line as it was and
+  the block drops (the tail stays lenient). Values that are not addresses but lie in the image range (`0x400000`,
+  `0x800000`, `0x7FFFFF`, a seed's low word) still go and now drop their unit: the spec-writer names, pins or rewords.
+  (2) `redact_table`: a column whose every filled cell is `tbl:` anchors is a name column and stays (its cells rewrite
+  to the name as in prose); a column that mixes `tbl:` with other evidence goes as before. (3) `→` ranges collapse like
+  en-dash ranges. Tests: 169 checks in test_export_build (both ways for each: a seed span, a formula span, a call span,
+  an address-only span, two address-only spans, a removal between spans, tbl: column kept / mixed column dropped /
+  fn:+data: column dropped, the arrow range, the fence operand and the fence tail); export_check 191, widgets 274,
+  publish 44 green. *Measure* (cut of main 87b7df0f against the lane's, text only, then one full build with
+  illustrations; 81 pages, 0 dropped; specs words dropped 16.6 % (60 692 of 364 889), same as before: the 24 units
+  that drop carry few words, tables that keep a name column count more words kept, net per page below); no spec near
+  the bar (highest combat/to-hit 24.3 %, anim/movement 24.1 %, both unchanged). Newly dropped prose and table units 24
+  (drlg/README 1, maze 5, outdoor 4, warps 1, items/properties 1, quest-drops 2, economy 1, inventory 1, combat/damage 1,
+  combat/delivery 1, stats/aggregate 1, skills/dispatch 2, path/README 1, sim/frame 1, save/d2s 1) and 7 pseudocode
+  blocks (drlg/lifecycle E, outdoor K, items/economy C and D, properties F, monsters/stats B, player/creation G; all a
+  flag or cap value, `0x400000`, `0x800000`, `0x7FFFFF`, left without its operand); words dropped changed on 26 specs
+  (e.g. drlg/maze 439 to 583, outdoor 1 536 to 1 676, delivery 1 141 to 1 310, d2s 1 243 to 1 409; fewer where a name
+  column is kept: drlg/README 675 to 630, items/use 607 to 561, skills/catalogue 474 to 416); about 90 table rows
+  changed words (their Inputs-table name column kept, 15 specs) and 4 rows whose evidence cell is now a dash
+  (skills/dispatch and missiles Constants, path/README A, items/affixes example 3's seed cell). Not changed: an arrow
+  chain whose head is an address (`(→ ActCreate)` in save/d2s D4 and a chain in quests/travel G1) keeps its lone arrow,
+  one for the reader to reword. Full list: `/tmp/claude-1000/-home-igor-Work-recompilcation-project/eb61de30-a30a-401a-a3db-30c67be2439b/scratchpad/x13f/changes-final.txt` (prose and tables; the fence blocks are the seven above).
+  `export_check … --repo workspace/export-repo/`: 0 failures, 1014 warnings. Backlog entry closed.
+- 2026-11-17, architect, Tier A review of lane/x13f (Opus). Verdict **accept with fixes (8: misread 3, omission 2,
+  other 3)**, the fixes made in the review. *The check asked for:* a scratch script compared, page by page, every code
+  span and every pseudocode line of the cut with the source after the documented rewrites (anchor to name, `sub_`
+  prefix, a citation's folder, `at 0x…`). On the lane's cut 11 spans and 382 lines differed, and some were kept units
+  whose code had changed: the operand hole missed `≠` (`if class 527 and ≠ 0`, `if ≠ 0: SetMode(8, 0, 0); end` with
+  the call after it gone), call targets outside an operator (`call 0x005B0D70` → `call`, `5. 0x00588DD0` → `5.`) and
+  call arguments (`Build(0x006F0B10, check Act5C)` → `Build(check Act5C)`, `Pfx(0x…, 0x…)` → `Pfx`), and command lines
+  lost their paths (`python3 -I tools/monpool.py pool workspace/…` → `python3 -I pool`). Two older rules did the same.
+  The evidence-parenthetical rule took a call's argument and a span's parenthetical for evidence: `R = Init(0x6AC6935F)`
+  → `R = Init`, the seed `(0x280687C4, 0x13ADFE65)` → an empty span. The link rewrite ran inside fenced blocks:
+  `g_PathPlanFuncs[ctx.type](ctx)` → `g_PathPlanFuncsctx.type`, `OutdoorAct[a](L)` → `OutdoorActa`. And a span over
+  a line break, or one a sentence split cut in two (`#### R<n>. Row <n> `), escaped the span rule:
+  `` `excel_bin.py diff` `` → `` ` diff` ``. *Fixes* (`tools/export_build.py`, 25 checks added to test_export_build).
+  (1, omission) A pseudocode code part breaks on a removal inside a call's parentheses or outside every parenthetical,
+  unless it is an address label (`init 0x005EA510:`, `at 0x…`). A removal in a parenthetical after a space
+  (`do 58 (0x005C56C0, Revive)`) is a label and still goes. (2, misread) A parenthetical right after a word, or inside a
+  code span, is never an evidence parenthetical. (3, misread) In a fenced block a link is only re-targeted when it
+  names an exported page; otherwise it stays as written. (4, omission) Spans pair across a line break, path spans pair
+  left to right (no longer matched between two spans), and a sentence never splits inside a span. (5, misread) A table
+  cell that opens with its tag and breaks keeps the tag (the lane's dash dropped the tag of three Constants and path
+  rows). A value cell whose span broke (items/affixes example 3's seed) breaks the row: a dash would read as "none",
+  the x70b2 ruling. (6, other) Arrows: a chain whose head or end was an address leaves no lone arrow (save/d2s D4 now
+  reads "(`ActCreate`)"). `73 → 0x0059DB20: refuse` reads `73: refuse`, and a tail `[C] → 0x0056E2F0 or X` reads
+  `[C] → X`. (7, other) Tails: a block opener's own colon stays (`case 2  (0x005EC069), x ← t:` had lost it), and
+  `; 0x005689E5, the tick` keeps its comment marker. (8, other) An anchor run into a span is one span
+  (`` data:g_ObjOperateFns@…`[OperateFn]` `` → `` `g_ObjOperateFns[OperateFn]` ``). *After the fixes* (a full build
+  with illustrations, 81 pages, 0 dropped): 27 501 spans checked, 3 differ, all one source defect (unescaped `|` in
+  code spans inside the path/README and path/search table cells, which GFM splits whatever the builder does). 12 338
+  fence lines checked, 93 differ, each an address label or an evidence parenthetical gone (`(0x00730514)`,
+  `init 0x…:`, `(0x005AF030, Frozen Orb)` → `(Frozen Orb)`). Specs: units dropped 973 of 12 428, words dropped
+  16.7 % (60 828 of 364 886), fenced blocks kept 808 of 895 (the lane's 838). The highest page is unchanged
+  (combat/to-hit 24.3 %). Against main 87b7df0f, 65 units of published spec pages newly drop: 27 prose units and rows
+  and 38 pseudocode blocks. They are listed for the spec-writer, sorted into pin, reword and source fix, in backlog
+  [2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules](../backlog/2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules.md);
+  the seed constant `0x53454953` of skills/missiles B1, which the parenthetical rule had removed, now fails X1 and
+  needs a value entry there. Tests: export_build 194, export_check 191, widgets 274, publish 44, all green.
+  `export_check … --repo workspace/export-repo/`: 0 failures, 1018 warnings. Gate green.

@@ -2,11 +2,11 @@
 from: architect
 to: archivist
 date: 2026-11-17
-status: open
+status: done
 context:
-  - ../plans/0070-redacted-public-export.md
-  - ../export/manifest.txt
-resolution: ""
+  - ../../plans/0070-redacted-public-export.md
+  - ../../export/manifest.txt
+resolution: "Done in lane/x13f: a removal inside a code span with other text breaks the unit, pseudocode code parts likewise beside an operator, tbl: name columns stay, arrow ranges collapse; 24 units and 7 blocks newly drop (list in the plan log, [plan 0070](../../plans/0070-redacted-public-export.md))"
 ---
 
 Plan 0070, found at the review of lane/x13a (2026-11-17): two builder rules of `tools/export_build.py` change the meaning of units they keep, on pages already in the published cut. (1) **An image-range value removed from inside a code span.** The second-round address removal takes a value in 0x00400000-0x009B9FFF out of a backtick span that holds other text, and the unit is kept: a formula, a seed pair or a call loses an operand with no report line but the REWRITE. In the review's cut: drlg/README and drlg/maze `E18C3A55:0090CE8A` → `E18C3A55:` (a seed's low word; a pin admits it on wiki/levels only); drlg/maze `0x006F0474 + 16·r` → `g_RiverForgeSpecials` ` + 16·r`; drlg/outdoor four `[0x006F… + …]` → `[ + …]`; items/affixes `004bc4a3:517d17c7` → `:517d17c7` and items/economy `007c890f:575b5184` → `:575b5184` (seed words); items/properties `0x007462F8 + 4f` → ` + 4f`; spans removed whole (the sentence kept without them): monsters/stats `hp ≥ 0x800000` (2^23, a value, not an address), drlg/lifecycle, drlg/warps, monsters/special, monsters/ai/machinery, player/party, path/README, quests/progression (four), quirks/README. Asked: a removal inside a code span that holds anything but the address is `broken` (the unit drops and is reported), and a span made only of an address goes as today; then the spec-writer names or pins what the drops show (a seed word or a computed value takes a `pin` line, which the architect reviews). (2) **A table's anchor column dropped when every body cell is `tbl:` anchors.** `redact_table` treats `tbl:Table.txt:column` cells as evidence, so the Inputs › Tables tables of 15 published specs keep only `Used for` and lose the table and column names (drlg/README, lifecycle, maze, outdoor, warps, monsters/special, monster-ai machinery and catalogue, items/trade and use, player/party, quests/travel and progression, sim/frame, skills/catalogue). A `tbl:` anchor rewrites to its name (as in a sentence), so it is content: count it as such in `redact_table`. (3) Minor: an address range written with `→` (`0x005C68AC → 0x005C68F0`) is not collapsed like an en-dash range and leaves `(→, …)`. Tier B check; rerun the cut-2 report and list the units whose words change.

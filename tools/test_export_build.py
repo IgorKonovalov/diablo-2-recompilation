@@ -112,6 +112,66 @@ def main():
        "a working-docs path fails X3")
     rows = eb.redact_table(["| a | b | c |", "|---|---|---|", "| x | 1 | fn:X@0x0045C370 |", "| y | 2 | data:T |"])
     ok(all(r.count("|") == 3 for r in rows), f"anchor-only column dropped ({rows})")
+    # x13f: a `tbl:` cell is content (it rewrites to its name); fn:/data: cells still go
+    rows = eb.redact_table(["| Table | Used for |", "|---|---|", "| tbl:Levels.txt:Id | the id |", "| tbl:Skills.txt:skill | skill |"])
+    ok(all(r.count("|") == 3 for r in rows), f"a tbl: column stays ({rows})")
+    ok(eb.rewrite_row(rows[2]) == "| `Levels.txt:Id` | the id |", f"a tbl: cell rewrites to its name ({eb.rewrite_row(rows[2])!r})")
+    rows = eb.redact_table(["| a | b |", "|---|---|", "| x | tbl:T.txt:c |", "| y | fn:X@0x0045C370 |"])
+    ok(all(r.count("|") == 2 for r in rows), f"a column mixing tbl: with other evidence still goes ({rows})")
+    rows = eb.redact_table(["| a | b |", "|---|---|", "| x | data:T |", "| y | fn:X@0x0045C370 |"])
+    ok(all(r.count("|") == 2 for r in rows), f"a data:/fn: column still goes ({rows})")
+    # x13f: a removal inside a code span with other text breaks the unit; a span of only the removed token goes
+    ok(eb.rewrite_text("The seed `E18C3A55:0090CE8A` pair.") == eb.BROKEN, "an address removed inside a span with other text breaks")
+    ok(eb.rewrite_text("It reads `0x006F0474 + 16*r` per row.") == eb.BROKEN, "an address in a formula span breaks")
+    ok(eb.rewrite_text("It calls `jmp [eax*4 + 0x006F0474]` here.") == eb.BROKEN, "an address in a call span breaks")
+    ok(eb.rewrite_text("It is read, `0x006F0474`, twice.") != eb.BROKEN, "a span of only the address goes")
+    ok(eb.rewrite_text("It is read, `0x006F0474`-`0x006F0478`, twice.") != eb.BROKEN, "two address-only spans go")
+    ok(eb.rewrite_text("It uses `a`, then 0x006F0474, then `b` twice.") != eb.BROKEN, "a removal between two spans is not inside one")
+    ok(eb.rewrite_text("It reads `x + 4` and 0x006F0474 here.") != eb.BROKEN, "a removal outside a span, with a span elsewhere, stays")
+    # x13f: the same in a pseudocode line's code part: the line stays as it was (the block then drops); a tail goes as before
+    ok(eb.rewrite_fence_line("if hp \u2265 0x00800010: hp \u2190 1") == "if hp \u2265 0x00800010: hp \u2190 1", "an operand removed in a code part leaves the line")
+    ok(eb.rewrite_fence_line("x \u2190 f(y)    [C] (fn:F@0x0045C370)") == "x \u2190 f(y)    [C]", "a tail removal still rewrites")
+    # x13f: an arrow range collapses like an en-dash range
+    ok(eb.rewrite_text("It spans (0x005C68AC \u2192 0x005C68F0) here.") == eb.rewrite_text("It spans (0x005C68AC \u2013 0x005C68F0) here."),
+       f"an arrow range collapses ({eb.rewrite_text('It spans (0x005C68AC \u2192 0x005C68F0) here.')!r})")
+    ok("\u2192" not in eb.rewrite_text("Range 0x005C68AC \u2192 0x005C68F0 is dead."), "no arrow left by a range")
+    # review of lane/x13f: a call's arguments and a parenthetical inside a code span are code, not evidence
+    t = "and `R = Init(0x6AC6935F)` = `6ac6935f:0000029a`."
+    ok(eb.drop_evidence_parens(t) == t, "a call's argument in a span stays")
+    ok(eb.drop_evidence_parens("with the seed `(0x280687C4, 0x13ADFE65)` when") == "with the seed `(0x280687C4, 0x13ADFE65)` when",
+       "a seed pair in a span stays")
+    ok(eb.drop_evidence_parens("if f(0x00800000) holds") == "if f(0x00800000) holds", "a call's argument stays")
+    ok(eb.drop_evidence_parens("It holds (fn:X@0x0045C370) here.") == "It holds here.", "an evidence parenthetical still goes")
+    # review of lane/x13f: a removal in a code part outside a label, or inside a call's arguments, keeps the line
+    for ln in ("if class 527 and 0x0058A9F0 \u2260 0: Idle(20)", "Step(s); call 0x005B0D70", "Build(0x006F0B10, check Act5C)",
+               "x \u2190 Pfx(0x00594450, 0x0058A8D0)", "python3 -I tools/monpool.py pool --seed 1", "254 alkor:   SetMode(8, 0, 0);  0x005BAD40; end"):
+        ok(eb.rewrite_fence_line(ln) == ln, f"a code-part hole keeps the line ({ln!r} -> {eb.rewrite_fence_line(ln)!r})")
+    for ln, want in (("init 0x005EA510:  v14 \u2190 \u22121", "init:  v14 \u2190 \u22121"),
+                     ("I7. do 58 (0x005C56C0, Revive):", "I7. do 58 (Revive):"),
+                     ("73 \u2192 0x0059DB20: refuse while", "73: refuse while"),
+                     ("case 2  (0x005EC069), x \u2190 t:", "case 2, x \u2190 t:"),
+                     ("if s \u2264 4: return      ; 0x005689E5, the tick never touches 0", "if s \u2264 4: return      ; the tick never touches 0"),
+                     ("K10. do 71:      [C] \u2192 0x0056E2F0 or SKILLS_ForUnitsInRange (run:x-y)", "K10. do 71:      [C] \u2192 SKILLS_ForUnitsInRange"),
+                     ("J9. do 67:   [C] \u2192 0x006633B0 (run:x-y)", "J9. do 67:   [C]")):
+        ok(eb.rewrite_fence_line(ln) == want, f"a label's address goes ({ln!r} -> {eb.rewrite_fence_line(ln)!r})")
+    # review of lane/x13f: an anchor run into a span is one span; an arrow chain headed by an address leaves no lone arrow
+    ok(eb.rewrite_text("It calls data:g_T@0x00732D18`[i]` here.") == "It calls `g_T[i]` here.",
+       f"anchor and span merge ({eb.rewrite_text('It calls data:g_T@0x00732D18`[i]` here.')!r})")
+    t = "It follows the join (`0x00530190` \u2192 `0x0052C210` \u2192\n  `ActCreate`), so maps match."
+    ok(eb.rewrite_text(t) == "It follows the join (`ActCreate`), so maps match.", f"no lone arrow ({eb.rewrite_text(t)!r})")
+    # review of lane/x13f: a broken tag cell keeps its tag; a value cell whose span lost a part breaks the row
+    ok(eb.rewrite_row("| do table | `g_T` | [C] `cmp eax, [0x006F0474]` (= 0xBF) |") == "| do table | `g_T` | [C] |",
+       f"a broken tag cell keeps the tag ({eb.rewrite_row('| do table | `g_T` | [C] `cmp eax, [0x006F0474]` (= 0xBF) |')!r})")
+    ok(eb.rewrite_row("| J4 | 1 | `004bc4a3:517d17c7` | ignored |") == eb.BROKEN, "a seed cell that lost its low word breaks the row")
+    # review of lane/x13f: a span crossing a line break is one span; a sentence never splits inside a span
+    ok(eb.rewrite_text("pinned by `excel_bin.py\n  diff`. [C]") == "pinned. [C]", "a span with a path across a line goes whole")
+    ok(eb.rewrite_text("as `tools/d2s.py\n  setwp` set them") == eb.BROKEN, "a two-line tool span is never cut to its tail")
+    ok(len(eb.split_sentences("one heading `#### R<n>. Row <n> ` each. Next one.")) == 2, "no split inside a span")
+    # review of lane/x13f: in a fenced block `[i](x)` is code: kept unless it names an exported page
+    pgx = type("P", (), {"path": "specs/path/README.md", "route": "spec-path/readme", "headings": set()})()
+    t = "```\nn \u2190 g_PathPlanFuncs[ctx.type](ctx)\n```\nSee [a](b) here."
+    ok(eb.rewrite_links(t, pgx, {}) == "```\nn \u2190 g_PathPlanFuncs[ctx.type](ctx)\n```\nSee a here.",
+       f"a fence's index-and-call stays ({eb.rewrite_links(t, pgx, {})!r})")
     rows = eb.redact_table(["| a | b |", "|---|---|", "| x | fn:X@0x0045C370 |", "| y | plain words |"])
     ok(len(rows[0].split("|")) == 4, "a column with prose cells stays")
     # Phase 9 review: a tag's evidence parenthetical that fails a text rule goes whole; one that passes stays
