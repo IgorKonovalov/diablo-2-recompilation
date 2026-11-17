@@ -1804,3 +1804,50 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   message; keyboard not driven there (residue). **Manifest:** `docs/export/reviewed-pages.txt` unchanged (no new
   page). Scratch builds and copies deleted. Tests: `test_schematic_kit` (29), `test_export_build` (154),
   `test_export_widgets` (274); gate green. Ledger: verdict accept with fixes, 5 (overclaim 1, omission 1, other 3).
+- 2026-11-17, archivist, lane/x12a (Phase 11 batch 2: rows 11, 13, 14). Two generators on the kit, each with
+  `--theme dark|light`, the data root first, `--schematic` accepted, in `SCHEMATIC_TOOLS` (and `test_export_build`'s
+  tuple assertion, one line each). **Row 11, `tools/links_anim.py`** (`0xc0ffee --act 0`; `--act 1|3|4`, `--diff 0..2`
+  also run): one frame per pick call of every table with two or more shown levels (pick kind, draws on the copy of the
+  act seed, side, rectangle, the check's answer and reason), a frame per finished table, and level 27's index step after
+  the table that holds the Black Marsh; 18 frames for Act I. The model is `drlg.Act` and `drlg.act_links`, run with
+  `drlg.PICK` and the three check functions wrapped (restored after), so the frames are the model's own calls; the draws
+  shown are the copy's `Seed.log`; a reject's reason uses `drlg.gap_overlap`; the level 27 index is recomputed from the
+  table's entry seed and asserted equal to `Act.idx27`. A fixed far entry (Moo Moo Farm: an anchor pick nobody anchors
+  to) is named and left out of the picture. For the three picks whose stored choice is a size (Act V's `0x0067D830`,
+  `0x0067D8E0`, `0x0067D980`) the frame says "shape", not "side"; the picks that draw on every call (`0x00676C00`, `0x0067D830`,
+  `0x0067D8E0`) say "picks again and draws again" after a reject, the others "next choice with no new draw" (warps
+  B1). **Row 14, `links_anim.py --warps`** (no seed): three frames, the warp points of Cave Level 1 and the two pairings
+  of the warps worked example. Level 3's slots come from the model (`Act`, `act_links`) and level 9's from the Levels
+  row (`drlg.LV`); the points are `(x + w / 2) * 5` and the pairing is `pair()`, a small function of the F1 rule: the
+  model keeps that rule inside `Model.warp_pair`, which needs a run log, so this is a second copy of the rule's
+  arithmetic, tied by tests to the spec's worked example (rank fails at k = 3 and slot 0 pairs; rank slot 3 has no room,
+  the walk 3 to 6 ends on slot 6) and to a toy rank-hit case. **The rooms of this output (level 9's two, and Cold Plains'
+  cave mouth on slot 6) are the worked example's inputs, not a run**: the block takes `values: restated`. **Row 13,
+  `tools/preset_anim.py`** (`0xc0ffee --preset lutw|lutn|catne`): a frame with the unit list as one cell per unit in walk
+  order, one frame per roll (the seed before and after, r, the test and its answer, the keep chance as a bar, the
+  units passed with no draw), and the kept list; for Lut Gholein's LutW 4 frames (68 units, 2 rolls: vendor 204 kept,
+  205 dropped). The model is `PresetUnitData.ds1` (the unit list: ids and positions only, no layer is drawn) and
+  `drop_rolls`; which unit drew is found by running `drop_rolls` on each prefix of the list, and each roll's answer is
+  asserted equal to the spec's step 3a test (a table in the tool, tested over a period of 12 for its chance). The
+  preset is named by a key (`lutw`, `lutn`, `catne`), not a file path, so `schematic.json` carries no path. **Tests:**
+  new `tools/test_drlg_anim.py` (17 tests; not in `test_schematic_kit.py`, to leave that file to the parallel lane):
+  determinism, both themes, folder clean under `export_check.verify_illustration` (allow-hex), no art decoder imported,
+  `TEXT_CLIPPED` and `CAPTION_CUT` empty over six link runs, the warps output and three presets in both themes, traced
+  rects, draws, level 27 index and act seed equal a plain run of the model (five act, seed, difficulty runs), the warps
+  worked example 1 (Cold Plains, Blood Moor's four sides, Rogue, Burial Grounds, Black Marsh's reject then side 3, index
+  1, draw `2FAADC42`) and 2 (points (7880, 6520), (7640, 6840); level 3's Vis and Warp lists), the preset worked example
+  (LutW and LutN draws, `r mod 3`, kept lists, seeds), every reject has a named reason over five seeds. Green:
+  `test_drlg_anim`, `test_schematic_kit` (29), `test_anim_schematic`, `test_export_build` (154), `test_export_check` (191),
+  `gate.py`. **Frames viewed** (dark and light): links Act I 1, 3, 6, 7, 9, 16, 17 (a Rogue overlap reject, a side-table
+  reject, the Burial Grounds accept, the table-done frame, the level 27 step), Act II 3 and Act V 2; warps 0, 1, 2; preset
+  0, 1, 2, 3. Fixed after looking: slot boxes too narrow for "WARP -1", captions that read "it the Rogue Encampment's
+  side is not in the table" (reasons are now whole clauses), "side -1" on an anchor pick, level names in capitals mid
+  sentence, "57 units passed since the last roll" before the first roll, the fallback walk shown without the rank slot it
+  repeats (F1 walks every slot naming the source). **Doubts:** (1) row 14's rooms are inputs of the worked example, so
+  the block says "restated"; a computed version would need the maze model's level 9 for a level seed, which `drlg.py`
+  has only through a log replay. (2) Row 11 shows Act I only in the block; the tool draws Acts II, IV and V too, and
+  Act III is refused (its layout is the jungle generator). (3) Act V's table has no check and the frames say "no check:
+  kept". (4) Row 13 has two rolls only (LutW); `catne` has one; a preset with more rolls could be added as a key if the
+  reviewer wants a busier picture. **Blocks:** rows 11, 13, 14 with draft captions and Place lines are in
+  `workspace/phase11/blocks-batch2.md` under "DRLG (x12a)" (ids `drlg-act1-links-c0ffee`, `drlg-preset-lutw-rolls`,
+  `drlg-warps-cave1-coldplains`); each caption passes `export_build.caption_sentences` with no sentence dropped.
