@@ -1,7 +1,7 @@
 """Animate the maze generator (docs/specs/drlg/maze.md) room by room, with the game's own tiles.
 
 Usage:
-  python3 -I tools/maze_anim.py <root> <level> <seed> [--out DIR] [--scale N] [--gif-factor N]
+  python3 -I tools/maze_anim.py <root> <level> <seed> [--out DIR] [--scale N] [--gif-factor N] [--schematic]
 
 <root> is the merged data tree (workspace/merged); <level> a maze level id (8-12, 34-36, 47-49, 65);
 <seed> the level seed. The seed is an illustrative input, not the level seed a game seed produces
@@ -27,6 +27,14 @@ rectangles are drawn relative to the bounding box; the shift would not change th
 fixed to the final level's bounds. Drawn like the game builds a room's tiles (drlg/0001): blank floors
 (0, 30, 0/1) hidden, an orientation-3 wall paired with its orientation-4 tile; no shadows, lighting or rarity
 variants. Stdlib only.
+
+--schematic (ADR-0036, the public export's mode): rooms as labelled boxes with their doors and the level's entry and
+exit marks (Levels Vis, not placed in a room: that needs the DS1 wall layer); no tile, no DS1 layout, no game palette.
+It draws with our fixed palette and the 5x7 font, never imports or opens an art decoder (ds1 tile layers, dt1, dc6,
+palette, maze_render), and the steps, calculations and captions are those of the full mode, except the warp lines (they
+come from the DS1 wall layer). Every file carries the schematic marker (PNG tEXt chunk, GIF comment, HTML comment,
+steps.json key \"schematic_only\") and schematic.json lists the files with their sha256. The full mode never writes the
+marker. The default DIR gets a -schematic suffix.
 """
 import csv
 import json
@@ -36,9 +44,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import ds1  # noqa: E402
-import maze_render  # noqa: E402
-import palette  # noqa: E402
+import maze_conv  # noqa: E402
 import png  # noqa: E402
 
 from anim_common import FONT, encode_gif, lzw_decode, lzw_encode, safe_out, text, wrap  # noqa: E402,F401
@@ -48,7 +54,7 @@ import anim_common  # noqa: E402
 # ---------------------------------------------------------------- model trace
 def trace(root, level, seed):
     """Run the replay model. Returns (steps, rooms, rng draws). Room numbers are placement order of the kept rooms."""
-    excel = maze_render._excel(root)
+    excel = maze_conv._excel(root)
     saved, sys.argv = sys.argv, ["maze_replay.py", excel]    # maze_replay reads its excel dir at import
     try:
         import maze_replay as M
@@ -256,7 +262,7 @@ def trace(root, level, seed):
     if carry and steps:
         steps[-1]["calc"] += carry
     # README step 9: the conversion walks the room list the generator leaves, newest first (9a, 9b, then step 5)
-    conv, _s, _u = maze_render.convert(root, L.lt, (L.seed.lo, L.seed.hi),
+    conv, _s, _u = maze_conv.convert(root, L.lt, (L.seed.lo, L.seed.hi),
                                        [(R.x, R.y, R.w, R.h, R.d, R.idx) for R in L.rooms])
     q_of = {R: (k, q) for k, (R, q) in enumerate(zip(L.rooms, conv))}
     rooms = []
@@ -299,7 +305,7 @@ def fill_poly(cv, W, H, pts, col):
 
 def _levels(root):
     """Levels.txt: id -> {name, vis[0..7]} (tbl:Levels.txt:Vis0..7, LevelName)."""
-    rows = list(csv.reader(open(os.path.join(maze_render._excel(root), "levels.txt"), encoding="latin-1"),
+    rows = list(csv.reader(open(os.path.join(maze_conv._excel(root), "levels.txt"), encoding="latin-1"),
                            delimiter="\t"))
     h, out = rows[0], {}
     for row in rows[1:]:
@@ -309,7 +315,62 @@ def _levels(root):
     return out
 
 
+def wlabel(lv, level, dest):
+    kind = "ENTRY" if dest < level else "EXIT"
+    return "%s: %s" % (kind, lv.get(dest, {}).get("name", "LEVEL %d" % dest))
+
+
+def timeline(level, steps, rooms, total, lv, warps):
+    """The frames and captions of both modes: [(frame state, rooms converted so far, lead room, caption)]. The text
+    and calculations are the same in the full and the schematic mode (the schematic mode has no warps: they come from
+    the DS1 wall layer, which it does not read)."""
+    n = len(rooms)
+    out = []
+    for st in steps:
+        out.append((st, set(), st["new"], dict(text=st["text"], calc=st["calc"])))
+    conv_total, done = 0, set()
+    for i in sorted(range(n), key=lambda j: rooms[j]["order"]):     # README step 9: conversion order, newest first
+        q = rooms[i]
+        conv_total += q["draws"] + q["nrooms"]       # level draws + each new room's first own-seed step, as counted above
+        done.add(i)
+        txt = "Room %d (converted %d of %d, newest first): Def %d (%s), preset file %s (%s)." % (
+            i + 1, q["order"] + 1, n, q["d"], q["name"], (q["file"] or "none").replace("\\", "/").split("/")[-1],
+            q["how"])
+        out.append((dict(text=txt, rng=total + conv_total, rooms=range(n), links=[]), set(done), i, dict(text=txt, calc=[
+            "RNG draws in this step: %d (%d level draws, and %d first steps of new rooms' own seeds, one per room "
+            "DRLG_RoomCreate makes); %d so far." % (q["draws"] + q["nrooms"], q["draws"], q["nrooms"], total + conv_total),
+            "Conversion (spec drlg/README.md step 9): after the generator, each maze room in the level's room list, "
+            "newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+            "Def %d is the room's LvlPrest row (%s); its File1..6 columns list the preset maps (DS1) it may use."
+            % (q["d"], q["name"])] + q["calc"] + [
+            "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the "
+            "schematic mode draws the room as a box."] + [
+            "This preset holds a warp: wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s); "
+            "marked in cyan on the final frame (drlg/warps.md, warp slot cell)." % (m, m, dest, lv.get(dest, {}).get("name", "?"))
+            for qi, m, dest, _fx, _fy in warps if qi == i])))
+    txt = ("Final composite: %d rooms after %d RNG draws (%d in the generator, %d in the conversion). Drawn relative "
+           "to the layout's corner; the game then moves the whole level to its place in the act (not drawn, shape "
+           "unchanged)." % (n, total + conv_total, total, conv_total))
+    wl = ["Warp (cyan mark): room %d, DS1 wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s) "
+          "(drlg/warps.md, warp slot cell). %s is by level order: the lower id is taken as the way in. The act's "
+          "link lists can override Vis at run time (warps.md § C); not modelled here."
+          % (qi + 1, m, m, dest, lv.get(dest, {}).get("name", "?"), wlabel(lv, level, dest).split(":")[0].capitalize())
+          for qi, m, dest, _fx, _fy in warps]
+    out.append((dict(text=txt, rng=total + conv_total, rooms=range(n), links=[]), set(range(n)), None, dict(text=txt, calc=wl + [
+        "Placement shift (spec drlg/maze.md G1): growth never looks at where the level sits in the act; rooms grow "
+        "freely around the first room, so coordinates can go negative.",
+        "At the end the game takes the bounding box of all rooms (x0, y0) and adds (level.x - x0, level.y - y0) to "
+        "every room, so the box's top-left corner lands on the level's origin in the act map.",
+        "It is one translation for all rooms: shape, doors and Defs do not change. This picture is already drawn "
+        "relative to the box corner, so the shifted level would look the same."])))
+    return out
+
+
 def build(root, level, seed, scale):
+    """The full mode: the game's own tiles (reads DT1, DS1 tile layers, the palette)."""
+    import ds1
+    import maze_render
+    import palette
     steps, rooms, total = trace(root, level, seed)
     r = maze_render.Renderer(root, scale)
     tw, th, pad = r.tw, r.th, r.pad
@@ -397,10 +458,6 @@ def build(root, level, seed, scale):
     def P2(fx, fy):
         return (ix + ox + int((fx - fy) * tw / 2) + tw // 2, oy + int((fx + fy) * th / 2))
 
-    def wlabel(dest):
-        kind = "ENTRY" if dest < level else "EXIT"
-        return "%s: %s" % (kind, lv.get(dest, {}).get("name", "LEVEL %d" % dest))
-
     def frame(k, st, done, lead, total_steps):
         cv = bytearray(CW * CH)
         vis = sorted(st["rooms"])
@@ -459,7 +516,7 @@ def build(root, level, seed, scale):
                 line(cv, CW, IH, pts[a], pts[(a + 1) % 4], C["warp"], 3)
             for yy in range(cy - 3, cy + 4):
                 cv[yy * CW + cx - 3:yy * CW + cx + 4] = bytes([C["warp"]]) * 7
-            lab = wlabel(dest)
+            lab = wlabel(lv, level, dest)
             lw, lx, ly = len(lab) * 12 + 8, min(max(cx - len(lab) * 6 - 4, 2), CW - len(lab) * 12 - 10), cy - dy - 26
             ly = max(ly, 24)
             for yy in range(ly, ly + 20):
@@ -476,51 +533,95 @@ def build(root, level, seed, scale):
         text(cv, CW, CH, 10, 8, "LEVEL %d  SEED %#X  (ILLUSTRATIVE INPUT)" % (level, seed), C["dim"])
         return bytes(cv)
 
-    n = len(rooms)
-    total_steps = len(steps) + n + 1
+    tlv = timeline(level, steps, rooms, total, lv, warps)
+    total_steps = len(tlv)
     frames, caps = [], []
-    for st in steps:
-        frames.append(frame(len(frames), st, set(), st["new"], total_steps))
-        caps.append(dict(text=st["text"], calc=st["calc"]))
-    conv_total, done = 0, set()
-    for i in sorted(range(n), key=lambda j: rooms[j]["order"]):     # README step 9: conversion order, newest first
-        q = rooms[i]
-        conv_total += q["draws"] + q["nrooms"]       # level draws + each new room's first own-seed step, as counted above
-        done.add(i)
-        txt = "Room %d (converted %d of %d, newest first): Def %d (%s), preset file %s (%s)." % (
-            i + 1, q["order"] + 1, n, q["d"], q["name"], (q["file"] or "none").replace("\\", "/").split("/")[-1],
-            q["how"])
-        frames.append(frame(len(frames), dict(text=txt, rng=total + conv_total, rooms=range(n), links=[]), set(done), i,
-                            total_steps))
-        caps.append(dict(text=txt, calc=[
-            "RNG draws in this step: %d (%d level draws, and %d first steps of new rooms' own seeds, one per room "
-            "DRLG_RoomCreate makes); %d so far." % (q["draws"] + q["nrooms"], q["draws"], q["nrooms"], total + conv_total),
-            "Conversion (spec drlg/README.md step 9): after the generator, each maze room in the level's room list, "
-            "newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
-            "Def %d is the room's LvlPrest row (%s); its File1..6 columns list the preset maps (DS1) it may use."
-            % (q["d"], q["name"])] + q["calc"] + [
-            "The tiles drawn are that DS1's floor and wall cells, looked up in the level type's tile files (DT1)."] + [
-            "This preset holds a warp: wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s); "
-            "marked in cyan on the final frame (drlg/warps.md, warp slot cell)." % (m, m, dest, lv.get(dest, {}).get("name", "?"))
-            for qi, m, dest, _fx, _fy in warps if qi == i]))
-    txt = ("Final composite: %d rooms after %d RNG draws (%d in the generator, %d in the conversion). Drawn relative "
-           "to the layout's corner; the game then moves the whole level to its place in the act (not drawn, shape "
-           "unchanged)." % (n, total + conv_total, total, conv_total))
-    frames.append(frame(len(frames), dict(text=txt, rng=total + conv_total, rooms=range(n), links=[]), set(range(n)),
-                        None, total_steps))
-    wl = ["Warp (cyan mark): room %d, DS1 wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s) "
-          "(drlg/warps.md, warp slot cell). %s is by level order: the lower id is taken as the way in. The act's "
-          "link lists can override Vis at run time (warps.md § C); not modelled here."
-          % (qi + 1, m, m, dest, lv.get(dest, {}).get("name", "?"), wlabel(dest).split(":")[0].capitalize())
-          for qi, m, dest, _fx, _fy in warps]
-    caps.append(dict(text=txt, calc=wl + [
-        "Placement shift (spec drlg/maze.md G1): growth never looks at where the level sits in the act; rooms grow "
-        "freely around the first room, so coordinates can go negative.",
-        "At the end the game takes the bounding box of all rooms (x0, y0) and adds (level.x - x0, level.y - y0) to "
-        "every room, so the box's top-left corner lands on the level's origin in the act map.",
-        "It is one translation for all rooms: shape, doors and Defs do not change. This picture is already drawn "
-        "relative to the box corner, so the shifted level would look the same."]))
+    for st, done, lead, cap in tlv:
+        frames.append(frame(len(frames), st, done, lead, total_steps))
+        caps.append(cap)
     return frames, caps, CW, CH, bytes(pal)
+
+
+def build_schematic(root, level, seed):
+    """The schematic mode (ADR-0036): rooms as labelled boxes, doors, the level's entry and exit marks; our own fixed
+    palette and the 5x7 font. No tile, no DS1 layout, no game palette: reads the tables of the user's own files only."""
+    steps, rooms, total = trace(root, level, seed)
+    lv = _levels(root)
+    tlv = timeline(level, steps, rooms, total, lv, [])
+    idx, pal = anim_common.schem_palette()
+    C = idx
+    x0 = min(q["rect"][0] for q in rooms)
+    y0 = min(q["rect"][1] for q in rooms)
+    gw = max(q["rect"][0] + q["rect"][2] for q in rooms) - x0
+    gh = max(q["rect"][1] + q["rect"][3] for q in rooms) - y0
+    CW, LH = 1100, 470
+    ms = max(2, min((CW - 40) // gw, (LH - 30) // gh, 12))
+    ox, oy = (CW - gw * ms) // 2, 24 + (LH - 24 - gh * ms) // 2
+    CH = LH + 5 * 18 + 8
+    all_links = steps[-1]["links"]
+    warps = sorted(d for d in lv[level]["vis"] if d)
+
+    def box(cv, x, y, w, h, col):
+        for yy in range(max(y, 0), min(y + h, CH)):
+            a, b = max(x, 0), min(x + w, CW)
+            if a < b:
+                cv[yy * CW + a:yy * CW + b] = bytes([col]) * (b - a)
+
+    def outline(cv, x, y, w, h, col, t=2):
+        box(cv, x, y, w, t, col)
+        box(cv, x, y + h - t, w, t, col)
+        box(cv, x, y, t, h, col)
+        box(cv, x + w - t, y, t, h, col)
+
+    def px(rc):
+        return ox + (rc[0] - x0) * ms, oy + (rc[1] - y0) * ms, rc[2] * ms, rc[3] * ms
+
+    def door(cv, a, b):
+        ra, rb = rooms[a]["rect"], rooms[b]["rect"]
+        if ra[0] + ra[2] == rb[0] or rb[0] + rb[2] == ra[0]:           # flush on a vertical edge
+            ex = ra[0] + ra[2] if ra[0] + ra[2] == rb[0] else rb[0] + rb[2]
+            lo, hi = max(ra[1], rb[1]), min(ra[1] + ra[3], rb[1] + rb[3])
+            cx, cy = ox + (ex - x0) * ms, oy + ((lo + hi) * ms // 2 - y0 * ms)
+            box(cv, cx - 4, cy - ms, 8, 2 * ms, C["door"])
+        elif ra[1] + ra[3] == rb[1] or rb[1] + rb[3] == ra[1]:          # flush on a horizontal edge
+            ey = ra[1] + ra[3] if ra[1] + ra[3] == rb[1] else rb[1] + rb[3]
+            lo, hi = max(ra[0], rb[0]), min(ra[0] + ra[2], rb[0] + rb[2])
+            cx, cy = ox + ((lo + hi) * ms // 2 - x0 * ms), oy + (ey - y0) * ms
+            box(cv, cx - ms, cy - 4, 2 * ms, 8, C["door"])
+
+    def frame(k, st, done, lead, total_steps):
+        cv = bytearray([C["bg"]]) * (CW * CH)
+        conv = len(st["links"]) == 0 and st["rooms"] == range(len(rooms))      # the conversion and final frames
+        for i in sorted(st["rooms"]):
+            x, y, w, h = px(rooms[i]["rect"])
+            box(cv, x + 1, y + 1, w - 2, h - 2, C["roomdone"] if i in done else C["room"])
+            outline(cv, x + 1, y + 1, w - 2, h - 2, C["acc"] if i == lead else C["edge"])
+            anim_common.text(cv, CW, CH, x + 6, y + 6, "R%d" % (i + 1), C["txt"], 2 if w >= 40 else 1)
+            if conv and w >= 40:
+                anim_common.text(cv, CW, CH, x + 6, y + 24, "DEF %d" % rooms[i]["d"], C["dim"], 1)
+                anim_common.text(cv, CW, CH, x + 6, y + 36, ("F%d" % (int(rooms[i]["how"].rsplit("File", 1)[1]))), C["dim"], 1)
+        for a, b in (all_links if conv else st["links"]):
+            door(cv, a, b)
+        if conv and lead is None:                                       # final frame: the level's entry and exit marks
+            for j, dest in enumerate(warps):
+                lab = wlabel(lv, level, dest)
+                yy = 30 + 22 * j
+                for t in range(-6, 7):
+                    w_ = 6 - abs(t)
+                    box(cv, 14 + 6 - w_, yy + 6 + t, 2 * w_ + 1, 1, C["warp"])
+                anim_common.text(cv, CW, CH, 32, yy, lab, C["warp"], 1)
+            anim_common.text(cv, CW, CH, 14, 30 + 22 * len(warps), "LEVEL ENTRY AND EXIT FROM LEVELS VIS (ROOM NOT SHOWN)",
+                             C["dim"], 1)
+        # caption strip
+        box(cv, 0, LH, CW, CH - LH, C["panel"])
+        anim_common.text(cv, CW, CH, 10, LH + 6, "STEP %d/%d    RNG DRAWS SO FAR: %d" % (k + 1, total_steps, st["rng"]),
+                         C["acc"])
+        for j, ln in enumerate(anim_common.wrap(st["text"], (CW - 20) // 12)[:3]):
+            anim_common.text(cv, CW, CH, 10, LH + 6 + 18 * (j + 1), ln, C["txt"])
+        anim_common.text(cv, CW, CH, 10, 8, "LEVEL %d  SEED %#X  (ILLUSTRATIVE INPUT)" % (level, seed), C["dim"])
+        return bytes(cv)
+    frames = [frame(k, st, done, lead, len(tlv)) for k, (st, done, lead, _cap) in enumerate(tlv)]
+    return frames, [t[3] for t in tlv], CW, CH, pal
 
 
 MAZE_HELP = """<li>Rooms are LvlMaze SizeX by SizeY tile blocks. A room is placed flush against a parent room on one of four sides:
@@ -528,18 +629,29 @@ MAZE_HELP = """<li>Rooms are LvlMaze SizeX by SizeY tile blocks. A room is place
 <li>Two random streams are used: the level seed (which room to grow from, each new room's seed, and at the end
 which preset file each room uses) and every room's own seed (which side to grow on, merge rolls).</li>
 <li>A draw advances a seed (lo, hi) as lo*0x6AC690C5 + hi (64-bit) and returns the new lo. "lo % n" picks one of n.</li>
-<li>Blue outline: placed room; yellow: this step's room; green line: a door between two rooms;
-cyan diamond: a warp (entry or exit stairs) from the preset map, labelled with the level it leads to.</li>
+@@MARKS@@
 <li>The seed is an illustrative input, not one the game derives from a game seed. Rooms the model tries and drops
 are listed in the calculations but not drawn.</li>"""
 
 
-def write_html(path, caps, W, H):
-    anim_common.write_html(path, caps, W, H, "maze animation", MAZE_HELP)
+MARKS_FULL = """<li>Blue outline: placed room; yellow: this step's room; green line: a door between two rooms;
+cyan diamond: a warp (entry or exit stairs) from the preset map, labelled with the level it leads to.</li>"""
+MARKS_SCHEM = """<li>Schematic drawing: each room is a labelled box (R and its number; after the conversion steps also its Def
+and the preset file index). Blue outline: placed room; yellow: this step's room; a green bar on a shared edge: a door
+between two rooms. The final frame lists the level's entry and exit by Levels Vis (cyan diamond); the schematic does
+not read the preset maps, so it does not say which room holds them.</li>"""
+
+
+def write_html(path, caps, W, H, schematic=False):
+    anim_common.write_html(path, caps, W, H, "maze animation", MAZE_HELP.replace(
+        "@@MARKS@@", MARKS_SCHEM if schematic else MARKS_FULL), anim_common.MARKER if schematic else None)
 
 
 def main(argv):
     argv = list(argv)
+    schematic = "--schematic" in argv
+    if schematic:
+        argv.remove("--schematic")
     opts = {"--out": None, "--scale": "8", "--gif-factor": "1"}
     for o in opts:
         if o in argv:
@@ -550,14 +662,19 @@ def main(argv):
         print(__doc__.strip(), file=sys.stderr)
         return 2
     root, level, seed = argv[0], int(argv[1]), int(argv[2], 0)
-    out = opts["--out"] or os.path.join(HERE, "..", "workspace", "render", "anim", "maze-%d-%x" % (level, seed))
+    out = opts["--out"] or os.path.join(HERE, "..", "workspace", "render", "anim", "maze-%d-%x%s" % (
+        level, seed, "-schematic" if schematic else ""))
     out = safe_out(out)
     os.makedirs(out, exist_ok=True)
-    frames, caps, W, H, pal = build(root, level, seed, int(opts["--scale"]))
+    if schematic:
+        frames, caps, W, H, pal = build_schematic(root, level, seed)
+    else:
+        frames, caps, W, H, pal = build(root, level, seed, int(opts["--scale"]))
+    text = {anim_common.MARKER_NAME: anim_common.MARKER} if schematic else None
     for i, f in enumerate(frames):
-        png.write_indexed(os.path.join(out, "frame-%03d.png" % i), W, H, f, pal, transparent=())
-    write_html(os.path.join(out, "index.html"), caps, W, H)
-    json.dump(caps, open(os.path.join(out, "steps.json"), "w"), indent=1)
+        png.write_indexed(os.path.join(out, "frame-%03d.png" % i), W, H, f, pal, transparent=(), text=text)
+    write_html(os.path.join(out, "index.html"), caps, W, H, schematic)
+    anim_common.write_steps_json(os.path.join(out, "steps.json"), caps, schematic)
     fac = int(opts["--gif-factor"])
     if fac > 1:
         gw, gh = W // fac, H // fac
@@ -566,7 +683,10 @@ def main(argv):
     delays = [90] * len(frames)
     delays[-1] = 500
     with open(os.path.join(out, "maze.gif"), "wb") as fh:
-        fh.write(encode_gif(frames, W, H, pal, delays))
+        fh.write(encode_gif(frames, W, H, pal, delays, anim_common.MARKER if schematic else None))
+    if schematic:                  # the marker's list: every file of this run, with its hash; the user's data root and --out left out
+        names = ["maze.gif", "index.html", "steps.json"] + ["frame-%03d.png" % i for i in range(len(frames))]
+        anim_common.write_schematic_json(out, "maze_anim", [str(level), argv[2]], names)
     print("%d frames -> %s" % (len(frames), out))
     return 0
 

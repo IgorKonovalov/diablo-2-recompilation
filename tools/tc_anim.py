@@ -3,7 +3,7 @@ ending with the dropped items' inventory icons.
 
 Usage:
   python3 -I tools/tc_anim.py <root> <monster|superunique|TC name> <seed> [--difficulty 0|1|2|normal|nightmare|hell]
-        [--players N] [--mf N] [--mlvl N] [--kind normal|champion|unique|minion] [--max N] [--out DIR]
+        [--players N] [--mf N] [--mlvl N] [--kind normal|champion|unique|minion] [--max N] [--out DIR] [--schematic]
   python3 -I tools/tc_anim.py selftest <root> <log> [<log> ...]      (instrumented run against kept game logs)
 
 <root> is the merged data tree (workspace/merged). The first argument names a MonStats Id (--kind picks the
@@ -21,6 +21,13 @@ workspace/render/anim/tc-<name>-d<difficulty>-<seed hex>/:
   tc.gif         the frames as an animated GIF (global palette: UI colours then the icons' colours)
   index.html     local step-through page (prev/next/play, slider, arrow keys, calculations, how to read this)
   steps.json     {text, calc} per step
+
+--schematic (ADR-0036, the public export's mode): each dropped item is a name card coloured by its quality, no
+icon; our own fixed palette (tools/anim_common.py SCHEM_UI) and the 5x7 font. It imports and opens no art decoder (dc6,
+item_art, palette, dt1, ds1 tile layers); the base item names come from the weapons, armor and misc tables. The steps,
+calculations and captions are those of the full mode except the "Inventory icon" line. Every output file carries the
+schematic marker (PNG tEXt chunk, GIF comment, HTML comment, steps.json key "schematic_only"); schematic.json lists the
+files with their sha256. The full mode never writes the marker. The default DIR gets a -schematic suffix.
 
 Every caption and calculation line restates a spec section; it claims nothing of its own. Models used, all
 reading of the specs, none re-derived here: tools/tc.py (Tables, nodrop_scaled; the resolver loop is the
@@ -50,11 +57,8 @@ if HERE not in sys.path:
 
 import affixes  # noqa: E402
 import anim_common  # noqa: E402
-import dc6  # noqa: E402
 import excel_bin  # noqa: E402
-import item_art  # noqa: E402
 import items_chain  # noqa: E402
-import palette as pal  # noqa: E402
 import png  # noqa: E402
 import props  # noqa: E402
 import tbl  # noqa: E402
@@ -427,8 +431,31 @@ def find_source(M, name, diff, kind, mlvl):
 
 # ---------------------------------------------------------------- icons (items/0003)
 
+class Names:
+    """Schematic mode (ADR-0036): the base items' shown names from the weapons, armor and misc tables, as
+    item_art.cmd_index's "name" column gives them (first row of a code wins), and no icon. Imports no art decoder."""
+
+    def __init__(self, M):
+        self.M = M
+        self.base = {}
+        for kind in ("weapons", "armor", "misc"):
+            h, rows = excel_bin.read_txt(excel_bin.find_file(M.excel, kind, ".txt"))
+            low = {}
+            for i, c in enumerate(h):
+                low.setdefault(c.lower(), i)
+            for r in rows:
+                self.base.setdefault(r[low["code"]].strip(), dict(name=r[low["name"]].strip()))
+
+    def render(self, code, q, row, it):
+        return None, "name card, no icon (schematic mode)"
+
+
 class Icons:
     def __init__(self, M):
+        global dc6, item_art, pal       # the art decoders load only in the full mode (schematic mode never imports them)
+        import dc6
+        import item_art
+        import palette as pal
         self.M = M
         root = M.root
         self.units = pal.load(root, "units")
@@ -510,11 +537,11 @@ class Canvas:
               q_low=(150, 150, 150), q_normal=(235, 235, 235), q_superior=(200, 200, 200), q_magic=(110, 130, 255),
               q_set=(60, 220, 60), q_rare=(255, 240, 80), q_unique=(205, 160, 90), black=(0, 0, 0))
 
-    def __init__(self, W, H):
+    def __init__(self, W, H, ui=None):
         self.W, self.H = W, H
         self.pal = []
         self.near = {}
-        self.C = {k: self.alloc(v) for k, v in self.UI.items()}
+        self.C = {k: self.alloc(v) for k, v in (ui or self.UI).items()}
         self.frozen = False
 
     def alloc(self, rgb):
@@ -580,15 +607,16 @@ def fseed(s):
 
 
 class Anim:
-    def __init__(self, M, src, seed, diff, players, mf, mx):
+    def __init__(self, M, src, seed, diff, players, mf, mx, schematic=False):
         self.M, self.src, self.seed, self.diff = M, src, seed, diff
+        self.schematic = schematic
         self.players, self.mf, self.mx = players, mf, mx
         self.steps = []
         self.view = dict(stack=[], cur=-1, log=[], dropped=[], item=None, items_done=0)
         self.made = set()
         self.gseed = ((seed * 0x9E3779B1 + 1) & M32, 666)
         if not hasattr(M, "_icons"):
-            M._icons = Icons(M)
+            M._icons = Names(M) if schematic else Icons(M)
         self.icons = M._icons
         self.pending_icons = []
 
@@ -831,8 +859,9 @@ class Anim:
         self.S("Item complete: %s." % title,
                ["Result of the model: quality %d (%s)%s." % (q, QNAME.get(q, q), "" if not res["steps"] else
                                                           ", reached by the fallback chain %s (uniques-sets.md E)" % " -> ".join(res["steps"])),
-                "Inventory icon: %s (items/0003: the identified view; magic and rare items take the first affix colour, "
-                "unique and set items their invtransform colour)." % inote,
+                ("Name card: coloured by quality, no icon (schematic mode)." if self.schematic else
+                 "Inventory icon: %s (items/0003: the identified view; magic and rare items take the first affix colour, "
+                 "unique and set items their invtransform colour)." % inote),
                 "Not modelled here: gold amount and gold find (tc.md H8-H9), ItemInitStats values, the ethereal and socket rolls, the automagic pick after them "
                 "(affixes.md J), the durability fix of a failed unique or set, property values."],
                item=itm)
@@ -940,7 +969,7 @@ class Anim:
             pass
         calc.append("Result: %s%s." % ("success" if res["ok"] else "failure", "" if not fb or res["ok"] else
                                        ", the next step of the chain follows"))
-        calc.append("ItemApplyProps draws (property values) are applied to the seed by tools/props.py; the values are "
+        calc.append("ItemApplyProps draws (property values) are applied to the seed by our property model; the values are "
                     "not shown.")
         itm["build"] += ["%s%s: %s" % ("fallback " if fb else "", kd, s) for s in shown] or [
             "%s%s builder %s" % ("fallback " if fb else "", kd, "ok" if res["ok"] else "failed")]
@@ -1050,13 +1079,21 @@ def draw(cv, A, st, k, total):
     for d in v["dropped"]:
         cv.rect(x, 430, 150, 180, C["bg"])
         cv.frame_rect(x, 430, 150, 180, C[QCOL[d["q"]]])
-        if d["icon"] is not None:
+        if A.schematic:
+            qn = QCOL[d["q"]][2:]
+            cv.rect(x, 430, 150, 180, C["qd_" + qn])          # the name card: no icon, our colours
+            cv.frame_rect(x, 430, 150, 180, C[QCOL[d["q"]]], 2)
+            cv.rect(x + 2, 432, 146, 22, C[QCOL[d["q"]]])
+            cv.text(x + 8, 436, QNAME[d["q"]].upper()[:11], C["black"], 2)
+            for j, ln in enumerate(anim_common.wrap(d["name"].upper(), 11)[:5]):
+                cv.text(x + 8, 464 + 18 * j, ln, C[QCOL[d["q"]]], 2)
+        elif d["icon"] is not None:
             w, h, _, _ = A.pending_icons[d["icon"]]
             sc = 2 if h <= 56 else 1
             cv.icon(x + (150 - w * sc) // 2, 434 + (112 - h * sc) // 2, A.pending_icons[d["icon"]], sc)
         else:
             cv.text(x + 8, 470, "NO ICON", C["dim"], 1)
-        for j, ln in enumerate(anim_common.wrap(d["name"].upper(), 24)[:3]):
+        for j, ln in enumerate(anim_common.wrap(d["name"].upper(), 24)[:3] if not A.schematic else []):
             cv.text(x + 6, 550 + 12 * j, ln, C[QCOL[d["q"]]], 1)
         if d["base"].upper() != d["name"].upper():
             for ln in anim_common.wrap(d["base"].upper(), 24)[:1]:
@@ -1077,9 +1114,10 @@ A NoDrop roll or a pick uses one draw on the source unit's seed; a sub-TC entry 
 <li>Right: the item being made. The six boxes are the quality tests in order (unique, set, rare, magic, superior, then
 normal or low): chance, the draw (RangeB of the chance, won below 128) and the result. Below: the creation builders on
 the item's own seed.</li>
-<li>Bottom: items dropped so far; an inventory icon appears once the item is complete.</li>
+<li>Bottom: items dropped so far; an inventory icon appears once the item is complete (schematic mode: a name card
+coloured by the item's quality, no icon).</li>
 <li>Each step's calculations name the spec section it restates (tc.md, quality.md, uniques-sets.md, affixes.md).
-Stages without a model in tools/ (monster level of an area, quest TC, gold, ItemInitStats, ethereal, sockets, automagic,
+Stages without a model here (monster level of an area, quest TC, gold, ItemInitStats, ethereal, sockets, automagic,
 property values) are marked "not modelled here".</li>
 <li>The seed is an illustrative input; the item seeds come from a game-seed stream derived from it, not from the
 game's own derivation.</li>"""
@@ -1089,6 +1127,12 @@ def cmd_render(argv):
     opts = {"--difficulty": "0", "--players": "1", "--mf": "0", "--mlvl": None, "--kind": "normal", "--max": "0",
             "--out": None}
     argv = list(argv)
+    schematic = "--schematic" in argv
+    if schematic:
+        argv.remove("--schematic")
+    targs = list(argv[1:])         # for schematic.json: as given, the data root (first) and --out left out
+    if "--out" in targs:
+        del targs[targs.index("--out"):targs.index("--out") + 2]
     for o in opts:
         if o in argv:
             i = argv.index(o)
@@ -1105,12 +1149,13 @@ def cmd_render(argv):
     mlvl = int(opts["--mlvl"]) if opts["--mlvl"] else None
     src = find_source(M, name, diff, opts["--kind"], mlvl)
     slug = "".join(c if c.isalnum() else "_" for c in src["label"].lower()).strip("_")
-    out = opts["--out"] or os.path.join(HERE, "..", "workspace", "render", "anim", "tc-%s-d%d-%x" % (slug, diff, seed))
+    out = opts["--out"] or os.path.join(HERE, "..", "workspace", "render", "anim", "tc-%s-d%d-%x%s" % (
+        slug, diff, seed, "-schematic" if schematic else ""))
     out = anim_common.safe_out(out)
     os.makedirs(out, exist_ok=True)
-    A = Anim(M, src, seed, diff, int(opts["--players"]), int(opts["--mf"]), int(opts["--max"]))
+    A = Anim(M, src, seed, diff, int(opts["--players"]), int(opts["--mf"]), int(opts["--max"]), schematic)
     A.run()
-    cv = Canvas(W, H)
+    cv = Canvas(W, H, anim_common.SCHEM_UI if schematic else None)
     for ic in A.pending_icons:
         cv.prealloc(ic)
     n = len(A.steps)
@@ -1120,15 +1165,20 @@ def cmd_render(argv):
         caps.append(dict(text=st["text"], calc=st["calc"]))
     p = cv.palette()
     for i, f in enumerate(frames):
-        png.write_indexed(os.path.join(out, "frame-%03d.png" % i), W, H, f, p, transparent=())
-    anim_common.write_html(os.path.join(out, "index.html"), caps, W, H, "treasure class drop animation", TC_HELP)
-    json.dump(caps, open(os.path.join(out, "steps.json"), "w"), indent=1)
+        png.write_indexed(os.path.join(out, "frame-%03d.png" % i), W, H, f, p, transparent=(),
+                          text={anim_common.MARKER_NAME: anim_common.MARKER} if schematic else None)
+    anim_common.write_html(os.path.join(out, "index.html"), caps, W, H, "treasure class drop animation", TC_HELP,
+                           anim_common.MARKER if schematic else None)
+    anim_common.write_steps_json(os.path.join(out, "steps.json"), caps, schematic)
     delays = [120] * n
     delays[-1] = 600
     gw, gh = W // 2, H // 2
     gf = [b"".join(f[y * 2 * W:y * 2 * W + gw * 2:2] for y in range(gh)) for f in frames]
     with open(os.path.join(out, "tc.gif"), "wb") as fh:
-        fh.write(anim_common.encode_gif(gf, gw, gh, p, delays))
+        fh.write(anim_common.encode_gif(gf, gw, gh, p, delays, anim_common.MARKER if schematic else None))
+    if schematic:
+        anim_common.write_schematic_json(out, "tc_anim", targs,
+                                         ["tc.gif", "index.html", "steps.json"] + ["frame-%03d.png" % i for i in range(n)])
     print("%d frames -> %s" % (n, out))
     return 0
 

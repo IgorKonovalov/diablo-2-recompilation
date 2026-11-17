@@ -270,7 +270,7 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   labelled boxes, their doors, the entry and exit marks; no tiles, no DS1 floor or wall layout. The drop: each item as
   a name card coloured by its quality; no icons. Our own fixed palette and the 5×7 font of `anim_common.py`. The same
   steps, calculation panels, captions and "How to read this" lines as the full mode. In schematic mode only, each
-  output file carries a marker (a PNG text chunk, a GIF comment, an HTML meta line, a `steps.json` key) and the tool
+  output file carries a marker (a PNG text chunk, a GIF comment, an HTML comment (the check bars `<meta`; amended at the Phase 2b review), a `steps.json` key) and the tool
   writes `schematic.json` (the tool, its arguments, each file's name and sha256). The full mode never writes the marker.
 - **Outputs:** the two tools, `tools/anim_common.py` as needed, their tests.
 - **Done when:** both tools run in schematic mode on the two illustration blocks of the wiki (`levels.md`,
@@ -562,3 +562,69 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   input:** the simplifier will drop every sentence holding a seed or a game-math value in hex (randomness.md's worked
   example, 17 lines), as X1 is written ("any other hex of 6 digits or more"). Whether such values may pass by a
   manifest line is a design question for the architect before Phase 6, not a check change. Next: Phases 2b, 3.
+- 2026-11-17 — **Phase 2b done** (archivist, lane/x70s; review requested, Tier A). `--schematic` in `tools/maze_anim.py` and
+  `tools/tc_anim.py`. Maze: rooms as labelled boxes (room number; Def and preset file index from the conversion steps
+  on), green door bars on shared edges, the level's entry and exit marks on the final frame. Drop: name cards coloured
+  by quality, no icon. Our palette (`SCHEM_UI` in `tools/anim_common.py`, 768-byte global palette, no `tRNS`) and the 5x7
+  font. The marker is the byte string `d2recon-schematic/1` (the one Phase 2's check, lane/x70c, looks for) in every
+  file: PNG `tEXt` chunk, GIF comment extension, an HTML comment, `steps.json` (an object `{"schematic_only", "steps"}`
+  in schematic mode; the full mode keeps the bare list). `schematic.json` is `{"marker", "tool", "args", "files":
+  {name: sha256}}`, every file but itself; args are as given, without the data root and `--out`. The full mode writes
+  none of it (byte-identical PNG and GIF to before the change; test).
+  - **Splits for the no-art import rule.** `maze_render.convert` and its tables moved to the new `tools/maze_conv.py`
+    (`maze_render` re-exports them); `tools/drlg.py` imports `dt1` lazily (only `dt1_keys` needs it), because
+    `maze_replay` imports `drlg`. `tc_anim.py` loads `dc6`, `item_art` and `palette` only inside the full mode's
+    `Icons`; schematic mode takes the base names from the weapons, armor and misc tables (`Names`, same "first row of a
+    code" rule as `item_art.cmd_index`). Full-mode steps differ in one calculation line only: "The tiles drawn are that
+    DS1's floor and wall cells..." now also says the schematic mode draws a box (both modes print the same line).
+  - **What cannot be equal, and why.** The maze's warp lines (per-room "This preset holds a warp" and the final
+    frame's "Warp" lines) come from the DS1 wall layer (orientation 10/11 cells), which the schematic mode does not
+    read; it shows the level's Levels Vis entry and exit marks (destination names) on the final frame without placing
+    them in a room. The drop's "Inventory icon" line becomes "Name card". Every other step text and calculation is
+    equal (test, 43 maze steps and 87 drop steps).
+  - **The DS1 reads that stay.** The map-scan model (`convert` step 5a, `drlg.PresetUnitData.ds1`) needs a preset DS1's
+    object list and its `floor0` cell values for the draw counts, so the DS1 file is opened and that one caller reads
+    that layer; no drawing code reads a layer. The test enforces exactly this (a guard on the `layers` key that admits
+    only that caller), together with blocked imports of `dt1`, `dc6`, `item_art`, `palette` and `maze_render`, blocked
+    opens of `.dt1`, `.dc6`, `.dcc`, `.pl2` and palette folders, and blocked `ds1._Tiles`, `_scan_cells`, `ds1_files`.
+    This is a narrower reading of "ds1 tile layers blocked" than the done-when's wording; the reviewer should rule on it.
+  - **Fits with the check's rules** (x70c's `export_check.py`, read from lane/x70c, commit 5475952b, not merged): its
+    `html_problems` bars `<meta` and a `src=` attribute-like string, so the step-through page in schematic mode has no
+    `<meta>` (pure ASCII with character references; the marker is an HTML comment) and sets the frame with
+    `setAttribute('src', ...)`. The plan's "HTML meta" line becomes "HTML comment". The check passes the two
+    output folders below as illustration folders of a cut-shaped tree (0 failures); the done-when item "Phase 2's check
+    passes the output folder" is met against that unmerged version and should be re-run after the merge.
+  - **Runs** into `workspace/render/schematic/` (never git): `drlg-maze-level36/` (`maze_anim.py 36 0xc0ffee`, 43 frames,
+    0.7 MB) and `items-tc-andariel-hell/` (`tc_anim.py andariel 0xc0ffee --difficulty 2 --mf 200`, 87 frames, 1.6 MB),
+    the args of the two wiki illustration blocks. Test: `python3 -I tools/test_anim_schematic.py` (5 tests, about
+    20 s; skipped without `workspace/merged`). Next: the architect's review; then Phase 3 can run illustration blocks.
+- 2026-11-17 — **Phase 2b review** (architect, Tier A, lane/x70s): **accept with fixes 4; one done-when item open.**
+  Full mode: PNG frames and GIFs byte-identical to `main` for both wiki blocks (rerun of `main`'s tools against the
+  branch's full output); `index.html` and `steps.json` differ only by the intended lines (the "tiles drawn" line, the
+  drop help's name-card note). No marker, no `schematic.json` in the full mode (test). Renders looked at (maze final and
+  a conversion frame, the drop's last frame): boxes, door bars, cards and the 5x7 font in our palette; no game pixel.
+  - **Ruling 1 (DS1 read).** Within ADR-0036: the schematic mode depicts no layout, and the DS1 file is opened only
+    for its object list, which is model input (the map scan's keep/drop draws), not art. The lane's reason was off: the
+    draw counts use the object list only; `floor0` is copied by `PresetUnitData.ds1` into its cache and never read on
+    this path. Fix (test tightened): `ds1.parse` is admitted only from `PresetUnitData.ds1`, the `layers` key is
+    hidden from the mapping (no `items`, iteration or copy reaches it) and handed only to that caller, and the
+    `floor0` copy of `PresetUnitData.ds1`'s result is hidden from any caller outside `tools/drlg.py`. A probe confirmed
+    each guard raises.
+  - **Ruling 2 (warps).** Accepted: entry and exit by Levels Vis, not placed in a room; the help line says so. The
+    steps equality exceptions (4 warp lines in the maze, 5 icon or card lines in the drop) are exactly the lines from
+    the art; every step text is equal.
+  - **Ruling 3 (HTML marker).** Accepted; the Phase 2b *What* now says "an HTML comment".
+  - **Names on cards** (base, unique, set and affix names from the tables) are text naming a row, kept by the
+    redaction-depth table's names row; fine under ADR-0036.
+  - **Fixes from the merged check** (lane/x70c, merged in 2ec0152c; X11 now runs X1-X4 and X9 on the folder's text):
+    `schematic.json` names the tool without `.py` (X3) and writes a hex argument in decimal (X1); the drop's captions
+    and help say "our property model" and "without a model here" in place of `tools/props.py` and `tools/` (X3, both
+    modes, so the steps stay equal).
+  - **Open (done-when "Phase 2's check passes the output folder", not met against the merged check):** the captions'
+    RNG arithmetic writes the seed, each draw's `lo` and the LCG multiplier in hex (about 300 values over the two
+    folders), and X1 fails every one; X3 reads `00c0ffee` as a commit hash. Not fixed here and the check is not
+    weakened. Options for the orchestrator or the owner: (a) the schematic mode writes these numbers in decimal (X1's
+    risk is addresses; seeds and draws are our model's values, but the multiplier is a code-image constant, ADR-0031);
+    (b) drop the hex-carrying calculation lines in schematic mode (loses the arithmetic the animation exists for);
+    (c) a scoped allowance in the check. Re-run the check on both folders after the ruling and after merging `main`.
+  - Ledger: architect-review, accept with fixes 4 (tests 1, tools 2, plan 1).

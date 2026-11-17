@@ -97,7 +97,6 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import ds1 as ds1mod  # noqa: E402
-import dt1 as dt1mod  # noqa: E402
 from rng import INIT_HIGH, MASK, step  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
@@ -279,6 +278,7 @@ class Data:
     def dt1_keys(self, name):
         """{(orientation, main, sub): [rarity, ...] in file order} for one DT1."""
         if name not in self._dt1:
+            import dt1 as dt1mod    # lazy: only the tile-key reads need it (tools/maze_anim.py --schematic never does)
             h = dt1mod.parse(open(self.tile_path(name), "rb").read())
             keys = {}
             for t in h["tiles"]:
