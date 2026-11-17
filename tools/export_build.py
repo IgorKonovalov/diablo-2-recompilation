@@ -72,7 +72,8 @@ WS = os.path.join(REPO, "workspace")
 ILLUS_TIMEOUT = 600
 SCHEMATIC_TOOLS = ("maze_anim.py", "tc_anim.py", "rng_anim.py", "seedtree_anim.py", "quality_anim.py", "special_anim.py",
                    "timing_anim.py", "frame_anim.py", "links_anim.py", "preset_anim.py",
-                   "path_anim.py", "runeword_anim.py", "move_anim.py")
+                   "path_anim.py", "runeword_anim.py", "move_anim.py",
+                   "combat_anim.py", "hire_anim.py", "affix_anim.py")
 ILLUS_KEYS = ("id", "tool", "args", "seed", "illustrates", "caption")
 ILLUS_VALUES = ("computed", "restated")   # optional `values:` key, default computed (review of lane/x11s)
 WIDGET_KEYS = ("id", "widget", "illustrates", "caption", "fallback")

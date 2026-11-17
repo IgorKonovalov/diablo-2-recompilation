@@ -1976,3 +1976,16 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `test_schematic_kit` (29), `test_export_build` (154), `test_export_check` (191), `test_anim_schematic` (5); gate
   green. Ledger: verdict accept with fixes, 8 (misread 1, omission 2, other 5). **For the spec-writer:** place the five
   blocks as their Place lines say; row 21 caption could add that the path stops in the same frame (the frames say so).
+- 2026-11-17, archivist, lane/x12e (Phase 11 batch 2: rows 17, 18, 19). New `tools/combat_anim.py` (a toy melee hit: to-hit,
+  block, build and delivery draws in order on two seeds), `tools/hire_anim.py` (a hire list: the n seeds, ten picks, ten
+  entries, 23 frames) and `tools/affix_anim.py` (one magic-affix pick: alvl, draw 1, filter counts, weights, draw 2; 4 to 7
+  frames); all in `SCHEMATIC_TOOLS` (new lines in `export_build.py` and its assertion). **Models:** `hirelings.py`
+  `build_stock(trace=)` and `roll_entry(trace=)`, and `affixes.py` `Walk.pick(trace=)` (a refused count per test), each with
+  an optional trace argument and nothing else changed (no-change proof: 288 hire-list builds and 11 400 picks identical
+  before and after; `hirelings.py check` and `affixes.py check` output identical on a kept log). `combat.py` is a log
+  checker with no forward function, so `combat_anim.py` writes the spec's rules out with a trace on the model's step,
+  range, MulDiv and `Checker.get_defense`, and a test feeds its numbers to `Checker.tohit`, `defence`, `build`,
+  `openwounds` and `crushing` as if logged. **Data (ADR-0009 risk 3):** the affix frames show counts only, at most five
+  ids with weights, a bar strip with no text and one name (the winner's); the hire frames show name indices, ids,
+  levels and prices; a test caps both. Tests: `test_combat_items_anim` (19), `test_schematic_kit`, `test_export_build`,
+  `test_export_check`, `test_anim_schematic`; gate green. Blocks: `blocks-batch2.md`, "Combat, hirelings, affixes (x12e)".

@@ -158,8 +158,11 @@ def exp_for_level(lvl, e):
     return s32(s32(s32((lvl + 1) * e) * lvl) * lvl)
 
 
-def build_stock(t, S, seller, vf):
-    """HIRE_BuildStock on a fresh table: [[name, seed, hired, listed] x 69], S stepped in place."""
+def build_stock(t, S, seller, vf, trace=None):
+    """HIRE_BuildStock on a fresh table: [[name, seed, hired, listed] x 69], S stepped in place.
+    trace: a list the animation tool passes (tools/hire_anim.py); each pick appends (k, u, v, probes, S after the pick's
+    draw) with u the draw, v the entry listed, probes the entries skipped (v None when the table is full). Nothing else
+    changes with it."""
     r = t.rows[t.seller_row(vf, seller)]
     first, last = r["first"], r["last"]
     n = last - first + 1
@@ -171,13 +174,19 @@ def build_stock(t, S, seller, vf):
     for _ in range(10):
         u = S.range(n)
         v = u
+        probes = 0
         while tab[v][3] or tab[v][2]:
             v += 1
+            probes += 1
             if v >= n:
                 v = 0
             if v == u:
+                if trace is not None:
+                    trace.append((len(trace), u, None, probes, (S.low, S.high)))
                 return tab, n
         tab[v][3] = 1
+        if trace is not None:
+            trace.append((len(trace), u, v, probes, (S.low, S.high)))
     return tab, n
 
 
@@ -188,15 +197,21 @@ def parse_table(hexs):
             for i in range(69)]
 
 
-def roll_entry(t, vf, plvl, seed, act, diff):
-    """HIRELING_RollEntry: (return value, 15 dwords) with the last dword's low word only (the code writes a word)."""
+def roll_entry(t, vf, plvl, seed, act, diff, trace=None):
+    """HIRELING_RollEntry: (return value, 15 dwords) with the last dword's low word only (the code writes a word).
+    trace: a dict the animation tool passes (tools/hire_anim.py); it receives k (the types), pick (draw 1), row (its
+    table row), low (draw 2's low word), mod (low mod 5) and raw (the level before the floor of 2). Nothing else
+    changes with it."""
     s = Seed(seed)
     rows = t.type_rows(vf, act, diff)
     if not rows:
         return 0, None
-    r = t.rows[rows[s.range(len(rows))]]
+    pick = s.range(len(rows))
+    r = t.rows[rows[pick]]
     low = s.step()
     lv = s32(plvl - 5 + (low % 5))
+    if trace is not None:
+        trace.update(k=len(rows), pick=pick, row=rows[pick], low=low, mod=low % 5, raw=lv)
     if lv < 2:
         lv = 2
     d = s32(lv - r["Level"])
