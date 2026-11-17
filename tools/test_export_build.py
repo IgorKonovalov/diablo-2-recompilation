@@ -112,6 +112,29 @@ def main():
        "a working-docs path fails X3")
     rows = eb.redact_table(["| a | b | c |", "|---|---|---|", "| x | 1 | fn:X@0x0045C370 |", "| y | 2 | data:T |"])
     ok(all(r.count("|") == 3 for r in rows), f"anchor-only column dropped ({rows})")
+    # x13f: a `tbl:` cell is content (it rewrites to its name); fn:/data: cells still go
+    rows = eb.redact_table(["| Table | Used for |", "|---|---|", "| tbl:Levels.txt:Id | the id |", "| tbl:Skills.txt:skill | skill |"])
+    ok(all(r.count("|") == 3 for r in rows), f"a tbl: column stays ({rows})")
+    ok(eb.rewrite_row(rows[2]) == "| `Levels.txt:Id` | the id |", f"a tbl: cell rewrites to its name ({eb.rewrite_row(rows[2])!r})")
+    rows = eb.redact_table(["| a | b |", "|---|---|", "| x | tbl:T.txt:c |", "| y | fn:X@0x0045C370 |"])
+    ok(all(r.count("|") == 2 for r in rows), f"a column mixing tbl: with other evidence still goes ({rows})")
+    rows = eb.redact_table(["| a | b |", "|---|---|", "| x | data:T |", "| y | fn:X@0x0045C370 |"])
+    ok(all(r.count("|") == 2 for r in rows), f"a data:/fn: column still goes ({rows})")
+    # x13f: a removal inside a code span with other text breaks the unit; a span of only the removed token goes
+    ok(eb.rewrite_text("The seed `E18C3A55:0090CE8A` pair.") == eb.BROKEN, "an address removed inside a span with other text breaks")
+    ok(eb.rewrite_text("It reads `0x006F0474 + 16*r` per row.") == eb.BROKEN, "an address in a formula span breaks")
+    ok(eb.rewrite_text("It calls `jmp [eax*4 + 0x006F0474]` here.") == eb.BROKEN, "an address in a call span breaks")
+    ok(eb.rewrite_text("It is read, `0x006F0474`, twice.") != eb.BROKEN, "a span of only the address goes")
+    ok(eb.rewrite_text("It is read, `0x006F0474`-`0x006F0478`, twice.") != eb.BROKEN, "two address-only spans go")
+    ok(eb.rewrite_text("It uses `a`, then 0x006F0474, then `b` twice.") != eb.BROKEN, "a removal between two spans is not inside one")
+    ok(eb.rewrite_text("It reads `x + 4` and 0x006F0474 here.") != eb.BROKEN, "a removal outside a span, with a span elsewhere, stays")
+    # x13f: the same in a pseudocode line's code part: the line stays as it was (the block then drops); a tail goes as before
+    ok(eb.rewrite_fence_line("if hp \u2265 0x00800010: hp \u2190 1") == "if hp \u2265 0x00800010: hp \u2190 1", "an operand removed in a code part leaves the line")
+    ok(eb.rewrite_fence_line("x \u2190 f(y)    [C] (fn:F@0x0045C370)") == "x \u2190 f(y)    [C]", "a tail removal still rewrites")
+    # x13f: an arrow range collapses like an en-dash range
+    ok(eb.rewrite_text("It spans (0x005C68AC \u2192 0x005C68F0) here.") == eb.rewrite_text("It spans (0x005C68AC \u2013 0x005C68F0) here."),
+       f"an arrow range collapses ({eb.rewrite_text('It spans (0x005C68AC \u2192 0x005C68F0) here.')!r})")
+    ok("\u2192" not in eb.rewrite_text("Range 0x005C68AC \u2192 0x005C68F0 is dead."), "no arrow left by a range")
     rows = eb.redact_table(["| a | b |", "|---|---|", "| x | fn:X@0x0045C370 |", "| y | plain words |"])
     ok(len(rows[0].split("|")) == 4, "a column with prose cells stays")
     # Phase 9 review: a tag's evidence parenthetical that fails a text rule goes whole; one that passes stays

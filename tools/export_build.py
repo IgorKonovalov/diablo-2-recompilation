@@ -313,8 +313,14 @@ RE_BROKEN = re.compile(_LEAD + r"\x00\s*:|\x00\s*['\u2019]s\b|" + _LEAD + r"\x00
 _ADDR = (r"@?0x[0-9A-Fa-f]{6,8}\b|@?0x(?:00)?[4-9][0-9A-Fa-f]{0,5}[xX?]+[0-9A-Fa-f]*\b"
          r"|(?<![A-Za-z0-9._])(?:00[4-9][0-9]{5}|(?=[0-9A-Fa-f]*[0-9])(?=[0-9A-Fa-f]*[A-Fa-f])[0-9A-Fa-f]{6,8})(?![\w.])")
 RE_ADDR = re.compile(r"(?<![\w+/@])(?:" + _ADDR + ")")
-RE_ADDR_SPAN = re.compile(r"`\x00(?:\s*[\u2013\u2014-]\s*\x00)*`")
-RE_ADDR_RANGE = re.compile(r"\x00(?:\s*[\u2013\u2014-]\s*\x00)+")
+RE_ADDR_SPAN = re.compile(r"`\x00(?:\s*[\u2013\u2014\u2192-]\s*\x00)*`")
+RE_ADDR_RANGE = re.compile(r"\x00(?:\s*[\u2013\u2014\u2192-]\s*\x00)+")
+# a removal inside a code span that holds anything else changes what the span says (a formula loses an operand, a
+# seed pair its low word): the unit is broken. A span made only of removed tokens went whole (RE_ADDR_SPAN, _OPEN).
+# the same in a pseudocode line's code part: a removed value beside an operator or an arrow leaves the expression
+# without an operand (`if hp >= : hp <-`, `[ + 4*r]`); the line then stays as it was and the block drops
+RE_OPERAND_HOLE = re.compile(r"(?:[\u2265\u2264\u2190<>=!+*&|^%-]|<<|>>)[ \t]*\x00|\x00[ \t]*(?:[\u2265\u2264\u2190+*&|^%]|[<>=!]=?|<<|>>)")
+RE_SPAN = re.compile(r"`[^`\n]*`")                # scanned left to right, so the pairs are the opening and closing ticks
 RE_PLAN = re.compile(_OPEN + r"(?:(?:\u00a7\s*)?\b(?i:plans?)\s+\d{4}(?:\s*(?:,|and|/)\s*\d{4})*(?:\s+(?:Phase|phase|P)\s*\d+[a-z]?(?:\.\d+)?)?"
                      r"(?:\s+batch\s+\w+(?:\s+rows?\s+\d+)?)?"
                      r"|\bADR-\d+(?:\s*\u00a7\s*[\w.]+)?|(?<![A-Za-z0-9])lane/[\w-]+)(?(1)`)")
@@ -427,7 +433,13 @@ def rewrite_text(text, plain=False, lenient=False):
                 out.append(SENT)
         last = m.end()
     out.append(_rw_plain(text[last:], plain))
-    return sent_cleanup("".join(out), lenient)
+    res = "".join(out)
+    if not lenient and not plain and SENT in res and any(
+            re.sub(r"[\s\x00\u2013\u2014\u2192,;+-]", "", m.group(0).strip("`")) for m in RE_SPAN.finditer(res) if SENT in m.group(0)):
+        return BROKEN
+    if plain and not lenient and RE_OPERAND_HOLE.search(res):
+        return BROKEN
+    return sent_cleanup(res, lenient)
 
 
 RE_TAIL = re.compile(r"\s{2,};\s|\s//\s|\s{2,}(?=\[[CI]\])|\s{2,}(?=\()")
@@ -518,8 +530,16 @@ def split_row(line):
     return re.split(r"(?<!\\)\|", s)
 
 
+def is_tbl_cell(cell):
+    """A cell of `tbl:` anchors only: a table and column name, which the rewrite keeps as in prose (x13f)."""
+    c = cell.strip()
+    return bool(re.search(r"\btbl:", c)) and not re.search(r"\b(?:fn|data|struct|fmt|src|run):|0x|findings|/\d{4}", c)
+
+
 def redact_table(lines):
-    """Drop a column whose body cells are all anchors, addresses or links to findings (and at least one is)."""
+    """Drop a column whose body cells are all anchors, addresses or links to findings (and at least one is). A column
+    whose every filled cell is `tbl:` anchors is a name column (Inputs > Tables): content, it stays (x13f). One that
+    mixes `tbl:` cells with other evidence is an evidence column and goes."""
     rows = [split_row(x) for x in lines]
     if len(rows) < 3:
         return lines
@@ -528,6 +548,9 @@ def redact_table(lines):
     for c in range(ncol):
         body = [r[c] for r in rows[2:] if c < len(r)]
         if body and all(is_evidence_cell(x) for x in body) and any(x.strip() for x in body):
+            filled = [x for x in body if x.strip() not in ("", "-", "\u2014", "\u2013")]
+            if filled and all(is_tbl_cell(x) for x in filled):
+                continue
             drop.append(c)
     if not drop or len(drop) == ncol:
         return lines

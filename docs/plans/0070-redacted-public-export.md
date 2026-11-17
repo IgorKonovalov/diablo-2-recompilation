@@ -2348,8 +2348,36 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `.claude`, Ghidra, harness, objdump, debugger, the repository name, `/home`: 0; `run:` ids 0; image addresses 2,
   both the pinned flag values of save/d2s; `fn:`/`src:` 4, all code text (`src: boss`, `hitfn:`). Manifest and
   `reviewed-pages.txt` updated (2026-11-17). *Found for the builder* (backlog
-  [2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column](../backlog/2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column.md)):
+  [2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column](../backlog/archive/2026-11-17-architect-archivist-export-builder-code-span-and-anchor-column.md)):
   an image-range value removed from inside a code span leaves a changed formula or seed in units the builder keeps,
   on published pages too (drlg/README and maze seed words, drlg/outdoor's four `[ + …]` reads, items/affixes and
   economy seed words, items/properties, monsters/stats `hp ≥` …); and an Inputs table whose cells are all `tbl:`
   anchors loses its name column (15 published specs). The export-readiness entry stays open for part B.
+- 2026-11-17, archivist, lane/x13f (builder: code-span removals break the unit; tbl: columns kept; → ranges). Backlog
+  entry from the lane/x13a review, items 1–3, in `tools/export_build.py`. *Rules.* (1) A removal inside a backtick
+  span that holds anything else (an address, run id, anchor, path or plan reference taken out of it) makes the unit
+  `broken` (it drops, reported as such); a span of only removed tokens goes whole as before; spans are paired left to
+  right, so a removal between two spans is not inside one. A table cell broken this way becomes a dash. In a pseudocode
+  line's code part a removed value beside an operator or an arrow (`if hp ≥ : hp ←`, `& `) leaves the line as it was and
+  the block drops (the tail stays lenient). Values that are not addresses but lie in the image range (`0x400000`,
+  `0x800000`, `0x7FFFFF`, a seed's low word) still go and now drop their unit: the spec-writer names, pins or rewords.
+  (2) `redact_table`: a column whose every filled cell is `tbl:` anchors is a name column and stays (its cells rewrite
+  to the name as in prose); a column that mixes `tbl:` with other evidence goes as before. (3) `→` ranges collapse like
+  en-dash ranges. Tests: 169 checks in test_export_build (both ways for each: a seed span, a formula span, a call span,
+  an address-only span, two address-only spans, a removal between spans, tbl: column kept / mixed column dropped /
+  fn:+data: column dropped, the arrow range, the fence operand and the fence tail); export_check 191, widgets 274,
+  publish 44 green. *Measure* (cut of main 87b7df0f against the lane's, text only, then one full build with
+  illustrations; 81 pages, 0 dropped; specs words dropped 16.6 % (60 692 of 364 889), same as before: the 24 units
+  that drop carry few words, tables that keep a name column count more words kept, net per page below); no spec near
+  the bar (highest combat/to-hit 24.3 %, anim/movement 24.1 %, both unchanged). Newly dropped prose and table units 24
+  (drlg/README 1, maze 5, outdoor 4, warps 1, items/properties 1, quest-drops 2, economy 1, inventory 1, combat/damage 1,
+  combat/delivery 1, stats/aggregate 1, skills/dispatch 2, path/README 1, sim/frame 1, save/d2s 1) and 7 pseudocode
+  blocks (drlg/lifecycle E, outdoor K, items/economy C and D, properties F, monsters/stats B, player/creation G; all a
+  flag or cap value, `0x400000`, `0x800000`, `0x7FFFFF`, left without its operand); words dropped changed on 26 specs
+  (e.g. drlg/maze 439 to 583, outdoor 1 536 to 1 676, delivery 1 141 to 1 310, d2s 1 243 to 1 409; fewer where a name
+  column is kept: drlg/README 675 to 630, items/use 607 to 561, skills/catalogue 474 to 416); about 90 table rows
+  changed words (their Inputs-table name column kept, 15 specs) and 4 rows whose evidence cell is now a dash
+  (skills/dispatch and missiles Constants, path/README A, items/affixes example 3's seed cell). Not changed: an arrow
+  chain whose head is an address (`(→ ActCreate)` in save/d2s D4 and a chain in quests/travel G1) keeps its lone arrow,
+  one for the reader to reword. Full list: `/tmp/claude-1000/-home-igor-Work-recompilcation-project/eb61de30-a30a-401a-a3db-30c67be2439b/scratchpad/x13f/changes-final.txt` (prose and tables; the fence blocks are the seven above).
+  `export_check … --repo workspace/export-repo/`: 0 failures, 1014 warnings. Backlog entry closed.
