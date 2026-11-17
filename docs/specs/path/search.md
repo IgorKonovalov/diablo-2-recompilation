@@ -5,7 +5,7 @@ target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/overview]
 consumed_by: [path/overview, anim/movement, skills/overview, skills/missiles, skills/catalogue, monsters/ai]
 tags: {C: 117, I: 27, L: 4}
-updated: 2026-11-16
+updated: 2026-11-17
 ---
 
 # The planners: search, greedy, type 1, type 15, random walk, spiral and the rest
@@ -319,7 +319,7 @@ PathPlanOnePoint(ctx) → 0 or 1:                                    [C] (fn:sub
   points[0] ← pt;  +0x28 ← 1;  return 1
 ```
 
-- F. [C] In the game 54 + 346 plans of the player's own Leap, one branch, one point, no grid needed in the first run's 54. The refusal branch rests on the emulation. (0x005DA00C, run:2026-11-04-path, run:2026-11-04-path-2)
+- F. [C] In the game 54 + 346 plans of the player's own Leap or Leap Attack, one branch, one point, no grid needed in the first run's 54. The refusal branch rests on the emulation. (0x005DA00C, run:2026-11-04-path, run:2026-11-04-path-2)
 
 ### G. Type 1: best-first over a pool of 200
 

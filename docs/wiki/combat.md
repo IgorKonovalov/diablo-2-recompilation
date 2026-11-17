@@ -1,7 +1,7 @@
 ---
 based_on:
-  - docs/specs/combat/README.md 2026-11-16
-  - docs/specs/combat/to-hit.md 2026-11-16
+  - docs/specs/combat/README.md 2026-11-17
+  - docs/specs/combat/to-hit.md 2026-11-17
   - docs/specs/combat/damage.md 2026-11-16
   - docs/specs/combat/reductions.md 2026-11-16
   - docs/specs/combat/delivery.md 2026-11-16
@@ -197,6 +197,14 @@ as moving for it, takes the evade path only, as a moving player does (confirmed 
 Each of these rolls is made only when its chance is above 0, so a defender without them draws nothing; that held
 for every logged event. A missile with no physical damage cannot be blocked, which is confirmed: 10 387 such missile
 events drew no block, 6 838 of them in logs where the player blocked other missiles.
+
+**A missile's soft hit.** The result word can carry a bit of its own for a missile, the soft hit. Three places set
+it. A missile damage function sets it on one roll of the missile's seed, confirmed under emulation. The other two are
+read from the code: a missile row with `SoftHit` and without `GetHit` sets it on a hit, and a missile row with neither
+`GetHit` nor `KnockBack` turns a block, an evade or an avoid into a soft hit that delivers no damage, in place of the
+block, evade or avoid bit. The 537 logged deliveries with the bit are confirmed to be 491 of the missile row `firestorm` and 46
+of the row `meteorfire`, and no other row; that the 46 come from the damage function's roll is read from the code
+([to-hit § C](../specs/combat/to-hit.md#c-the-hit-test-and-the-defence-rolls)).
 
 ## Building the damage
 

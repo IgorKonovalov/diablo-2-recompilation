@@ -1,8 +1,8 @@
 ---
 based_on:
-  - docs/specs/path/README.md 2026-11-16
-  - docs/specs/path/search.md 2026-11-16
-  - docs/specs/drlg/collision.md 2026-11-16
+  - docs/specs/path/README.md 2026-11-17
+  - docs/specs/path/search.md 2026-11-17
+  - docs/specs/drlg/collision.md 2026-11-17
 ---
 
 # Pathing
@@ -130,14 +130,14 @@ creation, and the mark calls take the mark mask while the plan reads the test ma
 **The test masks are seen in the game** for players and monsters:
 
 - **A player** tests `0x1C09`: every logged plan of a walk or run start, 3 999, and of Charge, 213. The other player plans are skill overrides,
-  Whirlwind's 158 and the 400 of the Leap Attack path, whose test and mark masks are both 0.
+  Whirlwind's 158 and the 400 of the flight path Leap and Leap Attack share, whose test and mark masks are both 0.
 - **A monster** tests by its MonStats flags: `0x1804` when flying, `0x3401` when it opens doors, `0x3C01` otherwise, in 21 126 plans. The wraith
   base class tests `0x804` by the creation's own branch, taken before the flag rule, in 27 plans. All 21 375 monster plans mark `0x100`.
 - **A vulture after its take-off** tests 0, set by its AI: the other 249 monster plans, of the two vulture classes.
 
 Neither of Whirlwind's masks, the plan's and the flight's, holds `0x100`, `0x1000` or `0x2000` (checked by a second reading), so no live unit's mark
-refuses that plan or that flight. The Whirlwind plan's mask ran to its boundary under emulation. Leap's flight sets the player's test mask to 0 and back
-at the landing; that the 400 plans above are that flight's is not read.
+refuses that plan or that flight. The Whirlwind plan's mask ran to its boundary under emulation. The flight of Leap or Leap Attack sets the player's test mask to 0 and back
+at the landing; the 400 plans above are that flight's, read from the code (one helper serves both skills, and which of the two made each plan is not told apart).
 
 **Two AI removals read a monster's `SizeY`.** A monster's footprint reads `SizeY` only through the rectangle mark and unmark, and two AI routines, one of them Baal's
 walk to the stairs, unmark their own monster's `SizeX × SizeY` rectangle (checked by a second reading). The two columns are
@@ -245,7 +245,7 @@ the code).
 ### One point: type 9
 
 The line test alone, and the plan is its end, or 0 if that is the start
-([search § F](../specs/path/search.md#f-the-one-point-type-9)). In the game, 54 + 346 plans of the player's own Leap, on one
+([search § F](../specs/path/search.md#f-the-one-point-type-9)). In the game, 54 + 346 plans of the player's own Leap or Leap Attack, on one
 branch, one point each. The refusal branch rests on the emulation.
 
 ### Best-first: type 1
@@ -392,7 +392,7 @@ landing 11.
 The **candidates** for the 11 were chosen after the result and not tested on data they did not see:
 
 - **8 are order:** the planning unit's own unmark over a reservation (4), a monster that left a reserved cell (1), the target's
-  unmark (2), the player's mask set to 0 at Leap's flight (1).
+  unmark (2), the player's mask set to 0 at the flight of Leap or Leap Attack (1).
 - **3 are the seventh caller** of the corpse call: class 194 in mode 14 ([Corpses](#corpses)).
 
 **No tested rule exists for either.** So a plan's grid stays an input, "the live cells", and a checker feeds the planners the
@@ -468,7 +468,7 @@ the code; the reset itself ran under emulation, 300 cases).
 | player | 2 | 7, or 8 in mode 19; 15 for the reach test of the position packet |
 | mode machine | 5 | the request's type, 15 as its fallback, current, 8 for knockback |
 | AI | 3 | 2, test plans that restore the path |
-| skill | 10 | 8 and 9 (Jump), 2 then 1 (a swarm's move), 1 (Diablo's run), current (Charge), 14 (Blessed Hammer), 7 (Whirlwind), 9 then 8 (Leap Attack) |
+| skill | 10 | 8 and 9 (Jump), 2 then 1 (a swarm's move), 1 (Diablo's run), current (Charge), 14 (Blessed Hammer), 7 (Whirlwind), 9 then 8 (Leap or Leap Attack) |
 | missile | 10 | 4 at creation, 10 from the four reseed callbacks, current for the rest |
 | movement | 2 | 13 or 2, then 15 or current (the replan) |
 | referenced by nothing | 2 | 16 |

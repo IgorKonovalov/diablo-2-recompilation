@@ -30,4 +30,4 @@ Points to check:
   defended missile reaches `AD0`.
 
 No symbols were added. The spec changes are in
-[`2026-11-17-reverser-spec-writer-fur-ai-idle-leap-labels-placeonground-bit-4000`](../2026-11-17-reverser-spec-writer-fur-ai-idle-leap-labels-placeonground-bit-4000.md).
+[`2026-11-17-reverser-spec-writer-fur-ai-idle-leap-labels-placeonground-bit-4000`](2026-11-17-reverser-spec-writer-fur-ai-idle-leap-labels-placeonground-bit-4000.md).

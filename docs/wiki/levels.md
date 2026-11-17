@@ -3,11 +3,11 @@ based_on:
   - docs/specs/drlg/README.md 2026-10-21
   - docs/specs/drlg/room-tiles.md 2026-10-27
   - docs/specs/drlg/preset.md 2026-11-03
-  - docs/specs/drlg/collision.md 2026-11-16
+  - docs/specs/drlg/collision.md 2026-11-17
   - docs/specs/drlg/maze.md 2026-11-03
   - docs/specs/drlg/warps.md 2026-11-10
   - docs/specs/drlg/outdoor.md 2026-11-10
-  - docs/specs/drlg/lifecycle.md 2026-11-16
+  - docs/specs/drlg/lifecycle.md 2026-11-17
   - docs/specs/monsters/spawn.md 2026-11-16
 ---
 

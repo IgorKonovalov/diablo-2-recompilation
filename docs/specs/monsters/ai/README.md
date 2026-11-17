@@ -4,7 +4,7 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, anim/timing, anim/movement, skills/dispatch, monsters/stats, path/overview, path/search, drlg/collision]
 consumed_by: [monsters/ai/machinery, skills/dispatch, monsters/stats, monsters/spawn, hirelings, drlg/lifecycle, path/overview, sim/frame]
-tags: {C: 78, I: 45, L: 10}
+tags: {C: 78, I: 45, L: 11}
 updated: 2026-11-17
 ---
 
@@ -201,10 +201,12 @@ C1. MonModeStartNeutral (mode NU, and MonSetMode's refusal fallback):      [C] f
           if Game+0x6A ≠ 0 or Game+0x74 ≠ 0: a ← the byte at MonStats+0x4F + difficulty
           n ← a, or 15 when a = 0
         queue kind 2 at T + n
-C2. MonAiIdle(n):                                                          [C] the next AI event at `T + n` after 2 358 of 2 573 last-call `Idle(n)`, n ≥ 1 in all ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); [I] the form at n ≤ 0, the mode NU command (fn:sub_005DE080_MonAiIdle@0x005DE080)
-      mode NU unless already NU;  cancel kind 2;  queue kind 2 at T + max(n, 1)
-C3. MonAiDelay(n):                                                         [C] the next AI event at `T + n` after 294 of 318 last-call `Delay(n)`, no mode command inside any of the 318 ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); [I] the form at n ≤ 0 (fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
-      cancel kind 2;  queue kind 2 at T + max(n, 1);  the mode is unchanged
+C2. MonAiIdle(n):                                                          [C] the next AI event at `T + n` after 2 358 of 2 573 last-call `Idle(n)`, n ≥ 1 in all ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); [I] the form at n ≤ 0 (C2b), the mode NU command (fn:sub_005DE080_MonAiIdle@0x005DE080)
+      m ← 1 when n = 0, else n                            ; a negative n is kept
+      mode NU unless the unit is already NU;  cancel kind 2;  queue kind 2 at T + m   ; 32-bit add
+C3. MonAiDelay(n):                                                         [C] the next AI event at `T + n` after 294 of 318 last-call `Delay(n)`, no mode command inside any of the 318 ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m)); [I] the form at n ≤ 0 (C2b) (fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
+      m ← 1 when n = 0, else n                            ; a negative n is kept
+      cancel kind 2;  queue kind 2 at T + m;  the mode is unchanged          ; 32-bit add
 C4. MonAiDelayEarlier(n):                                                  [C] to the queue call, 240 cases (run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)); [I] `UNIT_CancelEvents`' unlink path (fn:sub_005DE130_MonAiDelayEarlier@0x005DE130, 0x005DE15F)
       m ← 1 when n = 0, else n                            ; a negative n is kept
       keep the pending event when one is pending, it is not due at T,
@@ -215,9 +217,16 @@ C4. MonAiDelayEarlier(n):                                                  [C] t
 - C2a. [C] **Another queue can come first.** After 68 of the 2 573 last-call `Idle(n)` decisions the unit's next AI
   event comes 1 to 7 frames before `T + n`, in mode NU; which queue wins is not attributed. ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m),
   fn:sub_005DE080_MonAiIdle@0x005DE080)
-- C2b. [I] **C2's and C3's `max(n, 1)`** is the older reading of both helpers at n ≤ 0, where C4's emulation found
-  `n = 0 → 1` and a negative `n` kept; no logged call has n ≤ 0, and neither helper was emulated. See *Open questions*.
-  (fn:sub_005DE080_MonAiIdle@0x005DE080, fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
+- C2b. [I] **C2 and C3 share C4's rule at n ≤ 0.** Both helpers open with the idiom C4's emulation confirmed: a zero
+  `n` becomes 1 and a negative `n` falls through unchanged, so the frame is the 32-bit sum `T + n` and a negative `n`
+  queues the AI event at a frame below `T`. Neither helper rewrites the count before the add. No logged call has
+  n ≤ 0 and only C4 was emulated, so the form stays read from the code; what the queue does with a frame below `T` is
+  under *Open questions*. (fn:sub_005DE080_MonAiIdle@0x005DE080 0x005DE087–0x005DE094, 0x005DE0D5;
+  fn:sub_005DE0F0_MonAiDelay@0x005DE0F0 0x005DE0F4–0x005DE101, 0x005DE119;
+  [ai/0001 § 17](../../../findings/ai/0001-machinery.md#17-monaiidle-and-monaidelay-at-n--0-2026-11-17-lanefur))
+- C2c. [I] **`MonAiIdle`'s mode test** skips the NU command only for a present unit already in mode 1; a null unit
+  still takes the mode path. (fn:sub_005DE080_MonAiIdle@0x005DE080 0x005DE099–0x005DE0A1,
+  [ai/0001 § 17](../../../findings/ai/0001-machinery.md#17-monaiidle-and-monaidelay-at-n--0-2026-11-17-lanefur))
 - C5. [C] **The queueing sites:** `UnitQueueEvent` has kind 2 at 30 call sites and `UNIT_CancelEvents` at 66, two walkers
   agreeing; the 30 are the sites below with `MonAiIdle`, `MonAiDelay`, `MonAiDelayEarlier` and two of
   `MonModeStartNeutral` (C1 to C4), and the frame offsets the walker resolves hold: `T + 2` twice, 15, 25, 15, 13 twice,
@@ -593,7 +602,7 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 - [C] `MonAiIdle(5)` at frame 1 000 gives the unit's next AI event at frame 1 005, as C2's 2 358 logged calls do, unless
   another queue comes first (C2a). ([run:2026-11-16-sweep2-s1m](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m), fn:sub_005DE080_MonAiIdle@0x005DE080)
 - [I] It cancels any kind-2 record of the unit first, and `MonAiIdle(0)` queues one for frame 1 001: no `Idle(0)` is
-  logged, and C2b holds the form at n ≤ 0. (fn:sub_005DE080_MonAiIdle@0x005DE080)
+  logged, and C2b reads the form at n ≤ 0. (fn:sub_005DE080_MonAiIdle@0x005DE080)
 
 ## Reimplementation notes
 
@@ -646,8 +655,8 @@ tests are the checkers `tools/ai.py check` and `tools/ai_resume.py` over the log
 - [C] **The code's side of C40:** with `uniquesToo` 0 the callback refuses only `MonTypeFlag` 8, so a champion corpse in range becomes `corpse` (2 emulated cases; [machinery T22a](machinery.md#t22-row-22-greatermummy-fnsub_005f2b10_aigreatermummy0x005f2b10); fn:sub_005F2A00_AiGreaterMummyCb@0x005F2A00, run:2026-11-16-sweep2-s1ne, [ai/0001 § 14](../../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne)). [I] The skill's own target test is not read for champions. (fn:sub_005FD470_MonSkillTargetOk@0x005FD470)
 - [L] **The Uber forced cases** G1, G2, G3 and G5 of [ai/0016](../../../findings/ai/0016-uber-event.md) are named
   shortfalls, for owner play.
-- [I] **C2's and C3's form at n ≤ 0.** C4 turns 0 into 1 and keeps a negative `n`; whether `MonAiIdle` and `MonAiDelay`
-  clamp with `max(n, 1)` (C2b) is unread ([backlog](../../../backlog/archive/2026-11-16-spec-writer-reverser-monsters-ai-idle-delay-n-at-or-below.md)).
-  (fn:sub_005DE080_MonAiIdle@0x005DE080, fn:sub_005DE0F0_MonAiDelay@0x005DE0F0)
+- [L] **A frame below `T`.** What `UnitQueueEvent` does with an AI event queued below the current frame (a negative `n`
+  to C2, C3 or C4, C2b) is unread; no logged call has n < 0.
+  (fn:sub_005417D0_UnitQueueEvent@0x005417D0, [ai/0001 *Open questions*](../../../findings/ai/0001-machinery.md#open-questions))
 - [L] **`0x00623470`'s** column at MonStats `+0x0E` bit 0, `MonsterData+0x54`'s writer, the third `MonsterInit` block and
   `Game+0x6A`'s meaning in the `aidel` choice are unnamed here. (0x00623470, fn:sub_00574250_MonsterInit@0x00574250)
