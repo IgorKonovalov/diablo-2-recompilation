@@ -14,7 +14,7 @@ based_on:
 This page explains how the game decides which monsters exist. It covers which classes each [level](../glossary.md) can host, how
 a room gets filled the first time it becomes active, which of those monsters become champions, uniques or
 [superuniques](../glossary.md), and what level, hit points, defence and experience each one is created with. It restates the
-reviewed monster specs: the overview in [monsters/README](../specs/monsters/README.md#data-flow), the level pools
+reviewed monster specs: the overview in [monsters](../specs/monsters/README.md#data-flow), the level pools
 in [pool](../specs/monsters/pool.md#purpose), room population in [spawn](../specs/monsters/spawn.md#purpose),
 special monsters in [special](../specs/monsters/special.md#purpose) and stats in
 [stats](../specs/monsters/stats.md#purpose). The specs carry the exact arithmetic and [draw](../glossary.md) order; this page tells
@@ -63,7 +63,7 @@ position. The game seed gives the density roll of each attempt and one step for 
 leader's or boss's own unit seed gives the group size, the minion counts, the champion roll and the size of a
 [champion pack](../glossary.md)
 ([spawn § Algorithm](../specs/monsters/spawn.md#algorithm),
-[README § Data flow](../specs/monsters/README.md#data-flow)). That each monster's unit seed is made from one
+[monsters § Data flow](../specs/monsters/README.md#data-flow)). That each monster's unit seed is made from one
 game-seed draw is read from the code. Its exact value after creation, which the population runs took from the logs,
 is now predicted when the parts are run together (see [Placement](#placement-where-each-monster-stands)).
 

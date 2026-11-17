@@ -163,7 +163,7 @@ There are two ways an item gets its number of sockets
 reward) the count is capped by the inventory size, by 6, by the base's maximum, and by quality: magic at most 4, rare
 at most 2, crafted at most 3, sets and uniques 1 (or the count they already have). On drops, the size, 6 and base
 caps and their order are confirmed, and normal and superior items get no quality cap; the quality caps themselves are
-read from the code, since no logged run executed them. A count loaded from a save is kept as it is, above those caps: a magic
+read from the code, since no run executed them. A count loaded from a save is kept as it is, above those caps: a magic
 crystal sword with 6 sockets loaded with 6 and took 6 children.
 
 ## The Horadric Cube

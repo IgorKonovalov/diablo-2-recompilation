@@ -13,7 +13,7 @@ based_on:
 This page explains what happens when one unit hits another: whether the swing connects, how much damage it carries,
 how the defender's resistances and reductions cut it down, and what the hit does on arrival (crushing blow, open
 wounds, life and mana leech, chill, the life change). It restates the reviewed combat specs: the overview in
-[combat/README](../specs/combat/README.md#purpose), the hit test in [to-hit](../specs/combat/to-hit.md#purpose), the
+[combat](../specs/combat/README.md#purpose), the hit test in [to-hit](../specs/combat/to-hit.md#purpose), the
 damage build in [damage](../specs/combat/damage.md#purpose), the defender's side in
 [reductions](../specs/combat/reductions.md#purpose) and the arrival in [delivery](../specs/combat/delivery.md#purpose).
 The specs carry the exact arithmetic and [draw](../glossary.md) order; this page tells the story. Where something is

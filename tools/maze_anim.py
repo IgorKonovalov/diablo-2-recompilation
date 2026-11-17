@@ -339,25 +339,25 @@ def timeline(level, steps, rooms, total, lv, warps):
         out.append((dict(text=txt, rng=total + conv_total, rooms=range(n), links=[]), set(done), i, dict(text=txt, calc=[
             "RNG draws in this step: %d (%d level draws, and %d first steps of new rooms' own seeds, one per room "
             "DRLG_RoomCreate makes); %d so far." % (q["draws"] + q["nrooms"], q["draws"], q["nrooms"], total + conv_total),
-            "Conversion (spec drlg/README.md step 9): after the generator, each maze room in the level's room list, "
+            "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, "
             "newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
             "Def %d is the room's LvlPrest row (%s); its File1..6 columns list the preset maps (DS1) it may use."
             % (q["d"], q["name"])] + q["calc"] + [
             "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the "
             "schematic mode draws the room as a box."] + [
             "This preset holds a warp: wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s); "
-            "marked in cyan on the final frame (drlg/warps.md, warp slot cell)." % (m, m, dest, lv.get(dest, {}).get("name", "?"))
+            "marked in cyan on the final frame (warps.md, warp slot cell)." % (m, m, dest, lv.get(dest, {}).get("name", "?"))
             for qi, m, dest, _fx, _fy in warps if qi == i])))
     txt = ("Final composite: %d rooms after %d RNG draws (%d in the generator, %d in the conversion). Drawn relative "
            "to the layout's corner; the game then moves the whole level to its place in the act (not drawn, shape "
            "unchanged)." % (n, total + conv_total, total, conv_total))
     wl = ["Warp (cyan mark): room %d, DS1 wall cells of orientation 10/11 with slot %d, so Levels Vis%d = %d (%s) "
-          "(drlg/warps.md, warp slot cell). %s is by level order: the lower id is taken as the way in. The act's "
+          "(warps.md, warp slot cell). %s is by level order: the lower id is taken as the way in. The act's "
           "link lists can override Vis at run time (warps.md § C); not modelled here."
           % (qi + 1, m, m, dest, lv.get(dest, {}).get("name", "?"), wlabel(lv, level, dest).split(":")[0].capitalize())
           for qi, m, dest, _fx, _fy in warps]
     out.append((dict(text=txt, rng=total + conv_total, rooms=range(n), links=[]), set(range(n)), None, dict(text=txt, calc=wl + [
-        "Placement shift (spec drlg/maze.md G1): growth never looks at where the level sits in the act; rooms grow "
+        "Placement shift (maze.md G1): growth never looks at where the level sits in the act; rooms grow "
         "freely around the first room, so coordinates can go negative.",
         "At the end the game takes the bounding box of all rooms (x0, y0) and adds (level.x - x0, level.y - y0) to "
         "every room, so the box's top-left corner lands on the level's origin in the act map.",

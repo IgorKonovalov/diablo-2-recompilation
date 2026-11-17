@@ -118,8 +118,7 @@ The index lists nine such paths, wherever the specs state them; they live in the
 happened in a game: on one of the cube's crafting recipes, at a low item level, a recorded run logged the game's fault.
 Two more were reached only under emulation, the game's own code run on its own and not in a game: the game's fatal path
 on three paths of the skill catalogue, and the same path for a party's ninth member, which no stock game reaches: read from the code, a party holds
-at most eight players. The other six come from readings of the code. None was provoked for the index, and the harness has provoked
-none since that rule; the logged fault is older, from a run that expected it
+at most eight players. The other six come from readings of the code. None was provoked for the index, and no run has provoked one since that rule; the logged fault is older, from a run that expected it
 ([crash and hang paths](../specs/quirks/README.md#crash-and-hang-paths)).
 
 ## Community claims

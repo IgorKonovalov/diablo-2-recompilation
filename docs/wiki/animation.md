@@ -11,7 +11,7 @@ This page explains how long a unit's actions take on the server, and how far a m
 Every mode a unit enters (a swing, a cast, a hit recovery, a block, a walk) has an animation record. The record, the
 unit's stats and its weapon give a rate, and the rate decides on which game frames the mode's events fire and when the
 mode ends. This is where "frames per cast", "attack speed breakpoints" and "walk speed" come from. The page restates
-the reviewed specs: the overview in [anim/README](../specs/anim/README.md#purpose), the timing machinery in
+the reviewed specs: the overview in [anim](../specs/anim/README.md#purpose), the timing machinery in
 [anim/timing](../specs/anim/timing.md#purpose) and movement in [anim/movement](../specs/anim/movement.md#purpose). The
 specs carry the exact arithmetic, the addresses and the evidence; this page tells the story and says where the specs
 are less sure. Terms are in the [glossary](../glossary.md).
@@ -218,8 +218,7 @@ frames; at 7% FHR it is 9. The logs hold the 0 FHR case on a record with the sam
 
 ## The mode machines
 
-The specs describe which mode follows which ([timing § I](../specs/anim/timing.md#i-the-mode-machines)). The logged
-runs hold most of it: every logged player and monster start fell on the clock the tables give, and every logged end
+The specs describe which mode follows which ([timing § I](../specs/anim/timing.md#i-the-mode-machines)). The runs' logs hold most of it: every logged player and monster start fell on the clock the tables give, and every logged end
 was followed by the next mode they give (10 718 player ends, 28 003 monster ends).
 
 - **Players.** Neutral, walk, run, attack, cast and skill modes, get-hit, block, knockback and death. An action ends
@@ -344,7 +343,7 @@ step returns "arrived".
 
 Each frame of a run takes `RunDrain * 2` from stamina (1/256 units), times `armour speed / 10 + 1` for body armour with
 speed 10 or more, plus `stat 154` percent, at least 1 ([movement § D](../specs/anim/movement.md#d-the-run-drain)). 37 434
-logged run frames agreed. In a town it costs nothing (4 685 logged town drains left stamina unchanged). At 0 stamina
+run frames in the logs agreed. In a town it costs nothing (4 685 logged town drains left stamina unchanged). At 0 stamina
 the run becomes a walk ([movement § D2](../specs/anim/movement.md#d-the-run-drain)): a run turned into a walk 81 times
 in the runs. In the 75 turns that follow the drain's 0, the walk's every-frame event is queued in the drain's frame
 and the first walk step is taken in that frame. The other 6 are not the drain's turn: in each, a later mode set in the

@@ -112,8 +112,7 @@ open-server thread of modes 6 and 8 would break it. A debug switch sits at the h
 reference (checked by a second reading), so it reads as unreachable in the stock image.
 
 **What the kept logs show of this order.** Over the 331 frame-stamped kept logs, 3 713 293 events placed in 383 349 frames fall in rank order in every
-frame, 0 mismatches. **What tests it is far less:** 17 254 consecutive pairs separate the order (16 935 from the animation logger, 319 from the skills
-logger, none from any other), and 9 029 of them without the logger's own phase; the other placed frames agree trivially. 118 340 of the 501 689 frames
+frame, 0 mismatches. **What tests it is far less:** 17 254 consecutive pairs separate the order (16 935 from the animation logs, 319 from the skills logs, none from any other), and 9 029 of them without the logs' own phase; the other placed frames agree trivially. 118 340 of the 501 689 frames
 with two or more events cannot fail at all. Four wrong orders fail: monsters' walks before players' on 42 148 events, slot before every-frame on 9 608, missiles
 after items on 8 885, the drain before the tick on 95 ([§ B4](../specs/sim/frame.md#b-gametick)).
 
@@ -198,7 +197,7 @@ at or below it is raised to −1, the every-frame marker; the queue then follows
 **Seen in a window** ([§ D5](../specs/sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners)): 3 020 adjacent walks of different ranks, none inverted, in the seven counted windows that log seed steps: a Blood Moor pack and the Den of
 Evil, one player, Nova or standing, with what [§ K3](../specs/sim/frame.md#k3-a-large-zero-can-test-little) takes as given: 4 before 7, 417; 7 before 8, 1 975; 7 before 9, 203; 8 before 9, 425.
 
-**Seen in the kept logs**, by logger phase and call site, placing a walk against a neighbour:
+**Seen in the kept logs**, by the logs' phase and call site, placing a walk against a neighbour:
 - the players' slot walk before the monsters' (3 007 pairs);
 - the monsters' every-frame walk before their slot walk (4 637);
 - the missiles' walks before a player or monster event (6) and before the drain (81);
@@ -399,7 +398,7 @@ functions only, 1 720 of them; the owner and defender steps are at their listed 
 - **defender, 8:** the defence, cold, wear, get-hit, hit-class and damage sites of a hit. Only the defence and wear sites were hit.
 - **kill event, 0:** a unique mod's death site, named through its queued event. No window hit it.
 
-Owner and defender match event type and site, **not the target**: the logger does not log the target, so they separate "this site outside a combat event" from "inside one". Which seed a step moved is another matter, since a step's line logs the low half it read.
+Owner and defender match event type and site, **not the target**: the logs do not hold the target, so they separate "this site outside a combat event" from "inside one". Which seed a step moved is another matter, since a step's line logs the low half it read.
 
 **Seen in a window: the defender's 8 steps moved the player's seed, in two hits.** In the standing window, two Fallen at frames 1992 and 2020 each ran the defence roll and the wear sites inside their own attack events, 4 steps a hit. Each of the 8 logged low halves matches exactly one kept seed, the player's, and the player's next entry reading equals that seed with those 4 steps applied, 2 of 2. It agrees with [the defence rolls](../specs/combat/to-hit.md#c-the-hit-test-and-the-defence-rolls) and [wear](../specs/items/economy.md#h-wear-durability-quantity-charges-replenish).
 

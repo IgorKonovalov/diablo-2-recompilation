@@ -456,7 +456,7 @@ swaps the offers. Everything here restates the [trade spec](../specs/items/trade
 does, in game frames and in a few real-time windows; the trade window on the screen is out of scope.
 
 **What "seen" means in this section.** The trade has its own run: two unmodified clients on one machine in one hosted
-expansion game on Normal, driven by an agent, the host's server calls logged and replayed against the spec's rules by a
+expansion game on Normal, played automatically, the host's server calls logged and replayed against the spec's rules by a
 checker ([how to read the tags](../specs/items/trade.md#how-to-read-the-tags)). Three kept sessions met 13 planned
 cases; the checker found no mismatch except two timing lines named below. "Seen" means that a case of this run reached
 the branch; it checks the branch on the inputs the run gave, and nothing else. The rest is **read from the code**: the

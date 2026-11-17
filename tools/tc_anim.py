@@ -939,7 +939,7 @@ class Anim:
             ri = res["rare"]
             AT_ = self.M.AT
             calc.append("affixes.md E: rare names first (prefix side, then suffix side): '%s' and '%s' (the RarePrefix / RareSuffix keys "
-                        "shown as their string-table text, data/strings.md D and C); count %d "
+                        "shown as their string-table text, strings.md D and C); count %d "
                         "(table g_RareAffixCountTable[low & 7] after one Step, or 3 + Range(item.seed, 2) for a jewel)." % (
                             AT_.rare[ri["n1"] - 1]["disp"], AT_.rare[ri["n2"] - 1]["disp"], ri["count"]))
         shown = []

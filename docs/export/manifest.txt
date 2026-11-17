@@ -6,6 +6,7 @@
 #   group <slug> <order> <label…>           a sidebar group; <slug> is its route folder
 #   page  <path> <group-slug|-> <order>     a page; route <group-slug>/<file stem>, or <file stem> for `-`
 #   table <path> <line-of-header> <reason…> a table over 20 body rows allowed (X6); none in this cut
+#   alias <path> <page path>                a link to <path>, which is not exported, goes to that page instead
 #
 # Cut 1: the export-only pages, the wiki (except README.md and how-we-know.md), the glossary.
 
@@ -52,3 +53,7 @@ page glossary.md                  reference    2
 
 # Tables over 20 body rows allowed in advance: none. (No page above holds one at cut 1;
 # the only wiki table over 20 rows is the reading-order table of wiki/README.md, which is not exported.)
+
+# Aliases. The method page is not exported; the wiki's "how we know" links go to the export's page on the tags,
+# which says the same two levels in plain words (Phase 6 review, 2026-11-17).
+alias wiki/how-we-know.md export/reading-the-tags.md

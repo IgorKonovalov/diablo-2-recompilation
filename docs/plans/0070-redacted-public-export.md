@@ -1,6 +1,6 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2, 2b, 3, 4 and 5 done 2026-11-17; re-cut 2026-11-16 for three later owner decisions (simplification,
+> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2, 2b, 3, 4, 5 and 6 done 2026-11-17 (the first cut accepted with fixes at its redaction review; next: Phase 7, the owner's read and first publish, checklist in Phase 7); re-cut 2026-11-16 for three later owner decisions (simplification,
 > schematic illustrations per ADR-0036, the cheapest residue option); approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
 > 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
@@ -315,7 +315,7 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
 - **What:** the Tier A redaction review above, on a fresh first cut and on `workspace/export-repo/`. It also reads
   every drop line of the report, and looks at every schematic illustration (each GIF and its step-through page).
 - **Done when:** a verdict is recorded in this plan's log with the cut date, the check's output, the sample read, the
-  number of drops read and the illustrations seen.
+  number of drops read and the illustrations seen. **Done 2026-11-17** (accept with fixes; see the log).
 
 ### Phase 7 — The owner's read and the first publish
 - **Owner skill:** human
@@ -324,6 +324,36 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   to make the lockfile, and pushes through a pull request. The CI build and link check must pass on it; the merge to
   `main` deploys.
 - **Done when:** the owner says the site is served. No agent takes part beyond answering questions.
+- **Preconditions (Phase 6 review, 2026-11-17).** (a) The real site build and its link check on `dist/` have never
+  run: this machine has no npm, so they run first on the owner's machine (step 4 below) and again in CI; a red build
+  or link check stops the publish. (b) Before the first push the check's repository allowance narrows to the export
+  repository's name (step 2): today X7 passes any `https://github.com/igorkonovalov…` URL (Phase 2 review, ruling 6).
+- **The owner's checklist.** `<name>` is the export repository's name: neutral, not the working repository's name, no
+  trademark (ADR-0035). `$W` is the working checkout. No agent runs any of these steps beyond the check in step 2.
+  1. **Read the cut**: the pages under `$W/workspace/export/site/src/content/docs/` and the drops in
+     `$W/workspace/export/report.txt` (never copied). Rebuild it first if the docs changed since 2026-11-17:
+     `python3 -I tools/export_build.py`.
+  2. **Choose `<name>`**, and have it written into the check: `URL_ALLOW` in `tools/export_check.py` takes
+     `https://github.com/igorkonovalov/<name>` in place of the bare account prefix (an archivist lane, or the owner,
+     with a test that the account's other repositories fail). Then, from `$W`:
+     `python3 -I tools/export_check.py workspace/export --repo workspace/export-repo/` must print 0 failures.
+  3. **Assemble a fresh folder** outside `$W`, never a clone of it:
+     `mkdir ~/Work/<name> && cd ~/Work/<name> && git init -b main && cp -r $W/workspace/export-repo/. . && cp -r $W/workspace/export/site/. site/`
+     (this copies `site/src/content/docs/`, `site/src/cut.json` and `site/public/illustrations/` beside the
+     project files; `report.txt` stays behind). `git status` must show no `.git` folder copied and nothing else.
+  4. **Build and check locally**, from `site/`: `npm install` (writes `package-lock.json`, which is committed),
+     `npx playwright install chromium`, `SITE_BASE=/<name>/ npm run build`, then
+     `SITE_BASE=/<name>/ node scripts/check-site-links.mjs dist`. Both must pass; `SITE_BASE=/ npm run build` and
+     `npm run preview` give a local look. Remove `dist/` and `.astro/` (ignored anyway).
+  5. **Create the repository** `<name>` on GitHub under the owner's account, empty (no README, licence or
+     `.gitignore` from GitHub); in Settings, Pages, set the source to GitHub Actions.
+  6. **First commit and pull request.** `git commit --allow-empty -m "chore: start"` on `main` and push it (it holds no
+     workflow, so nothing runs); then `git switch -c cut-2026-11-17`, stage the files by path
+     (`git add .github .gitignore LICENSE README.md site`), commit, push the branch and open a pull request. The
+     `build` job (install, Mermaid, build, link check) must be green on it.
+  7. **Merge** the pull request into `main`; the `deploy` job publishes `https://igorkonovalov.github.io/<name>/`.
+     Open the front page, one page with a diagram and both illustrations (the GIF and its step-through page), and
+     say the site is served; that closes Phase 7.
 
 ### Phase 8 — The spec residue (replaced 2026-11-16)
 - **Replaced** by the simplifier (decision 6). No spec-writer batch runs. The working specs keep their evidence as
@@ -870,3 +900,63 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `drlg/README.md`, which carry a directory and read as the repository paths ADR-0035 bars; rule there. Request
   [closed](../backlog/archive/2026-11-17-archivist-architect-review-plan-0070-neutral-marker-and-inline-gif.md).
   Ledger: verdict accept with fixes, 1 fix: omission 1 (the X4 skip's shape).
+- **2026-11-17, architect, Phase 6: the first cut's redaction review (Opus, Tier A, lane/x70r6).** Verdict **accept
+  with fixes (8)**; Phase 6 done. **Cut:** 2026-11-17, `python3 -I tools/export_build.py` from `main` at 6519f8d3 plus
+  this lane's fixes, into `workspace/export`: 25 pages written, 0 dropped, two illustration folders (`drlg-maze-level36`,
+  43 frames; `items-tc-andariel-hell`, 87 frames). **Checks:** `export_check.py workspace/export`: 0 failures, 330 X12
+  warnings, exit 0; `--repo workspace/export-repo/`: 0 failures, 0 warnings; self-tests 117/0 (check) and 41/0
+  (builder), `test_anim_schematic.py` OK, gate full green. **X12 read:** 165 distinct capitalised names, all game names
+  (areas, skills, items, monsters), the illustrations' rare names and the nominative marks; no string-table text. The
+  two quoted-run warnings (pathing, server-frame) are spans between two short quotes, not a quotation. **Drops read:**
+  all 14 lines of the fresh cut's report, then the 6 left after the fixes: 2 caption sentences naming our tools (the
+  builder's own label sentence replaces them), the characters page's 2 Battle.net sentences (meant), and 2 method
+  sentences whose loss leaves the paragraph whole (randomness, the 852 inlined copies; items, a re-reading). Eight of
+  the 14 were claims lost to a tool word (the run drain's formula, the socket-count claim, the server frame's pair
+  counts and others); the wiki now says them without it (fix 7). **Read whole:** the front page, about, reading the
+  tags, randomness, glossary, monster AI, levels, items, characters, saves; read around every drop and residue hit in
+  animation, server frame, pathing, inventory and quirks; hand greps of all 25 pages per risk: (1) no address,
+  `sub_`/`DAT_`, `+0x` offset or anchor; tool names only where X9 allows; (2) 76 Mermaid fences and two plain fences
+  (the saves example's 48 header bytes, our own test save), no pseudocode; (3) no table over 20 rows (the longest 18
+  body rows), no flavour text; (4) "Blizzard" only on the about page and in the footer; (5) no `src:` id, no Open
+  questions section. Nothing says where a game file came from, nothing implies affiliation, no identity beyond
+  ADR-0035 (no owner name in the text). **Illustrations seen:** both GIFs (a GIF89a with the marker comment), maze
+  frames 20 and 42, drop frames 50 and 86 (boxes, door bars, name cards, the 5x7 font, our palette; no game pixel),
+  both step-through pages (template text, the help list, the script: no URL, no request, frames set by
+  `setAttribute`), the 96 and 134 distinct step texts (numbers folded) and both `schematic.json`. **Every file of
+  `workspace/export-repo/` read** (README, LICENSE head, `.gitignore`, the workflow, `package.json`, `astro.config.mjs`,
+  `content.config.ts`, `Footer.astro`, `check-site-links.mjs`).
+  - **Fixes** (category in brackets): (1) [tools] the redactor left the closing punctuation of an evidence
+    parenthetical that sat on its own line on the next line, so pages read "confirmed ." 265 times over 20 pages;
+    `drop_evidence_parens` now joins it back (2 tests). (2) [tools] 13 pages ended "and how we know." with the
+    method page's link dropped: a manifest line `alias <path> <page>` (README's format table, builder, 1 test), and
+    `alias wiki/how-we-know.md export/reading-the-tags.md`, so those links reach the tags page. (3) [tools] the
+    illustration captions' folder paths, ruling 1 below. (4) [wording] five wiki link texts `anim/README`,
+    `combat/README`, `monsters/README` (and `README § Data flow`), `skills/README`, `stats/README` now name the
+    subsystem. (5) [wording] the glossary's "the findings' NPC seed". (6) [wording] process residue naming our records:
+    "driven by an agent" (inventory), "the findings did not find" (pathing), five sentences of monster AI ("a finding",
+    "raises no role and no symbol", "no earlier review caught"), reworded without changing the claim. (7) [wording]
+    eight units dropped for a tool word (`logger`, `logged run`, `harness`) reworded to "the logs", "a run": the cut
+    now keeps the run-drain formula, the socket caps' order and the server frame's counts. (8) [tools] the export
+    repository's `astro.config.mjs` gave the top-level pages (How to read the tags, About) no sidebar entry; they now
+    come first, by their `sidebar.order` (run under node on the cut's tree; `node --check` clean; original kept in the
+    lane's scratch). Ledger: verdict accept with fixes, 8 fixes: tools 4, wording 4.
+  - **Ruling 1 (spec citations in illustration text).** A spec named by its file and section (`tc.md B1`,
+    `maze.md G1`) or by its subsystem name (`player/creation § J`, `rng/seeds`) passes: it names a document of the
+    second cut and gives no place in the working repository. A folder and a `.md` together (`drlg/README.md`,
+    `drlg/maze.md`, `drlg/warps.md`, `data/strings.md`) or a `README` name read as repository paths and go. Fixed in
+    both modes, so the steps stay equal: `tools/maze_anim.py` writes "the DRLG overview spec, step 9", "maze.md G1"
+    and "warps.md"; `tools/tc_anim.py` "strings.md D and C"; `test_anim_schematic.py` OK. The check is not widened;
+    Phase 9's specs carry many such citations, and its rewrite rule should apply this ruling.
+  - **Ruling 2 (the site build).** The real Astro build and the link check on `dist/` were never run (no npm here).
+    They are a Phase 7 precondition, run on the owner's machine before the first push and again in CI; the commands
+    are Phase 7's step 4.
+  - **Ruling 3 (X7's account allowance).** Narrowing `github.com/igorkonovalov` to the export repository's name is
+    Phase 7's step 2, before the first push, with the check rerun.
+  - **Left as they are (noted, not reject-grade):** glossary links land on the glossary's top, since its entries are
+    list items with no anchor; a few pages say "follow the links" or "each links its section" of spec mentions that
+    are now plain text (the front page says why); method words the plan keeps (*emulation*, *batch*, "raised",
+    "the project's notes"); the glossary's two source-file names of the room records (names, not data).
+  - **For the owner (Phase 7):** (a) read the cut; (b) choose the export repository's neutral name, so that X7 can be
+    narrowed and the check rerun; (c) run the build and the link check locally (never run here); (d) create the
+    repository, set Pages to GitHub Actions, open the first pull request, merge when green; (e) the licence stays
+    CC BY 4.0 unless changed before the first push. The checklist is in Phase 7.
