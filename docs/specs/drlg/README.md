@@ -260,7 +260,7 @@ the first runs, now modelled) and the preset drop rolls of step 5a ([preset.md](
 
 7. OutdoorLevelBuild(L):                                              [C] (fn:sub_00675360_OutdoorLevelBuild@0x00675360, run:2026-10-12-drlg-gen)
      cw: i32 ← L.w ÷ 8;  ch: i32 ← L.h ÷ 8                            ; signed, toward zero; four cw × ch cell grids
-     outdoor generator on L.seed: 0x0067D050, 0x00675080, then the act's generator
+     outdoor generator on L.seed: VertexRingBuild, OutVertsToCells, then the act's generator   ; (fn:sub_0067D050_VertexRingBuild@0x0067D050, fn:sub_00675080_OutVertsToCells@0x00675080)
        (L.id = 134 → the Act II one, else by act index)               ; outdoor.md § A–L
      OutdoorRoomsCreate(L)                                            ; step 8
 
@@ -306,7 +306,7 @@ the first runs, now modelled) and the preset drop rolls of step 5a ([preset.md](
          ps ← PresetInstanceCreate(L, M.def, M.rect)                  ; one draw iff Files ≥ 1
          MazePresetFile(ps, forced = M.idx, L)                        ; 9b
          PresetRoomsCreate(L, ps, flags 0, single = (M.w ≤ 12 and M.h ≤ 12))
-         unit nodes of M with [+0x0C] = 1 → 0x0066B5E0                ; no draw [C] (0x0066B5E0, run:2026-10-15-drlg-maze: 393 maze builds)
+         unit nodes of M with [+0x0C] = 1 → RoomAdjLink                ; no draw [C] (fn:sub_0066B5E0_RoomAdjLink@0x0066B5E0, run:2026-10-15-drlg-maze: 393 maze builds)
          RoomFree(M)                                                  ; the level keeps only the preset rooms
    9b. MazePresetFile(ps, forced, L):                                 [C] (fn:sub_006738C0_MazePresetFile@0x006738C0, run:2026-10-12-drlg-gen)
          if forced ≠ −1: ps.idx ← forced; return

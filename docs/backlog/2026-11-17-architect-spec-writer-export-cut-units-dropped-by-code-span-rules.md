@@ -18,3 +18,9 @@ Plan 0070, from the review of lane/x13f (2026-11-17). The export builder now dro
 **C. Tool command lines and tool spans:** monsters/pool's worked example, save/d2s J (`survey`) and its worked example, monsters/ai/catalogue's count sentence (`grep -cE … docs/specs/…`), items/sockets-runewords E3 (`tools/sockets.py check` over two lines). Reword without the path, or let them stay dropped.
 
 **D. A source defect the builder cannot fix:** the table cells `2 max(|dx|, |dy|) + min(|dx|, |dy|)` (path/search § the planner's heuristic row `h`) and `|dx|`, `|dy|` (path/README, row `window`) hold unescaped `|` inside code spans. GFM splits a table cell at every unescaped pipe, code span or not, so the published table shows them as extra cells. Write `\|`.
+
+**2026-11-17, spec-writer (lane/x13r).** Done on the spec side: of the review's 70 DROP lines, 62 export cleanly now,
+6 export once the six allow-hex lines proposed in the plan 0070 log entry of lane/x13r land (five `pin` lines for
+seed words and the value entry `53454953`; the architect owns allow-hex.txt), and 2 stay dropped by ruling (save/d2s
+J's `survey` block and the worked example's reproduce block: command lines only). Class D escaped. Left open for the
+review to add the allow-hex lines and close.

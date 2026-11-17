@@ -88,7 +88,7 @@ The context `ctx` and the record `path` are [overview § Runtime state](README.m
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | straight step, diagonal step | 2, 3 | 0x0067A875–0x0067A8E0, fn:sub_0067ADC0_PathOctile@0x0067ADC0 | [C] (controls `cost`, run:2026-11-03-path-emu-2, run:2026-11-03-path-emu-3) |
-| `h` | `2 max(|dx|, |dy|) + min(|dx|, |dy|)` | 0x0067A875–0x0067A8E0 | [C] (controls `h`, the same runs) |
+| `h` | `2 max(\|dx\|, \|dy\|) + min(\|dx\|, \|dy\|)` | 0x0067A875–0x0067A8E0 | [C] (controls `h`, the same runs) |
 | type 1 switch | `dx² + dy² ≤ 324` | 0x00679F43 | [C] (control `le325` 18 cases, run:2026-11-03-path-emu-3) |
 | type 1 pool | 200 nodes | 0x0067B1C0–0x0067B1CF | [C] (control `pool`, run:2026-11-03-path-emu-3) |
 | search store | 900 nodes, 10 000 tries a pass, 50 000 cells | 0x0067A77E, 0x0067A8EC, 0x0067AABC | [C] (controls `nodes`, `passes`, families `grid`, `over`, run:2026-11-03-path-emu-2) |

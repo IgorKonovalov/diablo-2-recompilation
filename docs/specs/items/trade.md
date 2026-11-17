@@ -497,7 +497,7 @@ H3. TradeAbort(leaver L):                                             [I] (fn:su
 I1. PLRSAVE_Save(p):                                                  [I] (fn:PLRSAVE_Save@0x00532400, 0x00532447–0x00532464) (all of I1)
       flag ← 1 if p's interaction is set and of kind 0, else 0
       on the route for game byte +0x6A ∈ {1, 2}: D2S_WriteSave(…, flag) → D2S_WriteItemList(…, flag)
-      the routes at 0x00531EB0 and 0x00532240 receive the flag; not followed to the writer
+      the routes SaveViaCallback and PLRSAVE_WriteFile (0x00531EB0, 0x00532240) receive the flag; not followed to the writer
 I2. SaveItemListOrSnapshot(buf, room, flag, …), unit u:              [I] (fn:sub_00531BB0_SaveItemListOrSnapshot@0x00531BB0, fn:sub_005675E0_TradeSnapshotCopy@0x005675E0) (all of I2)
       if flag ≠ 0 and u is a player and u has a record and rec.bytes ≤ room (signed):
         copy rec.bytes from rec.buffer;  return rec.bytes        ; the opening inventory

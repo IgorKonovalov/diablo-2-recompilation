@@ -577,7 +577,7 @@ G1. ITEMUSE_TownPortal(player, item):                                [I] (fn:ITE
       PlayerPortalClose(player)                                      ; frees the previous class-59 pair (G3)
       if PortalObjectCreate(room, x, y, town, &field, class 59, noSearch 0):
         PlayerPortalSet(player, field)                               ; player data +0x48
-        level 120 only: the summit hook 0x0058CF00 for both ends (quests/progression § Word 39)
+        level 120 only: the summit hook A5Q5_SummitPortalAdd (0x0058CF00) for both ends (quests/progression § Word 39)
 
 G2. PortalObjectCreate(room, x, y, dest, &out, class, noSearch) → bool:   [C] for the draws and their order (fn:sub_0056D130_PortalObjectCreate@0x0056D130, run:2026-10-17-quests)
       if a player is given and RoomIsTown(room) and not (class = 60 and dest ∈ {39, 133, 134, 135, 136}): refuse
@@ -635,7 +635,7 @@ Step notes:
 ```
 G3. OBJOP_Portal(game, object, operator) (OperateFn 15):             [I] (fn:OBJOP_Portal@0x00584870)
       if PlayerIsBusy(operator): refuse
-      if 0x00535B10(game, operator) ≠ 0 and the owner is not the operator: refuse      ; the operator is hostile to someone
+      if PlayerHostileToAny(game, operator) ≠ 0 and the owner is not the operator: refuse   ; the operator is hostile to someone (fn:sub_00535B10_PlayerHostileToAny@0x00535B10)
       if GetTickCount() < PlayerTickGet(operator, 0) + 5000: refuse                     ; the operator's own stamp (§ J)
       if the portal has an owner (≠ −1) who is not the operator:
         if PartyId(operator) = 0xFFFF: refuse                            ; in no party; 16-bit
@@ -654,7 +654,7 @@ G3. OBJOP_Portal(game, object, operator) (OperateFn 15):             [I] (fn:OBJ
       walk command to (x + 5, y + 5)                                 ; § H
       if no partner or class = 60: if the object is in mode 1, queue object event 1
       else if PlayerPortalGet(operator) = partner id:                 ; the owner, through the town end
-        free both ends;  RoomPinSet(their rooms, 1);  summit hook 0x0058CF50
+        free both ends;  RoomPinSet(their rooms, 1);  summit hook A5Q5_SummitPortalRemove (0x0058CF50)
       timed state 102 on the operator for 75 frames
 ```
 

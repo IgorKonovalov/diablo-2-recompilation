@@ -439,7 +439,7 @@ D1. Status word (client +0x0A), checked by D2S_CheckStatus:       [C] (fn:D2S_Ch
       bit 2   hardcore: must equal the game's hardcore flag (bit 0x800 of a callee's return), else (11) or (12)  ; 0x0053FD40
       bit 3   dead: refused when hardcore (10)
       bit 5   expansion: must equal game+0x70 ≠ 0, else (8) or (9)
-      bit 6   ladder: tested (codes 25, 26) only when the host flag 0x00883D54 is set, never on this image   [I] (0x00569DBC)
+      bit 6   ladder: tested (codes 25, 26) only when the host flag (0x00883D54) is set, never on this image [I] (0x00569DBC)
       bits 8–12  progression: Nightmare needs ≥ 5 (expansion) / ≥ 4 (classic); Hell needs ≥ 10 / ≥ 8, else (13) or (14)
                                                                    [I] the classic bounds 4 and 8 (fn:D2S_CheckStatus@0x00569D80)
 D2. The u16 at 0x026 is the high half of the status u32: always 0.  [C] (0x00569012–0x0056901B; 0 in 144 game-written saves)
@@ -609,8 +609,8 @@ E3. NPCs: 01 77, u16 0x34, then 3 × 8 bytes (first record of player data +0x60 
 - E. [C] **Second sources** ([save/0001 § Plan 0038 batch S1a](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16), and the H1a waypoint cases): the quest
   tag, version 6 and size `0x12A` in all 144 game-written saves, no quest bit of 192 blocks lost over 64 built and
   written pairs, and block 0 the played Normal game's; the waypoint version 1 and size `0x50` in all 144 saves, all 432
-  blocks starting `02 01` and ending with 8 zero bytes; the waypoint bits read by the game's menu as `tools/d2s.py
-  setwp` set them (two saves); the NPC tag and size in all 144 saves, and the NPC section of the 64 pairs back
+  blocks starting `02 01` and ending with 8 zero bytes; the waypoint bits read by the game's menu as the project's save
+  editor set them (two saves); the NPC tag and size in all 144 saves, and the NPC section of the 64 pairs back
   byte-identical. Markers: a Normal record with marker `0x0102`, waypoint 0 clear and 1 set read as `0x0003`; a
   `0x0101` and a 0 record each read as 16 zero bytes with waypoint 0 set (the marker 0 too: `WAYPOINT_Load` stores
   `0x0102` at 0x00661086 and the zero dword at 0x0066108B overwrites it); the next write stored `0x0102` back; marker
@@ -734,7 +734,7 @@ H1. WriteInventoryList(owner, bb):                               [C] (fn:ITEMS_W
       ; socketed items follow their parent, each starting on a byte boundary, not counted
 H2. Corpses: "JM", u16 count (0 or 1), per corpse: u32, u32, u32, then an item list   [C] (fn:D2S_WriteCorpses@0x005697F0, fn:D2S_ReadCorpses@0x0056A830, run:2026-10-27-sweep-d2s-play)
     count ≥ 2 refused (0x68); the first u32 is uninitialised stack (note), the other two
-    the position getters 0x0045ADF0 / 0x0045AE20                                          [I] (fn:D2S_WriteCorpses@0x005697F0)
+    the position getters UnitGetSubX / UnitGetSubY                                         [I] (fn:D2S_WriteCorpses@0x005697F0, fn:sub_0045ADF0_UnitGetSubX@0x0045ADF0, fn:sub_0045AE20_UnitGetSubY@0x0045AE20)
 H3. Expansion only: "jf", then the mercenary's item list with a hired mercenary (the test, C3i);   [C] (fn:D2S_WriteMercItems@0x005699A0, fn:D2S_ReadMercItems@0x0056AC10, run:2026-10-27-sweep-d2s-play)
     "kf", then u8 1 and the golem's item if the player owns a pet of type 3 whose class is 291
     (irongolem) and that golem holds an item, else u8 0.                             [I] (fn:D2S_WriteGolem@0x00569A00, fn:D2S_ReadGolem@0x0056AE50)
@@ -838,7 +838,7 @@ The item starts on a byte boundary and ends at the next one (zero padding).
 I1. SerializeItem(item, bb):                                     [C] (fn:ITEMS_SerializeBits@0x006312B0, note I1)
       d ← item.data ; rec ← the item's Weapons/Armor/Misc record
       Write(bb, "JM", 16)                                        ; read back signed and compared
-      f: u32 ← (d.flags with bit 19 cleared) | 0x00800000              [C] (0x006312D1–0x006312D6, run:2026-10-12-d2s-io)
+      f: u32 ← (d.flags with bit 19 cleared) | (1 << 23)               [C] (0x006312D1–0x006312D6, run:2026-10-12-d2s-io)
       if rec.compactsave (+0x143): f ← f | 0x00200000            [C] (0x00631312, 0x0063131B, note I1)
       Write(bb, f, 32)
       Write(bb, d.version, 10)                                   [C] (run:2026-10-12-d2s-io)
@@ -888,7 +888,7 @@ I3. WriteFull (extended item, save flag set):                    [C] (fn:ITEMS_W
       else if ItemIsType(4) (gold): 1 bit (stat 14 ≥ 0x1000), then stat 14 in 12 bits, or 32 when the bit is set; no SaveAdd   [I] (0x00630C2F–0x00630C44)
       if stackable (0x006289F0): stat 70 (quantity), a fixed 9 bits, no SaveAdd   [C] (0x006289F0, note I3)
       if f bit 11 (socketed): base stat 194 in SaveBits[194] bits, no SaveAdd    [C] (0x0062BE00, run:2026-10-15-socket-saves)
-      if q = 5 (set): 5 bits, bit i set when the item holds the stat list of set state 0x006E90B8[i]   [C] (fn:ITEMS_WriteFull@0x0062FFF0, note I3)
+      if q = 5 (set): 5 bits, bit i set when the item holds the stat list of the i-th set state in the table at 0x006E90B8   [C] (fn:ITEMS_WriteFull@0x0062FFF0, note I3)
       property lists (§ J): the main list (state 0, flag 0x40), then each set list whose bit is set,
       then, if f bit 26, the runeword list (state 171)                           [C] (fn:ITEMS_WriteFull@0x0062FFF0, note I3)
 ```
@@ -955,12 +955,12 @@ I4. Quality fields, written only when the item is identified (f bit 4) or the sa
   run:2026-10-12-d2s-io)
 - I3. [C] **Second sources for I3 and I4** ([save/0001 § Plan 0038 batch S1a](../../findings/save/0001-d2s-io.md#plan-0038-batch-s1a-2026-10-16)): all 649 extended items
   decode by I3 and re-encode byte for byte, with seed, ilvl, quality and gfx equal to the logged item in the 200
-  writes; `has_gfx` = the base type's `VarInvGfx` ≠ 0 on all 649 (`0x0062E8D0` returns `ItemTypes +0x23`); the
+  writes; `has_gfx` = the base type's `VarInvGfx` ≠ 0 on all 649 (`ItemVarInvGfx` returns `ItemTypes +0x23`); the
   armour, weapon and stackable fields of 3 saved props-forced items and 269 starting items equal their logged stats
   (`Save Add` and `Save Bits` applied); the sockets of 24 socketed items come back; the one set item of the corpus
   has bits `0b11` and exactly two set lists, and the reader takes the lists in one loop over the five bits with the
-  same body for each (`1 << i` tested, state `[0x006E90B8 + 4i]`, 165–169, 0x0062D8D4–0x0062D8F0); the runeword list
-  is that loop's extra pass with state 171 when the runeword flag is set (0x0062D8BB–0x0062D8CF); 7 unidentified
+  same body for each (`1 << i` tested, state word `i`, 4 bytes a word, of the table at 0x006E90B8, 165–169,
+  0x0062D8D4–0x0062D8F0); the runeword list is that loop's extra pass with state 171 when the runeword flag is set (0x0062D8BB–0x0062D8CF); 7 unidentified
   items carry their quality fields. Prefix and suffix ids by data over every magic, rare and crafted item with a main
   list (85 items, 127 ids) with failing counterfactuals, and the writer's `cmp`/`jle`/`sub` read in the code.
   (run:2026-10-12-d2s-io, run:2026-10-14-props-forced, run:2026-10-16-player, run:2026-10-15-socket-saves)

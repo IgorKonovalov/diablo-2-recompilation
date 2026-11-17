@@ -259,7 +259,7 @@ Step notes:
 - B6. [I] **No class gets a special mode-0 record.** `sub_005A78A0_MonModeRecord` tests `MonStats+0x1A5`, then
   switches on the class in two jump tables (classes 243–418 and 544–709, and 543 directly), which reach five targets:
   four give a special record only for modes 4, 5, 8, 9, 10 or 11, and the fifth, like every class outside the ranges,
-  falls to `0x006E2260 + 16·mode`. The run reached the default record and Baal's block; Diablo's block (0x005A7977) and
+  falls to `g_MonModeRecords[mode]` (16 bytes a record). The run reached the default record and Baal's block; Diablo's block (0x005A7977) and
   the two others were not run, so Diablo's record and his drop-before-script order rest on this reading.
   (fn:sub_005A78A0_MonModeRecord@0x005A78A0, [items/0010 § Plan 0038 batch H6d](../../findings/items/0010-quest-drops.md#plan-0038-batch-h6d-2026-10-17) qd 13)
 
@@ -841,7 +841,7 @@ F3. Personalize(player, item):                                    [C] (fn:NPC_Me
   66. Why the leg's rare is identified at creation is not read. (fn:NPC_MenuAction@0x00579D60,
   fn:sub_00558D90_ItemCreate@0x00558D90, run:2026-10-19-economy2, run:2026-10-27-sweep-quest-npc)
 - [I] The gate is `sub_0062E660_ItemCanRepair`, called first in `ItemRepairAll` (0x005761CB): it refuses a non-item,
-  an unidentified item (`+0x18 & 0x10` clear) and an ethereal one (`& 0x400000`), so an ethereal item comes back from
+  an unidentified item (`+0x18 & 0x10` clear) and an ethereal one (`& (1 << 22)`), so an ethereal item comes back from
   any of the three services unrepaired. No run had an identified ethereal item at the tail (the run's ethereal imbued
   `cap` was unidentified too, at full durability). (fn:sub_0062E660_ItemCanRepair@0x0062E660, 0x0062E679, 0x0062E689)
 

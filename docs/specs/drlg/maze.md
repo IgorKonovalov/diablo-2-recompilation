@@ -372,8 +372,8 @@ D2. Attach(entry):                                                   [C] but the
   [drlg/0006 § 6 *The tables by block*](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze)
 - [C] **Temple tables** (as `matchDef → def, dir`; `idx` −1). Down `0x006F02F8` has **three** entries: 1042 → 1046 (1),
   1043 → 1047 (0), 1045 → 1048 (3). Waypoint `0x006F0328` has four: 1042 → 1049 (1), 1043 → 1050 (0), 1045 → 1052 (3),
-  1044 → 1051 (2). Down is placed from `0x006F02F8 + 16r` unless the level is 124, and Waypoint on level 123 from
-  `0x006F0328 + 16r`. (data 0x006F02F8–0x006F0367, fn:sub_00673000_MazeSpecialsTemple@0x00673000,
+  1044 → 1051 (2). Down is placed from entry `r` of the Down table (16 bytes an entry) unless the level is 124, and
+  Waypoint on level 123 from entry `r` of the Waypoint table. (data 0x006F02F8–0x006F0367, fn:sub_00673000_MazeSpecialsTemple@0x00673000,
   [drlg/0006 § 6 *Temple*](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze: 122, 123)
 - [C] Down reads `r` 0..2 only (the draw is `mod 3`, `0x00673026`–`0x00673038`), so the word after its third entry, which
   is Waypoint's entry 0, is never read as Down's entry 3. `MazeSpecialPlace` reads one entry and then sets
@@ -534,8 +534,8 @@ F4. Level 92 corners:                                                [C] (fn:sub
   end); the Prev entry 0 that follows is `{489 → 500, −1, dir 3}`. (data 0x006F00E8, 0x006F00D8, 0x006F0028,
   [drlg/0006 § 6 *Lair 64*](../../findings/drlg/0006-maze.md#6-the-special-tables))
 - [C] **Lair 64's sequence**: after the draw `r`, Tight Spot with `&r`, then `r ← 3` and Treasure from the fixed address
-  (so `r` becomes 0), then Prev from `0x006F0028 + 16r`. Both windows of level 64 match room for room with their draws;
-  levels 62 and 63 reproduce the other branch (Next from `0x006F0068 + 16r`, then Prev). (fn:sub_00672DC0_MazeSpecialsLair@0x00672DC0,
+  (so `r` becomes 0), then Prev from entry `r` of the Prev table (16 bytes an entry). Both windows of level 64 match room for room with their draws;
+  levels 62 and 63 reproduce the other branch (Next from entry `r` of the Next table, then Prev). (fn:sub_00672DC0_MazeSpecialsLair@0x00672DC0,
   [drlg/0006 § 6 *Lair 64*](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze,
   run:2026-10-16-sweep-mazes, [drlg/0006 § Plan 0038 batch H5e](../../findings/drlg/0006-maze.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))
 
@@ -583,7 +583,7 @@ G3. MazeRiverOfFlame(L)  (level 107):                                [C] (fn:sub
 - G2. [C] The finder is taken from `g_BarracksFinders`, three function pointers: `k` 0 `MazeFindEast`, 1 `MazeFindSouth`,
   2 `MazeFindWest` (read at `0x0067313E`). (data:g_BarracksFinders@0x006F0468, fn:sub_00673120_MazeBarracksPlace@0x00673120,
   [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables))
-- G3. [C] The forge entry is `g_RiverForgeSpecials` `0x006F0474 + 16·r`, two entries, the W and E dead ends of base 836:
+- G3. [C] The forge entry is `g_RiverForgeSpecials[r]` (16 bytes an entry), a table of two entries, the W and E dead ends of base 836:
   `{837 → 853 Forge W, idx −1, dir 2}` and `{838 → 854 Forge E, idx −1, dir 0}`. No rotation pointer is passed (`0x0067349F`).
   (data:g_RiverForgeSpecials@0x006F0474, fn:sub_00673320_MazeRiverOfFlame@0x00673320,
   [drlg/0006 § 6](../../findings/drlg/0006-maze.md#6-the-special-tables), run:2026-10-15-drlg-maze)

@@ -2418,3 +2418,52 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   the seed constant `0x53454953` of skills/missiles B1, which the parenthetical rule had removed, now fails X1 and
   needs a value entry there. Tests: export_build 194, export_check 191, widgets 274, publish 44, all green.
   `export_check … --repo workspace/export-repo/`: 0 failures, 1018 warnings. Gate green.
+- 2026-11-17, spec-writer, lane/x13r (65 units dropped by the code-span rules, backlog
+  [2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules](../backlog/2026-11-17-architect-spec-writer-export-cut-units-dropped-by-code-span-rules.md)).
+  Reword only: no claim, tag or anchor changed (the `[C]`/`[I]`/`[L]` counts of the 29 touched specs are unchanged, and
+  no line count changed above a manifest `table` line). The review's list holds 70 DROP lines (the 68 the entry's text
+  names, its count says 65, plus anim/timing N1 and data/calc G); measured on a cut of this branch against a cut
+  of main 7b984160 by (page, section, kind): **62 restored** with the current allow-hex, **6 restored once the six
+  lines below land** (checked with them in a scratch copy of allow-hex.txt), **2 stay dropped** (class C, ruled). Three
+  blocks outside the list come back too (items/economy F4 and G3, quests/travel's portal block), so spec units dropped
+  fall 874 → 809 in the no-illustration cut.
+  **A (values).** Flags and caps reworded, no pin: `0x400000` → `1 << 22` / bit 22 (drlg/outdoor K1, drlg/lifecycle
+  E1, items/economy C8, D1, D5 and F4, items/properties F3, items/quest-drops F0, stats/aggregate H6 and the
+  `ethereal (flag bit 22)` label), `0x800000` → `1 << 23` (drlg/outdoor K1, drlg/lifecycle E3, save/d2s I1), the caps
+  `0x800000`/`0x7FFFFF` → 8388608/8388607 with a `2^23` comment (monsters/stats B8, player/creation G1). Proposed for
+  the review to add to docs/export/allow-hex.txt (each seed word is one `Step` of the seed the page gives, recomputed):
+  `53454953   the seed constant the monster-owner hook initialises its local seed with (skills/missiles § B1), outside the code image`;
+  `pin 0090CE8A specs/drlg/maze.md :: the worked example's seed after R0's draw, E18C3A55:0090CE8A, one Step of 015B2E7F:0000029A`;
+  `pin 0090CE8A specs/drlg/README.md :: the same seed word, worked example row 9, one Step of row 2's 015B2E7F:0000029A`;
+  `pin 004BC4A3 specs/items/affixes.md :: example 3's seed after draw 1, 004bc4a3:517d17c7, one Step of c35f85d3:0d511944`;
+  `pin 007C890F specs/items/economy.md :: example 8's attacker seed after one Step, 007c890f:575b5184, from d1712f2d:0b0beb6e`;
+  `pin 006E9C81 specs/combat/damage.md :: the worked example's row 2 seed after RangeB(71104), 0be642ca:006e9c81, one Step of 0109323f:20d5284f`.
+  **B (addresses).** Table reads by symbol: `g_RiverForgeSpecials[r]`, `g_BorderCornerIdx[in + 9·out]`,
+  `g_A1RiverIdx[p][0|1]`, `g_JungleClearingDefs[v >> 4]`, `g_JungleClearingOff[L.id − 76]` (the read base is 304
+  bytes before the symbol), `g_PropFuncTable[f]`, `g_MonModeRecords[mode]`, `[g_PathFaceStep + edx*4]`, the warps
+  tables as `T[k]` = `g_ActLinkTables + 240·k`; maze's unnamed Down/Waypoint/Prev/Next tables as "entry `r` of the …
+  table". Call targets by symbol (each checked in re/symbols.csv): `VertexRingBuild`, `OutVertsToCells`,
+  `RoomAdjLink`, `JungleLayout`, `KurastStack`, `UnitAddStat`, `ItemInvNonEmpty`, `PLAYER_SpendSkillPoint`,
+  `SaveViaCallback`, `PLRSAVE_WriteFile`, `STATE_DefaultRemoveCB`, `PlayerGetClient`, `InvBookSkillsRebuild`,
+  `A1Q29_NpcTalk`, `A5Q5_SummitPortalAdd`/`Remove`, `PlayerHostileToAny`, `UnitGetSubX`/`Y`, `ItemVarInvGfx`,
+  `MissCbReseedFromArg`, `MissCbReseedZigzag`, and in skills/catalogue `RedemptionChanceCb`, `FuryChainCb`,
+  `CountUnitsInRange`/`Cb`, `SkillDo06UnitCb`, `AURA_ApplyToTarget`, `CurseApplyCb`, `BaalCorpseCb`, `GroundDropCell`,
+  `MissSubDisc`, `MissCbReseedPathX`(`PlusArg`), `MissCbReseedRoll`, `MissCbAddStat25`, `InfernoEnd`(`Monster`),
+  `ShapeRemoveCb`, `ItemTargetRandomPoint`, `UnitStoredUnit9C`, `WhipChangeClass`, `VineCreateRow`, `UnitMsgA3`,
+  `CorpseTestF12`, `ImpregnateEndCb`, `UnitMarkUpdated`. A call argument takes the name and its anchor goes to the
+  line's tail. Unnamed targets (no symbol) are worded by role with the address as a label parenthetical the cut
+  drops: the error routine and reallocation (items/inventory), the AI quest calls of R31/R54 ("the first test",
+  "its partner", "its quest call"), `call an unnamed routine (0x005B0D70)`, `the drop function (0x00585E00)`, the mask
+  byte of dispatch H3, sim/frame's two calls and its global dword, save/d2s's set-state table and host flag.
+  **C (tools).** Reworded, restored: monsters/pool (the command moves into the prose sentence before the block,
+  which the cut drops as before; the block holds the output only), monsters/ai/catalogue's count sentence,
+  items/sockets-runewords E3, save/d2s E (`setwp`), data/calc G (`a model of our own`), anim/timing N1 (the walker
+  names, X9). **Stay dropped, ruled:** save/d2s J's `survey` block and the worked example's reproduce block, which
+  are command lines and their output only.
+  **D.** `\|` in the code spans of path/search's `h` row and path/README's `window` row (the cut's tables now have
+  their four cells; spans differ 0).
+  **Measure** (full build with illustrations): 81 pages, 0 dropped; specs units dropped 908 of 12 429, words dropped
+  16.3 %, fenced blocks kept 850 of 895; highest page combat/to-hit 24.3 %, none over 25 %. `export_check …
+  --repo workspace/export-repo/`: 0 failures, 1022 warnings. Span equality: 27 635 spans, 0 differ; 13 888 fence lines,
+  359 differ, each an address label, an `init 0x…:` label, a `sub_` prefix or an evidence tail gone (the restored
+  blocks carry more of them). Build deleted. **For x13b:** none of the 70 lines is in its files. Gate green.

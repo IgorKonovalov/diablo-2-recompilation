@@ -269,7 +269,7 @@ C6. P ← P + dP ÷ n;  S ← S + dS ÷ n;  R ← R + dR ÷ n     ; signed idiv 
     if ItemQualityMagicPlus(item): (P, S, R) ← StaffModTerm(item, P, S, R, n)
 C7. for each child in the item's own inventory (socketed gems, runes, jewels):     [C] (fn:sub_006292F0_PriceSocketTerm@0x006292F0, run:2026-10-17-economy)
       h ← child.base.cost ÷ 2;  P ← P + h;  S ← S + h;  R ← R + h
-C8. if item.flags & 0x400000: S ← S ÷ 4                  ; ethereal               [C] (0x0062F871–0x0062F9B3, run:2026-10-17-economy)
+C8. if item.flags & (1 << 22): S ← S ÷ 4                 ; ethereal               [C] (0x0062F871–0x0062F9B3, run:2026-10-17-economy)
     if ItemTypes[own type].Class < 7: S ← S ÷ 4          ; class item, again
 
 AddTerm(m, a):                                     ; the test is on P for all three  [C] (0x0062F1AB–0x0062F213, run:2026-10-17-economy)
@@ -354,7 +354,7 @@ StaffModTerm(item, P, S, R, n):                                                 
 ### D. Mode steps, the NPC row, quantity and the result
 
 ```
-D1. if mode = 1 and item.flags & 0x400000 and ItemHasDurability(item) and M ≠ 0 and D ≤ 0:   [C] (0x0062F9B6–0x0062FA8E, run:2026-11-16-sweep2-s4e-emu)
+D1. if mode = 1 and item.flags & (1 << 22) and ItemHasDurability(item) and M ≠ 0 and D ≤ 0:   [C] (0x0062F9B6–0x0062FA8E, run:2026-11-16-sweep2-s4e-emu)
       S ← 0                                              ; a broken ethereal item
 D2. if mode = 3 and not ItemTypeQuiver(item) and not Throwable(item) and ItemHasDurability(item):   [C] (0x0062F9B6–0x0062FA8E, run:2026-10-17-economy)
       if M = 0 or D ≥ M:     R ← 0
@@ -374,7 +374,7 @@ D4. if not IsType(item, 18 book) and not ItemTypeQuiver(item):                  
         if q < Ms and own stat 253 = 0: R ← R × (Ms − q);  S ← Ms × S − R
         else:                          S ← S × Ms;  R ← 0
       else: S ← S × q
-D5. if mode = 3 and not (item.flags & 0x400000): R ← R + RechargeCost(item)          [C] (0x0062FCD6–0x0062FCF2, fn:sub_00628D30_RechargeCost@0x00628D30, run:2026-11-16-sweep2-s4e-emu)
+D5. if mode = 3 and not (item.flags & (1 << 22)): R ← R + RechargeCost(item)         [C] (0x0062FCD6–0x0062FCF2, fn:sub_00628D30_RechargeCost@0x00628D30, run:2026-11-16-sweep2-s4e-emu)
 D6. S′ ← min(S, rec.max buy[d])                                                       [C] (0x0062FCF4–0x0062FD07, run:2026-10-17-economy)
 D7. if mode = 1: return max(S′, 1)                       ; "S′ < 1 → 1"             [C] (0x0062FD07–0x0062FD8B, run:2026-10-17-economy)
     if mode = 3: if r ≠ 0: R ← R − MulDiv(R, r, 100);  return R < 1 ? 1 : R
@@ -490,7 +490,7 @@ F4. Sell (mode 1):                                                              
       copy: bool ← true
       for each test, in this order, every one evaluated (no early exit):             ; tests 2, 5, 7 [C], the rest [I]: note F4 (0x0057962B–0x00579747)
         1 quality 1 named Cracked;  2 flag 0x100 (broken);  3 base type 7;  4 flag 0x1000000;
-        5 flag 0x400000 (ethereal);  6 0x0055F590;  7 ItemIsCarry1Unique;  8 the store record's byte +4
+        5 flag 1 << 22 (ethereal);  6 ItemInvNonEmpty;  7 ItemIsCarry1Unique;  8 the store record's byte +4
         if it matches: copy ← false
       if copy: ItemCopy (an item creation), then the copy is repaired (durability and quantity to maximum) and
         priced again; price ← min(price, copy price)
@@ -618,7 +618,7 @@ G3. UnitAddGoldStat(unit, stat, delta):                                         
       if v < 0: write 0                                   ; any unit, any stat (0x0053FF24)
       else if unit is a player (type 0) and ((stat = 14 and v > PLAYER_GoldCap(unit))
               or (stat = 15 and v > 2 500 000)): write 0  ; 0, not the cap (0x0053FF6F, 0x0053FF52)
-      else: 0x006272B0(unit, stat, delta, 0)              ; the add of delta
+      else: UnitAddStat(unit, stat, delta, 0)             ; the add of delta (fn:sub_006272B0_UnitAddStat@0x006272B0)
 G4. PlayerGiveGold(n): add min(n, cap − gold); drop the rest as piles (DropGoldAmount)  [C] the add, and at gold = cap all of n dropped (0x0055B089, run:2026-10-17-economy); [I] the over-cap split (0x0055B0B9) (fn:sub_0055B060_PlayerGiveGold@0x0055B060)
     GoldPickup(pile): take min(pile, cap − gold); re-drop the remainder (DropGold)       [I] (fn:sub_0055C850_GoldPickup@0x0055C850)
     StashGoldMove: deposit at most cap − stash; a withdrawal needs the room            [I] (fn:sub_00564D50_StashGoldMove@0x00564D50)

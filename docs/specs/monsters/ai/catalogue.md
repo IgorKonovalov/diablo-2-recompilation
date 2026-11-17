@@ -4159,34 +4159,34 @@ No `aip` slot read.
 
 #### R31. Row 31 `NpcOutOfTown` (fn:sub_005E7880_AiNpcOutOfTown@0x005E7880)
 
-No `aip` slot read. `R3` is `AiCtlParamGet(3)`; `Pfx` below means the class's pair of quest calls: for class 527 the second name, for the others the first.
+No `aip` slot read. `R3` is `AiCtlParamGet(3)`; each quest call below is a pair of functions: class 527 calls the second, the other classes the first.
 
 ```
 AiNpcOutOfTownInit (0x005E77A0), called first on every event:              [I] (0x005E77A0, 0x005E7880)
   if R3's two words are 0:
     (R3.x, R3.y) ← (X + 3, Y + 3)
-    if Pfx(0x005944B0, 0x0058A940) = 0: Pfx(0x005944F0, 0x0058A980);  UnitSetStat(U, 6, 0, 0);  SetMode(12, X, Y)
+    if the first test (0x005944B0, 0x0058A940) = 0: its partner (0x005944F0, 0x0058A980);  UnitSetStat(U, 6, 0, 0);  SetMode(12, X, Y)
     R3+0x14 ← 1;  R3+0x18 ← 0;  Idle(1);  returns 1
   returns 0
 
 think:                                                                     [I] (0x005E7880, 0x005E7AAF)
 1. if the init returned 1: return
-2. class 527: 0x0058AA10
+2. class 527: its own call (0x0058AA10)
 3. if NpcInteractAny(L): Idle(40); return          ; L when U is a monster with its data
 4. if U's mode is 12: return
 5. AiNpcNearPlayer                                 ; its result is not read
 6. if no R3: the init again;  Idle(40); return
 7. if R3+0x14 ≥ 2:
      R3+0x14 ← R3+0x14 + 1
-     p ← Pfx(0x00594450, 0x0058A8D0);  if none: Idle(20); return
+     p ← the point call (0x00594450, 0x0058A8D0);  if none: Idle(20); return
      if R3+0x14 < 8 and AiPathDistToPoint(U, p) > 0: WalkPt(p); return
      the partner, UnitSetStat(U, 6, 0, 0), SetMode(12, X, Y); return
 8. if AiPathDistToPoint(U, R3) > 1 (signed) and R3+0x18 ≤ 5:
      R3+0x18 ← R3+0x18 + 1
-     if class 527 and 0x0058A9F0 ≠ 0: Idle(20);  R3+0x18 ← 0; return
+     if class 527 and its test (0x0058A9F0) ≠ 0: Idle(20);  R3+0x18 ← 0; return
      WalkPt(R3); return
 9. if R3+0x14 = 1:
-     if Pfx(0x005943B0, 0x0058A820) = 0: R3+0x14 ← 1;  R3+0x18 ← 1;  Idle(20); return
+     if the second test (0x005943B0, 0x0058A820) = 0: R3+0x14 ← 1;  R3+0x18 ← 1;  Idle(20); return
      R3+0x14 ← 2
 10. Idle(20)
 ```
@@ -4348,8 +4348,8 @@ No `aip` slot read.
        if v18 ≤ 0: v18 ← 60
        v18 ← v18 − 1
      Idle(20); return
-3. class 251: if 0x0059DF50 ≠ 0 and AiNpcMode0IfFree = 1: SetMode(0, 0, 0);  0x0059C750; return
-   class 406: if 0x005B43F0 ≠ 0 and AiNpcMode0IfFree = 1: SetMode(0, 0, 0);  0x005B4440; return
+3. class 251: if its quest test (0x0059DF50) ≠ 0 and AiNpcMode0IfFree = 1: SetMode(0, 0, 0);  its quest call (0x0059C750); return
+   class 406: if its quest test (0x005B43F0) ≠ 0 and AiNpcMode0IfFree = 1: SetMode(0, 0, 0);  its quest call (0x005B4440); return
 4. Idle(20)
 ```
 
@@ -4757,7 +4757,7 @@ None written out here. Outside the tier's, the recorded seed-to-decision cases a
 - [ai/0020](../../../findings/ai/0020-owner-played-duriel-countess.md): the owner-played Duriel and The Countess, rows 44 and 10 and state 13.
 - [MonAI](../../../tables/MonAI.md), [MonStats](../../../tables/MonStats.md).
 
-To check the count: every row has one heading `#### R<n>. Row <n> ` and every state row one heading `#### S<n>. State row <n> `: `grep -cE '^#### R[0-9]+\. Row ' docs/specs/monsters/ai/catalogue.md` gives 148 and `grep -cE '^#### S[0-9]+\. State row '` gives 18.
+To check the count: every row has one heading `#### R<n>. Row <n> ` and every state row one heading `#### S<n>. State row <n> `; counting this page's headings that start with each form gives 148 and 18.
 
 ## Open questions
 

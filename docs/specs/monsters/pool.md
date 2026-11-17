@@ -670,10 +670,10 @@ expansion and classic games and unread under the watchpoints of step note B4.
 
 Source: run:2026-10-12-mon-pool, log `monpool-1-normal.log` (`-seed 1`, normal, expansion; the one game of
 the run whose difficulty byte was not rewritten). `tools/monpool.py` reproduces the pools and the seed after
-each level:
+each level (`python3 -I tools/monpool.py pool workspace/merged/data/global/excel --seed 1 --diff 0 --level 1 --level 2 --level 3`).
+For seed 1, normal, levels 1 to 3, the model prints:
 
 ```
-python3 -I tools/monpool.py pool workspace/merged/data/global/excel --seed 1 --diff 0 --level 1 --level 2 --level 3
 game seed Init(1) after 1 step(s): 6ac6935f:00000000; region seed = Init(6ac6935f)
 level   1 act 0 mlvl   0 pool [] seed after 6ac6935f:0000029a
 level   2 act 0 mlvl   1 pool [5(r2,3v) 19(r2,3v) 63(r2,1v)] seed after d52ffc3b:270b4ee5

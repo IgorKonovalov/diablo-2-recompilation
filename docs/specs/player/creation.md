@@ -486,7 +486,7 @@ G0. XP_OnMonsterKill(game, killer, victim), as the code's map:           [C] (fn
       if s ≠ none: owner ← GameFindUnit(game, type of s's owner, id of s's owner)
       return owner if owner is a player, else none
 G1. XP_Compute(exp: i32, clvl: i32, mlvl: i32) → i32:
-      if exp > 0x7FFFFF: exp ← 0x7FFFFF                                  [I] (0x0057E480–0x0057E4FF, all of G1 not tagged otherwise)
+      if exp > 8388607: exp ← 8388607    ; 2^23 − 1                      [I] (0x0057E480–0x0057E4FF, all of G1 not tagged otherwise)
       else if exp ≤ 0: return 1                                          [C] the code's map (0x0057E4A1–0x0057E4AA, run:2026-11-03-party-emu)
 G2.   if clvl ≥ MaxLvl(class): return 0                                 [C] (fn:XP_Compute@0x0057E480, run:2026-10-27-sweep-player)
 G3.   XP_LevelDiffPenalty:                                               [C] (fn:XP_LevelDiffPenalty@0x0057E2F0, run:2026-10-16-player, all of G3)
