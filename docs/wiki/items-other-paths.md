@@ -109,6 +109,22 @@ flowchart TD
   L -->|no| RW["runeword"]
 ```
 
+```illustration
+id: items-runeword-sanctuary-match
+tool: runeword_anim.py
+args: --base lrg --runes ko,ko,mal
+seed: none
+illustrates: ../specs/items/sockets-runewords.md#d-the-runeword-match
+caption: The match for Sanctuary in a normal large shield with three sockets, taking Ko, Ko and Mal in that order. After
+  the first two inserts the item holds fewer runes than sockets, so the match returns at once. After the third it
+  passes the quality test (low, normal and superior bases pass), the base's quest test and the count of children equal
+  to the sockets, and scans the Runes rows from record 0 (sockets-runewords § D1). A row that is not complete is
+  skipped, and a complete row is skipped at its first rune that differs from the children in socket order: of the 41
+  complete rows before record 41, 40 differ at the first rune and one at the second. Record 41 lists Ko, Ko, Mal,
+  equal to the children in socket order, and allows the item type shld, which a large shield is through the
+  equivalence of shie (§ D2 to D4). Not shown: the server's refusal list, and the runeword's property lines and rolls.
+```
+
 - Low-quality and superior bases make runewords, as normal ones do; magic, set, rare, unique and crafted bases never
   do. [Ethereal](../glossary.md) is not tested: an ethereal normal sword made *Steel* in a save the game itself wrote.
 - A quest base never makes one (*Wirt's Leg* made none in the run).

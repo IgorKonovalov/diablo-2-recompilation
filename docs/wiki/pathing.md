@@ -287,6 +287,22 @@ and no room are read**: a missile's collision is its own ([search § I](../specs
 A straight step has chance 10/32 and each side 11/32, seen in the game: the rule reproduces all 946 plans' points and seeds, a variant with 12/32
 straight fails all 851 it separates, and 10 616 of the game's 33 500 steps are straight (31.7 %).
 
+```illustration
+id: path-walk-toy-room
+tool: path_anim.py
+args: --mode walk --limit 12 --seed 0xc0ffee
+seed: illustrative
+illustrates: ../specs/path/search.md#i-the-random-walk-type-10
+caption: The random walk of type 10 on a toy room of 16 by 9 subtiles with a wall that has a gap, the room the search
+  below uses, from the start (2, 4), with the path's limit 12 and the seed 12648430 started with Init: 12 ÷ 2 = 6
+  draws and 7 points. The first direction toward the target is found once, and
+  it is to the right. Each draw steps the seed once; the direction of the move is the first direction plus an addend
+  read from a 32-value table by the new low word AND 31, which gives a straight step chance 10 in 32 and each side
+  11 in 32. The point written is the position before the move, and the position then moves 2 subtiles (search § I).
+  No grid and no room are read, so the points ignore the wall. The last point is the position after the last move,
+  and the plan returns the number of points.
+```
+
 The count of draws is the missile's limit halved, and the count of points one more. At limit 77 that is 38 draws and 39
 points. In the game, 698 + 248 plans return 39 at that limit, and in 654 of 654 creations the exit seed is the one predicted
 from the seed set up and the logged range: 20 steps for class 458, 38 for class 195, 10 for class 408
@@ -322,11 +338,43 @@ are one list relative to the start, and in 233 natural plans of the second
 cases say nothing about the game. **The plan reads no grid,** seen in the game: no grid read in 260 of 260 plans, 123 of them through cells with the wall bit. The hammer's end at a wall is
 the missile's own step (read from the code).
 
+```illustration
+id: path-spiral-toy-room
+tool: path_anim.py
+args: --mode spiral
+seed: none
+illustrates: ../specs/path/search.md#j-the-spiral-type-14
+caption: The spiral of type 14 around a position at the middle of the same toy room, (8, 4), with the position's
+  fraction at one half. Each iteration adds 9600 to the radius, in 1/65536 of a subtile, and 16 to the angle out of
+  512; the offset is the table's sine at the angle plus 128 and at the angle, each times the radius and truncated toward
+  zero, added to the position; a point is kept when its whole part differs from the last kept one (search § J). The
+  first point is kept on iteration 5, at the cell (8, 5), and the 77th on iteration 94, which ends the loop; 26 of the
+  77 lie inside the toy room. The picture takes the table's values as the sine of the angle, which the table is within
+  1.8e-07 of. No draw and no grid are used, so the wall changes nothing.
+```
+
 ### The search: types 0 and 16
 
 An iterative-deepening depth-first walk with no open list: each node takes the first direction of a fixed fan that passes the
 tests, so the fan's order is the tie-break ([search § L](../specs/path/search.md#l-the-search-types-0-and-16)). **All of this
 is emulated (2 116 cases, 0 mismatches, plus 120 boundary cases). No type 0 or 16 plan appears in 46 sessions.**
+
+```illustration
+id: path-search-toy-room
+tool: path_anim.py
+args: --mode search
+seed: none
+illustrates: ../specs/path/search.md#l-the-search-types-0-and-16 ../specs/path/search.md#a-what-the-planners-share
+caption: One search of type 0 on a toy room of 16 by 9 subtiles with a wall that has a gap, a start at (2, 4) and a
+  target at (13, 4). The octile length is h0 = 2 × 11 + 0 = 22, the first bound, and the last bound asked for is 33,
+  so the walk runs at 22, 27 and 32 (search § L2). Each pass is a depth-first walk: a node takes the first direction
+  of the fan that passes the tests, so it runs straight until the wall or the bound turns it; a straight step costs 2
+  and a diagonal 3, and a cell that already holds a lower cost than the new one is not entered again, the cell store
+  being kept from one pass to the next (§ L3). Bound 22 and bound 27 find no route; bound 32 reaches the target around
+  the wall through its gap, and the route is reduced to five corner points with the start not among them (§ L2). The
+  toy has one room, and its target is a point with no unit, so the near-target stop (§ L3 step 20) ends no walk
+  short of the target. Not shown: type 16's draws and a real room's masks.
+```
 
 - The rectangle it searches is not the true union of the two rooms: a target room with a smaller far end can shrink it below
   the unit's own room, and a start beyond it returns 0.

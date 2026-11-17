@@ -96,6 +96,23 @@ logged, and each was followed by the same entry's next choice, until a later cho
 recorded games, and an offline scan of the builder, never needed a back-up. Act III is different: its jungle layout steps the act seed itself and is part of the outdoor generator
 ([outdoor § J](../specs/drlg/outdoor.md#j-act-iii)).
 
+```illustration
+id: drlg-act1-links-c0ffee
+tool: links_anim.py
+args: 0xc0ffee --act 0
+seed: illustrative
+illustrates: ../specs/drlg/warps.md#b-the-act-link-builder ../specs/drlg/warps.md#c-level-rectangles-and-the-links-after-the-layout
+caption: Act I's two link tables for an illustrative map seed, one placement per frame. Each entry places one level's
+  rectangle against its anchor's on a side that a draw on a copy of the act seed usually chooses; when the act's check
+  rejects the rectangle, the same entry tries its next choice, for most entries with no new draw (warps § B1). The
+  check rejects a rectangle that overlaps one already placed; in Act I it also rejects a side of the Rogue Encampment
+  that the table of allowed sides does not list, and a side of the Burial Grounds that another level placed against
+  the Cold Plains holds (§ B3). Both tables start from the same act seed, so their first draws repeat one another
+  (§ B1). Each level placed against an anchor gets a seam both ways to it, and when the Black Marsh ends on side 1
+  or 3 the builder makes its one draw on the act seed itself, which gives level 27's file index (§ C1). Moo Moo Farm, which its
+  table fixes far from the others, is left out of the picture.
+```
+
 Every side choice of every entry was reached in runs: besides one fully logged game, nine map seeds were chosen
 offline so that between them they end on every choice but two, those two were placed and logged, and their builds
 were replayed pick by pick
@@ -305,6 +322,24 @@ The main building blocks, all on the level seed:
   possible from the Rogue Encampment), and the roads, whose tiles are laid when each road room is prepared
   ([outdoor § M](../specs/drlg/outdoor.md#m-the-out-room-grids-at-the-room-prepare-and-the-act-i-road-tiles)).
 
+```illustration
+id: drlg-outdoor-burial-grounds-c0ffee
+tool: outdoor_anim.py
+args: 0xc0ffee
+seed: illustrative
+illustrates: ../specs/drlg/outdoor.md#b-the-cell-grid-and-its-bits ../specs/drlg/outdoor.md#c-the-level-outline ../specs/drlg/outdoor.md#e-seams-and-the-border-pass
+caption: The Burial Grounds, one Act I outdoor level, built step by step for an illustrative map seed. The level is
+  a grid of cells of 8 × 8 tiles, here 5 × 6 from the rectangle the link builder gave it, and its outline is a ring of
+  vertices with an extra one where the seam with the Cold Plains starts (outdoor § B, C). The seam mark sets the border
+  bit and a warp-slot flag on the seam's cells (§ E1). The border pass then walks the ring from its first vertex, up
+  the west side, putting an edge piece on each cell and a corner piece at each turn; the first use of a piece in the
+  level draws a start for its file rotation, and a straight turn puts the edge piece again (§ E2). Where the seam
+  borders another outdoor level, its middle cell becomes the seam opening, with its file index forced to 4 on this level
+  after the rotation gave it one. Act I then places one preset, whose first use draws too, and the finished cells hold
+  the bits of § B: border, preset footprint and opening. Not shown: the other Act I levels, whose generators add
+  cliffs, rivers, roads, a waypoint and shrines.
+```
+
 When the act generator is done, the rooms are made row by row ([overview § Algorithm, step 8](../specs/drlg/README.md#algorithm)).
 A cell that anchors a preset makes a preset instance; its file draw (when `Files` is at least 1) is made and then
 overwritten by the index the generator stored in the cell. A cell covered by a preset makes nothing. Every other cell makes one 8 × 8 outdoor
@@ -423,6 +458,21 @@ and client copies roll separately, and with the room-seed roll they agree only w
 both: in a run, 888 server/client pairs loaded the same room first and rolled alike, and in 4 pairs different rooms
 loaded first and the roll seeds differed.
 
+```illustration
+id: drlg-preset-lutw-rolls
+tool: preset_anim.py
+args: 0xc0ffee --preset lutw
+seed: illustrative
+illustrates: ../specs/drlg/preset.md#2-which-seed-rolls-and-when ../specs/drlg/preset.md#3-the-keepdrop-rolls
+caption: The keep/drop rolls of one preset, the Lut Gholein map LutW, on an illustrative seed started with Init; in a
+  game these rolls run on Lut Gholein's level seed while its rooms are made (preset § 2). The
+  units are walked from the head of the list, which is the last entry of the file; ten kinds of unit are kept or
+  dropped by chance with one draw each, every other unit is kept with no draw (preset § 3). Here the two vendors
+  (MonStats 204 and 205) draw, each kept when the draw mod 3 is 0, one chance in three. The kept units are back in
+  file order (§ 3, step note 5). Each preset instance rolls once, on the level seed or on the first room's seed
+  (§ 2).
+```
+
 **Units the game adds** ([preset § 4](../specs/drlg/preset.md#4-units-the-game-adds)). Some river presets get ambient
 river objects that exist only in the client copy; all six preset types that get them were reached in runs. In the
 Blood Moor a preset of record 4–7 with file index 3 gets a monster (`navi`) at its centre, with no draw; runs built
@@ -458,6 +508,22 @@ room there; a run logged 695 such activations. If a level names the
 same destination in several slots (a wilderness level with four cave slots), the slots are paired in order by rank;
 when rank fails, the first destination slot that names the source and has a room is taken. Rank alone mispairs the
 Durance levels and some caves, so the fallback matters. 172 pairings were predicted without error.
+
+```illustration
+id: drlg-warps-cave1-coldplains
+tool: links_anim.py
+args: --warps
+seed: none
+values: restated
+illustrates: ../specs/drlg/warps.md#e-warp-points ../specs/drlg/warps.md#f-warp-pairing ../specs/drlg/warps.md#worked-example
+caption: Cave Level 1's two warp rooms and how Cold Plains and Cave Level 1 pair, as in the worked example of the warps
+  specification. A room with a warp bit for a slot whose warp id is not −1 adds one point at its centre, in subtiles:
+  (x + w ÷ 2) × 5 and (y + h ÷ 2) × 5, and so does a waypoint room; a seam slot (warp id −1) adds none (warps § E1). A slot pairs by rank: k is the number of earlier slots of the
+  source that name the same level, and the match is the k-th slot of the destination that names the source; if that
+  slot does not exist or has no room, a fallback walk takes the first slot naming the source whose room exists,
+  and no draw is made (§ F1). From Cold Plains slot 6 the rank search fails (k = 3) and the walk takes slot 0; from
+  Cave Level 1 slot 0 the rank slot 3 has no room and the walk ends on slot 6. The rooms are the example's inputs.
+```
 
 Pairing also widens what the stairs room can see, by the code. When the room activates, the game rebuilds its
 [near list](../glossary.md) (the level-building room's list, which the active room's is filtered from) from the rooms

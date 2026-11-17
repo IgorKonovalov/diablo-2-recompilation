@@ -93,6 +93,24 @@ How one level's pool is picked ([pool § C](../specs/monsters/pool.md#c-the-pool
   three such classes, so its pool is empty.
 - `Rarity` is only copied at this stage. It is used later, when a room picks from the pool.
 
+```illustration
+id: monsters-pool-wilderness2
+tool: pool_anim.py
+args: 0xc0ffee --level 3
+seed: illustrative
+illustrates: ../specs/monsters/pool.md#a-the-region-seed-sub_00547d20_monregionsinit ../specs/monsters/pool.md#b-the-region-build-sub_005479c0_monregionsbuild ../specs/monsters/pool.md#c-the-pool-pick-sub_005475e0_monregionpool
+caption: The pool of Act 1 - Wilderness 2 in normal for a game seed started with Init(12648430), one step at a time.
+  The game seed steps once, and the region seed is Init of the low word of that draw (pool § A); the frames give
+  both seeds. All levels are built on that one seed in id order, a level's picks and its appearance
+  sets both done before the next level's first draw: level 1 draws nothing, level 2 draws 30 times, and level 3 starts
+  from the seed they leave (§ B). Level 3 has four candidates in its mon slots and NumMon 3, so it makes min(3, 13, 4) =
+  3 picks, and its rangedspawn is 0, so no pick is redrawn. Each pick draws over the candidates that remain, takes that
+  slot and removes it (§ C): Range(R, 4) = 1 takes corruptrogue1, Range(R, 3) = 1 takes fallenshaman1, Range(R, 2) = 0
+  takes brute1, and cr_lancer1 is left out. Each taken class has isSpawn set, so it is kept with its rarity (2, 2
+  and 1, which add to 5). Of the 21 draws the level makes, 3 are the picks and 18 are the appearance sets of §
+  D, which the pictures do not show.
+```
+
 The game counts the candidates when it loads `Levels`, not from a column: the two count bytes are 0 in the shipped
 file, so a program that reads the file must count them itself, or every pool comes out empty
 ([pool § C](../specs/monsters/pool.md#c-the-pool-pick-sub_005475e0_monregionpool)). The candidate count is read from
@@ -262,6 +280,29 @@ cell. The walk tests cells against the room's [collision grid](../glossary.md)
   ([levels](levels.md#rooms-that-come-and-go-release-and-restore)).
 - The near-warp test can activate another room in the middle of the pass and, in some levels, step that level's
   seed ([drlg/collision](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
+
+```illustration
+id: monsters-pack-toy-room
+tool: pack_anim.py
+args: swarm1 --seed 0xc0ffee
+seed: illustrative
+illustrates: ../specs/monsters/spawn.md#f-the-normal-group ../specs/monsters/spawn.md#h-placement-spawnpospick-and-monspawntry
+caption: One normal group of the class swarm1 (MinGrp 4, MaxGrp 8, a footprint of two, no minions) placed on a toy room
+  of our own that has a logic box, three walls, one warp point and a WarpDist of 100; the room seed and the leader's seed are each started with
+  Init(12648430). The leader's point is drawn in up to 20 tries of two room draws each. A point whose squared distance to
+  a warp point is below WarpDist is refused with no probe; any other gets a probe of three room draws that tests the
+  footprint at the point once (spawn § H1). Here the first try is too close to the warp point, the next two are refused
+  by their probe, and the fourth stands. The exact placement then makes three room draws again, and the created leader
+  marks its centre (§ H1, H4). The group size is the leader seed's draw, k = (MinGrp − 1) + Range(seed, MaxGrp − MinGrp +
+  1) = 3 + 3 = 6 members, a group of seven with the leader (§ F2). Each member is placed by a walk round square rings 3, 6
+  and 9 subtiles from the leader: each ring starts at a random cell, the walk moves before it tests, a cell outside the
+  box is skipped with no test (members 2, 4 and 5 walk past such cells), and a cell is taken when the plus of its
+  footprint is clear under the mask 0x3C01 (§ H2, H3). A cell is refused when the plus is not clear, because of a wall or
+  of the 0x1000 mark of a monster already placed (members 3 to 6 meet such cells) (§ H4). Member 5 finds no cell on its
+  first ring and takes one on the second (§ H2). A member whose placement fails is missing. Not shown: the step of the
+  game seed that each creation makes, the class cell test, the region-id test (the toy box is one region) and the
+  level's waypoint point, which the warp test also measures.
+```
 
 Each creation steps the game seed once ([spawn § J](../specs/monsters/spawn.md#j-creation-and-the-unit-seed)).
 The new monster's own seed comes from that step. On 914 of 916 logged creations it was 2 steps past its starting
