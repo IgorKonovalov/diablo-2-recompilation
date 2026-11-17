@@ -108,6 +108,14 @@ pin 800010 wiki/saves.md :: the example item's 32-bit flags field as stored (bit
 pin 00800010 specs/save/d2s.md :: the example item's 32-bit flags field as stored (bits 4 and 23), save/d2s's worked example
 pin 800000 specs/save/d2s.md :: bit 23 of an item's flags word, a flag value (I1's stored-flags line and the worked example's derivation)
 pin 006E9C81 specs/combat/README.md :: the low word of the player's seed after step 3 of the worked example (a computed draw state)
+# Review of lane/x13r (2026-11-17): each value recomputed as one RNG step (tools/rng.py step) of the seed its page gives;
+# none is in re/symbols.csv. The four-character seed constant of skills/missiles B1 was refused (a domain value) and
+# written in decimal there instead.
+pin 0090CE8A specs/drlg/maze.md :: the worked example's starting seed E18C3A55:0090CE8A, one step of 015B2E7F:0000029A (overview row 2)
+pin 0090CE8A specs/drlg/README.md :: worked-example row 9's level seed E18C3A55:0090CE8A, one step of row 2's 015B2E7F:0000029A
+pin 004BC4A3 specs/items/affixes.md :: example 3's seed after draw 1, 004bc4a3:517d17c7, one step of c35f85d3:0d511944
+pin 007C890F specs/items/economy.md :: example 8's attacker seed after one step, 007c890f:575b5184, from d1712f2d:0b0beb6e
+pin 006E9C81 specs/combat/damage.md :: the worked example's row 2 seed after RangeB(71104), 0be642ca:006e9c81, one step of 0109323f:20d5284f
 
 # Pure arithmetic of the specs (owner decision 2026-11-17, plan 0070 Phase 9): limits and masks, powers of two,
 # compiler division reciprocals and the two well-known LCG constants, admitted as plain values. A domain value (a
