@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-15
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/anim/experiments.md
 resolution: "Tier B check 2026-11-16 (full passes): accept with fixes (4); H6d accepted (21, 2 provisional), timing 91 stays b, static route first for room walks, S6f to take 5 unsettled rows; merged into main."
 ---

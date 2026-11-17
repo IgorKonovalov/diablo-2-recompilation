@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md#implementation-log
   - ../../plans/0066-inventory/README.md#4-batch-list
 resolution: "Tier B check 2026-11-16: accept with fixes (1, bookkeeping); row 25 a-logs -> b, row 67 stays a-logs (rooms.gdb logs); S7b + S7f merged into main."
 ---

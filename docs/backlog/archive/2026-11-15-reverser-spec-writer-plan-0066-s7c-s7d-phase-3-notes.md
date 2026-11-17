@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m
   - ../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m
-resolution: "Done 2026-11-16 in plan 0066 Phase 3, frame cluster (lane/n66pf): path/README's entry row names PathReplan's four callers (still [I]), the masks table takes Leap Attack's 0 / 0 and a vulture row, E2 and E3 split to the logged types and the new mode, the monster row puts the wraith in PATH_DynamicCreate's branch; drlg/lifecycle § G and H2 read 'oldest first' as list order, not age [log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-frame-cluster-re-tagged-spec-writer-lanen66pf)"
+resolution: "Done 2026-11-16 in plan 0066 Phase 3, frame cluster (lane/n66pf): path/README's entry row names PathReplan's four callers (still [I]), the masks table takes Leap Attack's 0 / 0 and a vulture row, E2 and E3 split to the logged types and the new mode, the monster row puts the wraith in PATH_DynamicCreate's branch; drlg/lifecycle § G and H2 read 'oldest first' as list order, not age [log](../../plans/done/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-frame-cluster-re-tagged-spec-writer-lanen66pf)"
 ---
 
 For Phase 3 of plan 0066, with the S7c and S7d rows (no contradiction was found; these are wording and scope notes).

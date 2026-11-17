@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-15
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/anim/experiments.md
 resolution: "Done in plan 0066 Phase 3 (lane/n66v): anim/timing I2's table (GH, BL, S4, DD frame slot 0x005A6DE0; S3's end a bare ret), I2's MonSetMode (MonModeVelocity and the second UNIT_SetUsedSkill) and class overrides (the ten the switch names, ten more with no case, the +0x1A5 test); anim/movement A4 (BaseId written back); anim/README § A mode end (HandsRefresh's draws)."
 ---

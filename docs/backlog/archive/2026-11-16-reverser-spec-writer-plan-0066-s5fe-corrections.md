@@ -4,9 +4,9 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/combat/0001-formulas.md
-resolution: "Applied at plan 0066 Phase 3, combat cluster (lane/n66y): combat/README note 5, delivery A3 and its note 8, README B5's UnitMsgA3 writes ([plan log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-combat-cluster-re-tagged-spec-writer-lanen66y))"
+resolution: "Applied at plan 0066 Phase 3, combat cluster (lane/n66y): combat/README note 5, delivery A3 and its note 8, README B5's UnitMsgA3 writes ([plan log](../../plans/done/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-combat-cluster-re-tagged-spec-writer-lanen66y))"
 ---
 
 Plan 0066 batch S5fe (`lane/n66w`) found these against the combat specs at `b5999f5e`

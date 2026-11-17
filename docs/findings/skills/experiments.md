@@ -1647,7 +1647,7 @@ and [skills/0003 § 15](0003-handlers.md#15-plan-0045-phase-2-the-run-run2026-10
 
 ## run:2026-11-16-sweep2-s2ae
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 1: skills and
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 1: skills and
 missile leaf functions under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021), compared with a `tools/`
 model, plus objdump reads and a call-graph route listing. No game, no wine. The claims are in
 [skills/0002 § 17](0002-missiles.md#17-plan-0066-batch-s2ae-part-1-leaf-functions-emulated-earlier-runs-re-read-the-routes-2026-11-16-lanen66sa).
@@ -1704,7 +1704,7 @@ model, plus objdump reads and a call-graph route listing. No game, no wine. The 
 
 ## run:2026-11-16-sweep2-s2ae2
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 2: the two
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 2: the two
 mana checks and the missile collide filters under Ghidra's p-code emulator on the pinned image (ADR-0015), compared
 with a `tools/` model. No game, no wine. The claims are in
 [skills/0002 § 18](0002-missiles.md#18-plan-0066-batch-s2ae-part-2-the-mana-checks-and-the-collide-filters-emulated-2026-11-16-lanen66sa).
@@ -1767,7 +1767,7 @@ with a `tools/` model. No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s2ae3
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 3: hit
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 3: hit
 function 27, `CallDoFunc` and the unique-mod-29 missile hook under Ghidra's p-code emulator on the pinned image
 (ADR-0015), compared with a `tools/` model, and a static read of the two `g_MissileCollideTypes` `lea`s. No game, no
 wine. The claims are in
@@ -1829,7 +1829,7 @@ wine. The claims are in
 
 ## run:2026-11-16-sweep2-s2ae4
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 4: the
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 4: the
 zig-zag re-seed callback and `MissileCreate` up to its `SUnitCreate` call under Ghidra's p-code emulator on the pinned
 image (ADR-0015), compared with a `tools/` model, and the per-call-site allocator reach of the batch's remaining roots.
 No game, no wine. The claims are in
@@ -1894,7 +1894,7 @@ No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s2ae5
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 5:
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 5:
 `SKILLS_TargetCheck` whole and the re-seed callbacks `0x005D40F0` and `0x005CD110` to their `PathPlan` call under
 Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021), compared with a `tools/` model, and the per-call-site
 allocator reach of the batch's open roots. No game, no wine. The claims are in
@@ -1962,7 +1962,7 @@ allocator reach of the batch's open roots. No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s2ae6
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 6: stat-event
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 6: stat-event
 handlers 7, 8, 9, 10, 18 and 31 and Kick's start function 2 under Ghidra's p-code emulator on the pinned image
 (ADR-0015, ADR-0021), compared with a `tools/` model, and the objdump reads behind part 6's route decisions. No game,
 no wine. The claims are in
@@ -2028,7 +2028,7 @@ no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s2ae7
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 7:
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 7:
 `SKILLS_ItemChargesOk`, `sub_005DAA40_SkillWeaponWear` and stat-event handlers 26 and 27 under Ghidra's p-code
 emulator on the pinned image (ADR-0015, ADR-0021), compared with a `tools/` model. No game, no wine. The claims are in
 [skills/0002 § 23](0002-missiles.md#23-plan-0066-batch-s2ae-part-7-skills_itemchargesok-skillweaponwear-and-handlers-26-and-27-emulated-2026-11-16-lanen66sa).
@@ -2093,7 +2093,7 @@ emulator on the pinned image (ADR-0015, ADR-0021), compared with a `tools/` mode
 
 ## run:2026-11-16-sweep2-s2ae8
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 8:
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 8:
 `sub_00627260_UnitSetStat` run whole on a declared stat-list world, alone, behind handlers 18 and 26 and
 `SkillWeaponWear`, and inside `sub_0064AC60_MissileDamageToStats`, under Ghidra's p-code emulator on the pinned image
 (ADR-0015, ADR-0021), compared with a `tools/` model. No game, no wine. The claims are in
@@ -2162,7 +2162,7 @@ Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch
 
 ## run:2026-11-16-sweep2-s2ae9
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 9 (the
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (`lane/n66sa`), part 9 (the
 closing part): `sub_005C49E0_SummonSetLevel` whole and `sub_005C87A0_StatEv25CycloneArmor` to its boundaries, both
 with part 8's stat setter run whole, under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021),
 compared with a `tools/` model. No game, no wine. The claims are in
@@ -2227,7 +2227,7 @@ compared with a `tools/` model. No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s2be2
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2be (`lane/n66sb`), part 2: do 6's
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2be (`lane/n66sb`), part 2: do 6's
 per-unit callback 0x005DB150 to `STATE_ApplyTimed`, and `sub_005D4DB0_SkillPrgDo36NovaAtTarget` whole to
 `SkillNovaAtUnit` on Skills rows 44 and 48, under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021),
 compared with a `tools/` model; plus do 13's single return read with objdump over `.text` and with radare2. No game,
@@ -2289,7 +2289,7 @@ no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s2be3
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2be (`lane/n66sb`), part 3 (the
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2be (`lane/n66sb`), part 3 (the
 closing part): do 140 on the catalogue's worked example, and do 137 with `STATE_Set` and `UnitMarkUpdated` run whole
 up to 0x00570590, under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021), compared with a `tools/`
 model. No game, no wine. The claims are in

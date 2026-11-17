@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/skills/0002-missiles.md
 resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): items 1 and 2 in [skills/dispatch](../../specs/skills/dispatch.md) L2 (pseudocode and both bullets [C]) and item 3 as K4 (Cyclone Armor, [C] to UnitMarkUpdated and STATE_Set, the stat-84 write and off branch [I])."
 ---

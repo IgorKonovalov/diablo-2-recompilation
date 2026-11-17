@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/skills/0002-missiles.md
 resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): item 1 in [skills/dispatch](../../specs/skills/dispatch.md) C4 (the level is base plus C8's bonus, clamped, then max(lvl − 1, 0)) and D3; items 2–4 in skills/missiles D6 and the type-1 filter (part 1)."
 ---

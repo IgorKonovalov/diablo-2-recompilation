@@ -4,10 +4,10 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/items/0013-grids-belts-stacks.md
   - ../../findings/stats/0001-aggregate.md
-resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–2 in items/inventory (2 as H1's [I] remainder), items 3–8 in stats/aggregate [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–2 in items/inventory (2 as H1's [I] remainder), items 3–8 in stats/aggregate [log](../../plans/done/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 5d (`lane/n66z`) raised or refined these spec statements. Not blocking. Re-tag when the

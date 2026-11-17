@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: open
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
+  - ../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../specs/README.md
   - ../wiki/skills.md
 resolution: ""

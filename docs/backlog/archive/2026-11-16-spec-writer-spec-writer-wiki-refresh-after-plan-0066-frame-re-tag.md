@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../specs/README.md
 resolution: "Refreshed wiki/server-frame, pathing, levels, monsters, objects and seed-to-world against the re-tagged specs (window-seen tick order, second-reading raises, the 0xB0 send, RoomActivateB's fifth family, ItemPlaceOnGround's twelve calls, wanderer gate emulated, wraith and vulture masks, the SizeY removals); characters and quirks went with the combat and anim entries; the flag-clear note filed as [2026-11-16-spec-writer-spec-writer-sim-frame-new-rooms-flag-note-tag-after.md](../2026-11-16-spec-writer-spec-writer-sim-frame-new-rooms-flag-note-tag-after.md)."
 ---

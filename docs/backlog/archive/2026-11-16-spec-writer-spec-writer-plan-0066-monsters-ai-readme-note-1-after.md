@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../specs/quirks/README.md
 resolution: "Plan 0066 Phase 3, monsters/ai cluster part 1 (lane/n66ai): README n1's mode-end clause raised on S7b's count, its nine-sites half [I] for H1n; Q500 cites it beside sim/frame n8 and the quirks Coverage row's Weaker duplicate cell is empty ([README](../../specs/monsters/ai/README.md#reimplementation-notes), [quirks](../../specs/quirks/README.md))."
 ---

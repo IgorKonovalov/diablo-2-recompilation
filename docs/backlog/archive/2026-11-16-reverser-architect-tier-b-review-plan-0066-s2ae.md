@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/skills/0002-missiles.md
   - ../../findings/skills/experiments.md
 resolution: "Tier A audit: accept with fixes (6); merged to main 2026-11-16."

@@ -1,6 +1,6 @@
 # 0066 — Inferred-claims sweep 2: the simulation and game-rules specs
 
-> **Status:** approved (2026-11-10, by the owner, as recommended: question 1 (b), plan 0038 closed; question 2, 20 claims per session; Phase 1 go and question 3 (c) given by the owner 2026-11-10 evening)
+> **Status:** done 2026-11-17 (closed by the architect once every Phase 3 cluster was re-tagged and merged; Phase 3's review was Tier B on Sonnet per cluster for the last cluster, by the owner's token-budget decision, not Tier A per cluster; the Phase 2 harness batches not run stay deferred with their routes); approved 2026-11-10, by the owner, as recommended: question 1 (b), plan 0038 closed; question 2, 20 claims per session; Phase 1 go and question 3 (c) given by the owner 2026-11-10 evening
 > **Created:** 2026-11-10
 > **Owner skill(s):** architect, reverser, spec-writer
 > **Related ADRs:** 0004-boundary-oracles-in-reproduction, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation, 0015-emulated-reproduction, 0021-observed-boundaries-in-emulation, 0022-scope-server-frame, 0023-review-tiers-and-gate-first-fixes, 0028-case-and-process-in-experiment-records
@@ -9,7 +9,7 @@
 
 **Question:** which `[I]` claims in the simulation and game-rules specs can now be raised to `[C]` by one more harness
 run, a new check over kept logs, a static second source or an emulated reproduction? Which stay `[I]`, and why?
-[Plan 0038](done/0038-inferred-claims-sweep.md) asked this for the creation specs. ADR-0022 named this sweep as its
+[Plan 0038](0038-inferred-claims-sweep.md) asked this for the creation specs. ADR-0022 named this sweep as its
 "recommended companion plan" and deferred it until the server frame was composed, because most simulation `[I]`s are
 draw-order claims that the frame order decides. `sim/frame` is now reviewed (plan 0055), so the deferral no longer
 holds. When this plan is done, `docs/plans/0066-inventory/` classifies every `[I]` of the specs in scope, the cheap
@@ -112,7 +112,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 ### 2026-11-10 — Phase 0, inventory (architect, `lane/n66i`)
 
-- **Done.** [`0066-inventory/`](0066-inventory/README.md) has one file per in-scope spec (29) and a README. Every one of
+- **Done.** [`0066-inventory/`](../0066-inventory/README.md) has one file per in-scope spec (29) and a README. Every one of
   the 2 626 `[I]` has a row (2 618 spec lines; rows carry the line number and a count), and each file's *Count* sums to
   its spec's front matter at `b5999f5e`. None of the 29 specs changed since `95a9ea30`. The row skeletons came from a
   script; the classes, routes and batches came from the architect (player/party, the assembly) and eight helper copies,
@@ -160,7 +160,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 ### 2026-11-10 — Phase 1, batch S1a (reverser-static, `lane/n66a`)
 
 - **Done.** The 17 statements of S1a checked over the kept rev 4 (21) and rev 6 (17) AI logs, no game. Record: the dated
-  addendum *plan 0066 batch S1a* under run:2026-11-04-ai-r5 in [findings/ai/experiments.md](../findings/ai/experiments.md);
+  addendum *plan 0066 batch S1a* under run:2026-11-04-ai-r5 in [findings/ai/experiments.md](../../findings/ai/experiments.md);
   outputs in `workspace/logs/ai/sweep2-s1a/` (`manifest.sha256`), inputs in `workspace/logs/ai/manifest-sweep2-s1a-inputs.sha256`.
   Tools (`2172cedd`): `tools/ai_resume_flip.py` gains `--key row|think|rowthink`, `--thinks` and a `FREEPAST` line (the
   default output reproduces `review-p52c/flip-rows-full.txt` for rows 13 and 21 byte for byte); new `tools/ai_move_refusal.py`
@@ -194,7 +194,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   branch and store reversed alone (a store also against the unit's next decision), `<=` for `<` in draws and compares,
   axis swaps for rows 78/79, a signed remainder for row 43. It takes `--logs LIST` and `--rows`, so the bestiary-tour
   logs (question 3 (c)) plug in. Record: the dated addendum *plan 0066 batch S1b* under run:2026-11-04-ai-r5 in
-  [findings/ai/experiments.md](../findings/ai/experiments.md); outputs in `workspace/logs/ai/sweep2-s1b/`
+  [findings/ai/experiments.md](../../findings/ai/experiments.md); outputs in `workspace/logs/ai/sweep2-s1b/`
   (`manifest.sha256`), inputs as S1a's (`manifest-sweep2-s1a-inputs.sha256`).
 - **Result (inventory rows):** 0 mismatches in 28 of the 29 modelled thinks (row 23: 8, the rev 4 logger limit). Raised 43:
   row 44 (R12's block) whole; 42 in part, each on its taken, separated arms with the rest `[I]` as the row says (17, 18, 20,
@@ -230,10 +230,10 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   over the 45 kept logs of run:2026-10-25-skills, run:2026-10-27-skills and run:2026-10-30-skills-catalogue, unchanged:
   `workspace/logs/skills/2026-11-10-s2a-check.txt` (`f69b8ec8…`, 680 lines, 0 breaks) under
   `2026-11-10-s2a-manifest.sha256` (`sha256sum -c` passes from that directory). Record: the dated addendum in
-  [skills experiments, run:2026-10-27-skills](../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b),
+  [skills experiments, run:2026-10-27-skills](../../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-new-checks-over-the-three-kept-skills-runs-lanen66b),
   with pointer lines under the other two runs. The route said "new `tools/skills.py` checks"; they are a separate
   tool, so the hashed checker behind the three runs' kept outputs is unchanged.
-- **Rows.** 80 settled in [skills-README](0066-inventory/skills-README.md) and [skills-dispatch](0066-inventory/skills-dispatch.md),
+- **Rows.** 80 settled in [skills-README](../0066-inventory/skills-README.md) and [skills-dispatch](../0066-inventory/skills-dispatch.md),
   each with a dated note in its *Route* cell: **raised** 11 (README 1, 25; dispatch 7, 8, 9, 10, 61, 90, 173, 175, 191),
   **raised in part** 56 (the `[C]` part and the remainder's class
   and batch named in the row), **moved** 13 (README 5 and dispatch 12, 106, 188 to d-none; dispatch 72, 87, 99, 100,
@@ -275,8 +275,8 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   `check` is unchanged and reproduces part 1's `2026-11-10-s2a-check.txt` (`f69b8ec8…`). Kept outputs
   `workspace/logs/skills/2026-11-10-s2a-check2.txt` (`29ad2680…`), `2026-11-10-s2a-ai.txt` (`8816d536…`),
   `2026-11-10-s2a-ua.txt` (`3c3c8c6c…`) under `2026-11-10-s2a-part2-manifest.sha256` (passes from that directory), 0
-  breaks. Record: the part-2 addendum in [skills experiments](../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-part-2-handler-effects-the-ai-command-ammunition-lanen66b);
-  a dated note in [skills/0003 § 16](../findings/skills/0003-handlers.md#16-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills);
+  breaks. Record: the part-2 addendum in [skills experiments](../../findings/skills/experiments.md#addendum-2026-11-10-plan-0066-batch-s2a-part-2-handler-effects-the-ai-command-ammunition-lanen66b);
+  a dated note in [skills/0003 § 16](../../findings/skills/0003-handlers.md#16-plan-0045-phase-2-part-2-the-run-run2026-10-27-skills);
   `sub_005BF960_StatEv07Knockback` raised to `C` in `re/symbols.csv` (its return compared with the model in 246 calls,
   review-fixes rule 14).
 - **Rows (part 2).** Raised 3 (dispatch 11, 116, 176); raised in part 10 (README 22, 23; dispatch 86, 103, 107, 115,
@@ -290,7 +290,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   with bit 6 clear, the AI command (`MonAiUseSkill`) returns with bit 6 clear in 176 of 176 mode-14 calls (set at the
   call in 70), while modes 4, 5, 7, 8, 9 return with it set (174). dispatch's entry table (row 4), § E2, § M1 (row 150)
   and skills/README § C (row 16) need rewording for mode 14. Backlog
-  [2026-11-10-reverser-reverser-skills-mode-14-start-bit-6](../backlog/archive/2026-11-10-reverser-reverser-skills-mode-14-start-bit-6.md)
+  [2026-11-10-reverser-reverser-skills-mode-14-start-bit-6](../../backlog/archive/2026-11-10-reverser-reverser-skills-mode-14-start-bit-6.md)
   asks for the read. (2) Slow (dispatch § K row 19, inventory row 125): the logged `STATE_ApplyTimed` block carries
   stat 67 = −v, which the row does not name.
 - **Ready for re-tagging (Phase 3, spec-writer), parts 1 and 2 together,** by inventory row (spec lines at `b5999f5e`;
@@ -308,7 +308,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 ### 2026-11-10 — Sub-plan 0069 drafted (architect, `lane/n69a`)
 
-- Sub-plan [0069](0069-monster-ai-bestiary-tour.md) drafted for question 3 (c): the bestiary tour over H1a to H1d, H1g
+- Sub-plan [0069](../0069-monster-ai-bestiary-tour.md) drafted for question 3 (c): the bestiary tour over H1a to H1d, H1g
   and H1h (237 statements at `4fb8b55f`), `proposed`, for the owner.
 
 ### 2026-11-10 — Phase 1, batches S1c and S1d (reverser-static, `lane/n66d`)
@@ -320,7 +320,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   the call site too, the sites read from the code (the think's one call to the callee, or the emulated family's site for
   R99 and R130). Outputs in `workspace/logs/ai/sweep2-s1cd/` (`s1c-model-check.txt` `fb54d78f…`, `s1d-first-check.txt`
   `f41b2f45…`, `manifest.sha256` passes from there); the 74 input logs in `manifest-sweep2-s1cd-inputs.sha256`. Record:
-  the addenda *plan 0066 batch S1c* and *S1d* under run:2026-11-04-r72 in [findings/ai/experiments.md](../findings/ai/experiments.md),
+  the addenda *plan 0066 batch S1c* and *S1d* under run:2026-11-04-r72 in [findings/ai/experiments.md](../../findings/ai/experiments.md),
   with pointer lines under run:2026-11-03-ai, run:2026-11-03-ai-3 and run:2026-11-04-ai-r5. `tools/ai.py` is unchanged
   (the route named it; it is the hashed checker behind those runs' kept outputs).
 - **S1c (6 rows): raised in part 6, moved 0.** R44: 309 decisions, all fork-free, 0 mismatches, 310 calls past the first,
@@ -432,7 +432,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
 
 ### 2026-11-15 — Phase 1, batch S1e (reverser-static, `lane/n66e`): done, 22 of 22 settled
 
-- **Done.** The kept run [run:2026-11-15-sweep2-s1e](../findings/ai/experiments.md#run2026-11-15-sweep2-s1e): `tools/ai_s1e_emu.py`
+- **Done.** The kept run [run:2026-11-15-sweep2-s1e](../../findings/ai/experiments.md#run2026-11-15-sweep2-s1e): `tools/ai_s1e_emu.py`
   as committed at `9d00a53b` (`6d0287cd…`, unchanged), one `tools/ghidra.sh emuboundary` launch on
   `workspace/ghidra-n66e` (`-Xmx3G`, `MemoryMax=4G` scope), 24 families, 5 760 cases, 5 760 matching, 0 stopped, 0
   unaccounted traced reads; 244 controls, 240 failing every case they separate, 4 with no observable (`trkind`
@@ -455,7 +455,7 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   3593 block). (3) `AiLifePct` is `UnitLifePct` behind `ECX` (lines 58, 4689 and quirks Q515). (4) Mephisto's pick takes its first
   draw only after a find (line 2697). (5) `AiWoundedNearCb`'s ties replace and "not dying" is 0 for players (line 687). (6)
   `AiShadowSkillRoll` draws 0, 1 or 3 times and never reads `melee` (line 2031). Dated notes in ai/0002, 0003, 0006,
-  0008, 0011 and 0012 (rule 20); the spec copies routed by [backlog](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md).
+  0008, 0011 and 0012 (rule 20); the spec copies routed by [backlog](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md).
 - **Symbols:** none raised. The run is an ADR-0015/0021 emulation over a declared image, which confirms maps, not names
   (review-fixes rule 14).
 - **Totals** recomputed from the 29 inventory files against `main` `389cb19d` (merged at `0f30ab21`): a-logs 674, a-run
@@ -576,9 +576,9 @@ _(lanes append dated entries as phases land: what was found, the confidence reac
   revision committed at the pause, unchanged) over the 45 kept skills logs, under a 4 GB scope: kept output
   `workspace/logs/skills/2026-11-15-s2b-check.txt` (`180157a2…`, 218 lines, 0 breaks) and the `STA` state census
   `2026-11-15-s2b-sta-states.txt` (`d11872d5…`), both under `2026-11-15-s2b-manifest.sha256` (passes from that
-  directory). Record: the addendum in [skills experiments, run:2026-10-27-skills](../findings/skills/experiments.md#addendum-2026-11-15-plan-0066-batch-s2b-the-missile-lines-of-the-three-kept-skills-runs-lanen66f),
+  directory). Record: the addendum in [skills experiments, run:2026-10-27-skills](../../findings/skills/experiments.md#addendum-2026-11-15-plan-0066-batch-s2b-the-missile-lines-of-the-three-kept-skills-runs-lanen66f),
   with pointer lines under run:2026-10-25-skills and run:2026-10-30-skills-catalogue; a dated
-  [skills/0002 § 13](../findings/skills/0002-missiles.md#13-plan-0066-batch-s2b-the-missile-lines-re-checked-2026-11-15-lanen66f);
+  [skills/0002 § 13](../../findings/skills/0002-missiles.md#13-plan-0066-batch-s2b-the-missile-lines-re-checked-2026-11-15-lanen66f);
   `sub_005AE1F0_MissileMoveCollide` raised to `C` in `re/symbols.csv` and skills/0002's Functions table (its frame return
   compared with the nested end call in 888 frames, review-fixes rule 14). No Ghidra, no session.
 - **Rows** (each with a dated S2b note in its *Route* cell): **raised** 3 (catalogue 44; missiles 3, 30); **raised in
@@ -727,10 +727,10 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
   `s3a-check-r2.txt` (`f3116c95…`) keeps every revision 1 line, with `s3a-static-r2.txt` (`f1996df1…`) and
   `s3a-objdump.txt` (`2670cffb…`) under `workspace/logs/quests/sweep2-s3a/manifest-r2.sha256` (`d4862ce0…`, passes from
   that directory); development outputs in `dev2/` (`manifest-dev2.sha256`). New `tools/test_quests_s3a.py` (5 tests,
-  OK). Record: the [S3a addendum](../findings/quests/experiments.md#addendum-2026-11-15-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-lanen66g)
+  OK). Record: the [S3a addendum](../../findings/quests/experiments.md#addendum-2026-11-15-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-lanen66g)
   under run:2026-10-19-quests3, with pointer lines under the other two runs and the p47 travel sessions;
-  [quests/0001 § 18](../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)
-  and [quests/0002 § 16](../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g).
+  [quests/0001 § 18](../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g)
+  and [quests/0002 § 16](../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g).
   No game, no Ghidra.
 - **Open items of part 1, settled:** row 4's caller: one `E8` at 0x0052D920 by objdump as by the raw scan, no absolute
   reference; row 196: `0x005BB850` is called only through `PartyForEach` when `UnitPartyId` ≠ 0xFFFF
@@ -749,10 +749,10 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
 - **Contradictions** (Phase 3; backlog to the spec-writer):
   1. progression C4 (row 49): the first-join restore is per quest. Quest 13 restores b3 as `+0x0B` = 5 and quest 19
      does not restore on b4 (the 4 `MISMATCH` lines); as read, quest 13 maps b2 → (1, 2), b3 → (5, 5), b4 → (6, 5)
-     (0x0059D557–0x0059D5A3) ([backlog](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions.md)).
+     (0x0059D557–0x0059D5A3) ([backlog](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s3a-contradictions.md)).
   2. travel Outputs (row 86): an e3 follows every same-act level change (341 of 341) and none of the 87 act changes
      (40 by NPC, 47 by waypoint); progression word 4's "the e3 level-40 branch then finds state 7" is re-read with it
-     ([backlog](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s3a-travel-e3.md)).
+     ([backlog](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s3a-travel-e3.md)).
   3. In part, found in part 2: word 37's entry levels (rows 270, 272): the code tests 113 or 114 for b3
      (0x00589DAB–0x00589DB3) and 121 to 124 for b14 (0x00589EBB–0x00589EC4); the logs met 113 (3) and 123 (2), the
      two levels the spec's lists drop (in the first backlog entry).
@@ -835,7 +835,7 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
   their own manifest. Second tools: r2 and the raw-byte scan (`tools/xrefscan.py`) where `tools/economy_scan.py` (objdump)
   or Ghidra read first; objdump (`tools/sweep_s4b.py`'s walker) where Ghidra read first. Inputs: the 38 economy and economy2
   claim logs, the three kept inventory-2 logs, the 12 H2a logs, each under its run's manifest. Record:
-  [items/experiments § Addendum 2026-11-15](../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)
+  [items/experiments § Addendum 2026-11-15](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)
   under run:2026-10-17-economy, with pointer lines under run:2026-10-19-economy2 and run:2026-11-04-inventory-2; dated notes in
   items/0011 § 5 and skills/0002 § 2. Every row's *Route* cell carries its dated S4a or S4b note.
 - **S4a (22): raised 10, raised in part 12, moved 0.** Raised: 2 (the NPC class tests, r2), 6 (`PLAYER_GoldCap`, r2 and the
@@ -855,7 +855,7 @@ Targeted ruling on the three points the Tier B check left, not a full re-review.
   35 (the non-player branch → b H4c), 57 (the client rule → d-none).
 - **Contradicted in part: economy row 40** (F1, line 485): the "13 `nodurability` crossbows of a `Repair` type" are 12
   crossbows and the Phase Blade `7cr` (`swor`). A label, not a behaviour: Phase 3 rewords it, and the archivist corrects
-  ItemTypes.md line 181 (backlog [`2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections`](../backlog/2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections.md),
+  ItemTypes.md line 181 (backlog [`2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections`](../../backlog/2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections.md),
   which also carries skills/0002's monster `useAmmo` sites). No owner decision is needed.
 - **Symbols:** `PLAYER_GoldCap`, `sub_0055B060_PlayerGiveGold`, `sub_0054B1E0_Pkt20UseInvItem`, `sub_0054B560_Pkt26UseBeltItem`
   raised to `C` in `re/symbols.csv` and in items/0011's and items/0012's Functions tables (review-fixes 14).
@@ -935,7 +935,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `tools/combat.py`'s Checker unchanged on `c37r-run2.lst`, `p47h-run.lst` (with its recorded `--no-shield-log`) and
   `p47b-run.lst` (74 logs, 0 mismatches) and adds nine checks and the counters. Second tool r2 for `MonSkillAttackDo`'s
   calls and `COMBAT_QueueHit`'s copy. Record:
-  [combat/experiments § Addendum 2026-11-15](../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)
+  [combat/experiments § Addendum 2026-11-15](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)
   under run:2026-10-16-combat. Every settled row's *Route* cell carries its dated S5a note; the 11 others say "not
   settled in part 1".
 - **Raised 26:** README 1, 11 (c, r2 call order), 2, 13, 19, 20, 24, 26 (skills/missiles C2, C4, E1, F1 already `[C]`
@@ -954,7 +954,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   the kept DU/GH seed steps are in `check-combat.txt`), README 35, 38, damage 1, 29, 30, 33 and player/party 12 (the
   `MonAttackStats` output model), delivery 28 (`manahit`: 493 monster attacks with stats 62/63 set, `check-combat.txt`).
 - **New, not a contradiction:** 537 missile deliveries carry result bit 0x4000 (0x4001), which to-hit C1's list does
-  not name. Backlog [`2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000`](../backlog/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md)
+  not name. Backlog [`2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000`](../../backlog/2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000.md)
   (with combat/README line 433's stale "no two-client run yet").
 - **Totals** after `main` `aa6ceb9c` (the lane's base; nothing to merge): a-logs 628, a-run 340, b 446, c 390, c-emu
   494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 512, Phase 2 786, blocked 328. § 1, § 4 (S5a,
@@ -1004,9 +1004,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   objdump's walker over Ghidra's closure lists, every image body walked. A call's stack arguments by r2, walking back from
   the call and skipping an inner call's pops. Inputs: the four kept inventory logs under their manifests; the excel `.txt`
   tables; `expfield.d2`'s header. Records:
-  [items/experiments § Addendum 2026-11-15 (S4c)](../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batch-s4c-new-checks-over-the-kept-inventory-logs-and-static-second-sources-lanen66i)
+  [items/experiments § Addendum 2026-11-15 (S4c)](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batch-s4c-new-checks-over-the-kept-inventory-logs-and-static-second-sources-lanen66i)
   under run:2026-11-04-inventory, pointer lines under -ground-emu and -inventory-2;
-  [stats/experiments § Addendum 2026-11-15 (S4d part 1)](../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)
+  [stats/experiments § Addendum 2026-11-15 (S4d part 1)](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)
   under run:2026-10-17-stats; dated notes in items/0013 § 1 and stats/0002 § 7. Every settled row's *Route* cell carries its
   dated note.
 - **S4c (29): raised 21, raised in part 7, contradicted in part 1, moved 0.** Raised: 2, 3, 4, 5, 6, 8, 16, 21, 35, 54, 76,
@@ -1024,7 +1024,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Contradicted in part: states row 46** (line 467): the remove callback's closure reaches 122 drawing functions through
   `PetLimitRefresh` (0x0056E960 → `PetLimit` → `PetRemove` → `PetUnitRelease` → `MonSetMode` → `MonAttackStats`); the group
   clear, death purge and mode drop hold none. Whether an expiry takes the path stays `[I]` (→ c, part 2). Backlog for both
-  contradictions: [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+  contradictions: [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
 - **Symbols:** none raised. The run compares call sites, arguments, bytes and table cells, not a logged return of a named
   function (review-fixes 14's scope); judgment call (6) below.
 - **Totals** recomputed from the 29 inventory files' *Totals by class* after merging `main` `82eaa099`: a-logs 645, a-run 340, b 432,
@@ -1058,7 +1058,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   run under `systemd-run --user --scope -p MemoryMax=4G` (57 s): `workspace/logs/n66i/check-part2.txt` (`a2cbf09c…`,
   105 lines, `S4 total bad=0`; the checker 0 mismatches over both runs), `manifest-part2.sha256` passing from
   `workspace/logs/n66i`; development outputs under `dev/manifest-dev-part2.sha256`. Record:
-  [stats/experiments § Addendum S4d part 2](../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i);
+  [stats/experiments § Addendum S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i);
   dated notes in stats/0001 § 1 and § 9, stats/0002 § 1 and § 2. Every row's *Route* cell carries its note.
 - **S4d part 2 (34): raised 12, raised in part 13, raised in part and contradicted in part 4, contradicted in part 2, not
   raised 3, moved 0.** Raised: aggregate 3, 5, 6, 8, 12, 19, 32, 39; states 13, 32, 37, 41. In part, the remainder and its
@@ -1072,7 +1072,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   cases), aggregate 4 (the unit list's `0x2` is the drop-on-mode marker), aggregate 41 (the refresh's closure reaches 122
   drawing functions; no seed moved in 972 windows), aggregate 29 and 42 (136 the commonest gap in 22 of 28 logs, not
   every session); and states 5's remainder (`UNIT_HasState` answers for types 0, 1, 3: missiles, not objects). Backlog:
-  items 3–7 added to [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
+  items 3–7 added to [`2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections`](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s4c-s4d-corrections.md).
 - **Part-1 remainders:** aggregate 34 raised (the swap's direct calls touch `bl` 4 and 5 only, 76 swaps); states 5
   contradicted in part, its `+0xC8` half raised; states 14 (the poison lists' shape raised; burn, cold, freeze → c, S4e)
   and 46 (`PetLimitRefresh` on every player expiry, 149 freeing expiries drew nothing; a pet's release → c, S4e) keep a
@@ -1086,7 +1086,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   contradictions with their correction); stats/README split: 54; stats/states whole: 178, 400, 429, 443; split: 93, 181,
   206, 298, 467.
 - **Review:** Tier B for S4c and S4d whole, requested by a dated paragraph on
-  [`2026-11-15-reverser-architect-review-plan-0066-s4c-s4d-part1`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s4c-s4d-part1.md).
+  [`2026-11-15-reverser-architect-review-plan-0066-s4c-s4d-part1`](../../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s4c-s4d-part1.md).
   Judgment calls of part 2: (8) the flag rows (aggregate 4, 6, 9, 41) count only lists the apply made: a refresh returns
   the list it found (0x0056EACC), 2 993 such returns left out; (9) the controls of rows 16 and 17 are counted per checked
   write, where the stock model matched every write; op 8/9's control differs on every write, which separates but says
@@ -1107,7 +1107,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `systemd-run --user --scope -p MemoryMax=4G` (50 s): `workspace/logs/n66k/check.txt` (`0b8f36b7…`, 52 lines,
   `S6 total bad=0 control_bad=0`) and `static.txt` (`d0e848ac…`), `manifest.sha256` (`50f61c5e…`) passing from
   `workspace/logs/n66k`; development outputs under `dev/manifest-dev.sha256`. Record:
-  [anim/experiments § Addendum S6a](../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)
+  [anim/experiments § Addendum S6a](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-new-tallies-over-the-131-kept-logs-lanen66k)
   under run:2026-10-30-anim-p3b; dated notes in anim/0001 § 7.1 and the `MonAttackFrame` bullet, anim/0003 § 6.2.
   Every settled row's *Route* cell carries its S6a note.
 - **S6a part 1 (73 of 76): raised 16, raised in part 44, contradicted in part 1, not raised 12, moved 0.** Raised: 1, 2,
@@ -1120,7 +1120,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   120 (missile hits), 122 (no `PlayerModeAllowed` draw), 133 (no frozen dispatch).
 - **Contradicted in part: timing row 75** (§ I2, line 550): a code-2 event of a no-skill A1 or A2 strikes no hit (2 248
   of 2 248 dispatches), code 1 in 18 160 of 18 637; the test that drops code 2 is not read (→ c, S6c). Backlog
-  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md),
+  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md),
   with three Phase 3 notes (row 38's `RescheduleSkip` `+0x44 = (T − p) << 8`, row 117's "none of its refusals is
   reached" against all4's 781 refusals, row 42's 9 restarts by this rule against the spec's 15).
 - **Symbols:** `sub_00553C70_RescheduleSkip`, `sub_00553DC0_RescheduleAt` (their logged lists against E3: 819, 74) and
@@ -1142,7 +1142,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `check-part2.txt`), and reuse this run's `two-clocks`, `player-mode-end` and `start-sequence` counts for README 1, 2,
   9, 10, 12 where they cover them.
 - **Review:** Tier B (plan 0066 Phase 1), requested by
-  [`2026-11-15-reverser-architect-review-plan-0066-s6a-part1`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6a-part1.md).
+  [`2026-11-15-reverser-architect-review-plan-0066-s6a-part1`](../../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6a-part1.md).
   Judgment calls to check: (1) rows 3, 51, 53 raised by citing an emulation run already kept and reviewed, with no new
   check of this lane; (2) "a unit's mode set" is attributed to the next unit lines in its frame (MSET's return is
   `SUNIT_SetMode`'s, one level up), so the caller identities (`PlayerModeEnd`, `MonSetMode`, the start functions) stay
@@ -1164,7 +1164,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   control_bad=0`: the 74 unexplained stat-67 units and 20 longer point segments, both in remainders) and `ai78.txt`
   (`9c066151…`); `manifest-part2.sha256` (`9d65825c…`) passes from `workspace/logs/n66k`; development outputs under
   `dev/manifest-dev2.sha256`. Record:
-  [anim/experiments § Addendum S6a part 2 and S6b](../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k).
+  [anim/experiments § Addendum S6a part 2 and S6b](../../findings/anim/experiments.md#addendum-2026-11-15-plan-0066-batch-s6a-part-2-and-batch-s6b-new-tallies-over-the-same-131-logs-lanen66k).
   Every settled row's *Route* cell carries its note.
 - **S6a part 2 (3 rows):** 78 not raised (the ai logs date a neutral start only at an AI command, where the think's
   delay decides: 12 of 12 next decisions off `aidel`), 103 not raised (no kept tally separates codes 3/4 or the bit-6
@@ -1175,7 +1175,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   README 1, 3, 10, 12. Not raised: movement 15 (no `Velocity`-0 classic S1–S4 call logged → c-emu, S6e) and 36 (the
   logger's `ss` lacks Slows Target's state 24 → a-run, deferred). No contradiction.
 - **Backlog:** two items added to
-  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md):
+  [`2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections`](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6a-corrections.md):
   (5) a lead on monsters/stats § G's `fanatic` (stat 67 175, not 195, at `Velocity` 4, 2 units), (6) movement D2's open
   question answered (the 6 offset-1 turns are later phase-11 sets).
 - **Symbols:** none raised. The run compares stat values and rate-call outputs, not a function's logged return
@@ -1187,7 +1187,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   whole: 38, 115, 246, 260, 293, 330, 341, 343, 374; split: 41, 73, 99, 118, 122, 208, 221, 237, 259, 269, 277, 298,
   325, 338. README whole: 51, 113; split: 49, 79, 117, 134. Timing split: 794.
 - **Review:** Tier B, the existing request
-  [`2026-11-15-reverser-architect-review-plan-0066-s6a-part1`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6a-part1.md),
+  [`2026-11-15-reverser-architect-review-plan-0066-s6a-part1`](../../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6a-part1.md),
   annotated to cover S6a whole and S6b. Judgment calls to check: (1) the knockback point's attacker position is the
   last pilot `PLR` line before the hit (575 of 576 match; the 1 left as a possibly stale position, not a
   contradiction); (2) the 74 monsters whose neutral stat 67 fits no mod model are left in row 11's remainder, not
@@ -1205,7 +1205,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   checker=0 part1-bad=0`), the r2 reads in `p2/`, `manifest-p2.sha256` (`77a83aae…`) passing from `workspace/logs/n66j`;
   six development outputs in `p2/dev/` with their own manifest (one later unkept revision's output, with a counter
   bug, was overwritten by the kept run and is not cited). Record:
-  [combat/experiments § S5a part 2](../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j);
+  [combat/experiments § S5a part 2](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j);
   dated pointer bullets in combat/0001 § 12 and monsters/0004 § 9. Every row's *Route* cell carries its part-2 note.
 - **Raised 4:** README 38 and player/party 12 (the expansion player-count bonus: `b` 16 at `/players 3`, 600 of 600
   separating; 56 at `/players 8`, 1 679 of 1 798; 0 in Normal at `n` ≥ 2, 5 216 of 6 444; the table read with r2);
@@ -1251,8 +1251,8 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   Skills, ItemStatCost, Events and MonStats. Run under a 4 GB scope: `workspace/logs/n66j/s5b/check-s5b.txt`
   (`3b8c2822…`, 2 517 lines, 29 checks, `S5b total bad=0`) and `totals-s5b.txt`, `manifest-s5b.sha256`
   (`30f6ea65…`) passing from `workspace/logs/n66j/s5b`; fourteen development outputs in `dev/` with their own
-  manifest. Record: [combat/0001 § 18](../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)
-  under [run:2026-11-15-sweep2-s5b](../findings/combat/experiments.md#run2026-11-15-sweep2-s5b). Every row's *Route*
+  manifest. Record: [combat/0001 § 18](../../findings/combat/0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b)
+  under [run:2026-11-15-sweep2-s5b](../../findings/combat/experiments.md#run2026-11-15-sweep2-s5b). Every row's *Route*
   cell carries its dated S5b note; README § 4's S5b row updated.
 - **Raised 17:** README 3, 8; to-hit 2, 4, 19; damage 2, 19 (with a correction), 27, 32; reductions 1; delivery 1,
   20, 26, 38, 54, 65, 66.
@@ -1285,7 +1285,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   rule 19) though the closures, with callbacks as edges, hold no draw; (5) delivery 65's "no test of the return"
   walks every path after each call to a full `EAX` write or a call whose callee writes `EAX` first.
 - **Next:** S5b closes the combat static batches but S5e and S5fe (emulation). Tier B request
-  [`2026-11-15-reverser-architect-review-plan-0066-s5a-part1`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s5a-part1.md)
+  [`2026-11-15-reverser-architect-review-plan-0066-s5a-part1`](../../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s5a-part1.md)
   extended to S5a + S5b.
 
 ### 2026-11-15 — Phase 1, batches S7c and S7d (reverser-static, `lane/n66m`): done, S7c 18 of 18 and S7d 14 of 14 settled
@@ -1295,13 +1295,13 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   - `tools/sweep2_s7c.py` (`0a01fcf6…`) over the 46 path.gdb logs of run:2026-11-04-path (stock plans only) and
     run:2026-11-04-path-2, with `tools/path.py`'s `parse` and `evaluate` unchanged as the control (33 722 stock plans,
     33 722 matched): `workspace/logs/n66m/s7c/check-s7c.txt` (`911948c8…`, 261 lines, `S7c total bad=0
-    control_bad=0`). Record: [path/experiments § Addendum S7c](../findings/path/experiments.md#addendum-2026-11-15-plan-0066-batch-s7c-new-checks-over-the-46-kept-logs-lanen66m),
-    results in [path/0004 § 10](../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m).
+    control_bad=0`). Record: [path/experiments § Addendum S7c](../../findings/path/experiments.md#addendum-2026-11-15-plan-0066-batch-s7c-new-checks-over-the-46-kept-logs-lanen66m),
+    results in [path/0004 § 10](../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m).
   - `tools/sweep2_s7d.py` (`59732e90…`) over the 16 rooms.gdb logs of run:2026-10-17-lifecycle and
     run:2026-10-17-h7a-lifecycle, `tools/rooms.py`'s `Checker` unchanged as the control (`SUMMARY mismatches=4
     checks=2891656`, the kept checks' sum and their 4 known records): `workspace/logs/n66m/s7d/check-s7d.txt`
-    (`6e30d778…`, 101 lines, `S7d total bad=0`). Record: [drlg/experiments § Addendum S7d](../findings/drlg/experiments.md#addendum-2026-11-15-plan-0066-batch-s7d-new-checks-over-the-16-kept-lifecycle-logs-lanen66m),
-    results in [drlg/0009 § 11.5](../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m).
+    (`6e30d778…`, 101 lines, `S7d total bad=0`). Record: [drlg/experiments § Addendum S7d](../../findings/drlg/experiments.md#addendum-2026-11-15-plan-0066-batch-s7d-new-checks-over-the-16-kept-lifecycle-logs-lanen66m),
+    results in [drlg/0009 § 11.5](../../findings/drlg/0009-room-lifecycle.md#115-plan-0066-batch-s7d-new-checks-over-the-kept-logs-2026-11-15-lanen66m).
   - `workspace/logs/n66m/manifest.sha256` (`54ad0bc5…`) passes from `workspace/logs/n66m`; eight development outputs
     in `dev/` with `manifest-dev.sha256`, not cited. Every settled row's *Route* cell carries its dated note.
 - **S7c (18): raised 8, raised in part 8, not raised 2, moved 0.** Raised: path-README 9, 10 (the masks at 4 770 player
@@ -1323,7 +1323,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (`PresetUnitSpawn` in populate walks only, 286 separating). Not raised: 59 (the logged order is the breakpoints').
 - **No contradiction.** Phase 3 notes (PathReplan's callers, Leap's and vultures' test mask 0, E2's old mode, E3's
   wording, "oldest first" as list order) in
-  [`2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes.md).
+  [`2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes`](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s7c-s7d-phase-3-notes.md).
 - **Symbols:** `g_PathPlanFuncs` (data, the planner at 24 707 logged slot calls) and `PATH_MonTestMask` (the test mask
   of 21 099 monster plans; 21 126 until the review moved the 27 wraith plans to `PATH_DynamicCreate`'s branch) raised to C in `re/symbols.csv`, evidence path/0004, and in path/0004's Functions table
   (and drlg/0005's row for `PATH_MonTestMask`).
@@ -1334,7 +1334,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   split: 202, 389, 390, 562, 569. path/search whole: 97, 528, 535, 552; split: 287, 554, 773. drlg/lifecycle whole:
   242, 284, 311, 519; split: 245, 254, 361, 467, 599, 652, 675, 682, 918.
 - **Review:** Tier B with a Tier A audit announced, requested by
-  [`2026-11-15-reverser-architect-review-plan-0066-s7c-s7d`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s7c-s7d.md).
+  [`2026-11-15-reverser-architect-review-plan-0066-s7c-s7d`](../../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s7c-s7d.md).
   Judgment calls listed there: the mask rows raised over later writers, the two symbol raises, rows 2 and 31 kept,
   the cap-line explanations of unlogged follow-ups, row 59 kept, row 14's reading, row 25's `RR` lines unused.
 
@@ -1389,10 +1389,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   r2 and the pushes read from r2's linear listing. Run under a 4 GB scope: `workspace/logs/n66n/s7a/check-s7a.txt`
   (`43476f6e…`, 152 lines, `S7a total bad=0`) and `totals-s7a.txt`, `manifest-s7a.sha256` (`a1140b00…`) passing from
   `workspace/logs/n66n/s7a`; development outputs in `dev/` with their own manifest. Records:
-  [frame/0001 § 8](../findings/frame/0001-tick-and-messages.md#8-plan-0066-batch-s7a-part-1-second-tool-graphs-and-scans-2026-11-16-lanen66n),
-  [path/0001 § 15](../findings/path/0001-pathplan-register.md#15-plan-0066-batch-s7a-part-1-second-tool-scans-and-graphs-2026-11-16-lanen66n),
-  [drlg/0009 § 12](../findings/drlg/0009-room-lifecycle.md#12-plan-0066-batch-s7a-part-1-caller-and-pin-scans-with-a-second-tool-2026-11-16-lanen66n),
-  [player/0002 § 12](../findings/player/0002-party.md#12-plan-0066-batch-s7a-part-1-second-tool-scans-2026-11-16-lanen66n).
+  [frame/0001 § 8](../../findings/frame/0001-tick-and-messages.md#8-plan-0066-batch-s7a-part-1-second-tool-graphs-and-scans-2026-11-16-lanen66n),
+  [path/0001 § 15](../../findings/path/0001-pathplan-register.md#15-plan-0066-batch-s7a-part-1-second-tool-scans-and-graphs-2026-11-16-lanen66n),
+  [drlg/0009 § 12](../../findings/drlg/0009-room-lifecycle.md#12-plan-0066-batch-s7a-part-1-caller-and-pin-scans-with-a-second-tool-2026-11-16-lanen66n),
+  [player/0002 § 12](../../findings/player/0002-party.md#12-plan-0066-batch-s7a-part-1-second-tool-scans-2026-11-16-lanen66n).
   Every settled row's *Route* cell carries its dated S7a note; README § 4's S7a row updated.
 - **Raised 30:** party 2, 14, 20, 22; frame 6, 7, 24, 38, 45, 50, 79, 80, 83, 85, 86, 88, 90, 125; path-README 3 (with a
   correction: `UnitRelocate` is a second server creator), 24, 32–36, 60, 65; path-search 28; lifecycle 7, 27.
@@ -1404,7 +1404,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Contradicted in part 1: lifecycle 2.** `RoomActivateB`'s tenth call (0x0061B7CA) lies in a separate function,
   0x0061B7B0 (the room at coordinates, then the activation), reached from 0x0061A140 ← 0x00553790, the unit spawn at
   coordinates of lifecycle row 7: a fifth on-demand family beside the four the spec names. Backlog
-  [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../backlog/archive/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
+  [`2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller`](../../backlog/archive/2026-11-16-reverser-spec-writer-roomactivateb-fifth-caller.md).
 - **Symbols:** two added, both I, in `re/symbols.csv` and drlg/0009's Functions table:
   `sub_0061A140_ActRoomAtCoordsActivate`, `sub_0061B7B0_RoomAtCoordsActivate`. None raised (no logged return compared).
 - **Totals** after merging `main` `997fb18d` (`totals-s7a.txt`, from the 29 files' *Totals by class*): a-logs 628, a-run
@@ -1428,7 +1428,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `0x2000` at unit `+0xC4`); frame 117 (the client send-queue writers). Add sections `stores` and `masks` to
   `tools/sweep2_s7a.py`, rerun `all` into a new `check-s7a-p2.txt` (keep part 1's file), extend the review request.
 - **Next:** Tier B review of part 1 requested
-  ([`2026-11-16-reverser-architect-review-plan-0066-s7a-part1`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7a-part1.md));
+  ([`2026-11-16-reverser-architect-review-plan-0066-s7a-part1`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7a-part1.md));
   part 2 by a fresh lane on `lane/n66n`.
 
 ### 2026-11-16 — Phase 1, batch S7a part 2 of 2 (reverser-static, `lane/n66n`): 17 of 18 settled; S7a done
@@ -1439,9 +1439,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `all` under a 4 GB scope: `workspace/logs/n66n/s7a-p2/check-s7a-p2.txt` (`95d0ebe5…`, 351 lines, `S7a total bad=0`;
   its part-1 lines identical to `check-s7a.txt`'s), `totals-s7a-p2.txt`, `manifest-s7a-p2.sha256` (`7a4af9fc…`) passing
   from `workspace/logs/n66n/s7a-p2`; development outputs in `dev/` with `dev/manifest-dev.sha256`. Records:
-  [path/0001 § 16](../findings/path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n),
-  [drlg/0009 § 13](../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n),
-  [frame/0001 § 9](../findings/frame/0001-tick-and-messages.md#9-plan-0066-batch-s7a-part-2-the-frames-reach-to-the-packet-senders-2026-11-16-lanen66n).
+  [path/0001 § 16](../../findings/path/0001-pathplan-register.md#16-plan-0066-batch-s7a-part-2-stores-masks-and-flag-readers-with-a-second-tool-2026-11-16-lanen66n),
+  [drlg/0009 § 13](../../findings/drlg/0009-room-lifecycle.md#13-plan-0066-batch-s7a-part-2-bit-and-caller-scans-with-a-second-tool-2026-11-16-lanen66n),
+  [frame/0001 § 9](../../findings/frame/0001-tick-and-messages.md#9-plan-0066-batch-s7a-part-2-the-frames-reach-to-the-packet-senders-2026-11-16-lanen66n).
   Every row's *Route* cell carries its dated S7a note; README § 4's S7a row updated.
 - **Raised 5:** path-README 38 (with a correction: a planner's graph also tests `0x40`, `PathFaceDir`), 77; path-search 5;
   lifecycle 29, 48.
@@ -1450,7 +1450,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   base readings → d-none); path-search 14, 34 (13 register dword stores at `+0x90` → c; 14's "below 40 is a monster's
   14" → c); lifecycle 36 (whole-field writes → d-none).
 - **Contradicted in part 3**, one backlog entry
-  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md):
+  [`2026-11-16-reverser-spec-writer-s7a-part2-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-s7a-part2-corrections.md):
   path-README 17 (`UNIT_CollUnmarkRect` reads a monster's `SizeY` when `AiWussie` and `AiBaalToStairs` remove their
   unit); lifecycle 12 (four `ItemPlaceOnGround` callers missing: `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate`,
   `TargetBeltItemToGround`); frame 117 (`AutosaveTick` sends a one-byte `0xB0` through 0x0052B330 inside the frame,
@@ -1482,9 +1482,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `workspace/logs/n66o/s7b/check-s7b.txt` (`914b090d…`, 398 lines, `S7b total bad=0`); `tools/frame_p55c_counts.py` rerun for
   both runs, byte-identical to the kept review counts; `totals-s7b.txt`; `workspace/logs/n66o/manifest.sha256` (`7bce21ba…`)
   passes from `workspace/logs/n66o`; three development outputs in `dev/` with `manifest-dev.sha256`. Records:
-  [frame/experiments § Addendum S7b](../findings/frame/experiments.md#addendum-2026-11-16-plan-0066-batch-s7b-new-checks-over-the-kept-frame-window-logs-lanen66o),
-  results in [frame/0007 § Plan 0066 batch S7b](../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o)
-  and [drlg/0009 § 14](../findings/drlg/0009-room-lifecycle.md#14-plan-0066-batch-s7b-the-frame-windows-room-and-timer-lines-2026-11-16-lanen66o).
+  [frame/experiments § Addendum S7b](../../findings/frame/experiments.md#addendum-2026-11-16-plan-0066-batch-s7b-new-checks-over-the-kept-frame-window-logs-lanen66o),
+  results in [frame/0007 § Plan 0066 batch S7b](../../findings/frame/0007-frame-batch.md#plan-0066-batch-s7b-new-checks-over-the-kept-windows-2026-11-16-lanen66o)
+  and [drlg/0009 § 14](../../findings/drlg/0009-room-lifecycle.md#14-plan-0066-batch-s7b-the-frame-windows-room-and-timer-lines-2026-11-16-lanen66o).
   Every row's *Route* cell carries its dated S7b note; README § 4's S7b row updated.
 - **Raised 17:** frame 2, 5, 22, 28 (drain never in a tick: 344 lines over 5 500 frames; the stamp N between `FT1` N and
   `FT0` N + 1, 262 of 262; the call chain 1, 1, 4 by raw scan and r2), 59–61, 123 (the act lists modelled from `RC` and `RR`:
@@ -1501,7 +1501,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (no near list in the frame logs), 97 (reader-internal; a rerun of the same tool). No row moved class.
 - **Contradicted in part (outside the batch):** frame row 33, D6 (H7b): town #2, a counted window, holds 86 rank-6 events,
   each before rank 7. With the J2, K4 owner and A1 notes in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7b-corrections.md).
 - **Symbols:** none added or raised (no logged return compared).
 - **Totals** at `34271870` (`totals-s7b.txt`, the 29 files' *Totals by class*): a-logs 628, a-run 340, b 446, c 390,
   c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626, unchanged (no row moved class); Phase 1 1 512, Phase 2 786,
@@ -1510,7 +1510,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   694, 803, 819, 835, 852, 932, 938, 939; split: 37, 40, 94, 104, 148, 238, 290, 376, 381, 444, 473, 583, 618, 714, 721, 807,
   832, 833, 834, 846, 895. drlg/lifecycle whole: 47, 113; split: 116, 125, 249.
 - **Review:** Tier B, requested by
-  [`2026-11-16-reverser-architect-review-plan-0066-s7b`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7b.md).
+  [`2026-11-16-reverser-architect-review-plan-0066-s7b`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7b.md).
 - **Resume note (S7f, 35 rows, not started):** frame 8–11, 23, 27, 29, 44; path-README 7, 8, 11, 16, 44, 67; path-search 3,
   26, 27, 30, 35; lifecycle 38–46, 57, 61–64, 70, 77. Most are "read with a second tool" (objdump/r2 reads of constants,
   loop bounds, immediates and tables: `g_ServerFps`, the 0x006CAF10 initializer, `g_GameSlots`' bound, `g_UnitTypeEventList`,
@@ -1531,9 +1531,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   4 GB scope: `workspace/logs/n66o/s7f/check-s7f.txt` (`b7d57335…`, 182 lines, `S7f total bad=0`), `totals-s7f.txt`,
   `room_extent/` (byte-identical to `workspace/logs/a67/`), `manifest-s7f.sha256` (`a13648c3…`) passing from
   `workspace/logs/n66o/s7f`; four development runs and the reading listings in `dev/` with `manifest-dev.sha256`.
-  Records: [frame/0001 § 10](../findings/frame/0001-tick-and-messages.md#10-plan-0066-batch-s7f-constants-tables-and-the-net-queue-with-a-second-tool-2026-11-16-lanen66o),
-  [path/0001 § 17](../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o),
-  [drlg/0009 § 15](../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o).
+  Records: [frame/0001 § 10](../../findings/frame/0001-tick-and-messages.md#10-plan-0066-batch-s7f-constants-tables-and-the-net-queue-with-a-second-tool-2026-11-16-lanen66o),
+  [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o),
+  [drlg/0009 § 15](../../findings/drlg/0009-room-lifecycle.md#15-plan-0066-batch-s7f-the-inactive-records-writerreader-pairs-with-a-second-tool-2026-11-16-lanen66o).
   Every row's *Route* cell carries its dated S7f note; README § 4's S7f row updated.
 - **Raised 27:** frame 8, 9, 10, 11 (with a refinement: 7 reads in 5 functions), 23, 27; path-README 7, 11, 16, 67;
   path-search 3, 26 (with a refinement: 51 passes for any `h0`), 27, 35; lifecycle 38–46 (42 with a refinement: `+0x20`
@@ -1543,7 +1543,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   stores, as row 63 → d-none); path-search 30 (the builders' room rule → c); lifecycle 62 (the callee's "no new minions"
   → c), 64 (17 register stores to `[reg+0xC8]` → c), 70 (the spawn chain's flags and marks → c).
 - **None contradicted; no row moved class.** Refinements for Phase 3 in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7f-refinements.md).
 - **Symbols:** none added or raised (no logged return compared). The two `g_UnitTypeEventList` helpers 0x00540B30 and
   0x00540B70 are left unnamed.
 - **Totals** after merging `main` `90022fb9` (`totals-s7f.txt`, the 29 files' *Totals by class*): a-logs 628, a-run 340,
@@ -1553,7 +1553,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   split: 211, 419. path/README whole: 102, 120, 127, 473; split: 111, 391. path/search whole: 130, 652, 714, 769; split:
   736. drlg/lifecycle whole: 529, 531, 568–572, 574, 576, 679, 736, 749, 915; split: 745, 760, 845.
 - **Review:** Tier B, S7b and S7f together, by the extended request
-  [`2026-11-16-reverser-architect-review-plan-0066-s7b`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7b.md).
+  [`2026-11-16-reverser-architect-review-plan-0066-s7b`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7b.md).
 - **Next:** S7 is done on this lane (S7b, S7f); Phase 1's remaining batches as README § 4 lists them.
 
 ### 2026-11-16 - Tier B check of S7b and S7f (architect, `lane/n66o`): accept with fixes (1)
@@ -1574,7 +1574,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   One kept run under `systemd-run --user --scope -p MemoryMax=4G`: `workspace/logs/n66l/s6c/check.txt` (`8665c322…`,
   114 lines, 26 checks, `S6C total bad=0`; a second run gives the same bytes), `manifest.sha256` (`6e2b20c2…`, passes
   from that directory); development outputs under `workspace/logs/n66l/dev/manifest-dev.sha256`. Record:
-  [anim/experiments § Static addendum S6c](../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l);
+  [anim/experiments § Static addendum S6c](../../findings/anim/experiments.md#static-addendum-2026-11-15-plan-0066-batch-s6c-second-tools-over-the-code-image-lanen66l);
   dated notes in anim/0001 (after the record table), anim/0002 § 5, anim/0003 (the walk base, § 8). Every settled
   row's *Route* cell carries its S6c note.
 - **S6c (35): raised 12, raised in part 22, contradicted in part 1, not raised 0, moved 0.** Raised: timing 50, 55,
@@ -1590,7 +1590,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   frame function gets no code, `MonModeFrameEvent` passes only ECX and EDX, 0x005A7BD2–0x005A7BD6, so the drop is
   below `MON_MeleeHit` or in its gates, unread), 85 (the stat accessor), 103 (`+0xC4` bit 6's writers); movement 21, 26,
   35; README 12.
-- **Backlog:** [`2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections.md)
+- **Backlog:** [`2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections`](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s6c-corrections.md)
   (the contradiction and five refinements: S4/DD frame slot and S3's `ret` end, `MonSetMode`'s `MonModeVelocity` and
   second `UNIT_SetUsedSkill`, the ten chart rows with no case, `MonStatsSpeeds` writing `i` back, `HandsRefresh`'s draws
   under the mode end).
@@ -1631,7 +1631,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `MemoryMax=4G`), no observed boundary and no declared callee return (R2): every callee runs, the event queue and
   its pool among them. Four families, 11 624 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 65 controls,
   59 separating with `passed` 0, 6 with no observable (each named in the record). Record:
-  [run:2026-11-16-sweep2-s6e](../findings/anim/experiments.md#run2026-11-16-sweep2-s6e); `workspace/logs/n66l/s6e/run/`
+  [run:2026-11-16-sweep2-s6e](../../findings/anim/experiments.md#run2026-11-16-sweep2-s6e); `workspace/logs/n66l/s6e/run/`
   (`check.txt` `fca5054c…`, `manifest.sha256` `0539fe07…`, 12 lines, passes from there; `cases` regenerates the case
   file byte for byte); development run under `workspace/logs/n66l/s6e/dev/` (`manifest-dev.sha256`), not cited. Dated
   notes in anim/0001 §§ 2, 7, 8 and anim/0002 § 3.
@@ -1644,7 +1644,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements, the spec's text is Phase 3's):** (1) `ANIMDATA_Find`'s length fatal is inside the record
   loop: a long name in an empty block returns none; (2) monster SQ (14) is skill-dependent in both monster tables,
   which J3 does not list; (3) `AnimRateIsMove` and `AnimRateIsAttack` are fatal for unit types other than 0 and 1. Routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md); anim/0001 § 2's "fails
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md); anim/0001 § 2's "fails
   fatally on a name … longer than 8" carries the dated refinement (rule 20; the spec's copy, timing line 157, is item 1).
 - **Symbols:** none raised (an ADR-0015/0021 emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `7a3ef52e`: a-logs 628, a-run 340, b 446,
@@ -1682,7 +1682,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   seeds unchanged), one `tools/ghidra.sh emuboundary` launch on `workspace/ghidra-n66l` (`-Xmx3G`, `MemoryMax=4G`),
   no observed boundary and no declared return (R2). Three families, 21 144 cases, 0 mismatches,
   0 stops, 0 unaccounted reads or writes; 68 controls, 63 separating with `passed` 0, 5 with no observable (named in
-  the record). Record: [run:2026-11-16-sweep2-s6e-2](../findings/anim/experiments.md#run2026-11-16-sweep2-s6e-2);
+  the record). Record: [run:2026-11-16-sweep2-s6e-2](../../findings/anim/experiments.md#run2026-11-16-sweep2-s6e-2);
   `workspace/logs/n66l/s6e/run2/` (`check.txt` `d37ef05c…`, `manifest.sha256` `d5d968e6…`, 6 lines, passes from
   there; `cases` regenerates the case file byte for byte); development subset under `workspace/logs/n66l/s6e/dev2/`
   (`manifest-dev.sha256`), not cited. Dated notes in anim/0001 § 2 (shapeshift display) and anim/0003 § Answer (the
@@ -1700,7 +1700,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   read, which no emulation runs either.
 - **Corrections (refinements; the spec's text is Phase 3's):** (4) B3 omits the gfxtype 2 exception (class 6 in mode
   4 → 12), which anim/0001 states; (5) movement B6: −4096 wraps from 32 769. Routed by annotating
-  [the part 1 backlog entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+  [the part 1 backlog entry](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `19edd04f`: a-logs 625, a-run 340, b 466,
   c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 492, Phase 2 806 (inventory
@@ -1709,7 +1709,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   977's fallback-chain half; movement 198's step arithmetic and acceleration half, 225 (the bound `[C]`, the `X`
   thresholds `[I]`, with correction 5).
 - **Review:** the Tier B request
-  [`2026-11-15-reverser-architect-review-plan-0066-s6c`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6c.md)
+  [`2026-11-15-reverser-architect-review-plan-0066-s6c`](../../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6c.md)
   is extended to this part. Judgment calls: (1) a new tool file rather than new families in part 1's tool, so part 1's
   kept run stays reproducible unchanged; (2) the 18 `wsprintfA` rows moved to b rather than left for part 3: no
   emulation route exists under ADR-0029 and R2 (H6d is a proposal; timing 91's absent name and the rate floors no
@@ -1740,8 +1740,8 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `workspace/logs/n66p/s3b/check-s3b.txt` (`81021927…`, 244 lines, `SUMMARY mismatches=0 checks=286 logs=108`),
   `static-s3b.txt` (`905d610e…`), `totals-s3b.txt`, `manifest-s3b.sha256` (`9324e605…`) passing from that directory,
   inputs `manifest-s3b-inputs.sha256` (108 lines) passing from `workspace/logs/`; development outputs in `dev/` with
-  `manifest-dev.sha256`. Records: [quests/experiments § Addendum S3b](../findings/quests/experiments.md#addendum-2026-11-16-plan-0066-batch-s3b-kill-and-service-steps-over-the-kept-questsgdb-logs-lanen66p),
-  [quests/0001 § 19](../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p).
+  `manifest-dev.sha256`. Records: [quests/experiments § Addendum S3b](../../findings/quests/experiments.md#addendum-2026-11-16-plan-0066-batch-s3b-kill-and-service-steps-over-the-kept-questsgdb-logs-lanen66p),
+  [quests/0001 § 19](../../findings/quests/0001-progression.md#19-plan-0066-batch-s3b-kill-step-and-service-step-rules-over-the-kept-questsgdb-logs-2026-11-16-lanen66p).
   Every row's *Route* cell carries its dated S3b note; README § 4's S3b row updated.
 - **Raised 10:** progression 5, 15, 64, 72, 101, 138, 142, 259, 284, 315.
 - **Raised in part 24**, remainders in the Route cells: 3 (e9 at a leave → a-run H3f), 50, 73, 120, 127, 166, 220 (the
@@ -1754,7 +1754,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   warp into 132 before the opening, no gate line).
 - **None contradicted.** Refinements for Phase 3 (Radament's near-credit sites, Andariel's level-37 pass writing a
   credited killer again, two StepBits site owners) in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3b-refinements.md).
 - **Symbols:** `sub_00544720_GameQuestSet` raised to `C` (518 logged writes, every one on the `QI1` game record, none
   on a player record) in `re/symbols.csv` (evidence moved to quests/0001), quests/0001's Functions table (row added)
   and items/0008's Functions table.
@@ -1772,7 +1772,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   "not raised", since the logs lack the line (R6); (6) `GameQuestSet` raised as a symbol on its logged record (rule 14's
   scope: a role checked on the game's own writes, not a return).
 - **Review:** Tier B, requested by
-  [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s3b.md).
+  [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s3b.md).
 - **Resume note (S3c, 51 rows, not started):** progression 1–2, 6, 14, 19–33, 35–38, 45, 68, 78, 104, 124, 126, 159,
   175, 179, 229–230, 254, 302, 314, 316, 318–319, 321; travel 1, 21, 30–33, 36, 56, 78; README 3 (README § 4's S3c row).
   Method: r2 `axt` and immediate scans with a second tool. Start from `tools/quests_s3b.py static`'s helpers
@@ -1792,8 +1792,8 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   4 GB scope: `workspace/logs/n66p/s3c/check-s3c-p1.txt` (`4c86fddb…`, `S3c total bad=0`), `totals-s3c-p1.txt`,
   `manifest-s3c-p1.sha256` passing from that directory; development outputs (the first full run, whose `events` section
   failed its own owner test on an int3 entry guess, fixed before the kept run) in `dev/` with `manifest-dev.sha256`.
-  Records: [quests/0001 § 20](../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p),
-  [quests/0002 § 17](../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p).
+  Records: [quests/0001 § 20](../../findings/quests/0001-progression.md#20-plan-0066-batch-s3c-part-1-second-tool-reference-argument-and-table-scans-2026-11-16-lanen66p),
+  [quests/0002 § 17](../../findings/quests/0002-travel.md#17-plan-0066-batch-s3c-part-1-second-tool-reference-scans-2026-11-16-lanen66p).
   Every row's *Route* cell carries its dated S3c note; README § 4's S3c row updated.
 - **Raised 36:** progression 1, 2, 6, 14, 20–33, 35, 36, 38, 45, 68, 78, 126, 175, 230, 254, 314, 318, 321; travel 1,
   31, 33, 36, 78.
@@ -1807,7 +1807,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **None contradicted. One correction:** row 229's "word 32 has one write" holds for the player record; the game
   record's word 32 also gets b13 from `A3Q7_FirstJoin` (`GameQuestSet(32, 13)`, 0x005BD2EE). Refinements (e3's direct
   raiser in `NpcActTravel`, the operate wrapper 0x00584540, the travel check's same-act test, `A2Q6_WrongTombMsg`) in
-  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3c-refinements.md).
 - **Symbols:** none raised (rule 14 covers logged returns; this part is static).
 - **Totals** at `19edd04f` (`totals-s3c-p1.txt`, the 29 files' *Totals by class*): a-logs 625, a-run 341, b 448, c 390,
   c-emu 494, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; no class moved, so Phase 1 1 509, Phase 2 789, blocked
@@ -1824,7 +1824,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   section are walker failures (empty or short listings, `GameQuestSet`'s compare-known `lea`), each read in the output,
   none on a row's claim.
 - **Review:** Tier B, by extending
-  [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s3b.md)
+  [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s3b.md)
   to S3b + S3c part 1.
 - **Resume note (S3c part 2, 8 rows + 3 remainders):** progression 19, 179, 302; travel 21, 30, 32, 56; README 3; the
   remainders of progression 37 (the forced list's class tests at 0x00543B1E–0x00543B2A), 316 (the cairn stones' init)
@@ -1851,8 +1851,8 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `manifest-s3c-p2.sha256` (`008e41e8…`), which passes from that directory. The development outputs are in `dev2/`
   with `manifest-dev2.sha256` (14 lines). The last two development runs differ from the kept run only by the tool's
   docstring and the totals section. Records:
-  [quests/0001 § 21](../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p),
-  [quests/0002 § 18](../findings/quests/0002-travel.md#18-plan-0066-batch-s3c-part-2-the-travel-tables-and-the-field-centre-2026-11-16-lanen66p).
+  [quests/0001 § 21](../../findings/quests/0001-progression.md#21-plan-0066-batch-s3c-part-2-the-game-records-data-flow-the-placement-scans-with-a-second-parser-2026-11-16-lanen66p),
+  [quests/0002 § 18](../../findings/quests/0002-travel.md#18-plan-0066-batch-s3c-part-2-the-travel-tables-and-the-field-centre-2026-11-16-lanen66p).
   Every row's *Route* cell carries its dated S3c part 2 note, and README § 4's S3c row is updated.
 - **Raised 6** (5 after the Tier A review, which split 19): progression 19, 179, 302; travel 21, 30; README 3. **Remainders raised 3:** progression 37, 316, 319,
   so these rows are now raised whole.
@@ -1864,7 +1864,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections and refinements:** travel 32's "its later change to mode 2 draws again" was already superseded by
   quests/0002 § 15 (event 1 writes mode 2 directly, no draw). The game record's read side gains
   `QUESTS_SendGameRecord`'s `SaveBytes` (progression 19). Both are in backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s3c-part2-refinements.md).
 - **Symbols:** none raised (static).
 - **Totals** at `0f81e160` (`totals-s3c-p2.txt`, the 29 files' rows): a-logs 625, a-run 341, b 448, c 390, c-emu 494,
   d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No class moved, so Phase 1 is 1 509, Phase 2 789 and blocked 328
@@ -1887,7 +1887,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   6. The two malformed DS1s that `tools/ds1.py` refuses are counted by the second reader only. Neither is named by
      LvlPrest.
 - **Review:** Tier B. The request
-  [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s3b.md)
+  [`2026-11-16-reverser-architect-review-plan-0066-s3b`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s3b.md)
   is extended to S3b and S3c whole.
 
 ### 2026-11-16 — S3b and S3c review (architect, Tier A, the audit of the fifth Tier B lane since `lane/n66m`): accept with fixes (2)
@@ -1941,7 +1941,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   checks without the emulator: the kept p50b `bonus` outputs recounted, and K3 against a brute force. 7 216 cases,
   0 mismatches; 33 emulated controls, 32 separating with `passed` 0 (`adv m1516`: the dual classes' cell is 0, `sf`
   separates the test by its trace); `bonus` 2 and `k3` 1 controls separating, `passed` 0. Record:
-  [run:2026-11-16-sweep2-s6e-3](../findings/anim/experiments.md#run2026-11-16-sweep2-s6e-3);
+  [run:2026-11-16-sweep2-s6e-3](../../findings/anim/experiments.md#run2026-11-16-sweep2-s6e-3);
   `workspace/logs/n66l/s6e/run3/` (`check.txt` `ab744e1a…`, `manifest.sha256` `1d84bce4…`, 6 lines, passes from
   there; `cases` regenerates the case file byte for byte). The first launch looped in a case the generator should not
   have drawn (an advance wrap on a record with frames ≤ the start frame; see corrections) and was stopped (killed by
@@ -1963,7 +1963,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements and readings; the spec's text is Phase 3's):** (6) K3: `X_m = 15` needs no IAS;
   (7) F1, `[I]`: a wrap on a record with frames ≤ the start frame never ends; (8) C2's missile divide truncates
   toward zero; C3's no-path call passes the unit's own type, class and mode. Routed by annotating
-  [the part 1 backlog entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
+  [the part 1 backlog entry](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6e-part-1-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `1f507662`: a-logs 623, a-run 341, b 469,
   c 390, c-emu 475, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 488, Phase 2 810 (inventory
@@ -1973,7 +1973,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   correction 8), 219 (C3 up to its calls), 245 (C3's store), 644 (J1's negative divide), 730 (K3's attack form,
   with correction 6).
 - **Review:** the Tier B request
-  [`2026-11-15-reverser-architect-review-plan-0066-s6c`](../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6c.md)
+  [`2026-11-15-reverser-architect-review-plan-0066-s6c`](../../backlog/archive/2026-11-15-reverser-architect-review-plan-0066-s6c.md)
   now covers S6c and S6e whole. Judgment calls: (1) timing 30 raised whole on the itemless emulation plus S6c's dump
   of every class-4/6 cell, not on an item's weapon class (0x00629FE0 unrun); (2) timing 86's remainder raised from a
   kept earlier emulation's outputs recounted with separating controls, not a new run; (3) timing 98's remainder
@@ -2017,7 +2017,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   families, 16 100 cases, 0 mismatches, 0 unpredicted stops, 0 unaccounted reads or writes; 88 controls, 81
   separating with `passed` 0, 7 named in the record. One recount without the emulator (`knock`). No allocator or
   import reached; `pme` alone uses observed boundaries (ADR-0021). Record:
-  [run:2026-11-16-sweep2-s6f](../findings/anim/experiments.md#run2026-11-16-sweep2-s6f); `workspace/logs/n66s/s6f/run/`
+  [run:2026-11-16-sweep2-s6f](../../findings/anim/experiments.md#run2026-11-16-sweep2-s6f); `workspace/logs/n66s/s6f/run/`
   (`check.txt` `55040b7a…`, `knock.txt` `e39c661d…`, `manifest.sha256` `83e3c276…`, 17 lines, passes from there;
   `cases` regenerates the case file byte for byte). Dated notes in anim/0001 §§ 2, 5, 9 and anim/0003 §§ 2, 4.
 - **Rows settled.** Raised: timing 45 (`seq`), movement 43 (`coll`: 376 walks at the 10th crossing, 69 across a
@@ -2035,7 +2035,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements; the spec's text is Phase 3's):** the primary-hand rule and the unwritten index (B1), the
   MonStats read with no null test (G1, `[I]`), the three lookups of `UNIT_SeqInit` (G2), flag `0x8` at every
   unblocked end (B4), `PathStop`'s step pair (B5). Routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections.md).
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s6f-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* on `main` `0c3cd6c9`: a-logs 623, a-run 341, b 467, c 390,
   c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808 (inventory README § 1
@@ -2044,7 +2044,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   reading `[I]`), 387 (G2, with correction 3); movement 345 (the 10th crossing). Halves: timing 170 (the dual classes,
   with correction 1), 410 (G4's advance), 494 (I1 up to the calls); movement 41 and 269 (the line test), 212 (the walk,
   with correction 4), 221 (`PathStop`, with correction 5).
-- **Review:** Tier B, [request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s6f.md). Judgment calls:
+- **Review:** Tier B, [request](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s6f.md). Judgment calls:
   (1) `coll` takes each test's result from the run's own trace and predicts the walk around it: the `[C]` is the walk
   given the tests, what `0x0064FF90` answers for a cell is drlg/collision's; (2) synthetic `g_PlrSeqTables` and column
   map, and the stock code map in `g_ItemWeaponClassIndex` (ADR-0015 (4)); the codes per index stay with that table's
@@ -2063,10 +2063,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   strictness switches at an equal-output boundary, named in the record; two of the controls are the spec's own
   readings (`spec_sanct_any_r`, `spec_monster_only`). No allocator or import reached; observed boundaries (ADR-0021)
   at `STATE_ApplyTimed`, the weapon-block check 0x0064F380 and `UnitSetOverlayStat`, each with its call site checked.
-  Record: [run:2026-11-16-sweep2-s5e](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e);
+  Record: [run:2026-11-16-sweep2-s5e](../../findings/combat/experiments.md#run2026-11-16-sweep2-s5e);
   `workspace/logs/n66t/s5e/run/` (`check.txt` `100ff7eb…`, `manifest.sha256` `44d94245…`, 8 lines, passes from
   there; `cases` regenerates the case file byte for byte). Claims:
-  [combat/0001 § 19](../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e).
+  [combat/0001 § 19](../../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e).
 - **Rows settled (23 statements).** Raised 19: reductions 2, 3, 4, 8, 9, 12, 13, 14, 15, 19, 21, 22, 23; to-hit 6,
   9, 12, 25 (with a refinement), 27; damage 20. Raised in part 2: to-hit 11 (the bit names of MonsterData `+0x16` stay
   that field's tag, no batch), 24 (`0x00621190`'s map; the moving set {2, 3, 6} of `UnitIsMoving` → part 2).
@@ -2075,7 +2075,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   whole), README 12's P = 25 (the crushing-blow divisor stays for part 2).
 - **Corrections (the spec's text is Phase 3's):** the contradiction above; C3's moving modes 2/15 apply to every
   non-player type; A2's null difficulty record gives 100; A7's stat-116 block runs only for a positive stat; A6's
-  state record words. Routed by [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
+  state record words. Routed by [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* on `main` `01db64a5`, unchanged (no row moved class): a-logs 623,
   a-run 341, b 467, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808.
@@ -2084,7 +2084,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   128, 145, 158, 168, 221, 229, 264, 278, 325, 330 whole; 233 and 253 with correction 1. To-hit 110, 157, 161 (now
   whole), 181, 337 whole; 312 with correction 2; halves 170 (the map; the bit names `[I]`) and 304 (`0x00621190`).
   Damage 175. Combat README 205's P = 25 half.
-- **Review:** Tier B, [request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md). Judgment
+- **Review:** Tier B, [request](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md). Judgment
   calls: (1) reductions 16 and 18 filed contradicted in part, not raised with a correction: B2's pseudocode gives 0
   where the code keeps a negative resistance, a different output; (2) to-hit 25 raised with a refinement (types 2 to 5
   in modes 2/15 also evade), since the spec's monster half is right and the extra types are a wider map, whether any
@@ -2126,10 +2126,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   boundary; `COMBAT_BuildDamage` runs with no inventory, so the weapon relinks find no item); observed boundaries
   `UnitSetStat`, `STATE_ApplyTimed`, `COMBAT_ApplyDamage`, `UNIT_UnlinkStatList`, `UNIT_DispatchEvent`,
   `UnitSetOverlayStat`, each with its return address checked. Record:
-  [run:2026-11-16-sweep2-s5e2](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e2);
+  [run:2026-11-16-sweep2-s5e2](../../findings/combat/experiments.md#run2026-11-16-sweep2-s5e2);
   `workspace/logs/n66t/s5e/run2/` (`check.txt` `03b6603a…`, `manifest.sha256` `a5a0335d…`, 9 lines, passes from
   there; `cases` regenerates the case file byte for byte). Claims:
-  [combat/0001 § 20](../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2).
+  [combat/0001 § 20](../../findings/combat/0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2).
 - **Statements settled (24 of 29).** Raised 19: delivery 39, 40, 41, 42, 43, 47, 48; damage 3, 4, 5, 8, 10, 11,
   18, 22, 23, 24, 25, 26. Raised with a correction 1: delivery 44 (E3's `(x − 1)·4` is `x·4`). Contradicted in part 2 (delivery 46 by the architect's lane-check ruling, first filed raised with a correction: the stat-36 cap
   cancels a blow only up to `cb` = 0x100000, above it `cb mod 100` stays, and the row's "`cb` = 0 there" is that statement; damage 7 below). Raised in part 2: damage 12's two
@@ -2147,7 +2147,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (Phase 3's):** damage A step 1 (condition, stat 120's sign, positive-only 121/122), step 5 (the
   player's flag tests), step 6 (the poison roll always runs and replaces the field), delivery E1 (the cap's
   remainder above 0x100000; type 2+ defenders `k` = 4), E3 (`x·4`). Appended to the
-  [corrections entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md) as items 6–10; the
+  [corrections entry](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md) as items 6–10; the
   finding's own older bullets (combat/0001 § A steps 1, 5, 6 and the Freeze bullet) carry a pointer to § 20.
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after merging `main` `21905e83`, unchanged (no row moved class):
@@ -2157,7 +2157,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   9), 485, 486, 492 (with correction 10), 519 (correction 9), 533, 562; damage 78, 79, 80, 107, 124, 126, 168, 186,
   226, 234, 238, 243 whole; 89 (correction 6) and 136 in part; the remainders of 87, 120, 145, 146, 147, 334; README
   205 now whole.
-- **Review:** Tier B; the part 1 [request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md)
+- **Review:** Tier B; the part 1 [request](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md)
   is extended to S5e whole. Judgment calls: (1) damage 7 filed contradicted in part, not raised with a correction:
   the condition and stat 120's sign give other outputs (596 and 474 separating cases); (2) delivery 44 raised
   with a correction: the row's own claim (the missile terms) holds, the slip is in a neighbouring term of the same line
@@ -2180,10 +2180,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   648). Route check first (R2/ADR-0029): no allocator and no import on any path the cases take (the inventory page is
   declared at the descriptor's size, so `InvPageGet` allocates nothing; `GameFindUnit` and `UNIT_AnimTransform` are
   not reached); observed boundaries `SKILLS_EvalCalc` and 0x00621D50, return addresses checked. Record:
-  [run:2026-11-16-sweep2-s5e3](../findings/combat/experiments.md#run2026-11-16-sweep2-s5e3);
+  [run:2026-11-16-sweep2-s5e3](../../findings/combat/experiments.md#run2026-11-16-sweep2-s5e3);
   `workspace/logs/n66t/s5e/run3/` (`check.txt` `ddbca2be…`, `mas-recount.txt` `97495c77…`, `manifest.sha256`
   `03b20edd…`, 16 lines, passes from there; `cases` regenerates the case file byte for byte). Claims:
-  [combat/0001 § 21](../findings/combat/0001-formulas.md#21-plan-0066-batch-s5e-part-3-the-defence-roll-with-a-shield-unit_getdefense-and-the-delivery-prologue-run2026-11-16-sweep2-s5e3).
+  [combat/0001 § 21](../../findings/combat/0001-formulas.md#21-plan-0066-batch-s5e-part-3-the-defence-roll-with-a-shield-unit_getdefense-and-the-delivery-prologue-run2026-11-16-sweep2-s5e3).
 - **Statements settled (5 of 5).** Raised: to-hit 22; to-hit 20 with a correction (the `b ≥ 1` test precedes the
   divide; refinement: the moving test reads `0x00621190`, the exception `+0x10`); delivery 22 with a refinement (a
   defender with no room also loses `0x3`). Raised in part: to-hit 15 (stats 171, 16, 182 and the Holy Shield gate up
@@ -2196,7 +2196,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and `STATLIST_Clear`/`STATLIST_SetStat`, whose allocator use is unread. It stays `[I]` in the row, no part 4.
 - **Corrections (Phase 3's):** to-hit B1 for `d` ≤ 0 and the Holy Shield gate (11), C2's test order and the two mode
   fields (12), delivery B1's room-less defender (13). Appended to the
-  [corrections entry](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
+  [corrections entry](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5e-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** after merging `main` `2ffce327`, from inventory README § 1, unchanged (no row moved class): a-logs 623,
   a-run 334, b 474, c 390, c-emu 477, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 490, Phase 2 808.
@@ -2207,7 +2207,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   halves; damage 9, 15, 34; to-hit 24, 31), in part 3 (damage 6, 13, 14), not settled 1 (README 35).
 - **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** To-hit 257 (with correction 12), 283, 304
   (now whole), 354 (now whole); 192 and 202 with correction 11 (the calc value `[I]`); delivery 297 with correction 13.
-- **Review:** Tier B; the S5e [request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md) is
+- **Review:** Tier B; the S5e [request](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5e-part-1.md) is
   extended to S5e whole (parts 1–3). Judgment calls: (1) to-hit 14 filed contradicted in part, not raised with a
   correction: B1's formula gives another output for every `d` ≤ 0 with `p` ≠ 0 (648 cases); (2) to-hit 20 raised with
   a correction: the row's claim (the mode-2 exception) holds, the slip is the next line's test order (2 separating
@@ -2228,7 +2228,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `S2c total bad=0`), under `manifest-s2c-p1.sha256` (`fd3c4b47…`), which passes from that directory. The development
   outputs are in `workspace/logs/n66q/dev/` with `manifest-dev.sha256`. They include the first full run with revision
   `00cd05f2…`, before the D48 same-skill sites were added; it differs from the kept run only by those lines. Record:
-  [skills/0002 § 15](../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q).
+  [skills/0002 § 15](../../findings/skills/0002-missiles.md#15-plan-0066-batch-s2c-part-1-second-tool-table-call-and-data-scans-2026-11-16-lanen66q).
   Every settled row's *Route* cell carries its dated "S2c 2026-11-16 (part 1)" note. README § 4's S2c row is updated.
 - **Raised 34:** README 17; catalogue 3, 12, 25, 36, 67, 98, 99; dispatch 18–24, 46, 48, 58, 60, 81, 194, 195;
   missiles 9–13, 39, 43, 44, 51, 58, 68, 93.
@@ -2242,7 +2242,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Contradicted in part: missiles row 2.** No shrine function calls `MissileCreateAt`, and its two monster-AI callers
   are missing from the row's list. This rewording and the refinements (mdo entry 37 and the 9b tails, the circle's
   truncation, sandmaggot6/7, state 114 in `StateDo147Attached`, the mastery bonus's other callers, D42's scope) are in
-  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
 - **Symbols:** none raised. The run is static, and rule 14 covers logged returns.
 - **Totals** at `1f507662` (`quests_s3c.py totals` over the 29 files): a-logs 625, a-run 341, b 448, c 390, c-emu 494,
   d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626. No class moved, so Phase 1 is 1 509, Phase 2 789 and blocked 328.
@@ -2261,7 +2261,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   4. Dispatch 42 is raised in part, not whole, because of the durability path.
   5. Dispatch 81's five shared pushes are placed by hand: the push sits before a branch, and the linear walkers stop at
      the other path's `ret`. The output decodes each push twice.
-- **Review:** Tier B, requested by [`2026-11-16-reverser-architect-review-plan-0066-s2c`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s2c.md) (to be extended to part 2).
+- **Review:** Tier B, requested by [`2026-11-16-reverser-architect-review-plan-0066-s2c`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s2c.md) (to be extended to part 2).
 - **Resume note (S2c part 2, 22 rows):** README 24; catalogue 14, 57, 58, 74, 75, 108; dispatch 41, 56, 57, 76 (the
   reader half; its data half is in `check-s2c-p1.txt` D74/D76), 88, 95, 185, 193; missiles 5, 15, 23, 25, 48, 70, 94.
   Also the S2a/S2b remainders routed to S2c: dispatch 1, 2, 25 (the packet ids in `g_SrvPacketTable`), 50 (the source
@@ -2285,7 +2285,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   development runs are in `workspace/logs/n66q/dev2/` under `manifest-dev2.sha256`. They were made with earlier,
   unhashed revisions of the same sections. Those revisions differ only in four filters (the C14 `esi` window, the
   GetPhysMax test address, the D88 packet-base window, the M70 read filter) and in two added decodes (D76, M23).
-  Record: [skills/0002 § 16](../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q).
+  Record: [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q).
   Every row's Route cell carries an "S2c 2026-11-16 (part 2)" note, and README § 4's S2c row is updated.
 - **Raised 10:** README 24; catalogue 14, 57, 74, 75, 108; dispatch 56, 88, 185; missiles 5.
 - **Raised in part 10**, with the remainders `[I]` and out of this plan (dispatch 76 and missiles 70 moved here at the
@@ -2302,7 +2302,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Contradicted in part 3:** dispatch 57 and 193, because mode 14's start `sub_005A7870_MonModeStartSeq` clears bit 6
   (0x005A7884); and missiles 23, whose six monster sites lie in six bodies, not five. Backlog
   `2026-11-10-reverser-reverser-skills-mode-14-start-bit-6` is closed. The rewordings are added to
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md).
 - **Not settled 2, both still c:**
   - dispatch 41: the client's request sender is not located, and finding it is a search of its own;
   - missiles 15: `MissileCreate` reloads `esi` (0x0059FE51) and keeps the flags in registers, so a data-flow read is
@@ -2331,19 +2331,19 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   4. D57 and D193 stay "raised in part" rather than all-contradicted. The non-14 modes hold, and the mode-14 store is
      named.
   5. C108 is raised whole on the zero case the line states. A negative calc is not claimed.
-- **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s2c`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s2c.md),
+- **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s2c`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s2c.md),
   now extended to S2c whole.
 
 ### 2026-11-16 — Plan 0069 Phase 4: the tour's batches H1a to H1d, H1g and H1h settled (reverser-static, `lane/n69g`)
 
 - **Done.** The 211 rows of the six batches (the tour's 241 less the 30 Phase 1a moved to H1p) settled over the 38 kept AI logs and the
   46 tour logs with S1b's block rule and sentence H1's rule. Record: the addendum *plan 0069 Phase 4, the settle* under
-  run:2026-11-16-ai-tour-3 in [findings/ai/experiments.md](../findings/ai/experiments.md); outputs `workspace/logs/n69g/`
+  run:2026-11-16-ai-tour-3 in [findings/ai/experiments.md](../../findings/ai/experiments.md); outputs `workspace/logs/n69g/`
   (`manifest.sha256`). The plan 0069 log holds the method, the reasons by group and the judgment calls.
 - **Result (inventory rows):** raised 22, raised in part 41, kept `[I]` 148 (each with its reason in the row; 55 rows of 21 entries not
   reached, which wait on the owner). No class or batch move; the six batches' § 4 status is "done"; § 1 counts unchanged.
 - **Ready for Phase 3 (spec-writer), monsters/ai/catalogue at `b5999f5e` line numbers** (unchanged at `21905e83`; each line's run and the
-  paths raised are in [plan 0069's ready list](0069-monster-ai-bestiary-tour.md#2026-11-16--phase-4-the-211-rows-settled-reverser-lanen69g)
+  paths raised are in [plan 0069's ready list](../0069-monster-ai-bestiary-tour.md#2026-11-16--phase-4-the-211-rows-settled-reverser-lanen69g)
   and its inventory row): to `[C]` whole: 110 (R1), 248 (R7), 294 (R8), 328 (R10), 546 (R142), 574 (R17), 602 (R18), 836 (R25), 882 (R26), 1004 (R38), 1224 (R49), 1565 (R71), 1582 (R72), 3072 (R95), 3193 (R114), 3252 (R116), 3272 (R117), 3428 (R122), 3470 (R124), 3790 (R136), 3814 (R137), 4314 (R54). Split, the raised half `[C]` and the rest `[I]` as each row says: 104 (R1), 234 (R7), 243 (R7), 263 (R8), 288 (R8), 290 (R8), 311 (R10), 323 (R10), 341 (R11), 419 (R14), 526 (R142), 542 (R142), 560 (R17), 586 (R18), 735 (R25), 772 (R25), 780 (R25), 961 (R36), 976 (R36), 991 (R38), 1000 (R38), 1011 (R39), 1022 (R39), 1193 (R49), 1311 (R57), 1326 (R57), 1522 (R71), 1572 (R72), 1589 (R73), 1607 (R73), 3188 (R114), 3231 (R116), 3259 (R117), 3268 (R117), 3393 (R122), 3775 (R136), 3786 (R136), 3797 (R137), 3810 (R137), 4310 (R54), 4688 (Reimplementation). The `l` lines
   are rewritten as first-boundary lines (R43l's form), the `r` lines under H1 with the new counts; the block lines get a `[C]` bullet per
   block naming the logged paths, as at S1b. No symbol is raised.
@@ -2362,10 +2362,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes (traced reads all in `g_BitMask32`); 17 controls, 16
   separating with `passed` 0, `best_lt~` inherent; spec-reading controls `spec_unsigned` 1 142, `spec_141_gt0` 565.
   The `static` section lists the objdump reads the record cites (call sites, the peek, the allocator calls). Record:
-  [run:2026-11-16-sweep2-s5fe](../findings/combat/experiments.md#run2026-11-16-sweep2-s5fe);
+  [run:2026-11-16-sweep2-s5fe](../../findings/combat/experiments.md#run2026-11-16-sweep2-s5fe);
   `workspace/logs/n66w/s5fe/run/` (`check.txt` `f040b213…`, `static.txt` `43dcac84…`, `manifest.sha256` `bb29e9cf…`,
   14 lines, passes from there; `cases` regenerates the case file byte for byte). Claims:
-  [combat/0001 § 22](../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe).
+  [combat/0001 § 22](../../findings/combat/0001-formulas.md#22-plan-0066-batch-s5fe-the-missile-critical-chain-emulated-the-finishers-entry-tests-and-peek-and-the-routes-that-cross-an-allocator-run2026-11-16-sweep2-s5fe).
 - **Route check first (R2, ADR-0029).** Most of the batch's routes run code after a callee that allocates or walks
   rooms: `MissileCreate` → `sub_00555230_SUnitCreate` (0x0059FC75), `sub_00571AA0_UnitMsgA3` (0x0040B430 at
   0x00571AC1, the finisher's tail on every charged state), `COMBAT_QueueHit` (0x0040B430 at 0x0057CABE, reached from
@@ -2385,7 +2385,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   boundary), 50 (handlers 19, 27 through `UnitQueueEvent`). Not settled: README 14 (`MissileDamageBlock`'s weapon
   branch and `MISS_GetDamMin`/`Max` with `SKILLS_LevelBands`, declarable, not built in budget).
 - **Corrections (Phase 3's):** backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections.md)
+  [`2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s5fe-corrections.md)
   (README 501's "above 0", delivery 237's "on the copy", README 377's `UnitMsgA3` writes).
 - **Symbols:** none raised (an emulation over a declared image and static reads, review-fixes 14).
 - **Totals** after merging `main` `b5a32324`, recomputed from the 29 files' rows: a-logs 623, a-run 334, b 489, c 390,
@@ -2394,7 +2394,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Ready for Phase 3 (spec-writer), lines at `b5999f5e`, match by text.** combat/README 316, 327, 335 whole; 268,
   300, 417 now whole; 501 with correction 1 (mastery half); 187 and 496 the peek half. combat/delivery 142, 728 whole;
   237 with correction 2; 155 the entry tests and the peek.
-- **Review:** Tier B, [request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5fe.md). Judgment calls:
+- **Review:** Tier B, [request](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s5fe.md). Judgment calls:
   (1) the peek and do 52's pass raised by two static tools on the same bytes (S5b's judgment call (1)), not emulated:
   reaching the peek from the finisher's entry needs `GameFindUnit`'s image and `InMeleeRange`'s closure, not built;
   (2) delivery 8, 11, 15 and 61 moved whole although a declarable draw precedes the allocator or room walk (do 42's
@@ -2426,12 +2426,12 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   exception, K3's `X_m = 15`, F1's endless wrap `[I]`, C2's truncating divide, C3's no-path arguments, movement B6's
   −4096 wrap); S6f 1–5 (B1's primary hand, G1's readings `[I]`, G2's three lookups, B4's flag `0x8`, B5's step pair).
   S6a item 5 (monsters/stats § G's `fanatic`, a lead outside anim) is routed to the reverser
-  ([entry](../backlog/archive/2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part.md)).
+  ([entry](../../backlog/archive/2026-11-16-spec-writer-reverser-plan-0066-fanatic-stat-67-champion-part.md)).
 - **Also:** quirks Q40, Q117, Q249, Q372, Q373 and Q375 follow their notes to `[C]` (quirks C 388 / I 159); Q371,
   Q376 and Q377 stay `[I]`, their notes now holding both tags and the entries restating the `[I]` clause. Research-map
   rows of anim/timing, anim/movement, the overview and quirks updated. wiki/animation and wiki/quirks are left with W4
   and two understated paragraphs on the run's turn; a refresh entry is filed
-  ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-animation-refresh-after-plan-0066-anim-re.md)).
+  ([entry](../../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-animation-refresh-after-plan-0066-anim-re.md)).
 - **Judgment calls for the review:** (1) anim/README note 1 (row 12) raised whole on timing J7's `fire` and S6c's
   callee closure of timing row 94, although row 12's route left its remainder to S6c, which did not take it;
   (2) movement Outputs (row 38) raised whole: it states the end on arrival only, row 26's remainder being the monster
@@ -2442,7 +2442,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   address bound, with the client reading of the rest kept `[I]` (A2, C2, J6); (7) timing J1's "not reached on stock
   data" kept `[I]`, since slows and curses are not scanned (the H6d ruling (b)).
 - **Gate:** fast green (73 warnings, none new in anim but W4 on the two wiki pages); `--full` green (39 surveys).
-- **Review:** Tier A, [request](../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-anim-cluster.md).
+- **Review:** Tier A, [request](../../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-anim-cluster.md).
 
 ### 2026-11-16 — Phase 3 anim cluster review (architect, Tier A, `lane/n66v`): accept with fixes (3)
 
@@ -2489,7 +2489,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `totals`) on the helpers of `quests_s3c.py`, `skills_s2c.py` and `sweep2_s7a.py`: references three ways (raw bytes,
   objdump, r2), every claimed instruction decoded by objdump and r2, call arguments by two walkers, image words by Python
   and r2 `pxwj`, table cells by the `.txt` reader and the `.bin`. Record:
-  [run:2026-11-16-sweep2-s1f](../findings/ai/experiments.md#run2026-11-16-sweep2-s1f); kept output
+  [run:2026-11-16-sweep2-s1f](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f); kept output
   `workspace/logs/n66x/s1fo/check-s1fo-p1.txt` (91 check lines, `S1fo total bad=0`) and `manifest-s1fo-p1.sha256`,
   passing from `workspace/logs/n66x/s1fo`. Every settled row's *Route* cell carries its dated note; README § 4's S1f and
   S1o rows updated.
@@ -2505,7 +2505,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Observed for part 2:** MonStats `Skill8` is also set on 709 `uberbaal`, so catalogue R51a's "only on `diabloclone` and
   `uberdiablo`" holds for Diablo's block's records only (row 422).
 - **Contradictions** go to Phase 3 through
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md);
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md);
   dated notes in ai/0002 (line 379's list) and ai/0003 (line 557's absence), rule 20.
 - **Symbols:** none raised or added. No logged return is compared (review-fixes 14).
 - **Totals** after merging `main` `858b7eea` (the kept check's `totals` line, from the 29 files' *Totals by class*):
@@ -2529,7 +2529,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (`UnitQueueEvent` 0x005417D0 kind-2 pushes, 30, and the 66 cancels), 23, 33, 38 (Hireling, PetType, Skills `summon`
   classes' `AI`).
 - **Next:** Tier B review of part 1 requested
-  ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md));
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md));
   part 2 by a fresh lane on `lane/n66x`.
 
 ### 2026-11-16 — Phase 3, the combat cluster re-tagged (spec-writer, `lane/n66y`)
@@ -2538,8 +2538,8 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (`lane/n66j`), S5e parts 1–3 (`lane/n66t`) and S5fe (`lane/n66w`) entries above, their Tier B checks (the S5e
   check's additions 14 and 15 to the corrections entry, the S5fe check's README 25 ruling), the six inventory files'
   *Route* cells and the three spec-writer entries. Each raised statement carries its run or second-source anchor:
-  run:2026-10-16-combat with the [S5a part 1](../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)
-  or [part 2](../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)
+  run:2026-10-16-combat with the [S5a part 1](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-1-new-checks-over-the-kept-combat-and-skills-logs-lanen66j)
+  or [part 2](../../findings/combat/experiments.md#addendum-2026-11-15-plan-0066-batch-s5a-part-2-the-monattackstats-output-model-and-the-deliverys-boundary-draws-lanen66j)
   addendum, run:2026-11-15-sweep2-s5b, run:2026-11-16-sweep2-s5e, -s5e2, -s5e3, run:2026-11-16-sweep2-s5fe, and
   run:2026-10-25-skills / -10-27-skills for the copies skills/missiles already held.
 - **Front matter:** combat/README C 43 / I 43 / L 5 → **C 75 / I 27 / L 5**; combat/to-hit C 39 / I 33 / L 5 →
@@ -2567,10 +2567,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   damage's § D, step 3 and step 1; delivery's not-reached list and the finisher run). Quirks Q56, Q58–Q60, Q135, Q139
   (rewritten), Q142, Q255, Q258, Q262, Q263, Q266 and Q407 follow their combat notes to `[C]`; Q262 and Q263 now cite
   the combat notes alone and skills/dispatch n2 and n7 move to the Coverage table's *Weaker duplicate* column until the
-  skills cluster raises them ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-plan-0066-skills-dispatch-notes-2-and-7.md));
+  skills cluster raises them ([entry](../../backlog/archive/2026-11-16-spec-writer-spec-writer-plan-0066-skills-dispatch-notes-2-and-7.md));
   the quirks class table, stale since the anim re-tag (377 / 161 against 383 / 155), now reads 396 / 142. Research-map
   rows of combat (rewritten whole), player/party and quirks updated. wiki/combat and wiki/characters carry W4; a refresh
-  entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-combat-refresh-after-plan-0066-combat-re.md)).
+  entry is filed ([entry](../../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-combat-refresh-after-plan-0066-combat-re.md)).
 - **Judgment calls for the review:** (1) README 20 and 24, filed raised by S5a as re-tags of skills/missiles, are
   split: skills/missiles E1 and F1 keep the missile's `arPct`, `AlwaysExplode` and the seven pairs' order `[I]`, and
   "the order differs" rests on damage step 3's mastery place, still `[I]` (review-fixes 1); (2) README 21 and 22 split:
@@ -2590,7 +2590,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   them `[C]` (S5fe): the skills cluster's re-tag, under the `lane/s38s` scope ruling.
 - **Gate:** fast green (77 warnings; new: W4 on wiki/combat and wiki/characters, which the refresh entry answers);
   `--full` green (39 surveys); `tools/quirks.py check` 0 errors.
-- **Review:** Tier A, [request](../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-combat-cluster.md).
+- **Review:** Tier A, [request](../../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-combat-cluster.md).
 
 ### 2026-11-16 — Phase 3 combat cluster review (architect, Tier A, `lane/n66y`): accept with fixes (4)
 
@@ -2641,7 +2641,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Done.** Branch from `main` `4508f8a2`. Stopped at the orchestrator's token budget, before any kept emulation run.
   New tool `tools/sweep2_s7e_emu.py` (development revision `1d2acce0…`), four development launches on
   `workspace/ghidra-n66u` (`-Xmx3G`, `MemoryMax=4G`), kept with `workspace/logs/n66u/s7e/manifest-dev.sha256` (33 lines)
-  and not cited. Record: [run:2026-11-16-sweep2-s7e](../findings/frame/experiments.md#run2026-11-16-sweep2-s7e).
+  and not cited. Record: [run:2026-11-16-sweep2-s7e](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e).
 - **Rows settled: 11, all moved c-emu → b** (the route crosses a pool allocation or free whose block or effect the
   claim uses; ADR-0021 covers nothing after it and R2 forbids a declared return; each call named in its row):
   frame 12, 15, 30, 49, 58, 72, 74, 114, 122 → H7b; path-README 5, 18 → H7c.
@@ -2672,7 +2672,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `routes` (1); development `dev5`, `dev6` (`manifest-dev2.sha256`, 22). Tools: `tools/sweep2_s7e_emu.py` (`b89a4fa3…`;
   `--families`, the `mevd`/`mevr` model fix, the null-tail and below-control handling in `qx`, the null cell array in
   `ffn`), new `tools/sweep2_s7e_path.py` (`b70ebec2…`: `facing`, `mreset`, `wtick`, `wroll`) and
-  `tools/sweep2_s7e_routes.py` (`f2d7f39d…`). Record: [run:2026-11-16-sweep2-s7e](../findings/frame/experiments.md#run2026-11-16-sweep2-s7e), part 2.
+  `tools/sweep2_s7e_routes.py` (`f2d7f39d…`). Record: [run:2026-11-16-sweep2-s7e](../../findings/frame/experiments.md#run2026-11-16-sweep2-s7e), part 2.
   Families: `ffn` 600 (4 left out of the claim), `qx` 400, `mevd` 500, `mevr` 300, `facing` 200, `mreset` 300, `wtick` 300, `wroll` 300; 0
   mismatches; every control separates and passes 0.
 - **Rows (52):** raised 11 (travel 19; frame 37, 46, 70; path-README 4, 71; lifecycle 3, 72–75); raised in part 7
@@ -2681,7 +2681,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   row); not settled 27, stay c-emu with a reason each (frame 57, 115, 121; path-README 20, 23, 25, 27–30, 52, 69, 74, 75;
   path-search 1, 6, 8, 13, 16, 22, 23, 25, 32, 33; lifecycle 9, 50, 60). S7e whole: 63 rows, 18 moved to b (11 in part
   1), 18 raised whole or in part, 27 not settled.
-- **New readings** (filed to spec-writer, [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7e-refinements.md)):
+- **New readings** (filed to spec-writer, [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s7e-refinements.md)):
   at current frame −2 `EventQueueAt` raises a frame to −1 and takes a null tail, an access at address 0 (a fault in the
   game, `[I]`); `COLL_RectTest` does not test the map's cell pointer (drlg/collision E4). Also travel's B1 gained a scope
   bullet for sizes 0–4 and steps 1–5 (front matter and research map C 80), quests/0002's "(plan 0066 S3e, proposed)"
@@ -2691,7 +2691,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   Phase 1 1 472, Phase 2 826. H7b now 24 rows.
 - **For the owner:** none. The 27 not-settled statements could be a later static batch (no pool entry in 23 of them);
   whether that is worth a batch is the architect's call.
-- **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s7e`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7e.md), covering S7e whole.
+- **Review:** Tier B, [`2026-11-16-reverser-architect-review-plan-0066-s7e`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s7e.md), covering S7e whole.
 
 ### 2026-11-16 — Phase 1, batch S4e part 1 (reverser-static, `lane/n66z`): the stats family, 6 of 91 settled; resume note
 
@@ -2708,7 +2708,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (`dev/manifest-dev.sha256`, not cited). Four families, 11 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no
   traced write; 30 controls, each separating, `passed` 0. No observed boundary, no import, no allocator reached (the
   generator rejects a case whose model would grow or shrink the cache). Record:
-  [run:2026-11-16-sweep2-s4e-emu](../findings/items/experiments.md#run2026-11-16-sweep2-s4e-emu) (part 1),
+  [run:2026-11-16-sweep2-s4e-emu](../../findings/items/experiments.md#run2026-11-16-sweep2-s4e-emu) (part 1),
   `workspace/logs/n66z/s4e/run/` (`check.txt` `e138a326…`, `static.txt` `8149f77b…`, `r2.txt` `f083ed6b…`,
   `manifest.sha256` `c0773683…`, 24 lines, passes from there; `cases` regenerates every case and memory file byte for
   byte, and `check` reproduces `check.txt` from the committed revision). Claims in stats/0001 § 11, dated notes in
@@ -2720,7 +2720,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   between the two is kept (65 cases; the spec's threshold control fails 79); the rest raised with two refinements
   (the record argument and the extended bit; an absent entry unfloored). Remainder raised, no new run: 16 (op 7 on the
   running total, p51s's control). Correction and refinements routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part1-corrections.md).
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part1-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** after merging `main` `72f003c8`, from the 29 files' *Totals by class*: a-logs 623, a-run 334, b 507, c 390,
   c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 457, Phase 2 841. No row moved class
@@ -2754,11 +2754,11 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `repl` (`ITEMEVENT_Replenish` to `ReplenishStep`'s write). 14 300 cases, 0 mismatches, 0 stops, 0 undeclared
   reads, no traced write; 40 controls, each separating, `passed` 0. No allocator and no import on any covered route
   (guards never reached); the error routine 0x00408090 is an observed boundary (0xBBA 17, 0xCDC 110). Record:
-  [run:2026-11-16-sweep2-s4e-emu part 2](../findings/items/experiments.md#part-2-the-price-core-and-the-gold-wear-and-replenish-helpers-2026-11-16),
+  [run:2026-11-16-sweep2-s4e-emu part 2](../../findings/items/experiments.md#part-2-the-price-core-and-the-gold-wear-and-replenish-helpers-2026-11-16),
   `workspace/logs/n66z/s4e/run2/` (`check.txt` `09e30b28…`, `static.txt` `fc40bd45…`, `r2.txt` `970a0a52…`,
   `manifest.sha256` `75befcaa…`, 40 lines, passes from there; `cases` regenerates every input byte for byte and `check`
   reproduces `check.txt` from the committed revision). Claims in
-  [items/0011 § S4e part 2](../findings/items/0011-economy.md#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu),
+  [items/0011 § S4e part 2](../../findings/items/0011-economy.md#plan-0066-batch-s4e-part-2-the-price-core-under-emulation-run2026-11-16-sweep2-s4e-emu),
   dated notes in §§ 5 and 6.
 - **Rows settled (items/economy, 36).** Raised: 4, 5, 7, 12–20, 22, 23, 25–33, 35, 36, 47, 48 (27). Raised in part:
   11 (the timer's 2 500, no floor; `ReplenishStep`'s floor → b H4b), 34 (the stock-data expectation stays `[I]`), 43
@@ -2767,7 +2767,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   unused; the caller half → c, part 5). **Moved c-emu → b (H4b): 8, 56** (`DropGoldAmount`'s loop crosses the
   free-cell search 0x0064E810 and the item creation 0x00559CE0, a unit allocation, before every next test).
   Refinements and the correction routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part2-corrections.md) (G3's caps are a player's
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part2-corrections.md) (G3's caps are a player's
   only; B3 after B2; 0xBBA; D5's ethereal test never decides; Encode 4's `x`; the timer has no floor).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' rows; `main` `72f003c8`): a-logs 623, a-run 334, b 509, c 390, c-emu 442,
@@ -2791,7 +2791,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   already equal). No game, no Ghidra. `tools/ai_s1fo.py` (`842c1e79…`) gains sections `p2f` and `p2o`; part 1's sections
   unchanged and their lines reproduce `check-s1fo-p1.txt`. Kept output `workspace/logs/n66x/s1fo/check-s1fo-p2.txt`
   (178 check lines, 87 of part 2, `S1fo total bad=0`), `manifest-s1fo-p2.sha256` passing from `workspace/logs/n66x/s1fo`;
-  development in `dev2/` (`manifest-dev2.sha256`). Record: [run:2026-11-16-sweep2-s1f](../findings/ai/experiments.md#run2026-11-16-sweep2-s1f), *Part 2*.
+  development in `dev2/` (`manifest-dev2.sha256`). Record: [run:2026-11-16-sweep2-s1f](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f), *Part 2*.
   Every row's *Route* cell carries its dated note; README § 4's S1f and S1o rows updated.
 - **S1f (5).** Raised 1: S1e remainder 420 (the four inline picks have 0x005FC130's shape, n 17/16, fallback 11/1).
   Raised in part 2: 196 (the caller set and the region word's three writers; "levels 1 and up" stays), 431 (Baal's start
@@ -2805,7 +2805,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and 356 raised, 518 contradicted in part; part 2 above). S1o: 28 rows, 24 settled (13 raised, 9 raised in part, 2
   contradicted whole or in part), 4 not settled.
 - **Corrections** to Phase 3 through the part 1 entry
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md)
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1f-p1-corrections.md)
   (items 4 and 5 added); dated notes in ai/0005 § 2.8 (the store count) and ai/0001 § 9 (the draws), rule 20.
 - **Symbols:** none raised or added (no logged return compared).
 - **Totals** after merging `main` `72f003c8` (the kept check's `totals` line): a-logs 623, a-run 334, b 507, c 390,
@@ -2819,7 +2819,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `boneprison1`–`4` are row 1; left `[I]` (the class mapping in `SkillSummonClass` is unread), not filed as a
   contradiction; (6) the 196 and 420 remainders, routed to S1f from S1e, are counted as S1f rows here.
 - **Next:** Tier B review of S1f and S1o whole: the part 1 request, extended
-  ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md)).
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1f-s1o-part1.md)).
 - **Tier B check (architect, S1f and S1o whole):** accept with fixes. Rulings: 171 "raised in part with a correction"
   stands (the no-store-of-1 claim holds, the count is the correction); machinery 54 "contradicted in part" stands (the
   `SpawnPosPick` call holds, the empty *Draws* cell does not; both draws are gated); **machinery 19 narrowed to raised in
@@ -2856,7 +2856,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   entry.
 - **Also:** research-map rows of quests/progression and quests/travel rewritten whole; quests/README's evidence
   paragraph names plan 0066's raises. wiki/quests is left with W4 and one wrong row (the events table's level change);
-  a refresh entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-quests-refresh-after-plan-0066-quests-re.md)).
+  a refresh entry is filed ([entry](../../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-quests-refresh-after-plan-0066-quests-re.md)).
 - **Judgment calls for the review:** (1) travel B1's header (row 20) raised whole: S3a's remainder was routed to S7e,
   which landed (`ffn`, sizes 0–4, steps 1–5, through both wrappers and directly); the header cites both. (2) Pseudocode
   headers that cover more than the logs hold (travel A2, D2, E1, E2, G1, G3; progression A1) stay `[I]` with a `[C]` note
@@ -2870,7 +2870,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   rewrite says "dispatched" event 3, since Warriv's act change calls quest object 6's event-3 slot directly (S3c), which
   the S3a check's dispatch site does not see.
 - **Gate:** fast green (76 warnings, the W4s on wiki/quests the refresh entry answers); `--full` green.
-- **Review:** Tier A, [request](../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-quests-cluster.md).
+- **Review:** Tier A, [request](../../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-quests-cluster.md).
 
 ### 2026-11-16 — Phase 3 quests cluster review (architect, Tier A, `lane/n66qr`): accept with fixes (4)
 
@@ -2930,10 +2930,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `elem`, `smana`, `rst`, `dly`, `kick`, `skel`), 14 100 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes;
   62 controls, 57 separating with `passed` 0, the 5 others inherent and named; spec-reading controls `spec_two_ifs`
   111, `spec_no_swap` 1 172, `spec_unsigned` 12. Observed boundaries `SKILLS_GetSkillLevel` and 0x005B0D70, return
-  addresses checked. Record: [run:2026-11-16-sweep2-s2ae](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae);
+  addresses checked. Record: [run:2026-11-16-sweep2-s2ae](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae);
   `workspace/logs/n66sa/s2ae/run/` (`check.txt` `1b264a66…`, `static.txt` `2a020d10…`, `routes.txt` `c78b8b93…`,
   `manifest.sha256` `83a5755f…`, 12 lines, passes from there; `cases` regenerates the case file byte for byte). Claims:
-  [skills/0002 § 17](../findings/skills/0002-missiles.md#17-plan-0066-batch-s2ae-part-1-leaf-functions-emulated-earlier-runs-re-read-the-routes-2026-11-16-lanen66sa).
+  [skills/0002 § 17](../../findings/skills/0002-missiles.md#17-plan-0066-batch-s2ae-part-1-leaf-functions-emulated-earlier-runs-re-read-the-routes-2026-11-16-lanen66sa).
 - **Rows (22).** Raised 17: dispatch 38 (refinement), 91, 149 (refinement); missiles 35 (refinements), 38, 60, 61,
   62, 65, 66, 98 (emulated); from earlier kept runs, no new run: dispatch 122 (run:2026-11-16-sweep2-s5e2 `frz`),
   138 (run:2026-11-16-sweep2-s5e `phh`), missiles 28 (combat/0001 § 22, the combat cluster's Tier A ruling), 78
@@ -2944,7 +2944,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `MissileCreate` → `SUnitCreate` 0x0059FC75 → pool 0x0040B430 at 0x005553BE).
 - **Corrections (Phase 3's):** D4's `else`, count and written step; C5's null record and mask; L5's data-byte rows;
   H's do-34 "path X" = `SubX`; I4's tail call read. Routed by backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-corrections.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-corrections.md).
 - **Symbols:** none raised (an emulation over a declared image and re-reads of kept runs, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* on `main` `de39e642` (`tools/quests_s3c.py totals`): a-logs 623,
   a-run 334, b 508, c 390, c-emu 443, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 456, Phase 2 842.
@@ -3000,18 +3000,18 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `CursorDrop`, `InvPlaceItem`, `InvItemToCursor` and the interaction callees). 12 700 cases, 0 mismatches, 0 stops,
   0 undeclared reads, no traced write; 16 controls, each separating, `passed` 0. No import, no allocator on any
   covered route. Record:
-  [run:2026-11-16-sweep2-s4e-emu part 3](../findings/items/experiments.md#part-3-the-item-request-handlers-and-unitinteracts-item-case-2026-11-16),
+  [run:2026-11-16-sweep2-s4e-emu part 3](../../findings/items/experiments.md#part-3-the-item-request-handlers-and-unitinteracts-item-case-2026-11-16),
   `workspace/logs/n66z/s4e/run3/` (`check.txt` `1bc77600…`, `static.txt` `8de890ed…`, `manifest.sha256` `741310ae…`,
   27 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
   committed revision). Claims in
-  [items/0013 § 12](../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu),
+  [items/0013 § 12](../../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu),
   dated notes in items/0013 §§ 1, 5, 8 and items/0012 § 1.
 - **Rows settled (17).** items/use: 6 raised; 18, 19, 20 raised in part (the flagged-refusal 3 after the use function
   → b H4c, its closure reaching the use entries' `STATLIST_Alloc`). items/inventory: 1, 9, 10, 28, 30, 41, 43 raised;
   29 and 31 remainders raised (with refinements); 40 raised in part (lengths of `0x17`–`0x19` and `0x18`'s fields; the
   other handlers stay S4e part 4); 45, 99 raised in part (the page write before `InvPlaceItem`; its refusal → part 4,
   `place`); 64 raised in part (the walk after a blocked line → b H4c). No class move. Refinements routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part3-refinements.md): `PktPosFar`'s position
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part3-refinements.md): `PktPosFar`'s position
   rule and −2³¹; `0x26`'s test for a static-path unit; `PktOwnedItemBad`'s cursor alternative; `0x16`'s self refusal;
   `0x17`'s busy gate and `InteractIsPlayer`'s unread argument; `0x19`'s `NoManaMsg` and silent trade refusal and the
   trade test's map; `InvPlaceItem`'s ECX/EDX; I1's returns of 1 and `InteractWalkTo`; `GameFindUnit`'s type 5.
@@ -3044,7 +3044,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   S7f (`lane/n66o`), S7c and S7d (`lane/n66m`, with the Tier A audit's wraith fix) and S7e parts 1–2 (`lane/n66u`, with the
   Tier B check: frame 55, 56, 64, 65 b on reachability, kept) entries above, the five inventory files' *Route* cells and
   the six spec-writer entries. Each raised statement carries its anchor: the kept path logs (run:2026-11-04-path,
-  -path-2) with [path/0004 § 10](../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m);
+  -path-2) with [path/0004 § 10](../../findings/path/0004-per-event-reproduction.md#10-plan-0066-batch-s7c-new-checks-over-the-kept-logs-2026-11-15-lanen66m);
   the lifecycle logs (run:2026-10-17-lifecycle, -h7a-lifecycle) with drlg/0009 § 11.5; the frame windows (run:2026-11-04-frame,
   -frame2, -frame3) with frame/0007's S7b section and drlg/0009 § 14; the second tools' sections (frame/0001 §§ 8–10,
   path/0001 §§ 15–17, drlg/0009 §§ 12, 13, 15, player/0002 § 12); run:2026-11-16-sweep2-s7e for the emulated maps.
@@ -3070,9 +3070,9 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and 14).
 - **Also:** quirks Q275, Q487, Q500, Q502, Q523 and Q526 follow their notes to `[C]` (class table 402 / 136); Q500 now cites
   sim/frame n8 alone and monsters/ai/README n1 moves to the Coverage table's *Weaker duplicate* column
-  ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-plan-0066-monsters-ai-readme-note-1-after.md)). Research-map rows of
+  ([entry](../../backlog/archive/2026-11-16-spec-writer-spec-writer-plan-0066-monsters-ai-readme-note-1-after.md)). Research-map rows of
   sim/frame, path (both), drlg/lifecycle, drlg/collision, monsters/spawn, player/party and quirks rewritten. Eight wiki pages
-  carry W4; a refresh entry is filed ([entry](../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-frame-re-tag.md)).
+  carry W4; a refresh entry is filed ([entry](../../backlog/archive/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-frame-re-tag.md)).
   `tools/backlog.py close` rewrote the closed entries' links in three findings (drlg/0009, frame/0001, path/0001); no other
   findings edit.
 - **Judgment calls for the review:** (1) five rows filed raised are counted split, under the binding overclaim rule: frame 37
@@ -3088,7 +3088,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   add the second walker's.
 - **Gate:** fast green (89 warnings; new: W4 on the eight wiki pages the refresh entry names); `--full` green (39 surveys);
   `tools/quirks.py check` 0 errors.
-- **Review:** Tier A, [request](../backlog/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-frame-cluster.md).
+- **Review:** Tier A, [request](../../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-frame-cluster.md).
 
 ### 2026-11-16 — Phase 3 frame cluster review (architect, Tier A, `lane/n66pf`): accept with fixes (4)
 
@@ -3115,7 +3115,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (judgment call 6) wrote "0 at Leap Attack's plans" into a row anchored to `SkillSt40Leap`: 0x005DA00C and the row's
   own 0x005D9F9C both lie in `LeapAttackPath`, which path/0004 § 10 calls Leap Attack's and search F the player's
   Leap. The cell now names the address and the function, not the skill; the label question goes to the reverser
-  ([entry](../backlog/2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count.md), with
+  ([entry](../../backlog/2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count.md), with
   drlg/0009 § 13's "11 functions" for the 10 its list names). *Omission (1):* sim/frame E1's pseudocode (`[C]`, all
   of E1) showed the raise without the case D9 now states; its comment points there.
 - **Judgment calls.** (1) The six filed-raised rows split: accepted. (2) monsters/spawn K1 raised beside lifecycle
@@ -3141,10 +3141,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `cpa`, `cmon`, `cun`, `cmis`), 11 000 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes, no observed
   boundary, no import; 131 controls, 121 separating with `passed` 0, the 10 others named (9 inherent equalities, one
   spec control separated by two sibling families). Record:
-  [run:2026-11-16-sweep2-s2ae2](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae2);
+  [run:2026-11-16-sweep2-s2ae2](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae2);
   `workspace/logs/n66sa/s2ae/run2/` (`check.txt` `4aa76a41…`, `reach.txt` `0001c1a2…`, `static.txt` `42c76d27…`,
   `manifest.sha256` `1edb5bbd…`, 12 lines, passes from there). Claims:
-  [skills/0002 § 18](../findings/skills/0002-missiles.md#18-plan-0066-batch-s2ae-part-2-the-mana-checks-and-the-collide-filters-emulated-2026-11-16-lanen66sa).
+  [skills/0002 § 18](../../findings/skills/0002-missiles.md#18-plan-0066-batch-s2ae-part-2-the-mana-checks-and-the-collide-filters-emulated-2026-11-16-lanen66sa).
 - **Rows (9).** Raised 4: dispatch 36, 37 (`SKILLS_ManaOk` with `SkillLevelBonus` and `ExpMaxLevel` whole; the `− 1`
   separated, `spec_no_minus1` 428), 49 (`SKILLS_SrvManaCheck`; no state-114 branch, `spec_st114` 56); missiles 47
   (`CollideUnitFilter` with `UnitsHostile`, `PlayerPairFlags`, `AlignSame02`, `UnitAlignGet` whole). Raised in part
@@ -3154,7 +3154,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Refinements** (Phase 3's): the level bonus's terms; the last-hit test needs Missiles `+4` bit 0; the friend test is
   skipped with no owner, an owner that is the candidate is not hostile, two players use the relation node's bit 3.
   Routed by backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-2-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-2-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-2-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-2-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Judgment calls for the review:** (1) the mana families set stats 6 and 8 at the model's own cost (or one off) in
   about two cases of three, so the returned bit separates the level term; the cost is the model's, the emulator's
@@ -3194,10 +3194,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   4 800 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes, no import; 35 controls, all separating, `passed`
   0. Static: the def-use of the two `g_MissileCollideTypes` `lea`s (`masks.txt`, 0 stores through them) and per-site
   allocator reach for mod 29's and do 30's calls (`sites.txt`). Record:
-  [run:2026-11-16-sweep2-s2ae3](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae3);
+  [run:2026-11-16-sweep2-s2ae3](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae3);
   `workspace/logs/n66sa/s2ae/run3/` (`check.txt` `bad4fdbf…`, `masks.txt` `d7cc31cc…`, `sites.txt` `4d3253be…`,
   `static.txt` `0ecfbce8…`, `manifest.sha256` `5612f356…`, 11 lines, passes from there). Claims:
-  [skills/0002 § 19](../findings/skills/0002-missiles.md#19-plan-0066-batch-s2ae-part-3-the-mask-uses-read-calldofunc-hit-27-and-unique-mod-29-emulated-2026-11-16-lanen66sa).
+  [skills/0002 § 19](../../findings/skills/0002-missiles.md#19-plan-0066-batch-s2ae-part-3-the-mask-uses-read-calldofunc-hit-27-and-unique-mod-29-emulated-2026-11-16-lanen66sa).
 - **Rows (3, and part 2's 5 remainders).** Raised 1: missiles 73 (hit 27 is `mov eax, 1; ret 4`). Raised in part 2:
   missiles 69 (`CallDoFunc`'s unsigned bound, null test and pass-through; remainder, do 30's effect, stays c-emu) and
   21 (mod 29 to its first creation; remainder → b (H2a): the second creation lies past the first creation's
@@ -3205,7 +3205,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   remainders raised: missiles 40, 41, 42, 45, 46 (the mask cells; these rows are whole). No class moves.
 - **Refinements** (Phase 3's): mod 29's gates, its seed's high word and the side-missile geometry; `CallDoFunc`'s
   register pass-through and returns. Routed by backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-3-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Judgment calls for the review:** (1) the mask cells rest on the image bytes and a def-use of the only two
   pointers into the table that `.text` forms; a pointer reaching the table by other arithmetic is the residual every
@@ -3246,10 +3246,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `workspace/logs/n66sa/s2ae/manifest-dev-p4.sha256`, not cited). Two families (`zz`, `mcr`), 6 500 cases, 0
   mismatches, 369 predicted fatal-path stops, 0 unaccounted reads or writes, no import; 72 controls, 69 separating (the
   3 others named in the record), `passed` 0. Route reads: per call site, allocator and import reach of eight roots
-  (`sites.txt`). Record: [run:2026-11-16-sweep2-s2ae4](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae4);
+  (`sites.txt`). Record: [run:2026-11-16-sweep2-s2ae4](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae4);
   `workspace/logs/n66sa/s2ae/run4/` (`check.txt` `5d0dead9…`, `reach.txt` `83bda362…`, `static.txt` `02daa52f…`,
   `sites.txt` `58ac68de…`, `manifest.sha256` `ce7ed80a…`, 11 lines, passes from there). Claims:
-  [skills/0002 § 20](../findings/skills/0002-missiles.md#20-plan-0066-batch-s2ae-part-4-the-zig-zag-callback-and-missilecreate-to-its-allocation-emulated-2026-11-16-lanen66sa).
+  [skills/0002 § 20](../../findings/skills/0002-missiles.md#20-plan-0066-batch-s2ae-part-4-the-zig-zag-callback-and-missilecreate-to-its-allocation-emulated-2026-11-16-lanen66sa).
 - **Rows (6).** Raised whole: missiles 14 (the refusal), 18 (the `VelLev` term, no `− 1`), 76 (the zig-zag callback:
   `2 + ⌈n ÷ 15⌉` seed steps). Raised in part, `MissileCreate` up to `SUnitCreate` at 0x0059FC75 (observed boundary):
   missiles 16 (B1's lines before the call; remainder → b (H2a)), 17 (the slow scaling and the refusal; the `SubLoop`
@@ -3257,7 +3257,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   route crosses `SUnitCreate`'s pool allocation (0x0040B430 at 0x005553BE, `sites.txt`). No class moves.
 - **Refinements** (Phase 3's): the refusal's −2³¹ difference, `RoomAtSubtile`'s neighbour fallback, the guards' signed
   class and 0/1 owner types, the velocity's byte and dword widths, and the zig-zag's exact draws and points. Routed by
-  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements.md).
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-4-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Judgment calls for the review:** (1) `zz`'s domain is unit-to-target differences of at most 250 sub-tiles: past
   258, `PathDirection`'s product wraps and the index leaves `g_PathDirTable`, a read the run would not account; the
@@ -3303,10 +3303,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `rro`), 7 500 cases, 0 mismatches, 655 predicted fatal-path stops, 0 unaccounted reads or writes, no import; 78
   controls, 74 separating (the 4 others named in the record), `passed` 0. Route reads: per call site, allocator and
   import reach of 39 roots, every open S2ae row's function (`sites.txt`). Record:
-  [run:2026-11-16-sweep2-s2ae5](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae5);
+  [run:2026-11-16-sweep2-s2ae5](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae5);
   `workspace/logs/n66sa/s2ae/run5/` (`check.txt` `78107755…`, `split.txt` `f2f57100…`, `reach.txt` `cbd40329…`,
   `static.txt` `05fc2d2e…`, `sites.txt` `9255ebd1…`, `manifest.sha256` `0f6933ff…`, 12 lines, passes from there).
-  Claims: [skills/0002 § 21](../findings/skills/0002-missiles.md#21-plan-0066-batch-s2ae-part-5-skills_targetcheck-and-two-re-seed-callbacks-emulated-2026-11-16-lanen66sa);
+  Claims: [skills/0002 § 21](../../findings/skills/0002-missiles.md#21-plan-0066-batch-s2ae-part-5-skills_targetcheck-and-two-re-seed-callbacks-emulated-2026-11-16-lanen66sa);
   skills/0001's `TargetCheck` bullet carries a dated correction.
 - **Rows (4).** Raised whole: dispatch 47 (`SKILLS_TargetCheck`, whole, with `UnitsHostile`, `SkillPetTest`,
   `SkillAllyTest` and the party lookup run whole), **contradicted in part**: spec D2's dead-target rule holds only for a
@@ -3317,7 +3317,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `MissileCreate` after `SUnitCreate`'s pool allocation, 0x0059FC75 → 0x00555230, 0x0040B430 at 0x005553BE) and 82
   (the two callbacks' `PathPlan` entries; the walk and the do functions stay c-emu). No class moves.
 - **Refinements and the contradiction** (Phase 3's): routed by backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements.md)
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-5-refinements.md)
   (D2's clear map, its three `TargetableOnly` tests, the re-found target; the two callbacks' table cells, which leave
   out `PathPlan`'s walk, and `0x005CD110`'s roll gate).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
@@ -3361,11 +3361,11 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `InvItemRemove` or its return, the page byte dumped), `pageget` (`InvPageGet`), `rowfor` (`InvRowForUnit`, every page
   byte). 17 952 cases, 0 mismatches, 0 undeclared reads, no traced write; 375 `pageget` cases stop at an allocator
   guard where the model expects it; 19 controls, each separating, `passed` 0. No import reached. Record:
-  [run:2026-11-16-sweep2-s4e-emu part 4](../findings/items/experiments.md#part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-2026-11-16),
+  [run:2026-11-16-sweep2-s4e-emu part 4](../../findings/items/experiments.md#part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-2026-11-16),
   `workspace/logs/n66z/s4e/run4/` (`check.txt` `aa788c1b…`, `static.txt` `f189e4b8…`, `manifest.sha256` `ed4ce77e…`,
   32 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
   committed revision). Claims in
-  [items/0013 § 13](../findings/items/0013-grids-belts-stacks.md#13-plan-0066-batch-s4e-part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-invpageget-invrowforunit-run2026-11-16-sweep2-s4e-emu),
+  [items/0013 § 13](../../findings/items/0013-grids-belts-stacks.md#13-plan-0066-batch-s4e-part-4-the-other-request-handlers-invitemtocursor-invplaceitems-refusals-invpageget-invrowforunit-run2026-11-16-sweep2-s4e-emu),
   dated notes in items/0013 §§ 1, 2, 4, 5, 12.
 - **Rows settled (items/inventory).** Raised: 32, 33, 37 (with refinements), 34, 36, 38, 46 (with refinement); 40's
   remainder (with refinement: `0x1C`'s length 3). Raised in part: 15 (the size refusal; the first use → b, H4d, the
@@ -3373,7 +3373,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   5), 23 (the clamp and `InvGridPut`'s refusals; `InvGridFree` → part 5), 39 (to `BeltFreeSlot`; after it → part 5), 42
   (to `InvTakeItem`; after it → part 5); 45 and 99's remainder raised in part (refusals before `InvItemRemove`; one
   after it → part 5 with row 20). No class move. Refinements routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part4-refinements.md).
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part4-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' *Totals by class*; `main` `d74fcb6d`): a-logs 623, a-run 334, b 509,
   c 390, c-emu 442, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 455, Phase 2 843. README §§ 3, 4
@@ -3409,18 +3409,18 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (`BeltPutItem` to `InvItemRemove`), `expiry` (quality 9), `ground` (`ItemPlaceOnGround` with its flag, to
   `QUESTS_RaiseItemDropped`). 10 633 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 22 controls,
   each separating, `passed` 0. No import, no allocator reached. Record:
-  [run:2026-11-16-sweep2-s4e-emu part 5a](../findings/items/experiments.md#part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expiry-and-the-quest-call-2026-11-16),
+  [run:2026-11-16-sweep2-s4e-emu part 5a](../../findings/items/experiments.md#part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expiry-and-the-quest-call-2026-11-16),
   `workspace/logs/n66z/s4e/run5/` (`check.txt` `6e87e907…`, `static.txt` `320b0b98…`, `manifest.sha256` `fc4c8808…`,
   42 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
   committed revision). Claims in
-  [items/0013 § 14](../findings/items/0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu),
+  [items/0013 § 14](../../findings/items/0013-grids-belts-stacks.md#14-plan-0066-batch-s4e-part-5a-the-search-on-full-pages-and-in-sequence-invgridfree-the-belt-tests-beltputitem-the-ground-expirys-quality-9-and-the-quest-call-run2026-11-16-sweep2-s4e-emu),
   dated notes in items/0013 §§ 1, 6 and items/0014 § 2.
 - **Rows settled (items/inventory).** Raised: 22, 98, 48, 55; 47 and 84 with refinements (the error routine for a
   null item, a non-item or a missing row; `+0xC4` bit 0 from `UNIT_SetMode`); 23's remainder (`InvGridFree`). Raised in
   part: 87 (quality 9's `+45000`; "no stock path makes one" stays c, S4e continuation), 81 (`ItemPlaceOnGround`'s null
   room; `CursorDrop`'s and `DropCreateItem`'s tests → b, H4d, no class move). **Class move:** 63 c-emu → b (H4d): its
   claim is the room `GroundDropCell` returns to `CursorDrop`, past the search's pool allocation 0x0064DEE8 (ruling R2).
-  Refinements routed by [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5a-refinements.md).
+  Refinements routed by [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5a-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' rows and *Totals by class*; `main` `30e8a46c`): a-logs 623, a-run 334,
   b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. README
@@ -3458,11 +3458,11 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `double` (kind 3's draws at chosen `(r1, r2)`, seeds built backwards), `potret` (kind 3's return for amounts at and
   below 0), `stackreq` (`StackRequest` to `StackMerge`). 8 600 cases, 0 mismatches, 0 stops, 0 undeclared reads, no
   traced write; 16 controls, each separating, `passed` 0. No import, no allocator reached. Record:
-  [run:2026-11-16-sweep2-s4e-emu part 5b](../findings/items/experiments.md#part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-2026-11-16),
+  [run:2026-11-16-sweep2-s4e-emu part 5b](../../findings/items/experiments.md#part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-2026-11-16),
   `workspace/logs/n66z/s4e/run6/` (`check.txt` `108ce34a…`, `static.txt` `6499c56a…`, `manifest.sha256` `576815a0…`,
   22 lines, passes from there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the
   committed revision). Claims in
-  [items/0013 § 15](../findings/items/0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu),
+  [items/0013 § 15](../../findings/items/0013-grids-belts-stacks.md#15-plan-0066-batch-s4e-part-5b-the-blood-golems-heal-the-doubling-draw-kind-3s-return-and-stackrequest-run2026-11-16-sweep2-s4e-emu),
   dated notes in items/0012 §§ 5, 6 and items/0013 § 7.
 - **Rows settled.** items/use: 38 and 52 raised with refinements (the chance is the uniform-pair count; the `v = 0`
   rule's anchor is `GolemHealShare`'s 0x005C68AC, `GolemHeal` returning 0 at `v ≤ 0`); 34 raised in part (every amount
@@ -3470,7 +3470,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   c-emu, S4e continuation). items/inventory: 58 raised with refinement (a found non-item returns 0 with the flag
   clear). **Class move:** inventory 57 c-emu → b (H4d): each branch after the first `UnitSetStat` sends a stat message
   whose `ClientQueuePacket` allocates when the client's buffer has no room (0x0040B430 at 0x0053B2DD; ruling R2).
-  Refinements routed by [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5b-refinements.md).
+  Refinements routed by [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5b-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' rows and *Totals by class*; `main` `30e8a46c`): a-logs 623, a-run 334,
   b 511, c 390, c-emu 440, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 453, Phase 2 845. README
@@ -3506,7 +3506,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `tools/anim_h6d.py` (`9abf9588…`); `tools/anim_sessions.py` only gains `ANIM_LOGDIR`. Slot 1 only, 11 kept sessions
   (each a fresh process; `sp-bar-dw` rerun because the checker had already seen its first launch, kept as
   `dev3-sp-bar-dw`), 48 118 SR lines; predictions committed (`e616cb74`) before the first kept log. Record:
-  [run:2026-11-16-sweep2-H6d](../findings/anim/experiments.md#run2026-11-16-sweep2-h6d); `workspace/logs/n66h6/run/`
+  [run:2026-11-16-sweep2-H6d](../../findings/anim/experiments.md#run2026-11-16-sweep2-h6d); `workspace/logs/n66h6/run/`
   (`check-h6d.txt` `22d6dbdf…`, `check-anim.txt` `8eeade97…`, `manifest.sha256` `2fe0f52c…`, 37 lines, passes from
   there). `H6D total checks=189882 bad=0`; the existing `tools/anim.py check` (the control) `rate`/`name`/`record`
   48 118/0. Dated notes in anim/0001 § 2, anim/0002 § 3 and anim/0003 § 1.1.
@@ -3525,7 +3525,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
 - **Corrections (refinements; the spec's text is Phase 3's):** the floors are reached by monsters; the first call's
   `+0x48` is the live length of the previous mode (3 040 of 3 074 equal the previous record's, 34 do not); the
   fallback record is returned in play (FS, BN, MO in mode 14); the left-hand dual term stays `[I]`. Routed by
-  [the backlog entry](../backlog/2026-11-16-reverser-spec-writer-plan-0066-h6d-corrections.md).
+  [the backlog entry](../../backlog/2026-11-16-reverser-spec-writer-plan-0066-h6d-corrections.md).
 - **Symbols:** none raised (live reads; no new address named).
 - **Totals** from the 29 files' *Totals by class* after merging `main` `30e8a46c`: a-logs 623, a-run 334, b 507, c 390,
   c-emu 444, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 457, Phase 2 841 (the rows keep class b; the
@@ -3546,10 +3546,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   launches (`dev12/` to `dev14/`, `workspace/logs/n66sa/s2ae/manifest-dev-p6.sha256`, not cited). Seven families
   (`h7`, `h8`, `h9`, `h10`, `h18`, `h31`, `st2`), 18 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes;
   75 controls, 69 separating, the 6 others the strictness of a clamp at its own bound, `passed` 0. Record:
-  [run:2026-11-16-sweep2-s2ae6](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae6);
+  [run:2026-11-16-sweep2-s2ae6](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae6);
   `workspace/logs/n66sa/s2ae/run6/` (`check.txt` `276b3a96…`, `reach.txt` `a3ae2ace…`, `static.txt` `f6b1716e…`,
   `manifest.sha256` `d5ce3bdc…`, 13 lines, passes from there). Claims:
-  [skills/0002 § 22](../findings/skills/0002-missiles.md#22-plan-0066-batch-s2ae-part-6-six-stat-event-handlers-and-kicks-start-emulated-the-open-routes-read-2026-11-16-lanen66sa);
+  [skills/0002 § 22](../../findings/skills/0002-missiles.md#22-plan-0066-batch-s2ae-part-6-six-stat-event-handlers-and-kicks-start-emulated-the-open-routes-read-2026-11-16-lanen66sa);
   skills/0003's handler table carries a dated note (rows 10 and 18 say less than the code).
 - **Triage first (the orchestrator's step 1).** Every row of part 5's "read the branch, likely b" group was read in
   `run6/static.txt` against `run5/sites.txt`. Only do 146's rows lie wholly past a reaching call: **dispatch 182 and
@@ -3573,7 +3573,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   None contradicted.
 - **Refinements** (Phase 3's): handler 18's life-below-maximum gate and its floor at 0; handler 10's other-unit
   `+0xC4` bit 2 gate; handler 9's formula; handler 31's owner walk and event arguments. Routed by backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-6-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-6-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-6-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-6-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** from the 29 files' *Totals by class* after the merge of `main` `ac87a5f5`: a-logs 623, a-run 334, b 510,
   c 390, c-emu 441, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README
@@ -3620,10 +3620,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   (`dev15/`, `dev16/`, `workspace/logs/n66sa/s2ae/manifest-dev-p7.sha256`, not cited). Four families (`chg`, `wear`,
   `h26`, `h27`), 13 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 69 controls, 65 separating, the
   4 others the strictness of a clamp at its own bound, `passed` 0. Record:
-  [run:2026-11-16-sweep2-s2ae7](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae7);
+  [run:2026-11-16-sweep2-s2ae7](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae7);
   `workspace/logs/n66sa/s2ae/run7/` (`check.txt` `1baf4dc6…`, `reach.txt` `32353c4a…`, `static.txt` `27991a14…`,
   `manifest.sha256` `60c01ec1…`, 14 lines, passes from there). Claims:
-  [skills/0002 § 23](../findings/skills/0002-missiles.md#23-plan-0066-batch-s2ae-part-7-skills_itemchargesok-skillweaponwear-and-handlers-26-and-27-emulated-2026-11-16-lanen66sa);
+  [skills/0002 § 23](../../findings/skills/0002-missiles.md#23-plan-0066-batch-s2ae-part-7-skills_itemchargesok-skillweaponwear-and-handlers-26-and-27-emulated-2026-11-16-lanen66sa);
   skills/0001's C7 bullet carries a dated note.
 - **Rows (5).** Raised whole: dispatch 40 (`SKILLS_ItemChargesOk`, its four callees run whole). Raised in part:
   dispatch 130 (handler 26 to `UnitSetStat`; the write and the packet reduction after it stay c-emu, stat 6
@@ -3633,7 +3633,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   None moved, none contradicted.
 - **Refinements** (Phase 3's): C7's refusal, passes, level and walk end; N2's type-45 test, durability gate, signed
   roll and wrapped-sign break test; handler 26's gates and loss formula; handler 27's caps by unit type. Routed by
-  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-7-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-7-refinements.md).
+  backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-7-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-7-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** unchanged (no class move): a-logs 623, a-run 334, b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit
   23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README § 4's S2ae row updated; skills-dispatch rows
@@ -3680,10 +3680,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `workspace/ghidra-n66sa` (`-Xmx3G`, `MemoryMax=4G`) after three development launches (`dev17/`–`dev19/`,
   `workspace/logs/n66sa/s2ae/manifest-dev-p8.sha256`, not cited). Five families (`set`, `h18w`, `h26w`, `wearw`,
   `mdts`), 18 000 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 241 controls, 199 separating,
-  `passed` 0. Record: [run:2026-11-16-sweep2-s2ae8](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae8);
+  `passed` 0. Record: [run:2026-11-16-sweep2-s2ae8](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae8);
   `workspace/logs/n66sa/s2ae/run8/` (`check.txt` `2a37b7c0…`, `reach.txt` `fe367583…`, `static.txt` `24013e3c…`,
   `manifest.sha256` `45f538e0…`, 15 lines, passes from there). Claims:
-  [skills/0002 § 24](../findings/skills/0002-missiles.md#24-plan-0066-batch-s2ae-part-8-the-stat-setter-run-whole-behind-handlers-18-26-skillweaponwear-and-in-missiledamagetostats-2026-11-16-lanen66sa);
+  [skills/0002 § 24](../../findings/skills/0002-missiles.md#24-plan-0066-batch-s2ae-part-8-the-stat-setter-run-whole-behind-handlers-18-26-skillweaponwear-and-in-missiledamagetostats-2026-11-16-lanen66sa);
   § 23's *After* bullet carries a dated note.
 - **The setter world.** One declared list per unit: base `+0x24`, cache `+0x48`, changed-key array `+0x50`, callback
   `+0x5C` (0 or 0x0055B800), up to two parents (`+0x34`), declared ItemStatCost rows. `UnitSetStat` →
@@ -3695,7 +3695,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   write and the packet's `max(0, +0x4C − loss)`), 156 (wear's write); their allocating routes → b (H2a). None moved,
   none contradicted.
 - **Refinements** (Phase 3's): the setter's rules, K 26's packet reduction, C1's data bits and stat-180 source.
-  Routed by backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-8-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-8-refinements.md).
+  Routed by backlog [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-8-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-8-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** unchanged (no class move): a-logs 623, a-run 334, b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit
   23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README § 4's S2ae row updated; skills-dispatch rows
@@ -3735,11 +3735,11 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   development launch (`dev20/`, `workspace/logs/n66sa/s2ae/manifest-dev-p9.sha256`, not cited). Two families (`ssl`
   `SummonSetLevel` whole, `h25` handler 25 to `UnitMarkUpdated`/`STATE_Set`, both with the setter whole), 14 000
   cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 149 controls, 127 separating, `passed` 0. Record:
-  [run:2026-11-16-sweep2-s2ae9](../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae9);
+  [run:2026-11-16-sweep2-s2ae9](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2ae9);
   `workspace/logs/n66sa/s2ae/run9/` (`check.txt` `40230f8d…`, `reach.txt` `b776807a…`, `static.txt` `bf2c02a2…`,
   `wrap.txt` `8ec21331…`, `batch-totals.txt` `fb605ba9…`, `manifest.sha256` `5089fa8d…`, 13 lines, passes from
   there). Claims:
-  [skills/0002 § 25](../findings/skills/0002-missiles.md#25-plan-0066-batch-s2ae-part-9-summonsetlevel-and-handler-25-emulated-with-the-setter-whole-the-batch-closed-2026-11-16-lanen66sa).
+  [skills/0002 § 25](../../findings/skills/0002-missiles.md#25-plan-0066-batch-s2ae-part-9-summonsetlevel-and-handler-25-emulated-with-the-setter-whole-the-batch-closed-2026-11-16-lanen66sa).
 - **Rows (3).** Raised: dispatch 142 (the summon level's clamps, binding on both sides) and 143 (no `noRatio` read:
   the summon declared at `+0x00`/`+0x5C` only, no MonStats image, 0 unaccounted reads). Raised in part: dispatch 129
   (handler 25 to `UnitMarkUpdated` and `STATE_Set`; the stat-84 write and the off branch need a declared room and stay
@@ -3752,7 +3752,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   whole-row move to b (ruling R2 applies only to the remainders already routed to H2a).
 - **Refinements** (Phase 3's): L2's integer level and MonLvl indexing, the raw cells and no `noRatio` test, K 25's
   list, absorb order and percent test. Routed by backlog
-  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-9-refinements`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-9-refinements.md).
+  [`2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-9-refinements`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s2ae-part-9-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** unchanged (no class move): a-logs 623, a-run 334, b 510, c 390, c-emu 441, d-2c 59, d-owner 68, d-edit
   23, d-none 178 = 2 626; Phase 1 1 454, Phase 2 844. Inventory README § 4's S2ae row updated; skills-dispatch rows
@@ -3768,7 +3768,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   on that case (a wrong index reads undeclared memory, a traced read); (3) d129's remainder stays `[I]` (a room
   route), not b; (4) `wrap` added after the emulation, reproduction confirmed. The batch-wide list is in the request.
 - **Review:** Tier B request (to be audited at Tier A) filed:
-  [`2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae`](../backlog/archive/2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae.md).
+  [`2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae`](../../backlog/archive/2026-11-16-reverser-architect-tier-b-review-plan-0066-s2ae.md).
 
 ### 2026-11-16 — Phase 1, batch S4e part 5c (reverser-static, `lane/n66z`): the mercenary button, `ItemUse` after its entries, `ItemSkillQtyAdjust`, the routes; 12 rows settled or routed; resume note
 
@@ -3782,11 +3782,11 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `UnitAddStat` or the error routine); and a new `sites` command (the direct-call closures from 19 roots to an
   allocator or import). 8 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 18 controls, each
   separating, `passed` 0. No import, no allocator reached. Record:
-  [run:2026-11-16-sweep2-s4e-emu part 5c](../findings/items/experiments.md#part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-2026-11-16),
+  [run:2026-11-16-sweep2-s4e-emu part 5c](../../findings/items/experiments.md#part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-2026-11-16),
   `workspace/logs/n66z/s4e/run7/` (`check.txt` `a7d99e9b…`, `static.txt` `411de8b4…` 48 pins, `sites.txt` `2b6f5e27…`,
   `manifest.sha256` `e1cfd74e…`, 18 lines, passes from there; `cases` regenerates every input byte for byte and `check`
   reproduces `check.txt` from the committed revision). Claims in
-  [items/0013 § 16](../findings/items/0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu),
+  [items/0013 § 16](../../findings/items/0013-grids-belts-stacks.md#16-plan-0066-batch-s4e-part-5c-the-mercenary-button-itemuse-after-its-entries-itemskillqtyadjust-and-the-routes-past-invitemremove-run2026-11-16-sweep2-s4e-emu),
   dated notes in items/0012 §§ 1, 2.
 - **Rows settled.** items/use: 21 raised with refinements (busy-and-player → 3, the pet's room near the player's, no
   inventory → 3, the no-cursor branch to `0x0054D130`, the first free pet node); 22 raised in part (the test's 1 leaves
@@ -3800,7 +3800,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   message queue); use 22 (message `0x7C`, use returns other than 0 and 1) and 34 (the 1 after `UnitAddStat` /
   `STATLIST_SetStat`, both reaching `STATLIST_InsertEntry`) to H4c; use 22's "a test returning 0" to d-none (no stock
   entry's test returns 0, 0x005BE16F). Refinements routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5c-refinements.md).
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5c-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image, review-fixes 14).
 - **Totals** (recomputed from the 29 files' rows and *Totals by class* after merging `main` `ac87a5f5`): a-logs 623,
   a-run 334, b 513, c 390, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 451, Phase 2 847.
@@ -3833,7 +3833,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   or the pool's resize inside `STATLIST_RemoveEntry`); `static` (113 objdump pins), `sites` (5 roots) and `xref`
   (the stat callback's switch from the raw bytes; rel32 callers). 8 500 cases, 0 mismatches, 0 stops, 0 undeclared
   reads, no traced write; 19 controls, each separating, `passed` 0. Record:
-  [run:2026-11-16-sweep2-s4e-emu part 5d](../findings/items/experiments.md#part-5d-itemautoequipslot-addstats-removal-and-the-static-remainders-2026-11-16),
+  [run:2026-11-16-sweep2-s4e-emu part 5d](../../findings/items/experiments.md#part-5d-itemautoequipslot-addstats-removal-and-the-static-remainders-2026-11-16),
   `workspace/logs/n66z/s4e/run8/` (`check.txt` `097e2c36…`, `static.txt` `9842c53a…`, `sites.txt`
   `05cfb200…`, `xref.txt` `9615a76c…`, `manifest.sha256` `9c5d612d…`, 14 lines, passes from
   there; `cases` regenerates every input byte for byte and `check` reproduces `check.txt` from the committed
@@ -3844,7 +3844,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   test, the registration on the fourth argument). **Class moves:** none. **Remainders routed without a move:**
   items/inventory 61 (the cursor clear, `InvSetCursor` at 0x00563CB8 after `GroundDropCell`'s and
   `ItemPlaceOnGround`'s allocations) to H4d, ruling R2. Refinements routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5d-refinements.md).
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5d-refinements.md).
 - **Symbols:** none raised (an emulation over a declared image and objdump readings, review-fixes 14).
 - **Totals** (recomputed from the 29 files' *Totals by class* after merging `main` `31a4949c`): a-logs 623, a-run 334,
   b 513, c 390, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 451, Phase 2 847, unchanged.
@@ -3884,14 +3884,14 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   pins, 35 for states 14) and `xref` (the `g_StatEventFuncs` references, the event functions' callers, the four
   appliers' call scans). 9 000 cases, 0 mismatches, 0 stops, 0 undeclared reads, no traced write; 15 controls, each
   separating, `passed` 0. Record:
-  [run:2026-11-16-sweep2-s4e-emu part 5e](../findings/items/experiments.md#part-5e-itemautoequipslot-through-itemreqcheck-the-stat-event-list-and-the-elemental-appliers-2026-11-16),
+  [run:2026-11-16-sweep2-s4e-emu part 5e](../../findings/items/experiments.md#part-5e-itemautoequipslot-through-itemreqcheck-the-stat-event-list-and-the-elemental-appliers-2026-11-16),
   `workspace/logs/n66z/s4e/run9/` (`manifest.sha256`, 13 lines, passes from there). Claims in items/0013 § 18,
   stats/0001 § 13, stats/0002 § 12.
 - **Rows settled.** items/inventory 67's remainder raised (all of I6 now `[C]`); stats/aggregate 23's remainder
   raised (refinement `[I]`: a found node blocks both events, a 0 frees every kind-2 node of the stat not in use);
   stats/states 14's remainder raised with refinement (the four remove callbacks: poison and burn 0x0056E900, cold
   0x0057AD80, freeze 0x0057B170). **Class moves:** none. Refinements routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5e-refinements.md), including the H3 evidence
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5e-refinements.md), including the H3 evidence
   that sits beside aggregate 27 (H4e, a-run; not moved).
 - **Symbols:** none raised (an emulation over a declared image and objdump readings, review-fixes 14).
 - **Totals** (the 29 files' *Totals by class* summed after this part, `main` `31a4949c`): a-logs 623, a-run 334, b 513,
@@ -3929,7 +3929,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   part are `p5f_*.py` in `workspace/logs/n66z/s4e/scratch-p5f/`; the four inventory files edited by `p5f_rows.py`
   were diffed against `HEAD` (only the Route column of the 15 rows below changed, each a pure append; states 46's
   Class and Batch too). Record:
-  [run:2026-11-16-sweep2-s4e-emu part 5f](../findings/items/experiments.md#part-5f-the-closing-static-part-2026-11-16).
+  [run:2026-11-16-sweep2-s4e-emu part 5f](../../findings/items/experiments.md#part-5f-the-closing-static-part-2026-11-16).
   Claims in items/0013 § 19, stats/0001 § 14, stats/0002 § 13.
 - **Rows closed (15).** Raised: items/inventory 18's remainder (with refinement: `numboxes` read as a byte, the grid
   bytes also through `InvPageGet`); stats/aggregate 36's remainder (`add func` 0 built as a `prop`). Raised in part:
@@ -3946,8 +3946,8 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   other `+0x38` writers, chains, keys, extended fields), 29 (the 136 as act index 3's bucket period), 31 ("only"
   over the flag's 19 other users), 41 (whether a stock refresh takes the draw; routed to H4e, no class move: an
   a-logs row, and the path crosses the allocator, 0x0057026C, 0x0056FFFD). Refinements routed by
-  [backlog](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5f-refinements.md); the table checks by
-  [backlog](../backlog/2026-11-16-reverser-archivist-plan-0066-s4e-part5f-table-checks.md).
+  [backlog](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s4e-part5f-refinements.md); the table checks by
+  [backlog](../../backlog/2026-11-16-reverser-archivist-plan-0066-s4e-part5f-table-checks.md).
 - **Symbols:** none raised (objdump readings beside Ghidra readings; review-fixes 14).
 - **Totals** (the 29 files' *Totals by class* summed after this part, `main` `31a4949c`): a-logs 623, a-run 334, b 514,
   c 389, c-emu 438, d-2c 59, d-owner 68, d-edit 23, d-none 178 = 2 626; Phase 1 1 450, Phase 2 848. README § 1
@@ -3972,7 +3972,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   and correction backlog entries: 10 (parts 1, 2 corrections; parts 3, 4, 5a–5f refinements), and 1 archivist entry
   (table checks).
 - **Review:** Tier B requested by
-  [backlog](../backlog/archive/2026-11-16-reverser-architect-plan-0066-s4e-tier-b-review.md).
+  [backlog](../../backlog/archive/2026-11-16-reverser-architect-plan-0066-s4e-tier-b-review.md).
 
 ### 2026-11-16 — Phase 1, batch S2ae Tier A audit (architect, `lane/n66sa`): accept with fixes (6)
 
@@ -3998,7 +3998,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   helper 4 has no pool or import. Omission 2: dispatch 127's and missiles 63's Route cells said their callees were not
   read for allocation, which part 1's `routes.txt` reads (stated); the `+0xC4` bit 1 "dead" name in skills/0003
   § `TgtPlaceCheck` (a test of the bit **set**, 0x005FD4C5–0x005FD4D0) marked, and the table doc's copy routed
-  ([backlog](../backlog/2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name.md)). Stale
+  ([backlog](../../backlog/2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name.md)). Stale
   cross-reference 1: skills/0003's two `SummonSetLevel` bullets and quirks/0001's `noRatio` line given § 25's raise.
 - **Added at review (no fault):** d143's absence given the function's own memory operands (objdump); the mask cells'
   no-store given a dword scan of every section (four hits, the four `.text` operands).
@@ -4026,7 +4026,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   the entry reaches the claim around the gates). No Ghidra launch, no emulation. Outputs
   `workspace/logs/n66sb/s2be/run/` (`sites.txt` `8e0f7b91…`, `rows.txt` `dd1e9ea8…`, `tool.sha256` `b0b4e63f…`,
   `manifest.sha256` `cefa49ea…`, 3 lines, passes from there). Claims:
-  [skills/0003 § 18](../findings/skills/0003-handlers.md#18-plan-0066-batch-s2be-part-1-the-catalogues-after-parts-routed-re-seed-callbacks-from-the-kept-runs-2026-11-16-lanen66sb).
+  [skills/0003 § 18](../../findings/skills/0003-handlers.md#18-plan-0066-batch-s2be-part-1-the-catalogues-after-parts-routed-re-seed-callbacks-from-the-kept-runs-2026-11-16-lanen66sb).
 - **Rows (46 of 74 statements).** Moved c-emu → b, 45 (ruling R2; reasons and call sites in the rows): catalogue 13,
   15, 17–19, 21–24, 27, 31, 32, 34, 38–41, 45–47, 50, 51, 55, 61–66, 68, 69, 71, 72, 76, 77, 79, 83–86, 88, 94, 95, 97,
   106. Each claim lies after, or is the work of, `MissileCreate` or a wrapper, a spawn, `PathPlan` or the re-target
@@ -4087,10 +4087,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `MemoryMax=4G`) after one development launch (`dev1/`, `workspace/logs/n66sb/s2be/manifest-dev-p2.sha256`, not
   cited). Two families (`cb43`, `p36`): 6 500 cases, 0 mismatches, 0 stops, 0 unaccounted reads or writes; 35
   controls, 30 separating, `passed` 0. A `tail` read of do 13 with objdump over `.text` and radare2. Record:
-  [run:2026-11-16-sweep2-s2be2](../findings/skills/experiments.md#run2026-11-16-sweep2-s2be2);
+  [run:2026-11-16-sweep2-s2be2](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2be2);
   `workspace/logs/n66sb/s2be/run2/` (`check.txt` `2030c929…`, `rows.txt` `b8547594…`, `tail.txt` `ec66e116…`,
   `static.txt` `dc526bbe…`, `manifest.sha256` `0dc5df57…`, 12 lines, passes from there). Claims:
-  [skills/0003 § 19](../findings/skills/0003-handlers.md#19-plan-0066-batch-s2be-part-2-do-13s-return-do-6s-per-unit-callback-and-prg-36-on-skills-rows-44-and-48-2026-11-16-lanen66sb).
+  [skills/0003 § 19](../../findings/skills/0003-handlers.md#19-plan-0066-batch-s2be-part-2-do-13s-return-do-6s-per-unit-callback-and-prg-36-on-skills-rows-44-and-48-2026-11-16-lanen66sb).
 - **Rows (3).** Raised: catalogue 107. do 13's one `ret` follows `xor eax, eax` with no `EAX` write between, and no
   branch in `.text` lands between them (objdump, with radare2 as the second tool), so the return is 0 on every path,
   queue paths included; no remainder. Raised in part: catalogue 43 (the callback's nine-dword block to
@@ -4147,10 +4147,10 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   only). Two kept `tools/ghidra.sh emuboundary` launches on `workspace/ghidra-n66sb` (`-Xmx3G`, `MemoryMax=4G`), one
   per family (`tent140` 1 200, `d137` 1 500): 2 700 cases, 0 mismatches, 0 stops, 0 undeclared reads; 5 controls,
   each failing; the site control fails every boundary case. Two earlier `d137` launches were overwritten (not cited).
-  Record: [run:2026-11-16-sweep2-s2be3](../findings/skills/experiments.md#run2026-11-16-sweep2-s2be3);
+  Record: [run:2026-11-16-sweep2-s2be3](../../findings/skills/experiments.md#run2026-11-16-sweep2-s2be3);
   `workspace/logs/n66sb/s2be/run3/` (`check.txt` `dde8acec…`, `worked.txt` `2ed96de9…`, `manifest.sha256`
   `3f8db4aa…`, 13 lines, passes from there). Claims:
-  [skills/0003 § 20](../findings/skills/0003-handlers.md#20-plan-0066-batch-s2be-part-3-closing-the-worked-example-of-do-140-and-do-137-past-state_set-2026-11-16-lanen66sb).
+  [skills/0003 § 20](../../findings/skills/0003-handlers.md#20-plan-0066-batch-s2be-part-3-closing-the-worked-example-of-do-140-and-do-137-past-state_set-2026-11-16-lanen66sb).
 - **Rows (24).** Raised: catalogue 104 (the worked example as two recorded cases: W1 `SpawnAtPos(…; 100, 199, 0, 1,
   −1, 0)` with the seed three steps on and `n − i` = 4, W2 return 1 with the seed nine steps on; the spec's table
   values exactly). Raised in part: catalogue 96 (do 137 past `STATE_Set` with `STATE_Set` and `UnitMarkUpdated` whole
@@ -4176,7 +4176,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   as not settled with routes, as the brief for the closing part asks; none is moved to b, since each route needs no
   game run. (4) H2c (45 statements, proposed by part 1) is put to the reviewer with this batch.
 - **Review:** Tier B requested
-  ([request](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s2be.md)); it is the fifth check since the
+  ([request](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s2be.md)); it is the fifth check since the
   last audit, so a Tier A audit follows.
 
 ### 2026-11-16 — Phase 1, batch S1m (reverser-static, `lane/n66m1`): done, 40 of 40 rows settled or routed
@@ -4185,7 +4185,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   `tables`, `gaps`, `totals`; the image and table readers of `tools/ai_s1fo.py` and `tools/quests_s3c.py`) over the 38
   logs of S1a (21 rev 4, 17 rev 6), the 31 logs of run:2026-11-03-ai for the command-byte and seed-pair checks, and the
   six gap walks of run:2026-11-04-h1's review. Record:
-  [run:2026-11-16-sweep2-s1m](../findings/ai/experiments.md#run2026-11-16-sweep2-s1m); kept output
+  [run:2026-11-16-sweep2-s1m](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1m); kept output
   `workspace/logs/n66m1/s1m/check-s1m.txt` (74 check lines, `S1m total bad=0`), `manifest-s1m.sha256` passing from
   `workspace/logs/n66m1/s1m`; development in `dev/`. Every row's *Route* cell carries its dated note; README § 4's S1m
   row updated. One shared pass with S1a's tool was not needed: `ai_resume_flip.py`'s kept census for row 20 is cited, and
@@ -4200,7 +4200,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   the table's five commands (item 1). (3) 75 A1/A2 commands move the unit seed inside `MonSetMode` with no skill start
   logged (item 2). (4) States 10 and 11 occur in the Countess launches with no curse cast (item 4).
 - **Corrections** to Phase 3 through
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections.md)
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1m-corrections.md)
   (five items). No contradiction filed: each item is a refinement or a remainder.
 - **Symbols:** none raised or added.
 - **Totals** (the kept check's `totals` line; `main` `c6c85ae8` merged after, which changes no inventory file, and `tools/ai_s1m.py totals` gives the same line): a-logs 622, a-run 334,
@@ -4214,7 +4214,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   raised in part only for `<` against `≤` (no equal pair counted), every arm of row 2 taken; (6) README 32 on the first
   logged decision, which is not the allocation.
 - **Next:** Tier B review requested
-  ([`2026-11-16-reverser-architect-review-plan-0066-s1m`](../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1m.md)).
+  ([`2026-11-16-reverser-architect-review-plan-0066-s1m`](../../backlog/archive/2026-11-16-reverser-architect-review-plan-0066-s1m.md)).
 
 ### 2026-11-16 - Tier B check of S1m (architect, `lane/n66m1`): accept with fixes (3)
 
@@ -4280,7 +4280,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   Aggregate's open question on what queues the 136-frame refresh is narrowed to whether 136 is act 3's period (L
   unchanged). Research-map rows of stats/aggregate and stats (row 95), stats/states, items/economy, items/use and
   items/inventory, and quirks rewritten. Three wiki pages carry W4 (stats-and-states, economy, inventory); a refresh
-  entry is filed ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-stats-items-re.md)).
+  entry is filed ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-wiki-refresh-after-plan-0066-stats-items-re.md)).
   `tools/backlog.py close` rewrote the closed entries' links in two findings (items/experiments, stats/experiments); no
   other findings edit. No Mermaid block changed; none disagrees with its text.
 - **Owner note, left as filed.** The move conventions of items/inventory 61 (the cursor clear routed to b, H4d, with no
@@ -4309,7 +4309,7 @@ Two targeted rulings left by the S3a and S4a/S4b Tier B checks, not a review.
   callbacks are stated there); (12) aggregate's two `[L]` open questions reworded to drop the parts now emulated or read.
 - **Gate:** fast green (74 warnings; new: W4 on the three wiki pages the refresh entry names); `--full` green
   (39 surveys); `tools/quirks.py check` 0 errors.
-- **Review:** Tier A, [request](../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-stats-items-cluster.md).
+- **Review:** Tier A, [request](../../backlog/archive/2026-11-16-spec-writer-architect-review-plan-0066-phase-3-stats-items-cluster.md).
 
 ### 2026-11-16 — Phase 3 stats/items cluster review (architect, Tier A, `lane/n66si`): accept with fixes (3)
 
@@ -4398,7 +4398,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   Miscount 1: § 20 and the s2be3 record gave "89 linked, 147 already marked" beside per-case counts; they are per
   `UnitMarkUpdated` call (118 cases × 2 = 236), now stated. Omission 1: the order difference on 43 (a disagreement
   with the spec) and the Phase 3 refinements had no backlog entry (ADR-0024); filed
-  ([entry](../backlog/archive/2026-11-16-architect-spec-writer-plan-0066-s2be-skills-catalogue-retag.md)).
+  ([entry](../../backlog/archive/2026-11-16-architect-spec-writer-plan-0066-s2be-skills-catalogue-retag.md)).
 - **H2c ruling: accepted as filed**, a harness batch of its own: 45 statements under the 60 cap, one logger family
   (skills.gdb); folding into H2a would make 85. Sessions **~12 (an estimate)**, ~3.8 claims per session, so
   **deferred** under the threshold like H2a and H2b; when the skills harness runs, H2a and H2c share recipes
@@ -4425,11 +4425,11 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   0 mismatches, 0 unaccounted traced reads or writes, 79 controls, every one separated, `passed` 0. The one observed
   boundary is `UnitQueueEvent` 0x005417D0 (366 cases end there at the checked call sites), and 82 cases stop at the
   fatal guard as their claim states. The record is
-  [run:2026-11-16-sweep2-s1ne](../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne):
+  [run:2026-11-16-sweep2-s1ne](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne):
   `workspace/logs/n66ne/s1ne/run/` (`check.txt` `a88ddd26…`, `manifest.sha256` `25f3755b…`, 12 lines, passes from
   there) and `routes/` (`routes.txt` `734b4230…`). `cases` regenerates the case file byte for byte, and `check`
   reproduces `check.txt`. The claims are in
-  [ai/0001 § 14](../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne).
+  [ai/0001 § 14](../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne).
 - **Rows (17 of 44).** **Raised 9:** machinery 8, 36 and 37 (the override pair), 73 (`AiGreaterMummyCb`), and 28
   (B8, from the kept run:2026-10-27-ai-emu `ring` family with no new run, S2ae part 1's practice); README 5 and 6
   (`aidel` 15, stun 45), 24 (`MonAiEntryGet`, states 10–12 and 18 and past) and 25 (the gate). **Raised in part 8,**
@@ -4438,7 +4438,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   (`UNIT_CancelEvents`' unlink), 50 (the `MonAiInit` bound, which is part 2), and 56 (`MonSkillTargetOk`). There are no
   class moves, so the totals are unchanged.
 - **Corrections** go to Phase 3 through
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md)
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md)
   (six items). The largest is README C4: `n` = 0 becomes 1, a negative `n` is kept, and the compare is unsigned, not
   `max(n, 1)`. The others: C1's exit with no MonStats record, D2's `ECX` 0 stores, A7's unsigned `shr` of the size,
   `IsUndead`'s two bits, and `AiDeadMinionCb`'s distance taken first.
@@ -4482,10 +4482,10 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   `MonSetMode` 0x005A7C20, with `MonSetMode`'s command block read from the stack dump) and `bloodx` (60 row-125 cases
   on `tools/ai_cat_emu9.py`'s image, 60 matched). `catcount` re-runs cat-emu-9's models over that run's kept outputs
   with the notation's two readings reversed. The record is
-  [run:2026-11-16-sweep2-s1ne-p2](../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p2):
+  [run:2026-11-16-sweep2-s1ne-p2](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p2):
   `workspace/logs/n66ne/s1ne/run2/` (`manifest.sha256` `72300317…`, 19 lines, passes from there; `check.txt`
   `e4b67f9a…`, `check-bloodx.txt` `0a915314…`, `catcount.txt` `93e9ced4…`). Part 1's `run/` is unchanged. The claims are in
-  [ai/0001 § 15](../findings/ai/0001-machinery.md#15-plan-0066-batch-s1ne-part-2-the-walkers-monaiuseseqskill-the-parameter-list-and-the-notation-2026-11-16-lanen66ne).
+  [ai/0001 § 15](../../findings/ai/0001-machinery.md#15-plan-0066-batch-s1ne-part-2-the-walkers-monaiuseseqskill-the-parameter-list-and-the-notation-2026-11-16-lanen66ne).
 - **Rows (13 of 27).** **Raised 11:** machinery 9 (the notation: `Range`, `RangeB`, `Pow2` emulated; `D100()`'s
   unsigned remainder and `chance`'s signed compare separated in 553 and 85 kept cat-emu-9 cases), 24
   (`MonAiUseSeqSkill`), 29 (the three ring walkers), 30 (`StepAway`), 31 (`StepAwayXY`), 32 and 50 (`T56` to
@@ -4493,7 +4493,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   sign-extended Skill1). **Raised in part 2:** machinery 27 (the ten B7 walkers to their boundary; the refusal paths
   after it → b) and 46 (`AiParamsHead`, `AiParamsFind`; Alloc, Push and Pop reach the pool → b). No class moves.
 - **Corrections** go to Phase 3 through the part 1 entry
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md),
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md),
   as a dated paragraph (items 7–11): E4's `AiParamsFind` examines the head last; B8b's three ring walkers (centres,
   `MonSetMode` direct, null other, the state-60 order, `r & 0xFF`); B4's flag 0; B7's stop word keeps its high bytes;
   row 125's Skill1 is sign-extended.
@@ -4529,10 +4529,10 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   `AiUnitSearch`, `LogicRegionIdAt`, and under ADR-0029 (c) `MonAiInit`'s call instructions 0x005B0F18 (the row's
   init) and 0x005B0F30 (KERNEL32 `IsBadCodePtr`, slot 0x006CC34C). The AI class and state rows are image constants,
   read by the tool from `game.exe`'s `.data`. The record is
-  [run:2026-11-16-sweep2-s1ne-p3](../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p3):
+  [run:2026-11-16-sweep2-s1ne-p3](../../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne-p3):
   `workspace/logs/n66ne/s1ne/run3/` (`manifest.sha256` `68f39ec9…`, 13 lines, passes from there; `check.txt`
   `8f8b5626…`); the development run is in `dev3/` (own manifest). `run/` and `run2/` are unchanged. The claims are in
-  [ai/0001 § 16](../findings/ai/0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne).
+  [ai/0001 § 16](../../findings/ai/0001-machinery.md#16-plan-0066-batch-s1ne-part-3-monaiinit-monaiprechecks-aihostilecandidate-and-monaiforcedtarget-2026-11-16-lanen66ne).
 - **Rows (14).** **Raised 2:** machinery 51 (kind 3's `RangePow2` on the acting unit's seed, 48 cases) and 52 (one
   `Range 100` step for a state-146 player candidate, 7 cases; control `cand player` 16). **Raised in part 5,** each
   remainder after an observed boundary → b, named in the Route cell: machinery 13 (`MonAiForcedTarget`), 16
@@ -4546,7 +4546,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
 - **S1ne closed** (parts 1–3): of 44 rows, raised 22, raised in part 15, not settled 7; inventory README's S1ne Status
   cell updated.
 - **Corrections** go to Phase 3 through the existing entry
-  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md),
+  [`2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections`](../../backlog/archive/2026-11-16-reverser-spec-writer-plan-0066-s1ne-corrections.md),
   as a dated paragraph (items 12–16): E1's state-54 test first, the parameter free on MonsterData's control and the
   unstated `IsBadCodePtr` check; A3's kind 0 not cleared, a kind past 4 cleared, the flag choosing the line test and
   the search kind, the out distance sized by the found unit; A6's test order and the room-less candidate; KeepNear's
@@ -4559,7 +4559,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   not transcribed. (3) Machinery 52 raised on 7 player draws, each with the seed compared, the monster and no-state
   paths showing no step.
 - **Review:** Tier B requested
-  ([request](../backlog/archive/2026-11-16-reverser-architect-tier-b-review-plan-0066-s1ne.md)); the first check since the
+  ([request](../../backlog/archive/2026-11-16-reverser-architect-tier-b-review-plan-0066-s1ne.md)); the first check since the
   S2be audit restarted the count.
 
 ### 2026-11-16 — Phase 3, the skills cluster re-tagged, part 1 (spec-writer, `lane/n66sk`): skills/README, missiles and catalogue; resume note
@@ -4651,7 +4651,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   Q143, Q359, Q380, Q464, Q497 and Q527 stay `[I]` with their notes or sections. Three open questions narrowed
   (handlers reached, the summon's stats, the finisher entries). Research-map rows of skills/dispatch and quirks
   updated. The wiki refresh is filed for wiki/skills
-  ([entry](../backlog/2026-11-16-spec-writer-spec-writer-wiki-skills-refresh-after-plan-0066-skills-cluster.md)).
+  ([entry](../../backlog/2026-11-16-spec-writer-spec-writer-wiki-skills-refresh-after-plan-0066-skills-cluster.md)).
 - **Judgment calls for the review (part 2):** (1) rows 58 and 82 whole, each with one new `[I]` sentence for a clause
   the raise does not reach (58: the missile after the do with `useAmmo` 0; 82: the state-54 skip and no Misc row
   selecting the item-use entries), as part 1's (3); (2) rows 90 and 191, raised whole by S2a on Bash's logs, counted
@@ -4699,13 +4699,13 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
   machinery, no row moved. (7) Row 20 Scarab added to README H1's table on S1m's census (205 decisions, 346 calls past the
   first, 9 of 10 two-way sites failing alone, the tenth told apart by the next `AID` word).
 - **Review:** requested, Tier B on Sonnet only, by the owner's budget decision
-  ([entry](../backlog/archive/2026-11-16-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-cluster.md)).
+  ([entry](../../backlog/archive/2026-11-16-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-cluster.md)).
 - **Resume note (part 2, a fresh spec-writer on `lane/n66ai` or a new lane after this merges).** Left: **monsters/ai/catalogue**,
   inventory `monsters-ai-catalogue.md` (520 rows; front matter C 344 / I 520 / L 18, unchanged since `b5999f5e`). Its settled
   rows come from S1a, S1b, S1c, S1d, S1e, S1f (each row's Route cell) and plan 0069 Phase 4 (H1a–H1d, H1g, H1h: 22 raised,
   41 in part); about 104 rows have no verdict (H1e deferred, H1p, H1r, d-owner, d-none) and stay kept. Block lines carry one
   `[I]` for the whole think: add a `[C]` bullet per block naming the logged decisions (the S1b ruling, "Block and `a` lines").
-  Entries to apply and close with it: S1e corrections ([entry](../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md),
+  Entries to apply and close with it: S1e corrections ([entry](../../backlog/archive/2026-11-15-reverser-spec-writer-plan-0066-s1e-corrections-for-phase-3.md),
   six catalogue statements), S1f-p1 items 2–4 (row 518's four `AiLifePct` callers and one map; R51a's `Skill8` scope with
   `uberbaal`; R71a's eleven stores). Then: quirks entries citing catalogue notes, the catalogue research-map clause, § 6's
   catalogue row, the wiki refresh entry above, the gate `--full`, and the review request.
@@ -4743,7 +4743,7 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
 - **Not done:** the wiki/monster-ai refresh, by the owner's budget; its entry is annotated with what part 2 adds and stays
   open for one refresh against all three specs.
 - **Review:** requested, Tier B on Sonnet only, by the owner's budget decision
-  ([entry](../backlog/archive/2026-11-17-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-catalogue.md)).
+  ([entry](../../backlog/archive/2026-11-17-spec-writer-architect-tier-b-review-plan-0066-monsters-ai-catalogue.md)).
 
 ### 2026-11-17 — Phase 3, monsters/ai catalogue part 2: architect Tier B review (Sonnet, `lane/n66ai2`)
 
@@ -4752,3 +4752,10 @@ One review covering the Tier B list (`lane-check.md`) and the Tier A depth; the 
 - **Rulings on the 8 judgment calls (plus the 9th):** (1) `p` lines for block rows: accept, `[C]` p line and `[I]` convention bullet; row 12's header `[C]` accepted. (2) `l` lines without R43l's outcome count: accept, the addendum does not give it; R10r's Normal-only scope is stated. (3) 17 `r` lines under H1 and the twenty-entry count: accept. (4) Prose splits, logged half `[C]` first: accept. (5) Callback bullets `[C]` with block words under `[I]`: accept. (6) Eight corrected rows, row 72 counted split: accept, consistent with its Route ("refinement"). (7) Striking rows 78/79 and 85 clauses with L staying 18: accept, both clauses shared bullets (count verified 18). (8) Census bullets stay `[I]`: accept. (9) Q484/Q485 stay `[I]`: accept.
 - **Not done by design:** wiki/monster-ai refresh stays open. Request closed.
 
+### 2026-11-17 — Plan close (architect, `lane/n66close`)
+
+- **Final totals** ([inventory § 7](../0066-inventory/README.md#7-final-totals-plan-close-2026-11-17)). All 29 inventory files have a Phase 3 row in § 6. Across the 28 specs, counted once: 2 620 rows, 660 whole, 652 split, 46 corrected, 1 262 kept `[I]`; front matter `[C]` 2 174 to 3 497, `[I]` 2 655 to 2 075, `[L]` 208 to 202. [player/party](../0066-inventory/player-party.md) appears in two § 6 rows (the combat and frame clusters), so the printed sums (2 646 rows, 1 287 kept) overcount it by 26 rows and 25 kept.
+- **Review downgrade.** Phase 3 says "Tier A per cluster". Clusters anim, combat, quests, frame and stats/items got Tier A; skills and monsters/ai (parts 1 and 2) were reviewed as Sonnet Tier B only, by the owner's token-budget decision of 2026-11-16 (at most 2% of the weekly tokens for the rest). The clause was therefore not met for those clusters; the Tier B checks and their fixes are in the entries above and in the ledger.
+- **Deferred.** Phase 2 harness batches other than H6d and the bestiary-tour batches did not run (owner question 3 answer (c): the 0.2 to 11 claims per session never reached the threshold). Their rows stay `[I]` as (a-run, deferred) or (b, deferred) with the routes of inventory § 4 kept: H1e, H1m to H1o, H1p and H1r (out of plan 0069), H2a to H2c, H3a to H3f, H4a to H4e, H5a, H5b, H6a to H6c, H7a to H7d. The bestiary-tour batches H1a to H1d, H1g and H1h ran under [plan 0069](../0069-monster-ai-bestiary-tour.md) (Phase 4, `lane/n69g`). The d-owner, d-2c, d-edit and d-none classes (322 rows at Phase 0) stay `[I]`; so do the Phase 1 rows recorded "not settled" with routes (S2ae, S2be, S2c, S4e).
+- **Follow-ups left open in `docs/backlog/` (not done here).** Wiki refreshes: monster-ai (`2026-11-16-spec-writer-spec-writer-wiki-monster-ai-refresh-after-plan-0066-ai`), skills (`...-wiki-skills-refresh-after-plan-0066-skills-cluster`), stats/items (`...-wiki-refresh-after-plan-0066-stats-items-re`). Reverser: the idle-delay C2/C3 `max(n,1)` question (`2026-11-16-spec-writer-reverser-monsters-ai-idle-delay-n-at-or-below`), the leap-attack path label and `ItemPlaceOnGround` count (`2026-11-16-architect-reverser-leap-attack-path-label-and-itemplaceonground-count`), S5a's result bit `0x4000` (`2026-11-15-reverser-spec-writer+reverser-plan-0066-s5a-result-bit-0x4000`). Archivist: the Skills table C4 bit 1 name (`2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name`), the States melee-only bit 38 tag (`2026-11-15-architect-archivist-states-meleeonly-bit38-tag`), S4e part 5f table checks (`2026-11-16-reverser-archivist-plan-0066-s4e-part5f-table-checks`). Spec-writer: the S4a/S4b and H6d corrections (`2026-11-15-reverser-spec-writer+archivist-plan-0066-s4a-s4b-corrections`, `2026-11-16-reverser-spec-writer-plan-0066-h6d-corrections`). Plan 0069's unit-set-event entry and plan 0064's outdoor entry also stay open. The frame-cluster review request (accepted at its Tier A review above) is closed with this entry.
+- **Bookkeeping.** The plan moved to `docs/plans/done/`; its `0066-inventory/` directory stays in `docs/plans/` (as `0038-inventory/` did), so the plan's links to it now read `../0066-inventory/`.

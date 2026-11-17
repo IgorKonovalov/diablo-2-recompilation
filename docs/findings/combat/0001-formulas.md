@@ -979,7 +979,7 @@ Three `CombatAbs` sessions on slot 2 (the record: [experiments § run:2026-10-21
 
 ### 18. Plan 0066 batch S5b: static second sources (run:2026-11-15-sweep2-s5b)
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5b (`lane/n66j`, 2026-11-15). Each
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5b (`lane/n66j`, 2026-11-15). Each
 claim below was read with a second tool (the raw-byte scan of `tools/xrefscan.py`, radare2 and the objdump listing)
 or checked over a whole excel table; the checker is `tools/sweep2_s5b.py`, its kept output `check-s5b.txt`, the check
 names in brackets. The inventory row each settles is named first.
@@ -1156,7 +1156,7 @@ and Fog; from 0x00681C00: the C runtime) and game code.
 
 ### 19. Plan 0066 batch S5e part 1: emulated reduction and to-hit leaves (run:2026-11-16-sweep2-s5e)
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 1 (`lane/n66t`,
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 1 (`lane/n66t`,
 2026-11-16). Each claim below is the emulated map of the named function on declared inputs (ADR-0015), compared with
 `tools/combat_s5e_emu.py`'s model over the kept run ([run:2026-11-16-sweep2-s5e](experiments.md#run2026-11-16-sweep2-s5e),
 `check.txt`, 0 mismatches in 17 300 cases); the family and the separating control counts are in brackets. A claim
@@ -1230,7 +1230,7 @@ is named first.
 
 ### 20. Plan 0066 batch S5e part 2: stat events, life tick and the damage builder (run:2026-11-16-sweep2-s5e2)
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 2 (`lane/n66t`,
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 2 (`lane/n66t`,
 2026-11-16), as § 19: each claim is the emulated map of the named function on declared inputs (ADR-0015), compared
 with `tools/combat_s5e2_emu.py`'s model over the kept run
 ([run:2026-11-16-sweep2-s5e2](experiments.md#run2026-11-16-sweep2-s5e2), `check.txt`, 0 mismatches in 11 200 cases);
@@ -1346,7 +1346,7 @@ by the S5e corrections backlog entry.
 
 ### 21. Plan 0066 batch S5e part 3: the defence roll with a shield, `UNIT_GetDefense` and the delivery prologue (run:2026-11-16-sweep2-s5e3)
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 3 (`lane/n66t`,
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 3 (`lane/n66t`,
 2026-11-16), as §§ 19–20: each claim is the emulated map of the named function on declared inputs (ADR-0015),
 compared with `tools/combat_s5e3_emu.py`'s model over the kept run
 ([run:2026-11-16-sweep2-s5e3](experiments.md#run2026-11-16-sweep2-s5e3), `check.txt`, 0 mismatches in 12 000 cases); brackets give the
@@ -1423,7 +1423,7 @@ synthetic image (ADR-0015 (4)); what each offset means keeps its own tag.
 
 ### 22. Plan 0066 batch S5fe: the missile critical chain emulated, the finisher's entry tests and peek, and the routes that cross an allocator (run:2026-11-16-sweep2-s5fe)
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5fe (`lane/n66w`, 2026-11-16). The
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5fe (`lane/n66w`, 2026-11-16). The
 emulated claims are maps of the named function on declared inputs (ADR-0015), compared with
 `tools/combat_s5fe_emu.py`'s model over the kept run ([run:2026-11-16-sweep2-s5fe](experiments.md#run2026-11-16-sweep2-s5fe),
 `check.txt`, 0 mismatches in 3 600 cases); brackets give separating control counts (`sep`, each with `passed` 0) and

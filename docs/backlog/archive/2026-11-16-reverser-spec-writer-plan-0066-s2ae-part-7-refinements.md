@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/skills/0002-missiles.md
   - ../../specs/skills/dispatch.md
 resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): items 1–4 in [skills/dispatch](../../specs/skills/dispatch.md) C7, N2 (the pseudocode rewritten: type 45 test, stackable first, ItemHasDurability, the wrapped sign test) and the § K rows 26 and 27."

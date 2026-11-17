@@ -899,7 +899,7 @@ rows are the plan 0066 inventory files' Route cells "S2c 2026-11-16 (part 2)". T
 
 ### 17. Plan 0066 batch S2ae part 1: leaf functions emulated, earlier runs re-read, the routes (2026-11-16, `lane/n66sa`)
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (the skills dispatch and missiles
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S2ae (the skills dispatch and missiles
 emulation batch), part 1. The emulated claims are maps of the named function on declared inputs (ADR-0015), compared with
 `tools/skills_s2ae_emu.py`'s model over the kept run ([run:2026-11-16-sweep2-s2ae](experiments.md#run2026-11-16-sweep2-s2ae),
 `check.txt`, 14 100 cases, 0 mismatches); brackets give separating control counts (`sep`, each with `passed` 0) and the

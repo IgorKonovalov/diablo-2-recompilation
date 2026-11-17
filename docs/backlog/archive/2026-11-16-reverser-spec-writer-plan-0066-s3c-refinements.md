@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/quests/0001-progression.md
   - ../../findings/quests/0002-travel.md
 resolution: "Plan 0066 Phase 3 (lane/n66qr, 2026-11-16): word 32's game-record b13 write, e3's direct raiser in NpcActTravel, the operate wrapper 0x00584540, the travel check's act and position tests and A2Q6_WrongTombMsg written in. [quests/progression](../../specs/quests/progression.md#b-events-and-dispatch), [quests/travel](../../specs/quests/travel.md#d-waypoint-travel)"

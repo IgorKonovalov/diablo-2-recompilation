@@ -1,6 +1,6 @@
 # Plan 0066 inventory: totals, batch list and priority order
 
-Phase 0 of [plan 0066](../0066-simulation-inferred-claims-sweep.md), written by the architect on `lane/n66i` with eight
+Phase 0 of [plan 0066](../done/0066-simulation-inferred-claims-sweep.md), written by the architect on `lane/n66i` with eight
 helper copies, one per cluster (`ai1` the monsters/ai catalogue, `ai2` its machinery and README, `sk` skills, `qu`
 quests, `is` items and stats, `co` combat, `an` anim, `fp` sim/frame, path and drlg/lifecycle); the architect did
 player/party and the assembly. Every
@@ -521,3 +521,17 @@ each cluster's re-tag.
 
 A split adds a `[C]` beside the `[I]` it keeps, and corrections add a few `[I]` readings the findings name, so the
 `[C]` count rises by more than the `[I]` count falls.
+
+## 7. Final totals (plan close, 2026-11-17)
+
+Summed from § 6's 29 rows (28 spec files; [player/party](player-party.md) has two rows, one per cluster that touched it).
+
+| | Rows | Whole | Split | Corrected | Kept | `[C]` | `[I]` | `[L]` |
+|---|---|---|---|---|---|---|---|---|
+| Sum of the 29 rows as printed | 2 646 | 660 | 652 | 46 | 1 287 | 2 221 → 3 544 | 2 684 → 2 104 | 211 → 205 |
+| Each spec once (player/party: its 26 rows once, the combat row's 25 kept superseded by the frame row's 21 kept and 4 whole) | 2 620 | 660 | 652 | 46 | 1 262 | 2 174 → 3 497 | 2 655 → 2 075 | 208 → 202 |
+
+Whole + split + corrected + kept = 2 620 (the frame row for player/party counts 25 of its 26 rows, row 12 being the
+combat row's whole). `[C]` rises by 1 323 and `[I]` falls by 580 across the specs, because a split adds a `[C]` beside the
+`[I]` it keeps. The front-matter *before* column is each spec's count at its cluster's start, so it is not § 1's Phase 0
+total (2 626 `[I]`): the specs had been edited between.

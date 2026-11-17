@@ -2,11 +2,11 @@
 from: spec-writer
 to: architect
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
-  - ../plans/0066-inventory/README.md
-resolution: ""
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/0066-inventory/README.md
+resolution: "Tier A review of lane/n66pf accepted with fixes (4), plan 0066 log 2026-11-16; bookkeeping closed at plan close"
 ---
 
 Please review `lane/n66pf`: plan 0066 Phase 3, the frame / path / lifecycle / party cluster (sim/frame, path/README, path/search, drlg/lifecycle, player/party's S7a rows; drlg/collision E4 from the S7e refinements). Tier A. Blocking the cluster's merge.

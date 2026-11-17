@@ -4,9 +4,9 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/skills/0002-missiles.md
-resolution: "Done (lane/n66sk, Phase 3 skills cluster part 1): missiles B1's unique-mod-29 hook (gates, seed, side point, first creation; the second [I]), the mask cells and G2's CallDoFunc written in. [plan log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-skills-cluster-re-tagged-part-1-spec-writer-lanen66sk-skillsreadme-missiles-and-catalogue-resume-note)"
+resolution: "Done (lane/n66sk, Phase 3 skills cluster part 1): missiles B1's unique-mod-29 hook (gates, seed, side point, first creation; the second [I]), the mask cells and G2's CallDoFunc written in. [plan log](../../plans/done/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-skills-cluster-re-tagged-part-1-spec-writer-lanen66sk-skillsreadme-missiles-and-catalogue-resume-note)"
 ---
 
 Plan 0066 batch S2ae part 3 (`lane/n66sa`, run:2026-11-16-sweep2-s2ae3) raised skills/missiles G1's hit 27 (row 73),

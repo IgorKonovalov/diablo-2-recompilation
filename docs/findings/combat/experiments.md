@@ -669,7 +669,7 @@ lightning flat absorb that `abs-nm-marsh` was to reach.
 
 ## run:2026-11-15-sweep2-s5b
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5b (`lane/n66j`): static second
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5b (`lane/n66j`): static second
 sources for the 24 class-c rows of the combat specs. No game, no wine, no Ghidra. The claims are in
 [combat/0001 § 18](0001-formulas.md#18-plan-0066-batch-s5b-static-second-sources-run2026-11-15-sweep2-s5b).
 
@@ -698,7 +698,7 @@ sources for the 24 class-c rows of the combat specs. No game, no wine, no Ghidra
 
 ## run:2026-11-16-sweep2-s5e
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 1 (`lane/n66t`): the combat
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 1 (`lane/n66t`): the combat
 reduction and to-hit leaf functions run under Ghidra's p-code emulator on the pinned image (ADR-0015, ADR-0021),
 compared with `tools/` models. No game, no wine. The claims are in
 [combat/0001 § 19](0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e).
@@ -757,7 +757,7 @@ compared with `tools/` models. No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s5e2
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 2 (`lane/n66t`): the stat
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 2 (`lane/n66t`): the stat
 events, the player's life tick and `COMBAT_BuildDamage` under Ghidra's p-code emulator on the pinned image (ADR-0015,
 ADR-0021), compared with `tools/` models. No game, no wine. The claims are in
 [combat/0001 § 20](0001-formulas.md#20-plan-0066-batch-s5e-part-2-stat-events-life-tick-and-the-damage-builder-run2026-11-16-sweep2-s5e2).
@@ -824,7 +824,7 @@ ADR-0021), compared with `tools/` models. No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s5e3
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 3 (`lane/n66t`): the
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5e part 3 (`lane/n66t`): the
 defence roll with a player's shield, `UNIT_GetDefense` and the `COMBAT_ApplyDamage` prologue under Ghidra's p-code
 emulator on the pinned image (ADR-0015, ADR-0021), compared with `tools/` models, plus one recount of a kept log check.
 No game, no wine. The claims are in
@@ -890,7 +890,7 @@ No game, no wine. The claims are in
 
 ## run:2026-11-16-sweep2-s5fe
 
-Plan [0066](../../plans/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5fe (`lane/n66w`): the missile
+Plan [0066](../../plans/done/0066-simulation-inferred-claims-sweep.md) Phase 1, batch S5fe (`lane/n66w`): the missile
 critical chain and the progressive finisher's entry tests under Ghidra's p-code emulator on the pinned image
 (ADR-0015, ADR-0021), compared with a `tools/` model, plus objdump reads of the call sites the record cites. No game,
 no wine. The claims are in
