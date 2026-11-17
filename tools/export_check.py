@@ -72,7 +72,7 @@ RE_URL_ALLOW = re.compile(
 URL_ALLOW = ("https://github.com/${", "https://creativecommons.org/", "https://wiki.creativecommons.org/")
 URL_ALLOW_LOCKFILE = ("https://registry.npmjs.org/",)
 REPO_PATHS = {"site/package.json", "site/package-lock.json", "site/astro.config.mjs", "site/src/content.config.ts",
-              "site/src/components/Footer.astro", "site/scripts/check-site-links.mjs", "site/public/favicon.svg",
+              "site/src/components/Footer.astro", "site/scripts/check-site-links.mjs", "site/public/favicon.svg", "site/src/styles/site.css",
               ".github/workflows/pages.yml", "README.md", "LICENSE", ".gitignore"}
 TABLE_LIMIT = 20
 
