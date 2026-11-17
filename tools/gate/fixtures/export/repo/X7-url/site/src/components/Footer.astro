@@ -1,0 +1,20 @@
+---
+import Default from '@astrojs/starlight/components/Footer.astro';
+import cut from '../cut.json';
+---
+
+<Default><slot /></Default>
+
+<p class="cut-footer">
+  An unofficial, non-commercial preservation project. Not affiliated with or endorsed by Blizzard Entertainment.
+  Diablo and Blizzard Entertainment are trademarks of Blizzard Entertainment, Inc. No game files, art, text dumps or
+  code are included. Descriptions of behaviour are written in our own words. Cut on {cut.date}.
+</p>
+
+<style>
+  .cut-footer {
+    margin-top: 1rem;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+</style>

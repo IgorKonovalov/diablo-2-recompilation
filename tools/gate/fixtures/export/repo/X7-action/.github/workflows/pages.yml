@@ -1,0 +1,5 @@
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: someone/deploy@v1

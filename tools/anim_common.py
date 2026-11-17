@@ -4,6 +4,7 @@ wrapping, a stdlib LZW/GIF encoder, the local step-through HTML page and the out
 Illustration helpers only: nothing here models the game. Outputs of the tools stay under workspace/ (safe_out).
 Stdlib only.
 """
+import hashlib
 import json
 import os
 import struct
@@ -156,10 +157,12 @@ def _blocks(data):
     return bytes(out) + b"\0"
 
 
-def encode_gif(frames, W, H, pal, delays):
+def encode_gif(frames, W, H, pal, delays, comment=None):
     """frames: list of bytes (W*H indices); pal: 768 bytes. Frames after the first are cropped to the changed rows."""
     out = bytearray(b"GIF89a" + struct.pack("<HHBBB", W, H, 0xF7, 0, 0) + bytes(pal))
     out += b"\x21\xFF\x0BNETSCAPE2.0\x03\x01\x00\x00\x00"
+    if comment:                                     # comment extension (schematic marker)
+        out += b"\x21\xFE" + _blocks(comment.encode("latin-1"))
     prev = None
     for f, d in zip(frames, delays):
         y0, y1 = 0, H
@@ -175,7 +178,7 @@ def encode_gif(frames, W, H, pal, delays):
 
 
 
-def write_html(path, caps, W, H, title, help_html):
+def write_html(path, caps, W, H, title, help_html, marker=None):
     """Step-through page: caps = [{text, calc}], frame-NNN.png beside it. help_html: the <li> items of the box."""
     page = """<!doctype html><meta charset="utf-8"><title>@@TITLE@@</title>
 <style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
@@ -210,6 +213,13 @@ show(0);
 </script>
 """ % (W, H, json.dumps(caps))
     page = page.replace("@@TITLE@@", title).replace("@@HELP@@", help_html)
+    if marker:                                      # schematic mode only
+        # the export's check bars every <meta> element, so this page has none: it is pure ASCII (character references)
+        page = page.replace('<meta charset="utf-8">', "", 1).replace(
+            "<title>", '<!-- %s: schematic-only page, our own graphics -->\n<title>' % marker, 1)
+        page = page.replace("f.src='frame-'+('000'+i).slice(-3)+'.png';",     # the check reads `src='...'` as a link
+                            "f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');")
+        page = page.encode("ascii", "xmlcharrefreplace").decode("ascii")
     with open(path, "w") as fh:
         fh.write(page)
 
@@ -220,3 +230,48 @@ def safe_out(out):
     if real == ws or not real.startswith(ws + os.sep):
         raise SystemExit("refusing output dir %s: it must be under workspace/" % out)
     return real
+
+
+# ---------------------------------------------------------------- schematic mode (ADR-0036)
+# Our own fixed palette and marker. Nothing here comes from a game file. A schematic output is marked in every file
+# it makes (PNG tEXt chunk, GIF comment, HTML comment, steps.json key) and listed with hashes in schematic.json.
+MARKER_NAME = "d2recon-schematic"
+MARKER = "d2recon-schematic/1"           # the byte string tools/export_check.py looks for in every file (own graphics, no game art)
+
+SCHEM_UI = dict(                     # name -> RGB; the order is the palette order (index = position)
+    bg=(16, 16, 22), panel=(30, 30, 40), txt=(225, 225, 225), dim=(130, 130, 145), acc=(240, 210, 80),
+    good=(70, 200, 90), bad=(215, 70, 70), blue=(90, 140, 255), cur=(60, 60, 95), grey=(70, 70, 80),
+    q_low=(150, 150, 150), q_normal=(235, 235, 235), q_superior=(200, 200, 200), q_magic=(110, 130, 255),
+    q_set=(60, 220, 60), q_rare=(255, 240, 80), q_unique=(205, 160, 90), black=(0, 0, 0),
+    qd_low=(48, 48, 52), qd_normal=(62, 62, 66), qd_superior=(56, 56, 60), qd_magic=(34, 40, 78),
+    qd_set=(22, 66, 30), qd_rare=(74, 70, 22), qd_unique=(64, 50, 30),
+    room=(60, 70, 110), roomdone=(78, 92, 140), edge=(150, 160, 220), door=(80, 220, 120), warp=(90, 230, 255))
+
+
+def schem_palette():
+    """-> (name -> palette index, 768 palette bytes) of SCHEM_UI."""
+    idx = {k: i for i, k in enumerate(SCHEM_UI)}
+    pal = bytearray()
+    for rgb in SCHEM_UI.values():
+        pal += bytes(rgb)
+    return idx, bytes(pal) + bytes(768 - len(pal))
+
+
+def write_steps_json(path, caps, schematic):
+    """steps.json: the bare list in the full mode; in schematic mode an object that carries the marker key."""
+    with open(path, "w") as fh:
+        json.dump({"schematic_only": MARKER, "steps": caps} if schematic else caps, fh, indent=1)
+
+
+def write_schematic_json(out, tool, args, names):
+    """schematic.json beside the files: the tool, its arguments (the data root and --out left out) and each file's
+    name and sha256. Schematic mode only; the full mode never writes it. The tool is named without its extension and a
+    hex argument is written in decimal: the file is published, and the export's check (tools/export_check.py X1, X3)
+    fails a .py name and a hex number of 6+ digits."""
+    args = [str(int(a, 16)) if a.lower().startswith("0x") else a for a in args]
+    files = {}
+    for n in sorted(names):
+        with open(os.path.join(out, n), "rb") as fh:
+            files[n] = hashlib.sha256(fh.read()).hexdigest()
+    with open(os.path.join(out, "schematic.json"), "w") as fh:
+        json.dump({"marker": MARKER, "tool": tool, "args": list(args), "files": files}, fh, indent=1)

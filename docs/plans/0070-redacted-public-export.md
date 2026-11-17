@@ -1,6 +1,6 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** in progress: Phase 1 done 2026-11-16; re-cut 2026-11-16 for three later owner decisions (simplification,
+> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2, 2b, 4 and 5 done 2026-11-17; re-cut 2026-11-16 for three later owner decisions (simplification,
 > schematic illustrations per ADR-0036, the cheapest residue option); approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
 > 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
@@ -270,7 +270,7 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   labelled boxes, their doors, the entry and exit marks; no tiles, no DS1 floor or wall layout. The drop: each item as
   a name card coloured by its quality; no icons. Our own fixed palette and the 5×7 font of `anim_common.py`. The same
   steps, calculation panels, captions and "How to read this" lines as the full mode. In schematic mode only, each
-  output file carries a marker (a PNG text chunk, a GIF comment, an HTML meta line, a `steps.json` key) and the tool
+  output file carries a marker (a PNG text chunk, a GIF comment, an HTML comment (the check bars `<meta`; amended at the Phase 2b review), a `steps.json` key) and the tool
   writes `schematic.json` (the tool, its arguments, each file's name and sha256). The full mode never writes the marker.
 - **Outputs:** the two tools, `tools/anim_common.py` as needed, their tests.
 - **Done when:** both tools run in schematic mode on the two illustration blocks of the wiki (`levels.md`,
@@ -300,7 +300,7 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
 - **Outputs:** `workspace/export-repo/` (never in git); the file list and the pinned versions in this plan's log.
 - **Done when:** `tools/export_check.py --repo workspace/export-repo/` is green; the workflow has the two jobs, the
   build on pull requests, the deploy from `main` only, and `cancel-in-progress: false`; the footer component matches
-  the footer word for word. Tier B check; Phase 6 reads every file.
+  the footer word for word. Tier B check; Phase 6 reads every file. **Done 2026-11-17.**
 
 ### Phase 5 — The export-only pages
 - **Owner skill:** spec-writer
@@ -472,3 +472,200 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   Battle.net lines (the Battle.net ban stays strict: the line is dropped, never published). `docs/export/README.md`
   updated to match. Cost: about 2.9 M in all (was 3.9 M–5.6 M); first cut about 2.6 M. Next: Phases 2, 2b, 4 and 5,
   side by side; then 3.
+- **2026-11-16, Phase 4 (archivist, lane/x70r): files written, check not yet run.** `workspace/export-repo/` holds
+  `.gitignore`, `LICENSE` (the CC BY 4.0 legal code), `README.md`, `.github/workflows/pages.yml`, `site/package.json`,
+  `site/astro.config.mjs`, `site/src/content.config.ts`, `site/src/components/Footer.astro` and
+  `site/scripts/check-site-links.mjs`. `site/src/cut.json`, the content and `public/illustrations/` come from the
+  builder. Pinned versions, the same as the owner's other site: astro 7.3.1, @astrojs/starlight 0.42.0,
+  rehype-mermaid 3.0.0, playwright 1.63.0; no lockfile, no `npm` run. The workflow has `build` (push, pull request,
+  manual) and `deploy` (`main` only), `cancel-in-progress: false`, and `SITE_BASE` from the repository's name as
+  spelled. Only `actions/*` actions. The config reads the cut's date and, optionally, `groups` (`[{slug, label}]`, in
+  sidebar order) from `site/src/cut.json`: Phase 3's builder should write them. The link check resolves every `href` and
+  `src` under the base (illustration files and their step-through pages included), and fails on an external link
+  outside this repository and the licence's page. A smoke test on a scratch `dist/` found the broken, off-base and
+  external cases. Not done: `tools/export_check.py --repo` does not exist yet (Phase 3), so that done-when item is open.
+  The licence text holds other creativecommons.org URLs; X7's allowlist needs to cover `LICENSE`.
+- 2026-11-17 — **Phase 5 written** (spec-writer, lane/x70p). `docs/export/index.md` (front page: the project, what
+  the site holds and that it is simplified, where to start, the six manifest groups as links to their 22 pages),
+  `docs/export/reading-the-tags.md` (`[C]` and `[I]` with the wiki's words for each, the corroboration kinds in plain
+  words without a tool name, leads left out, *What is not known yet* kept, diagrams untagged) and
+  `docs/export/about.md` (the footer's statements, the simplified edition, the animations as schematic drawings of our
+  own per ADR-0036, CC BY 4.0). No claim about the game; no owner name in the text (ADR-0035: only where the host puts
+  it); no repository name. `tools/export_check.py` was not on main, so X1–X12 were self-checked against the rules'
+  text with a regex pass: clean (no fence, no table over 20 rows, no quoted run over 12 words). Found on the way: the
+  wiki's game-data title "Game data: tables, …" matches X2's `data:` as the rule is written; the front page's link
+  text avoids it, but the wiki page's title will hit it in the cut (Phase 2 or 3 to decide: narrow X2's `data:` to the
+  id form, or let the simplifier handle the title). Gate full green. Review request
+  [filed](../backlog/archive/2026-11-17-spec-writer-architect-review-0070-phase5-export-pages.md) (Tier A).
+- 2026-11-17 — **Phase 5 reviewed: accept with fixes (3)** (architect, Tier A, lane/x70p). All three pages read in
+  full. Owner decisions, ADR-0035 (no owner name, no repository name, no path or id), ADR-0036 (schematic drawings,
+  our colours, model-computed values, illustrative seeds) and the footer's statements hold; the six groups and 22 links
+  match the manifest's `page` lines and resolve; nothing states where a game file came from, and nothing implies
+  affiliation. X1–X12 checked by hand: clean; X12 warnings only for the nominative names (Diablo II, Lord of
+  Destruction, Blizzard Entertainment, Creative Commons), accepted. The tag table matches the evidence rules' two
+  levels and the four corroboration kinds without a tool name. Fixes, all in `reading-the-tags.md` (category: wording,
+  claim scope): (1) "each statement says how far it can be trusted" overclaimed the wiki, which marks what is inferred
+  ("nothing hidden"), now "they say it wherever a statement is only inferred"; (2) the leads bullet now allows the
+  quirks page's community claims compared with the code, as our own statements; (3) the bracketed tags are said to
+  belong to the specifications, not yet on the site (cut 1 holds no tag). Noted, not this phase's: X2's `data:` against
+  the wiki title "Game data: …" (Phase 2 or 3). Phase 5's other *Done when* items wait: the check green on a cut that
+  holds the pages (Phases 2 and 3). Lesson 11 added to the spec-writer's `review-fixes.md`.
+- 2026-11-17 — **Phase 2 done** (archivist, lane/x70c; Tier A review requested in the backlog). `tools/export_check.py`
+  (rules X1 to X12; `CUT_DIR`, `--repo DIR`, or both; `--manifest`, `--identity`, `--no-git-identity`),
+  `tools/test_export_check.py` (75 checks), fixtures in `tools/gate/fixtures/export/`, gate rule E20 in
+  `tools/gate.py` (runs the self-tests; the gate does not run the check on `docs/`). **Text rules as a function:**
+  `export_check.check_text(unit, identity=None)` returns `[(rule, line, detail)]` for X1 to X5 and X9 on one unit
+  (a sentence, item, row or fenced block; a fence inside the unit is tracked); `text_rules(unit)` returns the rule
+  set. Both read the git identity once (cached); the builder should call `text_rules` with that default.
+  **Fixtures:** `clean` (a cut with a table, mermaid, pseudocode and a verified schematic folder) and `pass-*`
+  (emulated and "attack-speed breakpoint" pass X9, "not confirmed by a run:" passes X2, a 25-row table the manifest
+  names passes X6, a warning-only X12 case) pass; one `X<n>-*` bad case per rule X1 to X11, including a Battle.net
+  menu line (X9), and the schematic cases: no marker, hash mismatch, an extra file, no `schematic.json`, an
+  `index.html` with an external URL, an `index.html` with a `src` outside its folder (all X11) and an image outside
+  an illustration folder (X8). `repo/clean` and `repo/X7-*`, `X9`, `X10-*`, `X11` cover `--repo`. The `.git` directory
+  cases are built at run time. The test also runs the check on an unredacted copy of three specs (rng, items, drlg
+  READMEs): X1, X2 and X3 fail as required. **Late change (orchestrator, Phase 5 lane):** X2's `data:` and the other
+  anchors match only when a name character follows (`data:ItemTypes`), so prose such as "Game data: tables, strings
+  and formulas" passes; fixture `pass-x2-data-prose` and two unit checks.
+  **Choices the review should confirm:** (1) *The schematic marker*, which Phase 2b's generators must write: the byte
+  string `d2recon-schematic/1` inside every `.gif`, `.png`, `index.html` and `steps.json` of the folder;
+  `schematic.json` is `{"marker": "d2recon-schematic/1", "files": {"<relative path>": "<sha256>"}}` listing every
+  file but itself; frame files may sit in subfolders (`frames/f1.png`). (2) X6 matches a manifest `table` line by
+  the page's route, not by line number (the redactor moves lines): a page may hold as many oversized tables as the
+  manifest names for it. (3) `report.txt` at the cut root is skipped (the builder writes it there; it is never
+  published). (4) In `--repo` mode X1 to X4 and X9 scan every text file but the lockfile, X5 is not applied (the
+  files are not pseudocode), and any path outside the plan's table plus `site/package-lock.json` is X11, so the
+  check on a repository that already holds a cut needs the cut mode on its `site/` content, not `--repo` alone.
+  (5) Heuristics: X1 and X3 also flag bare hex of 6 and of 7 to 40 digits when it holds a digit and a letter a to f;
+  X3's repository paths (`docs/`, `re/`, `tools/`, `workspace/`) match only when not preceded by a letter, digit or
+  `/` (so the export repository's own `site/src/content/docs/` passes); X4's generic absolute path needs a leading
+  space, quote or bracket; X12 is noisy by design. (6) X7 in repo mode allows `igorkonovalov.github.io`,
+  `github.com/IgorKonovalov` and `github.com/${…}`, any `creativecommons.org` page, and `registry.npmjs.org` in the
+  lockfile only.
+  **`--repo workspace/export-repo/` result:** green, 0 failures, 0 warnings, after two rule narrowings that were
+  false positives on correct text: `docs/` inside `site/src/content/docs/` (README) and `startsWith('data:')`
+  (the link checker). `LICENSE`'s creativecommons.org text passes X7. Nothing for Phase 4 to fix.
+- 2026-11-17 — **Phase 2 review: accept with fixes** (architect, Tier A, on lane/x70c). Each rule matches the
+  design's table, and the self-tests, `--repo workspace/export-repo/` (green) and the gate were rerun. Fixes, made in
+  `tools/export_check.py` with eight new self-tests (83 checks): (1) X3's repository-path narrowing exempted any `docs/`
+  after a `/`, so `../../docs/plans/…` and `../docs/specs/…` passed; only `content/docs/` is exempt now, and the
+  finding-id shape no longer skips a `/` before it. (2) X1 missed an address after `_` (`DAT_00556F60`, a name ending
+  in an address) and a bare all-digit address; bare hex after `_` and `00[4-7]` plus five digits now fail. (3) The
+  text of a schematic folder was never read: `steps.json` and `index.html` (hex colours aside) and `schematic.json`
+  (hashes aside; it holds the tool's arguments) now pass X1 to X4 and X9, and every file's bytes are searched for an
+  identity string or a home path; a failure is X11 for the folder. (4) X4 fails `/home/`, `/Users/` and `file:/`
+  anywhere (a `file:///home/…` link passed); the lockfile now gets X4. (5) X7 in the cut fails `ftp:`, `mailto:`,
+  `javascript:`, `file:/` and protocol-relative `//` targets, not only `http(s):`. (6) X9 also fails `Battle-net` and
+  the tool names radare2, rizin, x64dbg, ollydbg, IDA Pro and wine (no wiki hit; *debugger*, 3 wiki lines, stays out
+  of X9 per decision 8). **Rulings on the lane's choices:** (1) marker `d2recon-schematic/1` and the `schematic.json`
+  shape accepted; Phase 2b must write the tool's arguments without absolute paths or `workspace/` (they now fail X3
+  and X4). (2) X6 by route accepted. (3) `report.txt` skipped at the cut root only, accepted; Phase 7 copies `site/`
+  only. (4) `--repo` scope accepted, with X4 on the lockfile. (5) The hex heuristics accepted as widened. (6) X7's
+  allowlist of the whole `github.com/IgorKonovalov` prefix accepted for now: the working repository's remote name is
+  an X4 identity string, so a link to it fails; narrow it to the export repository's name once that is chosen
+  (Phase 7). X12 accepted as noise by design. The two other narrowings are safe: an anchor always has a name after
+  the colon, and the link checker's `'data:'` is followed by a quote. Indented code blocks get no X5 (only X1 to X4
+  and X9); findings are out of every scope, so accepted. **Dry run on the cut-1 wiki and glossary as they stand**
+  (copied unredacted, front matter and *Open questions* stripped by hand as the builder will; the three Phase 5 pages
+  absent): 174 failures and 318 X12 warnings (164 distinct). X1 124 (glossary 40; elsewhere 15 `sub_` names, 62 bare
+  hex, mostly seeds, 7 `0x` values such as the save magic and the RNG multiplier), X3 27 (12 commit-hash shapes, all
+  game seeds such as `5389700c`; 6 ADR, 3 `findings/`, 2 plan, 2 `.py`, 2 path), X9 22 (logger 13, logged run 2,
+  Battle.net 2, one each of decompile, disassembler, disassembly, Ghidra, harness), X5 1 (inside an illustration
+  block, which the builder replaces); X2, X4, X6, X7, X8 none. With front matter kept, X3 rose to 108. **Phase 3
+  input:** the simplifier will drop every sentence holding a seed or a game-math value in hex (randomness.md's worked
+  example, 17 lines), as X1 is written ("any other hex of 6 digits or more"). Whether such values may pass by a
+  manifest line is a design question for the architect before Phase 6, not a check change. Next: Phases 2b, 3.
+- 2026-11-17 — **Phase 2b done** (archivist, lane/x70s; review requested, Tier A). `--schematic` in `tools/maze_anim.py` and
+  `tools/tc_anim.py`. Maze: rooms as labelled boxes (room number; Def and preset file index from the conversion steps
+  on), green door bars on shared edges, the level's entry and exit marks on the final frame. Drop: name cards coloured
+  by quality, no icon. Our palette (`SCHEM_UI` in `tools/anim_common.py`, 768-byte global palette, no `tRNS`) and the 5x7
+  font. The marker is the byte string `d2recon-schematic/1` (the one Phase 2's check, lane/x70c, looks for) in every
+  file: PNG `tEXt` chunk, GIF comment extension, an HTML comment, `steps.json` (an object `{"schematic_only", "steps"}`
+  in schematic mode; the full mode keeps the bare list). `schematic.json` is `{"marker", "tool", "args", "files":
+  {name: sha256}}`, every file but itself; args are as given, without the data root and `--out`. The full mode writes
+  none of it (byte-identical PNG and GIF to before the change; test).
+  - **Splits for the no-art import rule.** `maze_render.convert` and its tables moved to the new `tools/maze_conv.py`
+    (`maze_render` re-exports them); `tools/drlg.py` imports `dt1` lazily (only `dt1_keys` needs it), because
+    `maze_replay` imports `drlg`. `tc_anim.py` loads `dc6`, `item_art` and `palette` only inside the full mode's
+    `Icons`; schematic mode takes the base names from the weapons, armor and misc tables (`Names`, same "first row of a
+    code" rule as `item_art.cmd_index`). Full-mode steps differ in one calculation line only: "The tiles drawn are that
+    DS1's floor and wall cells..." now also says the schematic mode draws a box (both modes print the same line).
+  - **What cannot be equal, and why.** The maze's warp lines (per-room "This preset holds a warp" and the final
+    frame's "Warp" lines) come from the DS1 wall layer (orientation 10/11 cells), which the schematic mode does not
+    read; it shows the level's Levels Vis entry and exit marks (destination names) on the final frame without placing
+    them in a room. The drop's "Inventory icon" line becomes "Name card". Every other step text and calculation is
+    equal (test, 43 maze steps and 87 drop steps).
+  - **The DS1 reads that stay.** The map-scan model (`convert` step 5a, `drlg.PresetUnitData.ds1`) needs a preset DS1's
+    object list and its `floor0` cell values for the draw counts, so the DS1 file is opened and that one caller reads
+    that layer; no drawing code reads a layer. The test enforces exactly this (a guard on the `layers` key that admits
+    only that caller), together with blocked imports of `dt1`, `dc6`, `item_art`, `palette` and `maze_render`, blocked
+    opens of `.dt1`, `.dc6`, `.dcc`, `.pl2` and palette folders, and blocked `ds1._Tiles`, `_scan_cells`, `ds1_files`.
+    This is a narrower reading of "ds1 tile layers blocked" than the done-when's wording; the reviewer should rule on it.
+  - **Fits with the check's rules** (x70c's `export_check.py`, read from lane/x70c, commit 5475952b, not merged): its
+    `html_problems` bars `<meta` and a `src=` attribute-like string, so the step-through page in schematic mode has no
+    `<meta>` (pure ASCII with character references; the marker is an HTML comment) and sets the frame with
+    `setAttribute('src', ...)`. The plan's "HTML meta" line becomes "HTML comment". The check passes the two
+    output folders below as illustration folders of a cut-shaped tree (0 failures); the done-when item "Phase 2's check
+    passes the output folder" is met against that unmerged version and should be re-run after the merge.
+  - **Runs** into `workspace/render/schematic/` (never git): `drlg-maze-level36/` (`maze_anim.py 36 0xc0ffee`, 43 frames,
+    0.7 MB) and `items-tc-andariel-hell/` (`tc_anim.py andariel 0xc0ffee --difficulty 2 --mf 200`, 87 frames, 1.6 MB),
+    the args of the two wiki illustration blocks. Test: `python3 -I tools/test_anim_schematic.py` (5 tests, about
+    20 s; skipped without `workspace/merged`). Next: the architect's review; then Phase 3 can run illustration blocks.
+- 2026-11-17 — **Phase 2b review** (architect, Tier A, lane/x70s): **accept with fixes 4; one done-when item open.**
+  Full mode: PNG frames and GIFs byte-identical to `main` for both wiki blocks (rerun of `main`'s tools against the
+  branch's full output); `index.html` and `steps.json` differ only by the intended lines (the "tiles drawn" line, the
+  drop help's name-card note). No marker, no `schematic.json` in the full mode (test). Renders looked at (maze final and
+  a conversion frame, the drop's last frame): boxes, door bars, cards and the 5x7 font in our palette; no game pixel.
+  - **Ruling 1 (DS1 read).** Within ADR-0036: the schematic mode depicts no layout, and the DS1 file is opened only
+    for its object list, which is model input (the map scan's keep/drop draws), not art. The lane's reason was off: the
+    draw counts use the object list only; `floor0` is copied by `PresetUnitData.ds1` into its cache and never read on
+    this path. Fix (test tightened): `ds1.parse` is admitted only from `PresetUnitData.ds1`, the `layers` key is
+    hidden from the mapping (no `items`, iteration or copy reaches it) and handed only to that caller, and the
+    `floor0` copy of `PresetUnitData.ds1`'s result is hidden from any caller outside `tools/drlg.py`. A probe confirmed
+    each guard raises.
+  - **Ruling 2 (warps).** Accepted: entry and exit by Levels Vis, not placed in a room; the help line says so. The
+    steps equality exceptions (4 warp lines in the maze, 5 icon or card lines in the drop) are exactly the lines from
+    the art; every step text is equal.
+  - **Ruling 3 (HTML marker).** Accepted; the Phase 2b *What* now says "an HTML comment".
+  - **Names on cards** (base, unique, set and affix names from the tables) are text naming a row, kept by the
+    redaction-depth table's names row; fine under ADR-0036.
+  - **Fixes from the merged check** (lane/x70c, merged in 2ec0152c; X11 now runs X1-X4 and X9 on the folder's text):
+    `schematic.json` names the tool without `.py` (X3) and writes a hex argument in decimal (X1); the drop's captions
+    and help say "our property model" and "without a model here" in place of `tools/props.py` and `tools/` (X3, both
+    modes, so the steps stay equal).
+  - **Open (done-when "Phase 2's check passes the output folder", not met against the merged check):** the captions'
+    RNG arithmetic writes the seed, each draw's `lo` and the LCG multiplier in hex (about 300 values over the two
+    folders), and X1 fails every one; X3 reads `00c0ffee` as a commit hash. Not fixed here and the check is not
+    weakened. Options for the orchestrator or the owner: (a) the schematic mode writes these numbers in decimal (X1's
+    risk is addresses; seeds and draws are our model's values, but the multiplier is a code-image constant, ADR-0031);
+    (b) drop the hex-carrying calculation lines in schematic mode (loses the arithmetic the animation exists for);
+    (c) a scoped allowance in the check. Re-run the check on both folders after the ruling and after merging `main`.
+  - Ledger: architect-review, accept with fixes 4 (tests 1, tools 2, plan 1).
+- 2026-11-17 — **Phase 4 reviewed: accept with fixes (3); Phase 4 done** (architect, Opus with Tier B scope, every
+  file of `workspace/export-repo/` read, lane/x70r). Held: `site/package.json` pins astro 7.3.1, @astrojs/starlight
+  0.42.0, rehype-mermaid 3.0.0 and playwright 1.63.0 exactly, the owner's other site's versions; no lockfile and no
+  `node_modules/`. The workflow has `build` on every push, pull request and manual run and `deploy` gated on
+  `refs/heads/main` with `pages: write` and `id-token: write`; `concurrency` group `pages`, `cancel-in-progress:
+  false`; `SITE_BASE` set once from the repository's name and seen by the build and the link check; only `actions/*`
+  (checkout, setup-node, cache, upload-pages-artifact, deploy-pages). `Footer.astro` matches the plan's footer word
+  for word with the date from `cut.json`, and is registered in the config. `LICENSE` is the CC BY 4.0 legal code
+  (all eight sections and the closing notice; no reference copy offline to hash against). The README says nothing of
+  where game files come from, implies no affiliation (it carries the disclaimer), and names no game file or tool of
+  ours; the only identity is the owner's GitHub account in the config's host and repository link (ADR-0035).
+  **Fixes, made in `workspace/export-repo/`** (category: tools correctness; originals kept in the review's scratch):
+  (1) `site/astro.config.mjs`, the empty-page hook: it took the text from the content container to `</main>`, which
+  holds Starlight's pagination and our footer, so no page could ever read empty and a Mermaid fence that does not
+  parse (Astro stores the entry without HTML; rehype-mermaid's throw does not stop the build) would publish a title
+  over nothing; it also failed every page without the container. It now fails a page whose container closes on
+  itself and skips a page without one, as the other site's hook does. (2) `site/scripts/check-site-links.mjs`:
+  Starlight writes each page's canonical link as an absolute URL on the site's own host
+  (`https://igorkonovalov.github.io/<base>/…`; seen in the other site's build), which the allowlist failed, so the
+  first CI build would have been red on every page; a link on the own host is now resolved as an internal link under
+  the base (a missing page or another base still fails). (3) The same script: a relative link climbing above the
+  site root now fails instead of resolving against files outside `dist/`. Smoke test on a scratch `dist/` at base
+  `/proj/`: canonical links, absolute and relative illustration GIFs and a step-through page pass; a missing own-host
+  page, another base on the own host, an above-root link, an outside host and a missing GIF fail (5 of 5).
+  **`python3 -I tools/export_check.py --repo workspace/export-repo/`** from the main checkout after the fixes: 0
+  failures, 0 warnings, exit 0; this closes the done-when item the lane left open. Noted for later phases: the
+  config needs `site/src/cut.json` (Phase 3's builder writes it, with `groups`); X7's `github.com/IgorKonovalov`
+  allowance is narrowed to the export repository at Phase 7 (Phase 2 review, ruling 6). Fixes count: tools 3.
