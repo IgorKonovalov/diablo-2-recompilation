@@ -40,8 +40,10 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
                when the index is absent
            E19 an ```illustration block under docs/ (ADR-0034) that does not parse (six keys: id, tool, args,
                seed, illustrates, caption), repeats an id, names no script in tools/, or has an `illustrates`
-               link that does not resolve: `python3 -I tools/site_build.py check` (registered at the
-               lane/site1 review)
+               link that does not resolve, or a ```widget block (ADR-0037) that does not parse, repeats an id,
+               names no folder in tools/widgets/, has a fallback that is neither `text` nor an illustration
+               id, or has an `illustrates` link that does not resolve: `python3 -I tools/site_build.py check`
+               (registered at the lane/site1 review)
            E20 the publish check's self-tests fail: `python3 -I tools/test_export_check.py` (plan 0070
                Phase 2; fixtures in tools/gate/fixtures/export/). The gate does not run the check on docs/
            E21 a scripted widget under tools/widgets/ (ADR-0037) whose widget.js `compute` differs, under node, from its

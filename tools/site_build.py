@@ -27,9 +27,16 @@ index.html (iframe) or, failing that, its GIF, with the caption, the seed label 
 A missing tool or a failing run leaves the block's note and a visible warning on the page; the build goes on.
 A run is skipped when the output directory's stamp (command line and tool mtime) is unchanged.
 
+Widgets ("```widget" blocks; ADR-0037): keys id, widget, illustrates, caption, fallback. No script runs on the local site:
+the block is drawn as its fallback, the named illustration's picture or, for `fallback: text`, the widget twin's table,
+with the caption and a note that the interactive element is on the published site.
+
 `check` is the gate's rule E19 for the blocks: every ```illustration block under docs/ parses (all six keys,
 no unknown key), ids are unique, `tool` names a script in the tools/ beside the docs directory (this script's
-tools/ when there is none), and every `illustrates` link resolves (file exists, #anchor is a heading of it).
+tools/ when there is none), and every `illustrates` link resolves (file exists, #anchor is a heading of it). Every
+```widget block parses (the export builder's parse_widget), its id is unique among widgets, `widget` names a folder
+tools/widgets/<name>/ with a widget.js, its `fallback` is `text` or the id of an illustration block under docs/, and its
+`illustrates` links resolve.
 One line per problem, exit 1 when there is one; last line `CHECK illustrations: N blocks, M problems`.
 
 Stdlib only. Everything written goes under workspace/ and never into git.
@@ -203,6 +210,7 @@ class Page:
         self.slugs = {}
         self.mermaid = []       # blocks, in order
         self.illus = []         # (dict, error, line)
+        self.widgets = []       # (dict, error, line): ```widget blocks, shown as their fallback (ADR-0037)
         self.warnings = []
         self.body = self.render(text)
 
@@ -379,7 +387,17 @@ class Page:
             d, err = parse_illustration(text)
             self.illus.append((d, err, lineno))
             return "<!--ILL%d-->" % (len(self.illus) - 1)
+        if kind == "widget":
+            d, err = parse_widget(text)
+            self.widgets.append((d, err, lineno))
+            return "<!--WID%d-->" % (len(self.widgets) - 1)
         return "<pre><code%s>%s</code></pre>" % (' class="lang-%s"' % html.escape(kind) if kind else "", html.escape(text))
+
+
+def parse_widget(text):
+    """-> (dict, error): a ```widget block (ADR-0037), by the export builder's own parser (one list of keys)."""
+    import export_build    # noqa: E402 (stdlib only)
+    return export_build.parse_widget(text)
 
 
 def parse_illustration(text):
@@ -548,6 +566,60 @@ def illus_html(page, d, err, rel, out_root, root, no_run):
     return '<figure class="illfig">%s%s</figure>' % (media, cap)
 
 
+def widget_html(page, d, err, rel, out_root, root, no_run, illus_by_id):
+    """A ```widget block on the local site (ADR-0037): no script runs here, so the block shows what the published page shows
+    when JavaScript is off: its fallback (the named illustration's picture, or the twin's text table) and its caption."""
+    if err:
+        page.warnings.append("widget block: " + err)
+        return '<div class="warn">Widget not shown: %s</div>' % html.escape(err)
+    wid, name, fb = d["id"], d["widget"], d["fallback"]
+    media = ""
+    if fb == "text":
+        wdir = os.path.join(HERE, "widgets")
+        fixture = os.path.join(wdir, name, "fixture.json")
+        table = None
+        if os.path.isfile(fixture):
+            sys.path.insert(0, wdir)
+            import twins    # noqa: E402 (tools/widgets/twins.py: the fallback table of each widget)
+            with open(fixture, encoding="utf-8") as fh:
+                table = twins.fallback_table(name, json.load(fh))
+        if table:
+            head, rows, note = table
+            media = "<p>%s</p><table><thead><tr>%s</tr></thead><tbody>%s</tbody></table>" % (
+                html.escape(note), "".join("<th>%s</th>" % html.escape(str(h)) for h in head),
+                "".join("<tr>%s</tr>" % "".join("<td>%s</td>" % html.escape(str(c)) for c in r) for r in rows))
+        else:
+            page.warnings.append("widget %s: no text fallback for the widget %s" % (wid, name))
+            media = '<div class="warn">Widget %s: no text fallback for %s.</div>' % (html.escape(wid), html.escape(name))
+    else:
+        ill = illus_by_id.get(fb)
+        kind = path = None
+        warn = "fallback illustration %s is not on a built page" % fb
+        if ill is not None:
+            kind, path, warn = run_illustration(ill, root, out_root, no_run)
+            if kind == "iframe":      # the picture: the GIF beside the step-through page, when the tool wrote one
+                odir = os.path.join(out_root, "illustrations", fb)
+                gifs = sorted(f for f in os.listdir(odir) if f.endswith(".gif")) if os.path.isdir(odir) else []
+                kind, path = ("gif", "illustrations/%s/%s" % (fb, gifs[0])) if gifs else (None, None)
+                warn = "" if gifs else "no picture beside the step-through page"
+        if kind == "gif":
+            media = '<img class="illus" src="%s%s" alt="%s">' % (rel, path, html.escape(d["caption"]))
+        else:
+            page.warnings.append("widget %s: %s" % (wid, warn))
+            media = '<div class="warn">Widget %s: fallback picture %s not shown: %s.</div>' % (
+                html.escape(wid), html.escape(fb), html.escape(warn))
+    links = []
+    for part in re.split(r"[,\s]+", d["illustrates"].strip()):
+        if part:
+            href, _k = href_for(page.ctx, part)
+            links.append('<a href="%s">%s</a>' % (html.escape(href), html.escape(part)) if href else html.escape(part))
+    meta = ("Widget %s: the interactive element runs only on the published site; this page shows its fallback, with no script. "
+            "Illustrates: %s. The values are computed by our model of the rule, not observed from the game." % (
+                html.escape(name), ", ".join(links)))
+    return '<figure class="illfig">%s<figcaption><strong>%s</strong><br><small>%s</small></figcaption></figure>' % (
+        media, html.escape(d["caption"]), meta)
+
+
 # ---------------------------------------------------------------- Mermaid
 
 def draw_mermaid(blocks):
@@ -713,6 +785,7 @@ def build(argv):
         for t in pg.mermaid:
             mm_blocks[hashlib.sha256(t.encode()).hexdigest()[:24]] = t
         broken += len(pg.ctx.broken)
+    illus_by_id = {d["id"]: d for pg in rendered.values() for d, err, _ in pg.illus if not err and d.get("id")}
     svgs, errs, skip = draw_mermaid(mm_blocks)
     if skip:
         warnings.append("Mermaid not drawn: %s (blocks shown as source)" % skip)
@@ -731,8 +804,12 @@ def build(argv):
         def il(m, pg=pg, rel=rel):
             d, err, _ = pg.illus[int(m.group(1))]
             return illus_html(pg, d, err, rel, out, root, no_ill)
+
+        def wd(m, pg=pg, rel=rel):
+            d, err, _ = pg.widgets[int(m.group(1))]
+            return widget_html(pg, d, err, rel, out, root, no_ill, illus_by_id)
         n_ill += len(pg.illus)
-        body = re.sub(r"<!--ILL(\d+)-->", il, re.sub(r"<!--MM:([0-9a-f]+)-->", mm, pg.body))
+        body = re.sub(r"<!--WID(\d+)-->", wd, re.sub(r"<!--ILL(\d+)-->", il, re.sub(r"<!--MM:([0-9a-f]+)-->", mm, pg.body)))
         warnings += ["%s: %s" % (p, w) for w in pg.warnings]
         dst = os.path.join(out, p[:-3] + ".html")
         os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -785,6 +862,25 @@ def check(argv):
     tools = os.path.join(os.path.dirname(docs), "tools")    # the checkout's own tools/ (gate --root, --staged)
     tools = tools if os.path.isdir(tools) else HERE
     seen, problems, nblocks, heads = {}, [], 0, {}
+    seen_w, wfall, ill_ids = {}, [], set()
+
+    def check_links(d, path, where):
+        """Every `illustrates` link of a block resolves: a relative link to a file that exists, its #anchor a heading of it."""
+        for part in re.split(r"[,\s]+", d.get("illustrates", "").strip()):
+            if not part:
+                continue
+            if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", part):
+                problems.append("%s: illustrates '%s' is not a relative link" % (where, part))
+                continue
+            tpath, _, frag = part.partition("#")
+            target = os.path.normpath(os.path.join(os.path.dirname(path), tpath)) if tpath else path
+            if not os.path.exists(target):
+                problems.append("%s: illustrates '%s' does not resolve" % (where, part))
+            elif frag and target.endswith(".md"):
+                if target not in heads:
+                    heads[target] = heading_slugs(target)
+                if heads[target] is not None and frag not in heads[target]:
+                    problems.append("%s: illustrates '%s': no heading with that anchor" % (where, part))
     for dp, dn, fn in os.walk(docs):
         dn.sort()
         for f in sorted(fn):
@@ -819,22 +915,30 @@ def check(argv):
                     tool = d.get("tool", "")
                     if re.fullmatch(r"[A-Za-z0-9_]+\.py", tool) and not os.path.isfile(os.path.join(tools, tool)):
                         problems.append("%s: tool '%s' is not in tools/" % (where, tool))
-                    for part in re.split(r"[,\s]+", d.get("illustrates", "").strip()):
-                        if not part:
-                            continue
-                        if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", part):
-                            problems.append("%s: illustrates '%s' is not a relative link" % (where, part))
-                            continue
-                        tpath, _, frag = part.partition("#")
-                        target = os.path.normpath(os.path.join(os.path.dirname(path), tpath)) if tpath else path
-                        if not os.path.exists(target):
-                            problems.append("%s: illustrates '%s' does not resolve" % (where, part))
-                        elif frag and target.endswith(".md"):
-                            if target not in heads:
-                                heads[target] = heading_slugs(target)
-                            if heads[target] is not None and frag not in heads[target]:
-                                problems.append("%s: illustrates '%s': no heading with that anchor" % (where, part))
+                    check_links(d, path, where)
+                    ill_ids.add(d.get("id"))
+                elif info == "widget":
+                    nblocks += 1
+                    body = "\n".join(x[len(indent):] if x.startswith(indent) else x.lstrip() for x in lines[i + 1:j])
+                    d, err = parse_widget(body)
+                    where = "%s:%d" % (rel, i + 1)
+                    if err:
+                        problems.append("%s: %s" % (where, err))
+                    if d.get("id"):
+                        if d["id"] in seen_w:
+                            problems.append("%s: widget id '%s' also at %s" % (where, d["id"], seen_w[d["id"]]))
+                        seen_w.setdefault(d["id"], where)
+                    name = d.get("widget", "")
+                    if re.fullmatch(r"[a-z0-9][a-z0-9_-]*", name) and not os.path.isfile(
+                            os.path.join(tools, "widgets", name, "widget.js")):
+                        problems.append("%s: widget '%s' is not in tools/widgets/" % (where, name))
+                    if d.get("fallback") and d["fallback"] != "text":
+                        wfall.append((where, d["fallback"]))
+                    check_links(d, path, where)
                 i = j + 1
+    for where, fb in wfall:
+        if fb not in ill_ids:
+            problems.append("%s: widget fallback '%s' is not an illustration id under docs/" % (where, fb))
     for p in problems:
         print("ILLUSTRATION " + p)
     print("CHECK illustrations: %d blocks, %d problems" % (nblocks, len(problems)))
