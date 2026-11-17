@@ -50,23 +50,45 @@ def child(tool, args):
         setattr(ds1, n, no)
     real_parse = ds1.parse
 
-    def model_call():
-        """True when the caller is the preset-unit model of tools/drlg.py (PresetUnitData.ds1): its map scan reads the
-        floor0 cell values to decide its draw counts. That is model input, not drawing; no other caller may read a layer."""
-        f = sys._getframe(2)
+    def model_call(depth=2):
+        """True when the caller is the preset-unit model of tools/drlg.py (PresetUnitData.ds1): it parses the DS1 for
+        its object list (the map scan's keep/drop draws) and keeps a copy of floor0 in its cache. That is model input,
+        not drawing; no other caller may parse a DS1 or read a layer."""
+        f = sys._getframe(depth)
         return f.f_code.co_name == "ds1" and os.path.basename(f.f_code.co_filename) == "drlg.py"
 
-    class Guarded(dict):
+    class Hidden(dict):
+        """A dict whose secret keys are out of the mapping (no items, values, iteration or copy reaches them) and
+        whose __getitem__ hands them out only to the callers `ok` admits."""
+        def __init__(self, d, secret, ok, what):
+            dict.__init__(self, {k: v for k, v in d.items() if k not in secret})
+            self._s, self._ok, self._what = {k: d[k] for k in secret if k in d}, ok, what
+
         def __getitem__(self, k):
-            if k == "layers" and not model_call():
-                raise RuntimeError("ds1 tile layers blocked")
+            if k in self._s:
+                if not self._ok():
+                    raise RuntimeError(self._what)
+                return self._s[k]
             return dict.__getitem__(self, k)
 
         def get(self, k, d=None):
-            if k == "layers" and not model_call():
-                raise RuntimeError("ds1 tile layers blocked")
-            return dict.get(self, k, d)
-    ds1.parse = lambda data: Guarded(real_parse(data))
+            return self[k] if k in self._s or k in self else d
+
+    def parse(data):
+        if not model_call():
+            raise RuntimeError("ds1.parse outside the preset-unit model blocked")
+        return Hidden(real_parse(data), ("layers",), model_call, "ds1 tile layers blocked")
+    ds1.parse = parse
+    import drlg
+    real_pu = drlg.PresetUnitData.ds1
+
+    def in_drlg():
+        return os.path.basename(sys._getframe(2).f_code.co_filename) == "drlg.py"
+
+    def pu_ds1(self, cell):     # the cached floor0 copy reaches no caller outside tools/drlg.py
+        d = real_pu(self, cell)
+        return d if isinstance(d, Hidden) else Hidden(d, ("floor0",), in_drlg, "floor0 outside tools/drlg.py blocked")
+    drlg.PresetUnitData.ds1 = pu_ds1
     real_open = builtins.open
 
     def guard_open(file, *a, **k):
@@ -132,8 +154,8 @@ class SchematicModes(unittest.TestCase):
             with open(os.path.join(out, "schematic.json")) as fh:
                 sj = json.load(fh)
             self.assertEqual(sj["marker"], anim_common.MARKER)
-            self.assertEqual(sj["tool"], tool)
-            self.assertEqual(sj["args"], args)
+            self.assertEqual(sj["tool"], tool[:-3])
+            self.assertEqual(sj["args"], [str(int(a, 16)) if a.startswith("0x") else a for a in args])
             names = sorted(os.listdir(out))
             self.assertEqual(names, sorted(list(sj["files"]) + ["schematic.json"]))
             for fname, sha in sj["files"].items():

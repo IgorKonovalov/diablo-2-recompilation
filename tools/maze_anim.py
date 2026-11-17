@@ -686,7 +686,7 @@ def main(argv):
         fh.write(encode_gif(frames, W, H, pal, delays, anim_common.MARKER if schematic else None))
     if schematic:                  # the marker's list: every file of this run, with its hash; the user's data root and --out left out
         names = ["maze.gif", "index.html", "steps.json"] + ["frame-%03d.png" % i for i in range(len(frames))]
-        anim_common.write_schematic_json(out, "maze_anim.py", [str(level), argv[2]], names)
+        anim_common.write_schematic_json(out, "maze_anim", [str(level), argv[2]], names)
     print("%d frames -> %s" % (len(frames), out))
     return 0
 

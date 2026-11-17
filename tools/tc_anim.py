@@ -969,7 +969,7 @@ class Anim:
             pass
         calc.append("Result: %s%s." % ("success" if res["ok"] else "failure", "" if not fb or res["ok"] else
                                        ", the next step of the chain follows"))
-        calc.append("ItemApplyProps draws (property values) are applied to the seed by tools/props.py; the values are "
+        calc.append("ItemApplyProps draws (property values) are applied to the seed by our property model; the values are "
                     "not shown.")
         itm["build"] += ["%s%s: %s" % ("fallback " if fb else "", kd, s) for s in shown] or [
             "%s%s builder %s" % ("fallback " if fb else "", kd, "ok" if res["ok"] else "failed")]
@@ -1117,7 +1117,7 @@ the item's own seed.</li>
 <li>Bottom: items dropped so far; an inventory icon appears once the item is complete (schematic mode: a name card
 coloured by the item's quality, no icon).</li>
 <li>Each step's calculations name the spec section it restates (tc.md, quality.md, uniques-sets.md, affixes.md).
-Stages without a model in tools/ (monster level of an area, quest TC, gold, ItemInitStats, ethereal, sockets, automagic,
+Stages without a model here (monster level of an area, quest TC, gold, ItemInitStats, ethereal, sockets, automagic,
 property values) are marked "not modelled here".</li>
 <li>The seed is an illustrative input; the item seeds come from a game-seed stream derived from it, not from the
 game's own derivation.</li>"""
@@ -1177,7 +1177,7 @@ def cmd_render(argv):
     with open(os.path.join(out, "tc.gif"), "wb") as fh:
         fh.write(anim_common.encode_gif(gf, gw, gh, p, delays, anim_common.MARKER if schematic else None))
     if schematic:
-        anim_common.write_schematic_json(out, "tc_anim.py", targs,
+        anim_common.write_schematic_json(out, "tc_anim", targs,
                                          ["tc.gif", "index.html", "steps.json"] + ["frame-%03d.png" % i for i in range(n)])
     print("%d frames -> %s" % (n, out))
     return 0

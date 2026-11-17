@@ -265,7 +265,10 @@ def write_steps_json(path, caps, schematic):
 
 def write_schematic_json(out, tool, args, names):
     """schematic.json beside the files: the tool, its arguments (the data root and --out left out) and each file's
-    name and sha256. Schematic mode only; the full mode never writes it."""
+    name and sha256. Schematic mode only; the full mode never writes it. The tool is named without its extension and a
+    hex argument is written in decimal: the file is published, and the export's check (tools/export_check.py X1, X3)
+    fails a .py name and a hex number of 6+ digits."""
+    args = [str(int(a, 16)) if a.lower().startswith("0x") else a for a in args]
     files = {}
     for n in sorted(names):
         with open(os.path.join(out, n), "rb") as fh:
