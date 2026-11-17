@@ -78,6 +78,16 @@ def main():
     ok("X1" in t("0x00556F60") and "X1" in t("sub_00556F60") and "X1" in t("Game+0x1B24"), "X1 shapes")
     ok("X3" in t("ADR-0031") and "X3" in t("findings/rng/0001") and "X3" in t("tools/gate.py"), "X3 shapes")
     ok("X4" in t("/home/x/y") and "X4" in ec.text_rules("hi secret-repo-name", IDENT), "X4 shapes")
+    def urlok(u):
+        return bool(ec.RE_URL_ALLOW.match(u.lower()))
+    ok(all(urlok(u) for u in ("https://github.com/igorkonovalov/arpg-1-14d-notes", "https://github.com/IgorKonovalov/arpg-1-14d-notes/",
+                              "https://github.com/IgorKonovalov/ARPG-1-14d-notes.git", "https://github.com/igorkonovalov/arpg-1-14d-notes#x",
+                              "https://igorkonovalov.github.io/arpg-1-14d-notes/a/b", "https://IgorKonovalov.github.io/arpg-1-14d-notes",
+                              "https://igorkonovalov.github.io")), "X7: the export repository and its site pass")
+    ok(not any(urlok(u) for u in ("https://github.com/igorkonovalov", "https://github.com/igorkonovalov/other",
+                                  "https://github.com/igorkonovalov/arpg-1-14d-notes-old", "https://github.com/igorkonovalov/arpg-1-14d-notes2/x",
+                                  "https://igorkonovalov.github.io/arpg-1-14d-notes-old/", "https://igorkonovalov.github.io/other/",
+                                  "https://github.com/other/arpg-1-14d-notes")), "X7: other repositories and extended names fail")
     ok(t("Igor Konovalov, https-free github.com/IgorKonovalov") == set(), "owner name and account pass X4")
     ok("X5" in t("```\nx = f(y);\n```"), "X5 on a unit that is a fenced block")
     ok(t("```mermaid\nflowchart LR\n  A[\"x;\"] --> B{y}\n```") == set(), "mermaid fence exempt from X5")
