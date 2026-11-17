@@ -17,7 +17,8 @@ under workspace/. Outputs:
   steps.json the captions and calculations; schematic.json the marker's file list (ADR-0036).
 
 Data shown (ADR-0009 risk 3: the affix tables are game data): the filter frame shows counts only; the weights frame shows
-at most five candidates, each as its affix id and weight, and the weight strip as bars with no text; the one affix name
+at most five candidates, each as its affix id and weight, and the weight strip with no text: bars for those five and
+the winner, each run of the other candidates merged into one block; the one affix name
 shown is the winner's, on the last frame. Steps: the inputs, the affix level, draw 1, the filter, the weights, draw 2 and
 the walk, the result; a pick that does not roll or finds no candidate ends early. Every number is computed by the pick of
 tools/affixes.py (Walk.pick, run with no log lines and a trace dict) and the affix level by its alvl_of; the affix level's
@@ -43,13 +44,14 @@ TESTS = (("spawnable", "C4A", "SPAWNABLE FLAG IS 0"),
          ("level", "C4C", "ROW LEVEL ABOVE ALVL OR MAXLEVEL BELOW IT"),
          ("rare", "C4D", "RARE FLAG 0 ON A RARE ITEM"),
          ("type", "C4E", "ITEM TYPE TEST FAILS"),
+         ("group", "C4F", "AUTOMAGIC PICK ONLY: ANOTHER GROUP"),
          ("frequency", "C4G", "FREQUENCY IS 0"),
          ("class", "C4H", "CLASS-SPECIFIC ROW OF ANOTHER CLASS"),
          ("taken", "C4I", "GROUP ALREADY ON THE ITEM"))
 HELP = """<li>The top row names the steps of one pick: the affix level (alvl), draw 1, the filter, the weights and draw 2.</li>
 <li>Draw 1: the low bit of the first step of the item seed decides whether the pick rolls at all.</li>
 <li>Filter: counts only, one line per test in the game's order, with the rows each test refused and the rows left. No row of the table is listed.</li>
-<li>Weights and draw 2: the strip is one bar per candidate, as wide as its weight; draw 2 picks a point along it, and the candidate under the point wins. At most five candidates are listed, by affix id and weight.</li>
+<li>Weights and draw 2: the strip runs over the total weight in table order; the listed candidates and the winner are bars as wide as their weights, and each run of the other candidates is one hatched block. Draw 2 picks a point along it, and the candidate under the point wins. At most five candidates are listed, by affix id and weight.</li>
 <li>Every value is computed by our model of the pick for the illustrative inputs given, not observed in the game.</li>"""
 
 
@@ -195,20 +197,20 @@ def build(T, codes, code, ilvl, seed, pre, theme):
         rows = tr["rows"]
         header("THE FILTER: COUNTS ONLY")
         stepper(2)
-        k.text(40, 84, "ROWS IN THE %s TABLE: %d" % (side, rows), "txt", 2, True)
+        k.text(40, 80, "ROWS IN THE %s TABLE: %d" % (side, rows), "txt", 2, True)
         refmap = dict(refused)
         left = rows
-        y = 114
+        y = 104
         for key, tag, lab in TESTS:
             n = refmap[key]
             left -= n
-            k.rect(40, y, 880, 30, "panel")
-            k.outline(40, y, 880, 30, "dim")
-            k.text(50, y + 8, tag, "dim", 2)
-            k.text(120, y + 8, lab, "txt" if n else "dim", 2, bool(n))
-            k.text(660, y + 8, "REFUSED %d" % n, "txt" if n else "dim", 2, bool(n))
-            k.text(800, y + 8, "LEFT %d" % left, "acc" if n else "dim", 2, True)
-            y += 34
+            k.rect(40, y, 880, 28, "panel")
+            k.outline(40, y, 880, 28, "dim")
+            k.text(50, y + 7, tag, "dim", 2)
+            k.text(120, y + 7, lab, "txt" if n else "dim", 2, bool(n))
+            k.text(910 - 128 - 16 - K.text_w("REFUSED %d" % n, 2), y + 7, "REFUSED %d" % n, "txt" if n else "dim", 2, bool(n))
+            k.text(910 - 128, y + 7, "LEFT %d" % left, "acc" if n else "dim", 2, True)
+            y += 31
         assert left == len(cands)
         k.text(40, y + 10, "CANDIDATES: %d    TOTAL WEIGHT W: %d" % (len(cands), Wt), "txt", 3, True)
         k.caption("Each row of the %s table meets the tests in order; a row refused by one is out. %d of %d rows are left "
@@ -240,9 +242,9 @@ def build(T, codes, code, ilvl, seed, pre, theme):
                 k.text(52, 154 + j * 36, "ID %d" % aid, "txt", 2, True)
                 k.text(300, 154 + j * 36, "WEIGHT %d" % w, "txt", 2)
             strip(k, 40, 360, 880, cands, Wt, None, None)
-            k.text(40, 392, "THE STRIP: ONE BAR PER CANDIDATE, AS WIDE AS ITS WEIGHT", "dim", 2)
-            k.caption("%d candidates with total weight %d; the strip gives each as wide as its weight, in table order "
-                      "(affixes C4)." % (len(cands), Wt), CAP_Y, 76)
+            k.text(40, 392, "THE STRIP: THE LISTED CANDIDATES AS BARS, THE REST AS ONE BLOCK", "dim", 2)
+            k.caption("%d candidates with total weight %d; on the strip each listed candidate is as wide as its weight, in "
+                      "table order (affixes C4)." % (len(cands), Wt), CAP_Y, 76)
             frames.append(k.done())
             caps.append(dict(
                 text="%d candidates, total weight %d." % (len(cands), Wt),
@@ -308,15 +310,38 @@ def build(T, codes, code, ilvl, seed, pre, theme):
     return frames, caps, k.pal, tr
 
 
+def segments(cands, win):
+    """The strip's segments in table order: (first, last, weight) with one candidate each for the MAX_LISTED listed
+    ones and the winner, and one merged segment for every run of the others between them (review of lane/x12e: a bar
+    per candidate gave every candidate's weight to the pixel, past the plan's 20 rows a frame)."""
+    keep = set(range(min(MAX_LISTED, len(cands))))
+    if win is not None:
+        keep.add(win)
+    segs = []
+    for j, (_a, w) in enumerate(cands):
+        if j in keep or not segs or segs[-1][0] in keep:
+            segs.append([j, j, w])
+        else:
+            segs[-1][1], segs[-1][2] = j, segs[-1][2] + w
+    return [tuple(s_) for s_ in segs]
+
+
 def strip(k, x, y, bw, cands, Wt, xdraw, win):
-    """The weight strip: one bar per candidate in table order, as wide as its weight; the winner's in the highlight."""
+    """The weight strip in table order: the listed candidates and the winner as bars as wide as their weights, each run
+    of the others as one merged block (hatched); the winner's bar in the highlight."""
     k.rect(x, y, bw, 22, "grey")
     cum = 0
-    for j, (_a, w) in enumerate(cands):
+    keep = set(range(min(MAX_LISTED, len(cands)))) | ({win} if win is not None else set())
+    for i, (j0, j1, w) in enumerate(segments(cands, win)):
         a, b = x + cum * bw // Wt, x + (cum + w) * bw // Wt
         cum += w
-        fill = "cur" if j == win else ("panel" if j % 2 == 0 else "grey")
-        k.rect(a, y, max(1, b - a), 22, fill)
+        if j0 in keep:
+            fill = "cur" if j0 == win else ("panel" if i % 2 == 0 else "grey")
+            k.rect(a, y, max(1, b - a), 22, fill)
+        else:
+            k.rect(a, y, max(1, b - a), 22, "grey")
+            for hx in range(a + 4, b - 1, 8):
+                k.vline(hx, y + 6, y + 15, "dim", 1)
         k.vline(a, y, y + 21, "dim", 1)
     k.outline(x, y, bw, 22, "dim")
     if win is not None:

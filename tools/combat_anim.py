@@ -123,7 +123,7 @@ def run(seed, dseed):
         crit.update(ran=True, r=rc, won=rc < st(a, 141))
     final = phys * 2 if crit["won"] else phys
     tr["cr"] = dict(crit, phys=phys, final=final)
-    rb1 = draw("A", "burning step", 1)
+    rb1 = draw("A", "always drawn", 1)
     tr["rb"] = dict(r=rb1, burn=combat.tdiv(max(316 + rb1, 0), 128))
     tr["pkt"] = dict(phys=final)
     # ---- delivery (a hit that was not blocked)
@@ -161,6 +161,12 @@ def run(seed, dseed):
     tr["dl"] = dl
     tr["sa"], tr["sd"] = sa, sd
     return tr
+
+
+def fname(label):
+    """The draw's function as the specs name it: the build's physical roll and its last step are RangeB (damage A, B),
+    the second compile of Range, with the same value."""
+    return "RANGEB" if label in ("physical", "always drawn") else "RANGE"
 
 
 def pts(v):
@@ -201,7 +207,8 @@ def build(seed, dseed, theme):
             x = 20 if who == "A" else 500
             y = ya if who == "A" else yd
             k.rect(x, y, 440, 22, "cur" if cur else "panel")
-            k.text(x + 6, y + 4, "%d %s: RANGE(%d) = %d" % (j + 1, label.upper(), n, v), "txt" if cur else "dim", 2, cur)
+            k.text(x + 6, y + 4, "%d %s: %s(%d) = %d" % (j + 1, label.upper(), fname(label), n, v), "txt" if cur else "dim", 2,
+                   cur)
             if who == "A":
                 ya += 26
             else:
@@ -240,7 +247,7 @@ def build(seed, dseed, theme):
     stepper(0)
     y = 86
     rows = [("DEFENCE = %d + %d / 4" % (th["def_base"], th["def_dex"]), "%d" % th["defense"]),
-            ("AR = (%d - 7) * 5 + %d + %d" % (th["dex"], th["s19"], th["factor"]), "%d" % th["ar"]),
+            ("AR = (DEX %d - 7) * 5 + %d + CLASS FACTOR %d" % (th["dex"], th["s19"], th["factor"]), "%d" % th["ar"]),
             ("C = 100 * %d / (%d + %d)" % (th["ar"], th["ar"], th["defense"]), "%d" % th["c1"]),
             ("C = %d * %d * 2 / (%d + %d)" % (th["c1"], th["alvl"], th["alvl"], th["dlvl"]), "%d" % th["c2"]),
             ("CLAMPED TO 5..95", "%d" % th["c"])]
@@ -361,7 +368,7 @@ def build(seed, dseed, theme):
     k.text(40, 156, "THE ELEMENTS AND POISON: NO DAMAGE RANGE, NO DRAW", "dim", 2)
     k.text(40, 186, "RANGEB(1) IS DRAWN EVERY TIME: RESULT %d" % rb["r"], "txt", 2, True)
     k.text(40, 216, "FINAL PHYSICAL %s POINTS" % pts(cr["final"]), "txt", 2, True)
-    columns(upto("burning step"), 260)
+    columns(upto("always drawn"), 260)
     k.caption(("Deadly strike: draw %d against %d percent, %s. " % (cr["r"], cr["chance"], "so the physical damage "
                "doubles" if cr["won"] else "so it does not double") if cr["ran"] else "") +
               "The build always draws RangeB(1) once (damage A, steps 3 and 7).", CAP_Y, 76)
@@ -404,10 +411,12 @@ def build(seed, dseed, theme):
         else:
             k.text(52, y + 34, "NO CHANCE, NO DRAW", "dim", 2)
         columns(len(tr["draws"]), 290, 3)
-        k.caption("On a hit, open wounds then crushing blow, each drawing on the attacker's seed only when its chance is above "
-                  "0 (delivery B3, E1, E2).", CAP_Y, 76)
+        k.caption("On a hit the stat events run newest registered first, here open wounds then crushing blow; each "
+                  "draws only with a chance above 0 (delivery B3, E).", CAP_Y, 76)
         frames.append(k.done())
-        calc = ["delivery.md B3: the handlers of event 5 run newest first: open wounds (E2), then crushing blow (E1); each reads life before this hit's damage."]
+        calc = ["delivery.md B3: the handlers of event 5 run newest first, so the order is the unit's own registration "
+                "order; the toy has open wounds run before crushing blow, as the logged characters did. Each reads the "
+                "life before this hit's damage."]
         if ow["ran"]:
             calc.append("delivery.md E2: r = Range(att.seed, 100) = %d against stat 135 = %d: %s%s." % (
                 ow["r"], ow["chance"], "applied" if ow["won"] else "not applied",
@@ -464,7 +473,7 @@ def build(seed, dseed, theme):
         y = ya if who == "A" else yd
         k.rect(x, y, 440, 30, "panel")
         k.outline(x, y, 440, 30, "dim")
-        k.text(x + 8, y + 8, "%d %s: RANGE(%d) = %d" % (j + 1, label.upper(), n, v), "txt", 2)
+        k.text(x + 8, y + 8, "%d %s: %s(%d) = %d" % (j + 1, label.upper(), fname(label), n, v), "txt", 2)
         if who == "A":
             ya += 36
         else:

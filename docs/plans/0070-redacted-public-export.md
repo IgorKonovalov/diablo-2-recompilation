@@ -1989,3 +1989,48 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   ids with weights, a bar strip with no text and one name (the winner's); the hire frames show name indices, ids,
   levels and prices; a test caps both. Tests: `test_combat_items_anim` (19), `test_schematic_kit`, `test_export_build`,
   `test_export_check`, `test_anim_schematic`; gate green. Blocks: `blocks-batch2.md`, "Combat, hirelings, affixes (x12e)".
+- 2026-11-17, architect, review of lane/x12e (Opus, Tier A): **accept with fixes**, 11: overclaim 1, misread 1,
+  omission 4, other 5. **No-change proof, reproduced** on a temporary worktree at 1616b1af (removed after):
+  `hirelings.py check` over `hire-run.lst`'s 48 logs, `affixes.py check` over `affixes-manifest.txt`'s 51 logs with the
+  oracle and with `--staff model`: all three outputs byte for byte identical to the lane's (0 mismatches); a
+  deterministic batch of 328 hire-list builds (both games, every seller, each listed entry rolled in three
+  difficulties) and 5 700 free-mode `Walk.pick` calls (every seventh base code, six ilvls, five seeds, both sides;
+  2 192 with an id, 3 508 none, no exception) hashed identical before and after. The trace arguments only read; the
+  refused counters are computed always and read by nothing else. **Row 17's copy:** combat.py has no forward function;
+  the toy restates to-hit A1–A6 (no target mods, pct 0), C2 (a monster's `min(stat 20, 75)`), damage A steps 2, 3, 7
+  and B1, delivery B3–B4 and E1–E2 on the model's step, range, MulDiv and `Checker.get_defense`, and the tests feed every
+  number to `Checker.tohit`, `defence`, `build` (which recomputes min, max, ed and the end packet), `openwounds` (state,
+  length, value) and `crushing` (the life after): the x12d precedent holds, `values: computed` kept. The tool builds
+  `Checker(None)` and reads no file at cut time; only the test reads `hp_pct` from the image when present, and asserts
+  the one-player term is 0. **Data rulings (ADR-0009 risk 3, ADR-0036):** row 18's name indices (the seller's range),
+  ids, levels and prices of ten entries are kept: they reveal at most the two or three rows of one act and difficulty,
+  each as one `Gold` and band, short illustrative rows. Row 19's counts, five merged ids with weights and one winner's
+  name are kept; the strip was not: a bar per candidate gave all 32 weights of the shown pick to the pixel (W = 150 over
+  880 px), past the row's "20 rows at most on a frame" (fix 6). **Fixes:** (1) overclaim: the delivery step said "the
+  handlers of event 5 run newest first: open wounds, then crushing blow"; delivery B3 makes the order the unit's own
+  registration order (the logged characters ran open wounds first): the step text, the frame caption and the block say
+  "newest registered first, here open wounds then crushing blow". (2) misread: the hire entry frames said "draw 1 picks
+  hireling id 1 among 2"; draw 1 picks a row (E3), whose id is shown: "DRAW 1: RANGE(k), A ROW" and "THAT ROW'S
+  HIRELING ID", caption "picks row r of k (hireling id h)". (3) omission: the filter frame, "one line per test in the
+  game's order", had no C4f line: added (AUTOMAGIC PICK ONLY: ANOTHER GROUP, refused 0). (4) omission: the combat test's
+  miss branch was conditional and none of the six seed pairs missed, so it never ran: (5, 12345) misses and is in the
+  traces; the assertion is unconditional. (5) omission: row 17's frames cite delivery E1 and E2 and the block had no § E
+  anchor: added. (6) omission: the strip draws bars for the five listed candidates and the winner only, each run of the
+  others one hatched block (`affix_anim.segments`); a test checks the nine filter tags and the segments. (7) other: the
+  build's draws were labelled `RANGE` where damage A and B name `RangeB`, and the always-drawn step "burning step":
+  `RANGEB` and "always drawn", tested. (8) other: the to-hit frame's AR row left its 20 unnamed: "CLASS FACTOR 20".
+  (9) other: the filter frame's `REFUSED n` ran into `LEFT n`; right-aligned before it, rows 31 px. Blocks (corrected in
+  `workspace/phase11/blocks-batch2.md`): (10) other: row 18 now says no pick of this build lands on a listed name (the
+  frames show none); (11) other: row 19's "the group test" → "the test of a group already on the item". Frames viewed
+  in both themes: combat 0–8, hire 0, 1, 5, 15 (both), affix 1, 3, 4, 5, 6, and the changed ones again after the fixes;
+  every number checked against the specs (c = 100 × 335 ÷ 535 = 62, 62 × 30 × 2 ÷ 50 = 74; ed 40 + 80 = 120, lo 2816,
+  hi 6195; Band(30) + 40 = 436; 300 ÷ 4 = 75 points, 57 600 − 3 319 = 54 281 units, 212.03; alvl 30 − 10 = 20; draw 2
+  of 93 in the span 86..94). Seed 12345 for rows 18 and 19 is fine: no caption implies 0xC0FFEE. Place lines checked
+  against combat, characters and items: right. **Cut:** the three blocks placed in the lane's wiki pages for one build
+  (restored after), `export_build.py --out workspace/export-x12e-review`: 71 pages, 0 dropped, the three illustration
+  folders; `export_check` 0 failures, 864 warnings; no DROP or REWRITE on the blocks; every caption sentence of the
+  three present; the folder removed. Tests green: `test_combat_items_anim` (21), `test_schematic_kit`,
+  `test_anim_schematic`, `test_export_build` (154), `test_export_check` (191); gate green. Ledger: verdict accept with
+  fixes, 11 (overclaim 1, misread 1, omission 4, other 5). **For the spec-writer:** place the three blocks as their
+  Place lines say; row 17's caption now names delivery § E, so the combat page's sentence after the diagram may say
+  the stat-event order is the unit's registration order.

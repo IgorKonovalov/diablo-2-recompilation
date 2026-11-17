@@ -175,8 +175,8 @@ def build(t, who, sid, vf, diff, plvl, seed, theme):
         k.text(20, 46, "ROLLED FROM ITS OWN SEED, NOT THE STORE SEED", "dim", 2)
         x0, y = 20, 76
         card = [("OWN SEED", "%08X" % e["seed"], "txt"),
-                ("DRAW 1: RANGE(%d)" % tr["k"], "%d" % tr["pick"], "txt"),
-                ("HIRELING ID", "%d" % e["hid"], "acc"),
+                ("DRAW 1: RANGE(%d), A ROW" % tr["k"], "%d" % tr["pick"], "txt"),
+                ("THAT ROW'S HIRELING ID", "%d" % e["hid"], "acc"),
                 ("DRAW 2: LOW WORD MOD 5", "%d" % tr["mod"], "txt"),
                 ("LEVEL = %d - 5 + %d" % (plvl, tr["mod"]), "%d%s" % (tr["raw"], "  RAISED TO 2" if tr["raw"] < 2 else ""),
                  "txt"),
@@ -204,8 +204,8 @@ def build(t, who, sid, vf, diff, plvl, seed, theme):
             k.text(lx + 100, 132 + i * 28, str(q["hid"]), col, 2, cur)
             k.text(lx + 156, 132 + i * 28, str(q["level"]), col, 2, cur)
             k.text(lx + 250, 132 + i * 28, str(q["price"]), col, 2, cur)
-        k.caption("Name %d rolls from its own seed: draw 1 picks hireling id %d among %d, draw 2 gives level %d, and "
-                  "the price is %d gold (hirelings E)." % (e["name"], e["hid"], tr["k"], e["level"], e["price"]),
+        k.caption("Name %d, own seed: draw 1 picks row %d of %d (hireling id %d), draw 2 gives level %d, price %d "
+                  "gold (hirelings E)." % (e["name"], tr["pick"], tr["k"], e["hid"], e["level"], e["price"]),
                   CAP_Y, 76)
         frames.append(k.done())
         caps.append(dict(

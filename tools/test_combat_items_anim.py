@@ -109,7 +109,7 @@ class Combat(unittest.TestCase):
         cls.ck = combat.Checker(T)
 
     def traces(self):
-        for seeds in ((0xC0FFEE, 12345), (0xC0FFEE, 5000), (1, 2), (0xDEADBEEF, 77), (12, 99), (555, 4242)):
+        for seeds in ((0xC0FFEE, 12345), (0xC0FFEE, 5000), (1, 2), (0xDEADBEEF, 77), (12, 99), (555, 4242), (5, 12345)):
             yield seeds, combat_anim.run(*seeds)
 
     def test_hit_chance_and_both_to_hit_draws_equal_the_models_check(self):
@@ -124,7 +124,7 @@ class Combat(unittest.TestCase):
             hit, sa, i = self.ck.tohit(ev, a, d, (s, 666), {}, lines, 0)
             self.assertEqual((hit, sa, i), (th["hit"], first[4], 3))
             n += 1
-        self.assertEqual(n, 6)
+        self.assertEqual(n, 7)
 
     def test_block_draw_equals_the_models_defence_roll(self):
         for (s, ds), tr in self.traces():
@@ -148,7 +148,7 @@ class Combat(unittest.TestCase):
             to_hit = draws[0]
             phys = next(x for x in draws if x[1] == "physical")
             ds_draw = next((x for x in draws if x[1] == "deadly strike"), None)
-            burn = next(x for x in draws if x[1] == "burning step")
+            burn = next(x for x in draws if x[1] == "always drawn")
             zero = struct.pack("<28i", *([0] * 28))
             end = [0] * 28
             end[0] = 0x20
@@ -175,7 +175,7 @@ class Combat(unittest.TestCase):
             if not dl["ran"]:
                 continue
             a, d = tr["a"], tr["d"]
-            sa = [x for x in tr["draws"] if x[1] == "burning step"][0][4]
+            sa = [x for x in tr["draws"] if x[1] == "always drawn"][0][4]
             ow, cb = dl["ow"], dl["cb"]
             sta = {"state": 62, "len": 200, "stat": 74, "val": -ow.get("dmg", 0)}
             sa2, ok = self.ck.openwounds({}, {}, a, d, sa, 5, sta if ow["won"] else None, 0)
@@ -192,7 +192,7 @@ class Combat(unittest.TestCase):
         self.assertEqual(self.hp_pct[1], 0)                     # one player: no player-count term (delivery E1)
         tr = combat_anim.run(0xC0FFEE, 12345)
         self.assertEqual([(w, lab) for w, lab, *_ in tr["draws"]],
-                         [("A", "to-hit"), ("D", "block"), ("A", "physical"), ("A", "deadly strike"), ("A", "burning step"),
+                         [("A", "to-hit"), ("D", "block"), ("A", "physical"), ("A", "deadly strike"), ("A", "always drawn"),
                           ("A", "open wounds"), ("A", "crushing blow")])
         # the generator's steps equal one step of the model's generator per draw
         sa = (0xC0FFEE, 666)
@@ -201,10 +201,9 @@ class Combat(unittest.TestCase):
                 got, sa = combat.rng_range(sa, n)
                 self.assertEqual((got, sa), (v, seed))
         # a miss and a block deliver nothing and draw no stat event
-        miss = next(t for _s, t in self.traces() if not t["th"]["hit"]) if any(
-            not t["th"]["hit"] for _s, t in self.traces()) else None
-        if miss:
-            self.assertEqual([x[1] for x in miss["draws"]], ["to-hit", "physical", "deadly strike", "burning step"])
+        miss = next(t for _s, t in self.traces() if not t["th"]["hit"])          # (5, 12345) misses (review of lane/x12e)
+        self.assertEqual([x[1] for x in miss["draws"]], ["to-hit", "physical", "deadly strike", "always drawn"])
+        self.assertFalse(miss["dl"]["ran"])
         blk = combat_anim.run(0xC0FFEE, 5000)
         self.assertNotIn("open wounds", [x[1] for x in blk["draws"]])
 
@@ -215,13 +214,24 @@ class Combat(unittest.TestCase):
             self.assertNotRegex(t, r"\.py|tools/|workspace")
         K.TEXT_CLIPPED.clear()
         K.CAPTION_CUT.clear()
-        for seeds in ((0xC0FFEE, 12345), (0xC0FFEE, 5000), (1, 2), (0xDEADBEEF, 77), (12, 99), (555, 4242)):
+        for seeds in ((0xC0FFEE, 12345), (0xC0FFEE, 5000), (1, 2), (0xDEADBEEF, 77), (12, 99), (555, 4242), (5, 12345)):
             for theme in ("dark", "light"):
                 combat_anim.build(seeds[0], seeds[1], theme)
         self.assertEqual((K.TEXT_CLIPPED, K.CAPTION_CUT), ([], []))
         self.assertEqual(combat_anim.main([DATA, "--seed", "0"]), 2)
         self.assertEqual(combat_anim.main([DATA, "--seed", "zz"]), 2)
         self.assertEqual(combat_anim.main([DATA, "extra"]), 2)
+
+    def test_build_draws_are_labelled_rangeb_and_the_class_factor_is_named(self):
+        # review of lane/x12e: damage A and B name the physical roll and the last step RangeB, not Range
+        with Recorder() as rec:
+            combat_anim.build(0xC0FFEE, 12345, "dark")
+        flat = " ".join(" ".join(f) for f in rec.frames)
+        self.assertIn("PHYSICAL: RANGEB(", flat)
+        self.assertIn("ALWAYS DRAWN: RANGEB(1) = 0", flat)
+        self.assertIn("TO-HIT: RANGE(100)", flat)
+        self.assertNotIn("BURNING", flat)
+        self.assertIn("CLASS FACTOR %d" % combat_anim.TOY_TOHIT_FACTOR, flat)
 
     def test_labels_use_no_x_for_times(self):
         with open(os.path.join(HERE, "combat_anim.py"), encoding="utf-8") as fh:
@@ -422,6 +432,27 @@ class Affix(unittest.TestCase):
         flat = " ".join(texts(out))
         self.assertIn("%d candidates, total weight %d" % (len(m["cands"]), m["W"]), flat)
         self.assertIn("Draw 2 is %d" % m["x"], flat)
+
+    def test_filter_lists_all_nine_tests_and_the_strip_merges_the_unlisted(self):
+        # review of lane/x12e: C4f had no line; a bar per candidate gave all 32 weights to the pixel
+        with Recorder() as rec:
+            _f, _c, _p, tr = affix_anim.build(self.T, self.codes, "lsd", 30, 12345, True, "dark")
+        tags = [s for s in rec.frames[3] if re.fullmatch(r"C4[A-I]", s)]
+        self.assertEqual(tags, ["C4A", "C4B", "C4C", "C4D", "C4E", "C4F", "C4G", "C4H", "C4I"])
+        cands, k = tr["cands"], tr["k"]
+        self.assertGreater(len(cands), 20)
+        for win in (None, k):
+            segs = affix_anim.segments(cands, win)
+            self.assertEqual(sum(w for _a, _b, w in segs), tr["W"])
+            self.assertEqual([j for a, b, _w in segs for j in range(a, b + 1)], list(range(len(cands))))
+            single = [a for a, b, _w in segs if a == b]
+            self.assertLessEqual(len(segs), affix_anim.MAX_LISTED + 3)
+            for a, b, _w in segs:
+                if a != b or a not in range(affix_anim.MAX_LISTED) and a != win:
+                    self.assertTrue(a >= affix_anim.MAX_LISTED and a != win)
+            self.assertTrue(set(range(affix_anim.MAX_LISTED)) <= set(single))
+            if win is not None:
+                self.assertIn(win, single)
 
     def test_no_roll_and_suffix_variants_end_early_and_name_nothing(self):
         out = TK.run("affix_anim.py", ["lsd", "30", "0xc0ffee"], "aff-nr")
