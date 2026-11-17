@@ -472,3 +472,28 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   Battle.net lines (the Battle.net ban stays strict: the line is dropped, never published). `docs/export/README.md`
   updated to match. Cost: about 2.9 M in all (was 3.9 M–5.6 M); first cut about 2.6 M. Next: Phases 2, 2b, 4 and 5,
   side by side; then 3.
+- 2026-11-17 — **Phase 5 written** (spec-writer, lane/x70p). `docs/export/index.md` (front page: the project, what
+  the site holds and that it is simplified, where to start, the six manifest groups as links to their 22 pages),
+  `docs/export/reading-the-tags.md` (`[C]` and `[I]` with the wiki's words for each, the corroboration kinds in plain
+  words without a tool name, leads left out, *What is not known yet* kept, diagrams untagged) and
+  `docs/export/about.md` (the footer's statements, the simplified edition, the animations as schematic drawings of our
+  own per ADR-0036, CC BY 4.0). No claim about the game; no owner name in the text (ADR-0035: only where the host puts
+  it); no repository name. `tools/export_check.py` was not on main, so X1–X12 were self-checked against the rules'
+  text with a regex pass: clean (no fence, no table over 20 rows, no quoted run over 12 words). Found on the way: the
+  wiki's game-data title "Game data: tables, …" matches X2's `data:` as the rule is written; the front page's link
+  text avoids it, but the wiki page's title will hit it in the cut (Phase 2 or 3 to decide: narrow X2's `data:` to the
+  id form, or let the simplifier handle the title). Gate full green. Review request
+  [filed](../backlog/archive/2026-11-17-spec-writer-architect-review-0070-phase5-export-pages.md) (Tier A).
+- 2026-11-17 — **Phase 5 reviewed: accept with fixes (3)** (architect, Tier A, lane/x70p). All three pages read in
+  full. Owner decisions, ADR-0035 (no owner name, no repository name, no path or id), ADR-0036 (schematic drawings,
+  our colours, model-computed values, illustrative seeds) and the footer's statements hold; the six groups and 22 links
+  match the manifest's `page` lines and resolve; nothing states where a game file came from, and nothing implies
+  affiliation. X1–X12 checked by hand: clean; X12 warnings only for the nominative names (Diablo II, Lord of
+  Destruction, Blizzard Entertainment, Creative Commons), accepted. The tag table matches the evidence rules' two
+  levels and the four corroboration kinds without a tool name. Fixes, all in `reading-the-tags.md` (category: wording,
+  claim scope): (1) "each statement says how far it can be trusted" overclaimed the wiki, which marks what is inferred
+  ("nothing hidden"), now "they say it wherever a statement is only inferred"; (2) the leads bullet now allows the
+  quirks page's community claims compared with the code, as our own statements; (3) the bracketed tags are said to
+  belong to the specifications, not yet on the site (cut 1 holds no tag). Noted, not this phase's: X2's `data:` against
+  the wiki title "Game data: …" (Phase 2 or 3). Phase 5's other *Done when* items wait: the check green on a cut that
+  holds the pages (Phases 2 and 3). Lesson 11 added to the spec-writer's `review-fixes.md`.
