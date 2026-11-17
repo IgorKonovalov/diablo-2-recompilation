@@ -238,9 +238,10 @@ def safe_out(out):
 MARKER_NAME = "schematic-only"
 MARKER = "schematic-only/1"           # the byte string tools/export_check.py looks for in every file (own graphics, no game art)
 
+# dim and bad raised to a contrast of 4.5 on bg and panel (they were 4.37 and 3.82 on panel; review of lane/x11a)
 SCHEM_UI = dict(                     # name -> RGB; the order is the palette order (index = position)
-    bg=(16, 16, 22), panel=(30, 30, 40), txt=(225, 225, 225), dim=(130, 130, 145), acc=(240, 210, 80),
-    good=(70, 200, 90), bad=(215, 70, 70), blue=(90, 140, 255), cur=(60, 60, 95), grey=(70, 70, 80),
+    bg=(16, 16, 22), panel=(30, 30, 40), txt=(225, 225, 225), dim=(150, 150, 165), acc=(240, 210, 80),
+    good=(70, 200, 90), bad=(235, 95, 95), blue=(90, 140, 255), cur=(60, 60, 95), grey=(70, 70, 80),
     q_low=(150, 150, 150), q_normal=(235, 235, 235), q_superior=(200, 200, 200), q_magic=(110, 130, 255),
     q_set=(60, 220, 60), q_rare=(255, 240, 80), q_unique=(205, 160, 90), black=(0, 0, 0),
     qd_low=(48, 48, 52), qd_normal=(62, 62, 66), qd_superior=(56, 56, 60), qd_magic=(34, 40, 78),

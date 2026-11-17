@@ -602,7 +602,8 @@ def verify_illustration(folder, identity=()):
 
 def html_problems(html, files):
     out = []
-    if re.search(r"(?:https?|ftp|wss?):|//[\w-]+\.[a-z]{2,}", html, re.I):
+    # a scheme starts at a word boundary: "draws: 3" is text, "ws://x" and " ws:x" are not (review of lane/x11a)
+    if re.search(r"\b(?:https?|ftp|wss?):|//[\w-]+\.[a-z]{2,}", html, re.I):
         out.append("external URL")
     if re.search(r"\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|EventSource|importScripts|\bimport\s*\(|@import",
                  html):

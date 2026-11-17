@@ -88,7 +88,7 @@ def build(n, act, levels, rooms, theme):
         k.text(20, 10, s, "acc", 2, True)
 
     def top(stage):
-        k.box(20, 34, 380, 56, [("MAP SEED", "dim"), ("N = %d" % T["n"], "txt")], "panel", "acc", sc=2)
+        k.box(20, 34, 380, 56, [("MAP SEED", "dim"), ("N = %08X" % T["n"], "txt")], "panel", "acc", sc=2)
         k.box(560, 34, 380, 56, [("GAME SEED", "dim"), ("%08X:%08X" % T["game"], "txt")], "panel", "dim", sc=2)
         k.text(420, 52, "SAME N", "dim", 2)
         k.text(420, 68, "UNDER AN OVERRIDE", "dim", 1)
@@ -146,7 +146,7 @@ def build(n, act, levels, rooms, theme):
         k.caption(s, CAP_Y, 76)
 
     # ---- step 1
-    hdr("SEED TREE FOR N = %d" % T["n"])
+    hdr("SEED TREE FOR N = %08X" % T["n"])
     top(0)
     cap("The game made with seed N has two roots. The map seed is N and builds the world; the game seed starts from "
         "N too and seeds the units.")
@@ -162,8 +162,8 @@ def build(n, act, levels, rooms, theme):
         hdr("EACH ACT: INIT ON THE MAP SEED, STEP ONCE")
         top(0)
         act_row(i + 1, hl=i)
-        cap("%s: the act seed starts from the map seed, steps once, and keeps its low word %d as the level seed base%s." % (
-            ACTR[i], a["base"],
+        cap("Act %s: the act seed starts from the map seed, steps once, and keeps its low word %08X as the level seed "
+            "base%s." % (ACTR[i], a["base"],
             "; Act II then draws two tomb numbers mod 7 until they differ" if i == 1 else
             ("; Act III then takes one more draw and keeps its lowest bit" if i == 2 else "")))
         frames.append(k.done())
@@ -201,8 +201,8 @@ def build(n, act, levels, rooms, theme):
         act_row(5, hl=act)
         lvl_row(len(levels))
         room_row(i + 1, hl=i)
-        cap("Level %d, room %d: one draw on the level seed gives %d; the room's seed starts from it and steps once, "
-            "and that first value %d is kept." % (L0["id"], R["n"], R["level"][0], R["room"][0]))
+        cap("Level %d, room %d: one draw on the level seed gives %08X; the room's seed starts from it and steps once, "
+            "and that first value %08X is kept." % (L0["id"], R["n"], R["level"][0], R["room"][0]))
         frames.append(k.done())
         caps.append(dict(
             text="Level %d, room %d: one draw on the level seed, then the room's own seed starts from it and steps once." % (

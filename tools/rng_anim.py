@@ -29,7 +29,7 @@ import schematic_kit as K  # noqa: E402
 
 W, H = 960, 500
 CAP_Y = 436
-HELP = """<li>Top row: the seed's two words before the draw, the multiplier, and the 64-bit product low x multiplier + high; its upper half becomes the new high word and its lower half the new low word.</li>
+HELP = """<li>Top row: the seed's two words before the draw, the multiplier, and the 64-bit result low x multiplier + high; its upper half becomes the new high word and its lower half the new low word.</li>
 <li>Middle: the draw is the new low word mod n (here n is the range); that remainder is the number the game uses.</li>
 <li>Bottom: the numbers drawn so far, newest highlighted. A range below 1 would draw nothing and leave the seed alone; it is not shown.</li>
 <li>Every value is computed by our model of the generator for the illustrative seed given, not observed in the game.</li>"""
@@ -89,9 +89,9 @@ def build(seed, count, n, theme):
     word_box(225, 54, 170, "HIGH", start[1], edge="acc")
     k.text(20, 150, "N = %d" % (start[0]), "txt", 3, True)
     k.text(20, 190, "LOW = N, HIGH = 666", "dim", 2)
-    k.text(20, 230, "EACH DRAW STEPS THE SEED ONCE, THEN TAKES THE NEW LOW WORD MOD n", "dim", 2)
+    k.text(20, 230, "EACH DRAW STEPS THE SEED ONCE, THEN TAKES THE NEW LOW WORD MOD THE RANGE", "dim", 2)
     tape(0, None)
-    k.caption("Seed N = %d, range n = %d, %d draws. The seed is two 32-bit words; Init sets the low word to N and "
+    k.caption("Seed N = %d, range %d, %d draws. The seed is two 32-bit words; Init sets the low word to N and "
               "the high word to 666." % (start[0], n, count), CAP_Y, 76)
     frames.append(k.done())
     caps.append(dict(
@@ -105,7 +105,7 @@ def build(seed, count, n, theme):
         blank_row(before)
         k.text_c(618, 84, "=", "txt", 3, True)
         # the product, as its two halves
-        k.text(635, 33, "64-BIT PRODUCT", "dim", 2)
+        k.text(635, 33, "64-BIT RESULT", "dim", 2)
         word_box(635, 54, 150, "BITS 32-63", after[1], edge="good", col="good")
         word_box(790, 54, 150, "BITS 0-31", after[0], edge="acc", col="acc")
         k.arrow(710, 134, 710, 184, "good")
@@ -117,7 +117,7 @@ def build(seed, count, n, theme):
         # the draw
         k.rect(20, 230, 920, 110, "panel")
         k.outline(20, 230, 920, 110, "dim")
-        k.text(34, 240, "THE DRAW = NEW LOW MOD n", "dim", 2)
+        k.text(34, 240, "THE DRAW = NEW LOW MOD THE RANGE", "dim", 2)
         s = "%d MOD %d = " % (after[0], n)
         k.text(34, 280, s, "txt", 3, True)
         k.text(34 + K.text_w(s, 3) + 6, 280, str(res), "acc", 4, True)

@@ -83,8 +83,7 @@ class Kit(unittest.TestCase):
         for theme, t in K.THEMES.items():
             for name in ("txt", "dim", "acc", "good", "bad", "blue"):
                 for ground in ("bg", "panel"):
-                    need = {"dim": 4.0, "bad": 3.5}.get(name, 4.5)   # dark dim and bad are the earlier tools' own values (4.37; 3.82 on panel)
-                    self.assertGreaterEqual(contrast(t[name], t[ground]), need, "%s %s on %s" % (theme, name, ground))
+                    self.assertGreaterEqual(contrast(t[name], t[ground]), 4.5, "%s %s on %s" % (theme, name, ground))
             self.assertGreaterEqual(contrast(t["txt"], t["cur"]), 4.5, theme)
 
     def test_widgets_draw_inside_the_canvas(self):
@@ -259,6 +258,16 @@ class Blocks(unittest.TestCase):
         for st in (sa, sc):
             self.assertEqual(themes(st), max(2, rooms(st) // 5 + 1))      # maze.md H1: want = max(2, count / 5 + 1)
         self.assertNotEqual(themes(sa), themes(sc))
+        # maze.md H1 themes only rooms not locked, so a themed room's placement step must not say locked; a parent
+        # whose Def a special's new room recomputes is not "set by the special" (review of lane/x11a)
+        for st in (sa, sc):
+            locked = {int(m.group(1)) for s in st for m in [re.match(r"Room (\d+) placed .*\(locked\)", s["text"])] if m}
+            themed = {int(m.group(1)) for s in st for m in [re.match(r"Room (\d+): theme step", s["text"])] if m}
+            self.assertTrue(locked)
+            self.assertFalse(locked & themed, (locked, themed))
+            self.assertTrue(any("so its Def is recomputed from its open sides" in s["text"] for s in st))
+        self.assertEqual({int(m.group(1)) for s in sa for m in [re.match(r"Room (\d+) placed .*\(locked\)", s["text"])] if m},
+                         {9, 12, 14})     # level 47: Prev E and the dock (maze.md F2 AddFixed) and the Next special's new room
 
 
 if __name__ == "__main__":

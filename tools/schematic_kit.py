@@ -134,6 +134,8 @@ class Kit:
         ty = y + (h - (lh * len(lines) - 4)) // 2
         for ln in lines:
             s, cc = (ln, col) if isinstance(ln, str) else ln
+            if fill == "cur" and cc == "dim":      # dim on the highlight fill is below 4.5 in the dark theme
+                cc = "txt"
             if align == "c":
                 self.text_c(x + w // 2, ty, s, cc, sc, bold)
             else:

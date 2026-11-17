@@ -1023,7 +1023,8 @@ def draw(cv, A, st, k, total):
     v = st["view"]
     C = cv.C
     cv.new()
-    cv.text(10, 8, "%s  %s  SEED %#X  (ILLUSTRATIVE INPUT)" % (A.src["label"].upper(), DIFFN[A.diff].upper(), A.seed),
+    cv.text(10, 8, "%s  %s  SEED %#X  (ILLUSTRATIVE INPUT)%s" % (A.src["label"].upper(), DIFFN[A.diff].upper(), A.seed,
+                                                              "  %d PLAYERS" % A.players if A.players > 1 else ""),
             C["dim"])
     # left: frame stack and log
     cv.rect(8, 32, 628, 360, C["panel"])
@@ -1033,10 +1034,10 @@ def draw(cv, A, st, k, total):
         col = C["txt"] if d == v["cur"] else C["dim"]
         if d == v["cur"]:
             cv.rect(12, y - 2, 620, 20, C["cur"])
-        nds = f.get("nds")           # a scaled NoDrop that differs from the table's (more than one player) shows as ND a>b
+        nds = f.get("nds")           # a scaled NoDrop that differs from the table's (more than one player): ND a->b
         s = "%s%s  %s%d/%d  ND %s  T %d" % ("  " * d, f["name"][:22].upper(), "FIXED " if f["neg"] else "PICKS ",
                                              f["left"], f["picks"],
-                                             "%d>%d" % (f["nd"], nds) if nds is not None and nds != f["nd"] else f["nd"],
+                                             "%d->%d" % (f["nd"], nds) if nds is not None and nds != f["nd"] else f["nd"],
                                              f["total"])
         cv.text(16, y, s[:50], col)
         y += 20

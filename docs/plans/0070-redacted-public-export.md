@@ -1467,7 +1467,43 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   it, the rule is the architect's and is not narrowed here; (2) the dark palette's `dim` and `bad` reach contrast 4.37
   and 3.82 on the panel colour (earlier tools' values, left alone). **allow-hex:** no line added (`0xC0FFEE`,
   `6AC690C5`, `0000029A` and `00003039` were present; frames carry hex only as pixels, texts use decimals and
-  `{low:high}` states). **Blocks:** the proposed `illustration` blocks of rows 1–4 with draft captions are in the
-  scratch file `/tmp/claude-1000/-home-igor-Work-recompilcation-project/eb61de30-a30a-401a-a3db-30c67be2439b/scratchpad/x11a/blocks.md`
+  `{low:high}` states). **Blocks:** the proposed `illustration` blocks of rows 1–4 with draft captions are in
+  `workspace/phase11/blocks-batch1.md` (gitignored; moved there and corrected at the review below)
   (ids `rng-seed-12345`, `rng-seed-tree-c0ffee`, `items-tc-andariel-hell-8players`, `drlg-maze-level47`) for the
   spec-writer lane. Not done: a cut build with the blocks placed (the spec-writer places them).
+- 2026-11-17, architect, review of lane/x11a (Opus, Tier A): **accept with fixes**, 9: misread 2, overclaim 1,
+  omission 1, other 5. Checked: no art decoder imported by `rng_anim.py`, `seedtree_anim.py` or the kit (the test's
+  import guard, and read); frames viewed in both themes (rng 0, 1, 9; seed tree 2, 7, 8, 10; tc eight players 4; maze
+  47 final), each number against the model and the specs: the rng draw (randomness § The generator, RNG core § 2 and
+  its worked example: 12345 gives 87 and `{015b2e77:0000141d}`), the seed tree (seeds § steps 1, 3a–3c, 4, 5 and
+  step note 3: all five acts share the base; the Act II calc's "(steps − 1) / 2 pairs" is honest, `drlg.Act` steps
+  the act seed only in 3b and 3c, and seed 12345 gives seeds.md's 2 pairs), tc § F (n = 1 + 7 ÷ 2 = 4; 19 → 0 from
+  r = 19/68; two NoDrop picks with one player, none with eight; six items, D1's monster limit), maze § E1, § F2 and
+  § H1 (level 47's ring, dock path and want = max(2, 14 ÷ 5 + 1) = 3 against 17 ÷ 5 + 1 = 4). **Byte identity**
+  reproduced: a temporary worktree at 1b35f8df and the lane commit gave the same 138 sha256 for the maze 36 and
+  Andariel schematic runs (worktree removed). **Fixes** (`tools/`): (1) misread: `maze_anim.py` said "Fixed Def and
+  file index (locked)" at a room's placement from its final lock state, so rooms the theme pass locks later read as
+  fixed (level 47 rooms 7, 8, 13; level 36 rooms 6, 7, 11, 16, already served), and called a parent's Def recomputed
+  after a special's new room is attached to it "special-room table entry sets Def" (maze § H1 themes only free rooms;
+  § F2): placement now says locked only for a room made locked (`attach_locked`, a special's new room), and the parent
+  step says its Def is recomputed and it stays free; a test (no themed room's placement says locked; level 47's
+  locked placements are rooms 9, 12, 14). (2) other: the rng frames wrote the seed N and the range n both as "N" in
+  the upper-case font ("MOD N" read as mod the seed): now "mod the range", and "64-bit result" for the sum.
+  (3) other: the seed tree's caption strip gave decimals beside hex boxes and the map seed in decimal beside the game
+  seed in hex: the strip and the map seed box are hex now (pixels; the step page keeps decimals and `{low:high}`
+  states), and the kit draws dim text on the highlight fill as text colour (3.59 in dark). (4) omission: the
+  eight-player tc frames never said eight players and wrote `ND 19>0`: the header adds "8 PLAYERS" when players > 1 and
+  the row reads `ND 19->0` (one-player frames unchanged). (5) other, the lane's doubt (1), the reviewer's rule:
+  `export_check.html_problems`' scheme test starts at a word boundary (`\b(?:https?|ftp|wss?):`); tests both ways
+  ("draws: 3", "news: none" pass; `ws://x`, `wss://x`, ` ws:x`, `ftp:x`, a protocol-relative host fail).
+  (6) other, ruling on doubt (2): change, not keep. The dark `dim` (130, 130, 145) → (150, 150, 165) and `bad`
+  (215, 70, 70) → (235, 95, 95) reach 5.66 and 4.98 on the panel; the kit's test asks 4.5 of every text colour in
+  both themes. The served maze 36 and Andariel illustrations change on the next cut (they are re-cut anyway).
+  **Blocks** (doubt 4): copied to `workspace/phase11/blocks-batch1.md` and corrected there: (7) overclaim: row 2 said
+  the map seed is the game's seed number without the override condition (seeds § step 1); (8) misread: row 4 said
+  the ring "closed with a door link" and growth and specials are "the same passes"; it now names the ring's three
+  growths and the Sewers finisher's dock path (§ F2, anchor added); (9) other: row 3's place line pointed at a section
+  the page does not have, and row 2's second placement needs its own id. **Cut:** the four blocks placed in the lane's
+  wiki pages for one build (restored after), `export_build.py --out workspace/export-x11a-review`: 71 pages, the six
+  illustration folders, `export_check` 0 failures (864 warnings, none new from the blocks); the folder was removed.
+  Tests green: `test_schematic_kit` (15), `test_anim_schematic`, `test_export_build`, `test_export_check`; gate green.
