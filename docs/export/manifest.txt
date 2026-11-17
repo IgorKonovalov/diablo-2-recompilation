@@ -4,8 +4,9 @@
 #
 # Lines (whitespace-separated; `#` starts a comment; blank lines ignored):
 #   group <slug> <order> <label…>           a sidebar group; <slug> is its route folder
-#   page  <path> <group-slug|-> <order>     a page; route <group-slug>/<file stem>, or <file stem> for `-`
-#   table <path> <line-of-header> <reason…> a table over 20 body rows allowed (X6); none in this cut
+#   page  <path> <group-slug|-> <order> [<stem>]  a page; route <group-slug>/<stem or file stem>, or <stem> for `-`
+#   table <path> <line-of-header> <reason…> a table over 20 body rows allowed (X6), by its header's source line;
+#                                           an unnamed one over 20 rows is dropped whole by the builder
 #   alias <path> <page path>                a link to <path>, which is not exported, goes to that page instead
 #
 # Cut 1: the export-only pages, the wiki (except README.md and how-we-know.md), the glossary.
@@ -51,9 +52,117 @@ page wiki/server-frame.md         running      6
 page wiki/quirks.md               reference    1
 page glossary.md                  reference    2
 
-# Tables over 20 body rows allowed in advance: none. (No page above holds one at cut 1;
-# the only wiki table over 20 rows is the reading-order table of wiki/README.md, which is not exported.)
+# Tables over 20 body rows of the wiki: none. (The only wiki table over 20 rows is the reading-order table of
+# wiki/README.md, which is not exported.)
 
 # Aliases. The method page is not exported; the wiki's "how we know" links go to the export's page on the tags,
 # which says the same two levels in plain words (Phase 6 review, 2026-11-17).
 alias wiki/how-we-know.md export/reading-the-tags.md
+
+# Cut 2: the reviewed specs that pass Phase 9 (plan 0070; review 2026-11-17). One group per subsystem, after the
+# wiki's groups. A spec `README.md` takes the route stem `overview`. A reviewed spec missing here was left out at the
+# review (the plan's log names each with its reason): over 25 % of its words dropped (the builder's measure, Open
+# questions sections counted) rng/README, rng/seeds, data/strings, drlg/room-tiles, drlg/collision, monsters/spawn,
+# monsters/ai/README, objects/README, items/vendors, items/inventory, items/use, combat/README, stats/README,
+# stats/aggregate, stats/states, save/d2s; not whole: skills/catalogue (3 of its 21 pseudocode blocks kept) and
+# conformance/README (a guide to running our trace set and checker, which the export does not ship; its command dropped);
+# provenance on its rows: monsters/ai/catalogue (about 90 rows say how the block was checked against our records).
+group spec-data         11  Spec: Game data
+group spec-drlg         12  Spec: Level generation
+group spec-monsters     13  Spec: Monsters
+group spec-monster-ai   14  Spec: Monster AI
+group spec-items        16  Spec: Items
+group spec-player       17  Spec: Characters
+group spec-hirelings    18  Spec: Hirelings
+group spec-combat       19  Spec: Combat
+group spec-skills       21  Spec: Skills and missiles
+group spec-anim         22  Spec: Animation
+group spec-path         23  Spec: Pathing
+group spec-sim          24  Spec: Server frame
+group spec-quests       25  Spec: Quests and travel
+group spec-chain        27  Spec: Seed to world
+group spec-quirks       28  Spec: Quirks
+
+page specs/data/README.md                     spec-data         1  overview
+page specs/data/excel.md                      spec-data         2
+page specs/data/calc.md                       spec-data         4
+
+page specs/drlg/README.md                     spec-drlg         1  overview
+page specs/drlg/lifecycle.md                  spec-drlg         2
+page specs/drlg/preset.md                     spec-drlg         3
+page specs/drlg/maze.md                       spec-drlg         4
+page specs/drlg/outdoor.md                    spec-drlg         5
+page specs/drlg/warps.md                      spec-drlg         7
+
+page specs/monsters/README.md                 spec-monsters     1  overview
+page specs/monsters/pool.md                   spec-monsters     2
+page specs/monsters/special.md                spec-monsters     4
+page specs/monsters/stats.md                  spec-monsters     5
+
+page specs/monsters/ai/machinery.md           spec-monster-ai   2
+
+page specs/items/tc.md                        spec-items        1
+page specs/items/quality.md                   spec-items        2
+page specs/items/affixes.md                   spec-items        3
+page specs/items/uniques-sets.md              spec-items        4
+page specs/items/properties.md                spec-items        5
+page specs/items/sockets-runewords.md         spec-items        6
+page specs/items/quest-drops.md               spec-items        7
+page specs/items/cube.md                      spec-items        8
+page specs/items/economy.md                   spec-items        10
+page specs/items/trade.md                     spec-items        11
+
+page specs/player/README.md                   spec-player       1  overview
+page specs/player/creation.md                 spec-player       2
+page specs/player/party.md                    spec-player       3
+
+page specs/hirelings/README.md                spec-hirelings    1  overview
+
+page specs/combat/to-hit.md                   spec-combat       2
+page specs/combat/damage.md                   spec-combat       3
+page specs/combat/reductions.md               spec-combat       4
+page specs/combat/delivery.md                 spec-combat       5
+
+page specs/skills/README.md                   spec-skills       1  overview
+page specs/skills/dispatch.md                 spec-skills       2
+page specs/skills/missiles.md                 spec-skills       3
+
+page specs/anim/README.md                     spec-anim         1  overview
+page specs/anim/timing.md                     spec-anim         2
+page specs/anim/movement.md                   spec-anim         3
+
+page specs/path/README.md                     spec-path         1  overview
+page specs/path/search.md                     spec-path         2
+
+page specs/sim/frame.md                       spec-sim          1
+
+page specs/quests/README.md                   spec-quests       1  overview
+page specs/quests/progression.md              spec-quests       2
+page specs/quests/travel.md                   spec-quests       3
+
+page specs/chain/README.md                    spec-chain        1  overview
+
+page specs/quirks/README.md                   spec-quirks       1  overview
+
+# Tables over 20 body rows allowed (X6), each named by its header's source line with a reason (Phase 9 rulings).
+# Left out, so dropped whole by the builder: monsters/special 381 (its Weights and xfer columns copy MonUMod's
+# rows), quirks 673 (community-claim verdicts) and 730 (the specs' coverage, repository bookkeeping). Also ruled,
+# on pages left out of this cut: items/vendors 658 out (the gambling list by level: item-table content),
+# monsters/ai/README 536 out (a per-think evidence record); objects/README 51, save/d2s 315 and 1252,
+# skills/catalogue 151 would be named (a column index, a file layout, our worked example, our step table).
+table specs/drlg/maze.md           709   the worked example's draw-by-draw steps (our own step table)
+table specs/drlg/outdoor.md        124   our index of the generators' constant tables: names and shapes, no values
+table specs/items/cube.md          1017  worked example 1's draw-by-draw steps (our own step table)
+table specs/items/properties.md    410   our decision table of the property handlers: draws and writes per func
+table specs/monsters/pool.md       53    our index of the table columns the pool reads (a schema, no rows)
+table specs/monsters/special.md    58    our index of the table columns special monsters read (a schema, no rows)
+table specs/path/README.md         62    the path record's fields (in-memory offsets, owner decision 2026-11-17)
+table specs/quirks/README.md       77    our quirk entries, group 1 (statements, not game rows)
+table specs/quirks/README.md       108   our quirk entries, group 2
+table specs/quirks/README.md       149   our quirk entries, group 4
+table specs/quirks/README.md       233   our quirk entries, group 5
+table specs/quirks/README.md       382   our quirk entries, group 6
+table specs/quirks/README.md       522   our quirk entries, group 7
+table specs/quirks/README.md       555   our quirk entries, group 8
+table specs/quirks/README.md       585   our quirk entries, group 9
+table specs/skills/dispatch.md     1014  our decision table of the stat-event handlers: event, effect, draws

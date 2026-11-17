@@ -104,3 +104,42 @@ pin 0090CE87 wiki/randomness.md :: the high word after step 4 of the worked exam
 pin 0090CE8A wiki/levels.md :: the high word of the level seed after the first maze room of the Den of Evil example
 pin 6D6D80 wiki/saves.md :: the running checksum after byte 15 of the example save
 pin 800010 wiki/saves.md :: the example item's 32-bit flags field as stored (bits 4 and 23)
+
+# Pure arithmetic of the specs (owner decision 2026-11-17, plan 0070 Phase 9): limits and masks, powers of two,
+# compiler division reciprocals and the two well-known LCG constants, admitted as plain values. A domain value (a
+# flag mask such as 0x3F0FF80, a magic word such as 0x01020304, a four-character code, a logged seed word) stays out.
+# 0x400000 and 0x800000 are powers of two in the code image's range: refused as plain values, so not listed.
+# Limits and masks (a run of set bits)
+7FFFFFFF   the largest positive i32, a limit (command-line seeds, distances), not an address
+FFFFFFFF   all 32 bits set: -1 as a u32, the "none" word and the mask of a full word
+0FFFFFFF   the low 28 bits, a mask
+F0000000   the top four bits of a word, the mask of a string hash's high nibble
+FFFF0000   the high half of a word (a 16.16 position's integer part)
+FFFFFF00   every bit but the low byte, a mask
+FFFFF000   every bit but the low 12, a range test's mask
+1FFFFF     the largest value of 21 bits, a variable-length encoding's limit
+3FFFFFF    the largest value of 26 bits, a variable-length encoding's limit
+# Powers of two
+100000     2^20, a power of two (a bit or a scale)
+200000     2^21, a power of two (a bit)
+1000000    2^24, a power of two (a bit)
+2000000    2^25, a power of two (a bit)
+4000000    2^26, a power of two (a bit)
+8000000    2^27, a power of two (a bit)
+10000000   2^28, a power of two (a bit)
+20000000   2^29, a power of two (a bit)
+40000000   2^30, a power of two (a bit)
+80000000   2^31, the sign bit of a word
+# Compiler division reciprocals (a multiply-high that divides by a constant)
+AAAAAAAB   the reciprocal for an unsigned division by 3
+55555555   the reciprocal used for a signed division by 3 (with a subtraction)
+55555556   the reciprocal for a signed division by 3
+CCCCCCCD   the reciprocal for an unsigned division by 5
+66666667   the reciprocal for a signed division by 5 (or 10, with a shift)
+24924925   the reciprocal for a division by 7
+38E38E39   the reciprocal for a division by 9 (or 18, with a shift)
+88888889   the reciprocal for a division by 15 (with a shift)
+68DB8BAD   the reciprocal for a division by 10000 (with a shift)
+# The two well-known LCG constants (the entropy generator's multiplier and increment, a textbook pair)
+19660D     1664525, the well-known LCG multiplier
+3C6EF35F   1013904223, the well-known LCG increment
