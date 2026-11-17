@@ -247,6 +247,10 @@ def drop_evidence_parens(text, strict=False):
     out, last = [], 0
     for s, e in parenthetical_spans(text):
         inner = text[s + 1:e - 1]
+        # a call's arguments (`Init(0x6AC6935F)`, `f(...)`) and a parenthetical inside a code span (a seed pair) are
+        # code, not a statement's evidence: they stay, and a removal inside them breaks the unit (review of lane/x13f)
+        if s > 0 and re.match(r"\w", text[s - 1]) or text.count("`", 0, s) % 2:
+            continue
         # a parenthetical right after a `[C]`/`[I]` tag is the tag's evidence: when it fails a text rule (a tool name, an
         # address, a run or a path in it), it goes whole and the statement stays (plan 0070 Phase 9 review)
         after_tag = bool(RE_TAG_BEFORE.search(text, 0, s)) and bool(inner.strip()) \
@@ -320,13 +324,14 @@ RE_ADDR_RANGE = re.compile(r"\x00(?:\s*[\u2013\u2014\u2192-]\s*\x00)+")
 # the same in a pseudocode line's code part: a removed value beside an operator or an arrow leaves the expression
 # without an operand (`if hp >= : hp <-`, `[ + 4*r]`); the line then stays as it was and the block drops
 RE_OPERAND_HOLE = re.compile(r"(?:[\u2265\u2264\u2190<>=!+*&|^%-]|<<|>>)[ \t]*\x00|\x00[ \t]*(?:[\u2265\u2264\u2190+*&|^%]|[<>=!]=?|<<|>>)")
-RE_SPAN = re.compile(r"`[^`\n]*`")                # scanned left to right, so the pairs are the opening and closing ticks
+# scanned left to right, so the pairs are the opening and closing ticks; a span may cross a line break inside one unit
+# (`excel_bin.py\n  diff`): review of lane/x13f
+RE_SPAN = re.compile(r"`[^`]*`")
 RE_PLAN = re.compile(_OPEN + r"(?:(?:\u00a7\s*)?\b(?i:plans?)\s+\d{4}(?:\s*(?:,|and|/)\s*\d{4})*(?:\s+(?:Phase|phase|P)\s*\d+[a-z]?(?:\.\d+)?)?"
                      r"(?:\s+batch\s+\w+(?:\s+rows?\s+\d+)?)?"
                      r"|\bADR-\d+(?:\s*\u00a7\s*[\w.]+)?|(?<![A-Za-z0-9])lane/[\w-]+)(?(1)`)")
 _PATH = (r"(?:(?:\.\./|\./)*(?<![\w/])(?:docs|re|tools|workspace|\.claude)/[\w./~-]*[\w/]|(?<![\w/.-])[\w-]+\.(?:py|csv|log)\b"
          r"|(?<![\w])\.claude\b)")
-RE_PATH_SPAN = re.compile(r"`[^`\n]*?" + _PATH + r"[^`\n]*`")
 RE_PATH = re.compile(_PATH)
 # an address the page pins (a computed value, never an address of the image) stays: set by the builder per page
 PAGE_PINS = {}
@@ -343,7 +348,11 @@ def clean_name(name):
 
 
 def _anchor(m):
-    return "`" + m.group(2) + "`" if clean_name(m.group(2)) else SENT
+    if not clean_name(m.group(2)):
+        return SENT
+    if not m.group(1) and m.string[m.end():m.end() + 1] == "`" and not m.string.count("`", 0, m.start()) % 2:
+        return "`" + m.group(2) + "\x02"        # `data:T@0x...`[i]`` -> `T[i]`: one span, not two run together
+    return "`" + m.group(2) + "`"
 
 
 def _cite(m):
@@ -368,16 +377,23 @@ def _addr(m):
 def _rw_plain(s, plain=False):
     s = RE_ANCHOR.sub((lambda m: m.group(2) if clean_name(m.group(2)) else SENT) if plain else _anchor, s)
     s = RE_STRUCT.sub((lambda m: m.group(2) if clean_name(m.group(2)) else SENT) if plain else _anchor, s)
+    s = s.replace("\x02`", "").replace("\x02", "`")
     s = RE_REMOVE.sub(SENT, s)
     s = RE_CITE.sub(_cite, s)
     s = RE_README.sub(SENT, s)
     s = RE_PLAN.sub(SENT, s)
-    s = RE_PATH_SPAN.sub(SENT, s)
+    s = RE_SPAN.sub(lambda m: SENT if RE_PATH.search(m.group(0)) else m.group(0), s)     # paired, never between two spans
     s = RE_PATH.sub(SENT, s)
     if "0x" in s or re.search(r"[0-9A-Fa-f]{6}", s):
         s = RE_ADDR.sub(_addr, s)
         s = RE_ADDR_SPAN.sub(SENT, s)
         s = RE_ADDR_RANGE.sub(SENT, s)
+        # `73 -> 0x0059DB20: refuse ...` -> `73: refuse ...`: the arrow went with the address it pointed to
+        s = re.sub(r"[ \t]*\u2192[ \t]*\x00(?=[ \t]*:)", SENT, s)
+        if not plain:
+            # an arrow chain whose head or end was an address: `(0x00530190 -> ActCreate)` reads `(ActCreate)`, no lone arrow
+            s = re.sub(r"(\(\s*)\x00[ \t]*\u2192\s*", r"\1", s)
+            s = re.sub(r"\s*\u2192[ \t]*\x00(\s*\))", r"\1", s)
     return s
 
 
@@ -410,6 +426,7 @@ def sent_cleanup(t, lenient=False):
     t = re.sub(_LEAD.replace("^", "^(") + r")\x00\s*[,;]\s*", r"\1", t)        # a list's first slot went
     t = re.sub(r"((?:^|[\].!?*])[ \t]*)\x00\s*[,;]\s*", r"\1", t)          # after a tag or a sentence's end
     t = re.sub(r"\(\s*\x00\s*:\s*", "(", t)                                    # `(run:…: detail)` -> `(detail)`
+    t = re.sub(r"(;[ \t]*)\x00[ \t]*[,:][ \t]*", r"\1", t)                # `; 0x005689E5, the tick` -> `; the tick`
     t = re.sub(r"[,;]\s*\x00(?=\s*[,;])", "", t)
     t = re.sub(r"\s*[,;]\s*\x00(?=\s*(?:[.)\]:]|$))", "", t, flags=re.M)
     t = re.sub(r"\(\s*\x00\s*[,;]\s*", "(", t)
@@ -437,9 +454,28 @@ def rewrite_text(text, plain=False, lenient=False):
     if not lenient and not plain and SENT in res and any(
             re.sub(r"[\s\x00\u2013\u2014\u2192,;+-]", "", m.group(0).strip("`")) for m in RE_SPAN.finditer(res) if SENT in m.group(0)):
         return BROKEN
-    if plain and not lenient and RE_OPERAND_HOLE.search(res):
+    if plain and not lenient and (RE_OPERAND_HOLE.search(res) or code_hole(res)):
         return BROKEN
     return sent_cleanup(res, lenient)
+
+
+def code_hole(t):
+    """A removal in a pseudocode line's code part that the line can't be read without (review of lane/x13f): one inside a
+    call's arguments (`Build(0x006F0B10, check)`), or one outside every parenthetical that is not an address label (`at
+    0x...`, `init 0x...:`): `call 0x005B0D70` -> `call`, `reaches 0x00408090;`, a command's removed path. A removal inside
+    a parenthetical after a space (`mdo 15 (0x005AF030, Frozen Orb)`) is a label and goes."""
+    stack = []
+    for i, ch in enumerate(t):
+        if ch == "(":
+            stack.append(i > 0 and bool(re.match(r"\w", t[i - 1])))
+        elif ch == ")" and stack:
+            stack.pop()
+        elif ch == SENT:
+            if any(stack):
+                return True
+            if not stack and not re.search(r"(?i)\bat\s*$", t[:i]) and not re.match(r"[ \t\x00]*:", t[i + 1:]):
+                return True
+    return False
 
 
 RE_TAIL = re.compile(r"\s{2,};\s|\s//\s|\s{2,}(?=\[[CI]\])|\s{2,}(?=\()")
@@ -463,9 +499,13 @@ def rewrite_fence_line(line):
     if t.strip():
         t = rewrite_text(drop_evidence_parens(t, strict=True), plain=True, lenient=True)
         if t != tail:
-            t = re.sub(r"[ \t]*[:,;][ \t]*$", "", t)
+            if not re.search(r"[:,;][ \t]*$", tail):            # a block opener's own colon stays (review of lane/x13f)
+                t = re.sub(r"[ \t]*[:,;][ \t]*$", "", t)
             t = re.sub(r"[ \t]+(?://|;|#)[ \t]*$", "", t)
             t = re.sub(r"\(\s*\)", "", t).rstrip()
+            # a call list that lost its first target (`[C] -> 0x0056E2F0 or X`) or its only one (review of lane/x13f)
+            t = re.sub(r"\u2192[ \t]+(?:or|and)[ \t]+", "\u2192 ", t)
+            t = re.sub(r"[ \t]*\u2192[ \t]*$", "", t)
     return (c + t).rstrip() if (c != code or t != tail) else line
 
 
@@ -491,9 +531,14 @@ def rewrite_row(line, row_breaks=True):
         r = rewrite_text(c.strip())
         if r != c.strip():
             changed = True
-            if row_breaks and BROKEN in r and not RE_EVID_START.match(c) and cell_words(c) >= 3:
-                return BROKEN
-            if BROKEN in r or not re.search(r"[A-Za-z0-9]", r):
+            if BROKEN in r:
+                # a value cell whose code span lost a part (a seed `004bc4a3:517d17c7` -> `:517d17c7`) breaks the row like a
+                # statement; a cell that opens with its tag keeps the tag alone (review of lane/x13f)
+                if row_breaks and not RE_EVID_START.match(c) and (cell_words(c) >= 3 or "`" in c):
+                    return BROKEN
+                mt = RE_TAG_CELL.match(c)
+                r = mt.group(1).strip(" ,;") if mt else "—"
+            elif not re.search(r"[A-Za-z0-9]", r):
                 r = "—"
         new.append(r if r != c.strip() else c.strip())
     return "| " + " | ".join(new) + " |" if changed else line
@@ -564,7 +609,14 @@ def strip_links(text):
 
 
 def split_sentences(text):
-    return [p for p in re.split(r"(?<=[.!?])\s+(?=(?!\[[CIL]\])[A-Z\[`(*\"'_|])", text) if p.strip()]
+    """Never inside a code span (`#### R<n>. Row <n> `): review of lane/x13f."""
+    out, last = [], 0
+    for m in re.finditer(r"(?<=[.!?])\s+(?=(?!\[[CIL]\])[A-Z\[`(*\"'_|])", text):
+        if text.count("`", 0, m.start()) % 2 == 0:
+            out.append(text[last:m.start()])
+            last = m.end()
+    out.append(text[last:])
+    return [p for p in out if p.strip()]
 
 
 def prose_words(text):
@@ -966,7 +1018,26 @@ def rewrite_links(text, page, by_path):
         rel = "./" if rel == "." else rel + "/"
         keep = frag and frag in tgt.headings and not ec.text_rules(frag)    # a slug that carries a seed fails the check
         return f"[{label}]({rel}{'#' + frag if keep else ''})"
-    return RE_LINK.sub(sub, text)
+    # a fenced block is code: a `[i](x)` in it is an index and a call, not a link (`g_PathPlanFuncs[ctx.type](ctx)`), and a
+    # link written in it never renders. Only a link to an exported page gets its new route; the rest stays as written
+    # (review of lane/x13f)
+    def sub_fence(m):
+        r = sub(m)
+        return r if r.startswith("[") else m.group(0)
+    out, seg, fence = [], [], None
+    for ln in text.split("\n"):
+        fm = RE_FENCE.match(ln)
+        if fm and (fence is None or fm.group(2)[0] == fence[0] and len(fm.group(2)) >= len(fence)):
+            if seg:
+                out.append(RE_LINK.sub(sub_fence if fence is not None else sub, "\n".join(seg)))
+                seg = []
+            fence = fm.group(2) if fence is None else None
+            out.append(ln)
+            continue
+        seg.append(ln)
+    if seg:
+        out.append(RE_LINK.sub(sub_fence if fence is not None else sub, "\n".join(seg)))
+    return "\n".join(out)
 
 
 # ---------------------------------------------------------------- build
