@@ -156,6 +156,14 @@ class Pack(unittest.TestCase):
                 for n in NAMES:
                     self.assertNotIn(n, t, t)
 
+    def test_the_walk_counts_skipped_cells_as_walked_not_tested(self):
+        # review of lane/x12b: H2 skips a cell outside the rectangle with no predicate call
+        t = " ".join(texts(self.a))
+        self.assertNotIn("cells tested", t)
+        self.assertIn("skipped with no test", t)
+        self.assertNotIn("no box flag", t)
+        self.assertNotIn("1 cells", t)
+
     def test_the_numbers_equal_a_second_run_of_the_model(self):
         for seed in (0xC0FFEE, 12345, 7):
             ci = pack_anim.class_info(DATA, "swarm1")
@@ -204,6 +212,22 @@ class Pack(unittest.TestCase):
         self.assertNotEqual(toy.test(x + 1, y + 5), 0)      # a created monster's centre blocks its neighbours' plus
         self.assertEqual(toy.test(x + 2, y + 5), 0)
         self.assertEqual(toy.cell(0, 0), 0x27)              # a cell in no room adds 0x27
+
+    def test_the_toy_tests_and_marks_with_the_collision_model(self):
+        # review of lane/x12b: no copy of H3/H4 in the tool; the test and the mark are tools/collision.py's
+        import collision
+        src = open(os.path.join(HERE, "pack_anim.py"), encoding="utf-8").read()
+        self.assertNotIn("def footprint", src)
+        self.assertNotIn("0x1000 if", src)
+        toy = pack_anim.Toy(0x3C01, 2)
+        self.assertIsInstance(toy.world, collision.World)
+        x, y = pack_anim.GX + 10, pack_anim.GY + 20
+        toy.mark(x, y)
+        self.assertEqual(toy.cell(x, y), 0x1100)            # pattern 1: the plus of the monster bit, the 0x1000 centre
+        self.assertEqual(toy.cell(x + 1, y), 0x0100)
+        self.assertEqual(toy.test(x + 1, y), 0x1000)        # the mask 0x3C01 reads the centre mark, not 0x100
+        self.assertEqual(toy.test(x + 2, y), 0)
+        self.assertEqual(toy.test(pack_anim.GX, y), 0x27)   # the plus reaches past the room's left edge: 0x27 unmasked
 
     def test_no_clipped_text_and_no_cut_caption(self):
         K.TEXT_CLIPPED.clear()
@@ -298,6 +322,13 @@ class Pool(unittest.TestCase):
         self.assertEqual(len(tr["picks"][1]["draws"]), 1)
         frames, caps, _p, _t = pool_anim.build(DATA, 0xC0FFEE, 110, 0, "dark")
         self.assertTrue(any("C6: %d draws" % len(first["draws"]) in " ".join(c["calc"]) for c in caps))
+
+    def test_the_levels_before_fit_their_boxes(self):
+        # review of lane/x12b: the seed after ran into a long label on one line; it has its own line, and every
+        # level's label fits the 920-pixel box at the largest counts
+        _mon, lvl = pool_anim.load_names(os.path.join(DATA, "data", "global", "excel"))
+        for i, n in enumerate(lvl):
+            self.assertLess(K.text_w("LEVEL %d %s: %d DRAWS, POOL OF %d" % (i, n.upper(), 9999, 13), 2), 910, n)
 
     def test_no_clipped_text_and_no_cut_caption(self):
         K.TEXT_CLIPPED.clear()

@@ -59,7 +59,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
-import dt1 as dt1mod  # noqa: E402
 from rng import step  # noqa: E402
 from spawn_place import near_point  # noqa: E402
 
@@ -131,6 +130,7 @@ class TileDB:
     def file_tiles(self, f):
         p = os.path.join(self.root, f.replace("\\", "/").lower())
         if p not in self.files:
+            import dt1 as dt1mod    # lazy, as in drlg.py: tools/pack_anim.py's toy world reads no tile file
             self.files[p] = dt1mod.parse(open(p, "rb").read())["tiles"]
         return self.files[p]
 
@@ -649,6 +649,17 @@ class World:
         if P is not None and P["cm"]:
             self.hit("in-pass marks not matched to a creation", len(P["cm"]))
         self.P = None
+
+    @classmethod
+    def one_room(cls, room, x0, y0, w, h, cells):
+        """A world of one room with no neighbours over the u16 `cells` (w x h, row major), for a toy grid
+        (tools/pack_anim.py): collision_test and pattern_op run on it unchanged. Used by no log check."""
+        wd = cls.__new__(cls)
+        wd.rects = {room: (x0, y0, w, h)}
+        wd.maps_override = {room: Map(x0, y0, w, h, cells)}
+        wd.nears_override = {room: []}
+        wd.P = None
+        return wd
 
     # cell access on the pass grid
     def near_of(self, r, nears=None):

@@ -172,9 +172,9 @@ def build(root, seed, lid, diff, theme):
     rows = ([("LEVELS 1 TO %d: %d DRAWS IN ALL" % (early[-1]["lid"], sum(p["draws"] for p in early)), None)] if early else []) + \
            [("LEVEL %d %s: %d DRAWS, POOL OF %d" % (p["lid"], lvl[p["lid"]].upper(), p["draws"], p["npool"]), p) for p in shown]
     for lab, p in rows:
-        k.box(14, y, 920, 44, [(lab, "txt")], "panel", "dim", "txt", 2, align="l")
-        if p is not None:
-            k.text(560, y + 15, "R AFTER %s" % hx(*p["seed"]), "dim", 2)
+        # the seed after on a line of its own: on one line a long level name ran into it (review of lane/x12b)
+        k.box(14, y, 920, 44, [(lab, "txt")] + ([("R AFTER %s" % hx(*p["seed"]), "dim")] if p is not None else []),
+              "panel", "dim", "txt", 2, align="l")
         y += 52
     r0 = before[-1]["seed"] if before else r
     k.box(14, y + 10, 920, 56, [("R AT THE FIRST DRAW OF LEVEL %d" % lid, "dim"), (hx(*r0), "acc")], "cur", "acc", "txt", 2,
