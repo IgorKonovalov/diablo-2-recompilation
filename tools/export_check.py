@@ -25,7 +25,8 @@ Rules (plan 0070 § Publish check):
   X8  any image: Markdown image, <img>, <video>, an image file; except a root-absolute /illustrations/<id>/<file> target under a verified
       illustrations/<id>/ folder (ADR-0036)
   X9  banned topics (copy protection, CD key, Battle.net, Warden) and tool names (Ghidra, gdb, decompile*,
-      disassembl*, harness, logger, "logged run"); emulation/emulated/breakpoint pass
+      disassembl*, harness, logger, "logged run", objdump, debugger, r2 in a tool's shape); emulation/emulated/
+      breakpoint pass
   X10 footer component differs from the footer word for word or is unregistered; cut.json without a date
   X11 cut: a file other than .md, cut.json and the schematic allowlist (folder with schematic.json: marker,
       sha256 list, nothing else, index.html with no URL/request; the text of steps.json, index.html and
@@ -131,9 +132,14 @@ RE_X9 = [
     (re.compile(r"copy[- ]?protection|\bcd[- ]?key", re.I), "copy protection / CD key"),
     (re.compile(r"battle[-. ]?net|\bbnet\b", re.I), "Battle.net"),
     (re.compile(r"\bwarden\b", re.I), "Warden"),
-    (re.compile(r"\bghidra\b|\bgdb\b|\bdecompil\w*|\bdisassembl\w*|\bharness\b|\blogger\b|\blogged runs?\b"
-                r"|\bradare2?\b|\brizin\b|\bx64dbg\b|\bollydbg\b|\bIDA Pro\b|\bwine\b", re.I),
+    (re.compile(r"\bghidra\b|\bgdb\b|\bdecompil\w*|\bdisassembl\w*|\bharness(?:es)?\b|\bloggers?\b|\blogged runs?\b"
+                r"|\bradare2?\b|\brizin\b|\bx64dbg\b|\bollydbg\b|\bIDA Pro\b|\bwine\b|\bobjdump\b|\bdebugger\b", re.I),
      "tool name"),
+    # `r2` as the tool, not a variable (`r2 ← …`, `r1 and r2`): beside another tool, after "by"/"with", or as the
+    # subject of a reading (plan 0070 Phase 9 review)
+    (re.compile(r"(?i)\b(?:objdump|python|ghidra|bytes)\s+and\s+r2\b|\br2\s+and\s+(?:objdump|python|ghidra)\b"
+                r"|\b(?:by|with)\s+r2(?:'s)?\b(?!\s*[←=(\[])"
+                r"|\br2(?:'s)?\s+(?:reads?|gives|finds|lists|walks?|LCG|pushes|sites|beside|alike)\b"), "tool name r2"),
 ]
 RE_FENCE = re.compile(r"^\s*(```+|~~~+)\s*([\w-]*)")
 RE_BLOCK_BAD = [
@@ -312,6 +318,11 @@ def _allowed_hex(line, m, what, allow, scoped, sect=False, pins=()):
     if before and before in "_+":
         return False
     v = hex_value(tok)
+    # a bare identifier that mixes the cases of its letters (`deadD2`, a variable) is a name, not a number,
+    # unless it reads as a value of the code image (plan 0070 Phase 9 review)
+    if what == "hex of 6+ digits" and tok[:2].lower() != "0x" and re.search("[a-f]", tok) and re.search("[A-F]", tok) \
+            and not in_image(v):
+        return True
     if scoped:
         for k, rx in enumerate(RE_DRAW_CTX):
             for cm in rx.finditer(line):
@@ -425,7 +436,8 @@ def parse_manifest(path):
         elif f[0] == "table" and len(f) >= 3:
             tabs.append(f[1])
     for p in pages:
-        stem = os.path.splitext(os.path.basename(p[0]))[0]
+        # `page <path> <group> <order> [<route stem>]`: the optional stem names the route's last segment (Phase 9)
+        stem = p[3] if len(p) >= 4 else os.path.splitext(os.path.basename(p[0]))[0]
         route = stem if p[1] == "-" else f"{p[1]}/{stem}"
         routes[p[0]] = route
     for t in tabs:
