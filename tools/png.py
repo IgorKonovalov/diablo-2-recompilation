@@ -6,6 +6,7 @@ Used by the render subcommands in tools/ (dt1.py, ds1.py, ...). Not a command-li
     pixels: bytes/bytearray of width*height palette indices, row-major, top row first.
     palette_rgb: 768 bytes, R,G,B per entry (see tools/palette.py for the pal.dat order).
     transparent: indices written with alpha 0 (tRNS chunk). Index 0 by default.
+    text: optional {keyword: text} written as tEXt chunks (the schematic marker of tools/anim_common.py).
 """
 import os
 import struct
@@ -16,7 +17,7 @@ def _chunk(kind, data):
     return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
 
 
-def encode_indexed(width, height, pixels, palette_rgb, transparent=(0,)):
+def encode_indexed(width, height, pixels, palette_rgb, transparent=(0,), text=None):
     if width <= 0 or height <= 0:
         width, height, pixels = 1, 1, b"\0"
     if len(pixels) != width * height or len(palette_rgb) != 768:
@@ -33,12 +34,14 @@ def encode_indexed(width, height, pixels, palette_rgb, transparent=(0,)):
         for i in transparent:
             alpha[i] = 0
         out += _chunk(b"tRNS", bytes(alpha))
+    for key, val in (text or {}).items():          # tEXt chunks: Latin-1 keyword, NUL, text
+        out += _chunk(b"tEXt", key.encode("latin-1") + b"\0" + val.encode("latin-1"))
     out += _chunk(b"IDAT", zlib.compress(bytes(raw), 6))
     out += _chunk(b"IEND", b"")
     return out
 
 
-def write_indexed(path, width, height, pixels, palette_rgb, transparent=(0,)):
+def write_indexed(path, width, height, pixels, palette_rgb, transparent=(0,), text=None):
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "wb") as f:
-        f.write(encode_indexed(width, height, pixels, palette_rgb, transparent))
+        f.write(encode_indexed(width, height, pixels, palette_rgb, transparent, text))

@@ -472,3 +472,39 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   Battle.net lines (the Battle.net ban stays strict: the line is dropped, never published). `docs/export/README.md`
   updated to match. Cost: about 2.9 M in all (was 3.9 M–5.6 M); first cut about 2.6 M. Next: Phases 2, 2b, 4 and 5,
   side by side; then 3.
+- 2026-11-17 — **Phase 2b done** (archivist, lane/x70s; review requested, Tier A). `--schematic` in `tools/maze_anim.py` and
+  `tools/tc_anim.py`. Maze: rooms as labelled boxes (room number; Def and preset file index from the conversion steps
+  on), green door bars on shared edges, the level's entry and exit marks on the final frame. Drop: name cards coloured
+  by quality, no icon. Our palette (`SCHEM_UI` in `tools/anim_common.py`, 768-byte global palette, no `tRNS`) and the 5x7
+  font. The marker is the byte string `d2recon-schematic/1` (the one Phase 2's check, lane/x70c, looks for) in every
+  file: PNG `tEXt` chunk, GIF comment extension, an HTML comment, `steps.json` (an object `{"schematic_only", "steps"}`
+  in schematic mode; the full mode keeps the bare list). `schematic.json` is `{"marker", "tool", "args", "files":
+  {name: sha256}}`, every file but itself; args are as given, without the data root and `--out`. The full mode writes
+  none of it (byte-identical PNG and GIF to before the change; test).
+  - **Splits for the no-art import rule.** `maze_render.convert` and its tables moved to the new `tools/maze_conv.py`
+    (`maze_render` re-exports them); `tools/drlg.py` imports `dt1` lazily (only `dt1_keys` needs it), because
+    `maze_replay` imports `drlg`. `tc_anim.py` loads `dc6`, `item_art` and `palette` only inside the full mode's
+    `Icons`; schematic mode takes the base names from the weapons, armor and misc tables (`Names`, same "first row of a
+    code" rule as `item_art.cmd_index`). Full-mode steps differ in one calculation line only: "The tiles drawn are that
+    DS1's floor and wall cells..." now also says the schematic mode draws a box (both modes print the same line).
+  - **What cannot be equal, and why.** The maze's warp lines (per-room "This preset holds a warp" and the final
+    frame's "Warp" lines) come from the DS1 wall layer (orientation 10/11 cells), which the schematic mode does not
+    read; it shows the level's Levels Vis entry and exit marks (destination names) on the final frame without placing
+    them in a room. The drop's "Inventory icon" line becomes "Name card". Every other step text and calculation is
+    equal (test, 43 maze steps and 87 drop steps).
+  - **The DS1 reads that stay.** The map-scan model (`convert` step 5a, `drlg.PresetUnitData.ds1`) needs a preset DS1's
+    object list and its `floor0` cell values for the draw counts, so the DS1 file is opened and that one caller reads
+    that layer; no drawing code reads a layer. The test enforces exactly this (a guard on the `layers` key that admits
+    only that caller), together with blocked imports of `dt1`, `dc6`, `item_art`, `palette` and `maze_render`, blocked
+    opens of `.dt1`, `.dc6`, `.dcc`, `.pl2` and palette folders, and blocked `ds1._Tiles`, `_scan_cells`, `ds1_files`.
+    This is a narrower reading of "ds1 tile layers blocked" than the done-when's wording; the reviewer should rule on it.
+  - **Fits with the check's rules** (x70c's `export_check.py`, read from lane/x70c, commit 5475952b, not merged): its
+    `html_problems` bars `<meta` and a `src=` attribute-like string, so the step-through page in schematic mode has no
+    `<meta>` (pure ASCII with character references; the marker is an HTML comment) and sets the frame with
+    `setAttribute('src', ...)`. The plan's "HTML meta" line becomes "HTML comment". The check passes the two
+    output folders below as illustration folders of a cut-shaped tree (0 failures); the done-when item "Phase 2's check
+    passes the output folder" is met against that unmerged version and should be re-run after the merge.
+  - **Runs** into `workspace/render/schematic/` (never git): `drlg-maze-level36/` (`maze_anim.py 36 0xc0ffee`, 43 frames,
+    0.7 MB) and `items-tc-andariel-hell/` (`tc_anim.py andariel 0xc0ffee --difficulty 2 --mf 200`, 87 frames, 1.6 MB),
+    the args of the two wiki illustration blocks. Test: `python3 -I tools/test_anim_schematic.py` (5 tests, about
+    20 s; skipped without `workspace/merged`). Next: the architect's review; then Phase 3 can run illustration blocks.
