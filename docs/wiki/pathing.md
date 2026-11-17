@@ -530,9 +530,8 @@ What the logs did not reach, each stated as it stands ([overview § G2](../specs
 From the specs' open questions ([overview](../specs/path/README.md#open-questions), [search](../specs/path/search.md#open-questions)):
 
 - **Do corpses block movement?** No immediate mask scanned holds the corpse bit, and no mask the path module builds or reads from a table, but that is what
-  the findings did not find, and no run tests it. 77 register stores to the test mask outside the module are not resolved.
-- **The operations in order.** Whether marks and unmarks applied in the game's order, with the seventh caller, leave 0 wrong plans. The logger
-  holds no line per ordinary mark. The same question carries the player after an act change beyond its 7 and 3, and the shorts above.
+  the reading did not find, and no run tests it. 77 register stores to the test mask outside the module are not resolved.
+- **The operations in order.** Whether marks and unmarks applied in the game's order, with the seventh caller, leave 0 wrong plans. The logs hold no line per ordinary mark. The same question carries the player after an act change beyond its 7 and 3, and the shorts above.
 - **The `0x200` cells:** what sets them. No logged unit does.
 - **A relocated dead monster and a server revival in a log**, and the routes not followed
   ([collision § Open questions](../specs/drlg/collision.md#open-questions)).

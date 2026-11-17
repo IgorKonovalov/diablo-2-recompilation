@@ -11,7 +11,7 @@ This page explains how a character's final numbers come about: how the game adds
 its set bonuses, its passive skills and the states on it (curses, auras, potions, shrines) into the strength, life
 or resistance that the rest of the game reads; and how a timed state is put on a unit, refreshed, refused, replaced
 and ended. It also covers the per-frame regeneration of life, mana and stamina, auras, and shrines and wells. It
-restates the reviewed stats specs: the overview in [stats/README](../specs/stats/README.md#purpose), the adding up in
+restates the reviewed stats specs: the overview in [stats](../specs/stats/README.md#purpose), the adding up in
 [aggregate](../specs/stats/aggregate.md#purpose) and the states in [states](../specs/stats/states.md#purpose). The
 specs carry the exact arithmetic; this page tells the story. Where something is read from the code but not yet seen
 in a test run, or is still unknown, the page says so. "Confirmed by a second reading" means the instructions were read

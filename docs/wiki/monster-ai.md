@@ -27,7 +27,7 @@ This page names its ground at each statement, because the kinds differ and do no
 |---|---|---|
 | **Seen in a game** | Logged in the game and compared with a model: the three kept batches of AI logs, a first run, a second of 21 sessions and a third of 17 logs, and five logs of Duriel and The Countess played by hand. | It holds for what the logs hold. A decision compared "at its first call" says nothing past that call. |
 | **Emulated** | The game's own code run on declared inputs, up to its first callee. | It shows that code's map up to that call: no callee, and no store or command after it. It does not show what the game passes in. |
-| **Read from the code** | A reading of the instructions or of a finding. Nothing ran. | No run has checked it. [Not every catalogue block has yet been read against the instructions](#how-far-the-blocks-have-been-read). |
+| **Read from the code** | A reading of the instructions, or of the project's notes on them. Nothing ran. | No run has checked it. [Not every catalogue block has yet been read against the instructions](#how-far-the-blocks-have-been-read). |
 | **A consistency check** | A model walks on past the first call, taking each call's logged result, and forks where a branch reads a value the log does not hold. | A model that forks cannot fail at the fork, so it raises nothing. |
 | **Unknown** | Listed under [The shorts](#the-shorts-by-name) and [What is not known yet](#what-is-not-known-yet). | |
 
@@ -371,7 +371,7 @@ result decides, is claimed by these counts.
 - The control that moves the call site fails every decision by construction. The melee control fails 767 of 4 476 and separates nothing in 16 rows. Controls fail as required in both later batches.
 - Fallen's return for modes 0 and 12 was never taken.
 
-**A hand map stays a reading.** For rows 6, 13, 28, 29's think and 35, the map is read from the finding and the instructions, not emulated. The logged first call equals it, and
+**A hand map stays a reading.** For rows 6, 13, 28, 29's think and 35, the map is read from the notes and the instructions, not emulated. The logged first call equals it, and
 that equality is what is seen. The map as a rule of the code is not raised.
 
 **A fault of the logging, not of the model.** The first logs of one revision in the Far Oasis held 36 first-call mismatches, all Scarab, all one call inside a pending owner lookup that the
@@ -387,7 +387,7 @@ does not hold, the model forks, and a model that forks cannot fail there. So the
 
 **What is claimed, in plain words.** For the decisions in this table and no others, **on the logged paths only**: no branch the model ran read an unknown value, so with the logged inputs and the
 logged results of the calls, the game's code gives exactly one sequence of calls; that sequence equals the logged one in callee, call site and every word the model knows; and the code then returns
-with no further call. **This raises no role and no symbol, and no reading of a catalogue finding.** The other side of a one-way branch is not compared. It assumes that an opaque callee changes no
+with no further call. **It confirms no row's role or name, and no reading in the catalogue.** The other side of a one-way branch is not compared. It assumes that an opaque callee changes no
 known memory but one unit field and its pointer arguments, and the known words exclude synthetic stack and path pointers.
 
 | Row | Name | Decisions | Calls past the first | Two-way sites that fail alone when flipped | Logs (revision 4: the second batch; 6: the third batch and the logs played by hand) | How narrow |
@@ -471,11 +471,11 @@ it has any, are counted in its entry.
 - **The arms a logged-path model compared**, on many entries: the decisions, the mismatches, and which branches fail alone when reversed. They confirm the arms met on the logged paths, and the untaken arms stay readings.
 - **Callbacks and helpers run whole** under emulation for some rows, among them the trap's arrow pick, a generator's class pick, and Diablo's and Baal's skill picks.
 
-Past those, nothing else in the catalogue is confirmed, and no row's role, symbol or reading is raised by being resumed.
+Past those, nothing else in the catalogue is confirmed, and no row's role, name or reading is confirmed by being resumed.
 
 ### How far the blocks have been read
 
-A block restates a finding's compact block or prose, and those were wrong in places no earlier review caught. The state of that is stated in one place, and it moves, so it is by link:
+A block restates the project's notes on the code, and those were wrong in places no earlier check caught. The state of that is stated in one place, and it moves, so it is by link:
 [**How to read an entry**](../specs/monsters/ai/catalogue.md#how-to-read-an-entry) names the blocks read line by line against the instructions, and by whom, the blocks not read, and the rate of error measured on a sample of them. Read
 that paragraph before relying on a block outside its read set. Within that sample, an error changed a branch or a command's argument, and none a draw's order or count.
 

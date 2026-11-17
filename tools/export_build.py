@@ -23,8 +23,8 @@ Per page, in this order:
                  `[L]` tag goes too. A section goes when its heading fails or nothing is left under it. It never
                  rewrites a word of a unit it keeps. Every drop is a report line: page, heading, rule, text.
   3. link rewriter  a link to a page of the manifest becomes a link to its route, relative to the linking page
-                 (the heading anchor kept when the heading is still there); any other link keeps its text and
-                 loses its target.
+                 (the heading anchor kept when the heading is still there); a link to a page an `alias` line of
+                 the manifest names goes to that line's page; any other link keeps its text and loses its target.
   4. illustrations  each block runs `tools/<tool> <root> <args> --schematic --out <folder>` (only the tools that
                  have the mode); the page gets a link to the GIF, a link to the step-through page and the caption,
                  simplified like page text. A block whose tool has no schematic mode is dropped.
@@ -77,7 +77,7 @@ EVIDENCE = [
 # ---------------------------------------------------------------- manifest
 
 def parse_manifest(path):
-    groups, pages = [], []
+    groups, pages, aliases = [], [], []
     for raw in open(path, encoding="utf-8"):
         f = raw.split("#", 1)[0].split()
         if not f:
@@ -88,7 +88,9 @@ def parse_manifest(path):
             stem = os.path.splitext(os.path.basename(f[1]))[0]
             pages.append({"path": f[1], "group": f[2], "order": int(f[3]),
                           "route": stem if f[2] == "-" else f"{f[2]}/{stem}"})
-    return groups, pages
+        elif f[0] == "alias" and len(f) >= 3:
+            aliases.append((f[1], f[2]))        # a link to f[1] (not exported) goes to the page f[2] (Phase 6 review)
+    return groups, pages, aliases
 
 
 def safe_out(out):
@@ -192,13 +194,23 @@ def evidence_only(inner):
     return not re.sub(r"[\s,;:.\-–—/#()\[\]]+", "", s)
 
 
+RE_PUNCT_AFTER = re.compile(r"[ \t]*(?:\n[ \t]*)?(?=[.,;:!?])")
+
+
 def drop_evidence_parens(text):
     out, last = [], 0
     for s, e in parenthetical_spans(text):
         inner = text[s + 1:e - 1]
         if inner.strip() and evidence_only(inner):
-            out.append(text[last:s].rstrip(" "))
-            last = e
+            # a parenthetical on a line of its own leaves its closing punctuation on the next line; join it back, so
+            # the page does not read "confirmed ." (Phase 6 review, 2026-11-17)
+            m = RE_PUNCT_AFTER.match(text, e)
+            if m:
+                out.append(text[last:s].rstrip(" \t\n"))
+                last = m.end()
+            else:
+                out.append(text[last:s].rstrip(" "))
+                last = e
     out.append(text[last:])
     return "".join(out)
 
@@ -544,7 +556,7 @@ def redact(pg, blocks):
 
 def build(out, manifest, root, date, allow, run_illus=True):
     out = safe_out(out)
-    groups, specs = parse_manifest(manifest)
+    groups, specs, aliases = parse_manifest(manifest)
     shutil.rmtree(os.path.join(out, "site"), ignore_errors=True)
     if os.path.isfile(os.path.join(out, "report.txt")):
         os.remove(os.path.join(out, "report.txt"))
@@ -579,6 +591,9 @@ def build(out, manifest, root, date, allow, run_illus=True):
         pg.headings = {slug(b["text"]) for b in kept if b["kind"] == "heading"}
         pages.append((pg, kept))
     by_path = {p.path: p for p, k in pages if k is not None}
+    for src, dst in aliases:
+        if src not in by_path and dst in by_path:
+            by_path[src] = by_path[dst]
     docs_out = os.path.join(out, "site", "src", "content", "docs")
     for pg, kept in pages:
         if kept is None:

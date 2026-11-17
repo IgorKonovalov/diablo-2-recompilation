@@ -19,6 +19,7 @@ One entry per line, fields separated by whitespace; `#` starts a comment, blank 
 | `group` | slug, order, label (the rest of the line) | A sidebar group. Its slug is the route folder of its pages; its order places it in the sidebar. |
 | `page` | docs-relative path, group slug or `-`, order | A page in the export. Its route is `<group>/<file stem>`, or `<file stem>` for `-` (top level, before every group); its order is its `sidebar.order` inside its group. `export/index.md` at the top level is the site's front page. |
 | `table` | docs-relative path, line of the table's header row, reason | A table over 20 body rows allowed past rule X6. Each one is read in the cut's redaction review. |
+| `alias` | docs-relative path of a page not exported, docs-relative path of a `page` | A link to the first goes to the second's route instead of losing its target. The first stays out of the export. |
 
 Every page path exists, except the export-only pages until Phase 5 writes them. No two pages share a route.
 

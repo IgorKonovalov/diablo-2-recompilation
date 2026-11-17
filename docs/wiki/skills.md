@@ -12,7 +12,7 @@ This page explains what the server does when a unit uses a skill: how the reques
 when the skill's animation starts and which on its action frame, what the skill costs and how its delay works, how a
 skill's melee hit is built, what the charge-up skills and their finishers do, which item stats and skills react to
 hits and kills, how a summon is made, and how a missile is created, flies, collides and hits. It restates the
-reviewed skills specs: the overview in [skills/README](../specs/skills/README.md#purpose), the skill side in
+reviewed skills specs: the overview in [skills](../specs/skills/README.md#purpose), the skill side in
 [dispatch](../specs/skills/dispatch.md#purpose) and the missile side in [missiles](../specs/skills/missiles.md#purpose).
 The specs carry the exact arithmetic and [draw](../glossary.md) order; this page tells the story. Where something is
 read from the code but not yet seen in a test run, or is still unknown, the page says so. "Confirmed by a second

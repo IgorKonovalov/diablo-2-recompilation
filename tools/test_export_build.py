@@ -82,8 +82,9 @@ illustrates: x
 caption: A caption.
 ```
 """
-PAGE_B = "# Beta\n\n## Second\n\nBeta text, see [Alpha](a.md) and [self](#second).\n"
-MANIFEST = "group g 1 Group\npage a.md - 1\npage b.md g 2\n"
+PAGE_B = ("# Beta\n\n## Second\n\nBeta text, see [Alpha](a.md) and [self](#second).\n\n"
+          "Read [how we know](method.md#tags) and [hidden](hidden.md).\n")
+MANIFEST = "group g 1 Group\npage a.md - 1\npage b.md g 2\nalias method.md a.md\n"
 
 
 def main():
@@ -97,6 +98,10 @@ def main():
        "an in-memory offset parenthetical dropped")
     ok(eb.redact_text("Its seed (`unit+0x20`, the source) drives.") == "Its seed (`unit+0x20`, the source) drives.",
        "an offset parenthetical with words stays (the simplifier drops the unit)")
+    ok(eb.redact_text("it is confirmed\n([spec](../specs/rng/README.md#notes)):\n") == "it is confirmed:\n",
+       "a dropped parenthetical on its own line takes its punctuation back")
+    ok(eb.redact_text("it is read\n(fn:X@0x0045C370) and then\nmore.") == "it is read\n and then\nmore.",
+       "a dropped parenthetical before a word keeps the line break")
     t = eb.redact_text("- **Seed**: a state. See [specs/rng](specs/rng/README.md) and [findings/rng/0001](f.md).")
     ok(t == "- **Seed**: a state.", f"a See sentence of path-labelled links dropped ({t!r})")
     ok(eb.redact_text("See [the randomness page](randomness.md).") == "See [the randomness page](randomness.md).",
@@ -159,6 +164,8 @@ def main():
         ok("Gone section" not in a and "Nothing survives" not in a, "a section with a failing heading goes whole")
         ok("[Alpha](../../a/)" in b or "[Alpha](../" in b, f"link from a nested route is relative ({b.splitlines()[-1]!r})")
         ok("[self](#second)" in b, "a same-page anchor that exists stays")
+        ok("[how we know](../../a/)" in b and "[hidden]" not in b and "hidden" in b,
+           "an alias line sends a link to its page (anchor dropped when absent); others lose their target")
         rep = open(os.path.join(out, "report.txt"), encoding="utf-8").read()
         ok("DROP a.md" in rep and "X1" in rep and "X9" in rep and "has no schematic mode" in rep,
            "every drop is a report line with page, heading, rule and text")
