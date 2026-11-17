@@ -795,7 +795,7 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   greps of the cut for tool names, method words, the working repository's name, the owner's paths, anchors and
   addresses: none, except below. **Readability (Phase 6 reads these):** the front page and randomness read whole. The
   glossary keeps every entry's sense but loses the core seed vocabulary the wiki links to (Map seed, Game seed, Item
-  seed and five more) and keeps a repository note in its preamble and five method-only entries; [entry](../backlog/2026-11-17-architect-spec-writer-glossary-export-readiness-plan-0070.md)
+  seed and five more) and keeps a repository note in its preamble and five method-only entries; [entry](../backlog/archive/2026-11-17-architect-spec-writer-glossary-export-readiness-plan-0070.md)
   to the spec-writer. monster-ai's *The first call* and *Past the first call* are about our method and no longer read
   whole after the drops ("So the 12 614 …" points at a dropped row; "They are exactly the decisions …" at a dropped
   sentence); Phase 6 decides between a spec-writer rewrite and a manifest directive that drops a named section. The two
@@ -805,3 +805,13 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   above). Request [closed](../backlog/archive/2026-11-17-archivist-architect-review-plan-0070-phase-3-builder-redactor-simplifi.md).
   Ledger: verdict accept with fixes, 6 fixes: misread 1 (the image range), overclaim 1 (the draw-shape claim),
   omission 3 (pins for the true range, `[L]` in the check, working-docs paths), other 1 (the offset parenthetical).
+- 2026-11-17 — **Glossary and monster-ai ready for the cut** (spec-writer, lane/x70g; Tier A review
+  [requested](../backlog/2026-11-17-spec-writer-architect-review-x70g-glossary-monster-ai-export-readiness.md)). The
+  glossary's 29 dropped entries (27 X1, 2 X3) now carry their offsets and addresses in trailing evidence-only
+  parentheticals, so each definition stands alone and the working text keeps every offset; the preamble note left the
+  body (its rule is in the spec-writer skill, step 6); the five method-only entries stay, since wiki pages in the cut
+  use the terms. monster-ai: the X9 units of *The first call* and *Past the first call* (and the three *shorts* items
+  dropped for the same word) reworded, and six link-only parentheticals on a line of their own joined to their
+  sentence (each left a stray full stop). Cut into `workspace/export-x70g`: glossary 29 of 161 units dropped before, 0
+  of 159 after; monster-ai 20 of 354 before, 0 after; `export_check` 0 failures. Entry
+  [closed](../backlog/archive/2026-11-17-architect-spec-writer-glossary-export-readiness-plan-0070.md).
