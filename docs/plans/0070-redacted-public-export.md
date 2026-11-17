@@ -472,3 +472,15 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   Battle.net lines (the Battle.net ban stays strict: the line is dropped, never published). `docs/export/README.md`
   updated to match. Cost: about 2.9 M in all (was 3.9 M–5.6 M); first cut about 2.6 M. Next: Phases 2, 2b, 4 and 5,
   side by side; then 3.
+- 2026-11-17 — **Phase 5 written** (spec-writer, lane/x70p). `docs/export/index.md` (front page: the project, what
+  the site holds and that it is simplified, where to start, the six manifest groups as links to their 22 pages),
+  `docs/export/reading-the-tags.md` (`[C]` and `[I]` with the wiki's words for each, the corroboration kinds in plain
+  words without a tool name, leads left out, *What is not known yet* kept, diagrams untagged) and
+  `docs/export/about.md` (the footer's statements, the simplified edition, the animations as schematic drawings of our
+  own per ADR-0036, CC BY 4.0). No claim about the game; no owner name in the text (ADR-0035: only where the host puts
+  it); no repository name. `tools/export_check.py` was not on main, so X1–X12 were self-checked against the rules'
+  text with a regex pass: clean (no fence, no table over 20 rows, no quoted run over 12 words). Found on the way: the
+  wiki's game-data title "Game data: tables, …" matches X2's `data:` as the rule is written; the front page's link
+  text avoids it, but the wiki page's title will hit it in the cut (Phase 2 or 3 to decide: narrow X2's `data:` to the
+  id form, or let the simplifier handle the title). Gate full green. Review request
+  [filed](../backlog/2026-11-17-spec-writer-architect-review-0070-phase5-export-pages.md) (Tier A).
