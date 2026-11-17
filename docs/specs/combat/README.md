@@ -584,7 +584,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   and chaining), 12 (branches), 14 (the hooks and the finisher), 15 (the reproduction), the boundary recommendation,
   *Leads used* (30 verdicts, five contradicted).
 - [combat/experiments § run:2026-10-16-combat](../../findings/combat/experiments.md#run2026-10-16-combat) and its
-  architect review: 19 sessions, 15 358 events, 0 mismatches; the resume-lane addendum (40 logs, 40 655 events,
+  review: 19 sessions, 15 358 events, 0 mismatches; the resume-lane addendum (40 logs, 40 655 events,
   0 mismatches) and its review; the shortfalls.
 - [combat/0001 § 16](../../findings/combat/0001-formulas.md#16-plan-0047-phase-2-the-shortfalls-run2026-10-20-shortfalls)
   and [combat/experiments § run:2026-10-20-shortfalls](../../findings/combat/experiments.md#run2026-10-20-shortfalls)
@@ -600,7 +600,7 @@ crushing blow at `/players 8` ([delivery](delivery.md#worked-example)). [C] (run
   stat-event handlers and their draws), 13 (draws per event), and plan 0045's P1.3 review (its log).
 - [skills/0002](../../findings/skills/0002-missiles.md) §§ 2 (creation), 3 (the damage block, `MissileCritRoll`, the
   pierce count), 5 (the hit, the to-hit roll), 6 (`MISSILE_BuildDamage`'s draw order), 9 (draws per event), and the
-  architect's ruling on the creation draws (plan 0045 P1.2 review).
+  review ruling on the creation draws (plan 0045 P1.2).
 - `tools/combat.py` (the model behind the confirmed tags, `check` over the run list), `tools/gdb/combat.gdb`.
 - Types: `re/types/combat.h`. Plan: [0037](../../plans/done/0037-combat-formulas.md).
 - Upstream: [rng](../rng/README.md), [rng/seeds](../rng/seeds.md), [monsters/stats](../monsters/stats.md),

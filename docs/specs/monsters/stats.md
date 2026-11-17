@@ -868,7 +868,7 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
 
 ## Evidence
 
-- The *Out of scope* line under *Inputs and oracles* is the architect's ruling at plan 0025 Phase 1.
+- The *Out of scope* line under *Inputs and oracles* is the scope ruling of plan 0025 Phase 1.
 - [findings/ai/0016-uber-event.md](../../findings/ai/0016-uber-event.md): no creator of classes 704, 705 or 709 found in this image, for the hpregen note under *Open questions*.
 - [ai/0017 § 13](../../findings/ai/0017-phase2-second-run.md#13-third-part-2026-11-04-lanep52c-the-fixed-model-the-tier-table-h3-logger-rev-5) and [ai/0006, H3 bullet](../../findings/ai/0006-summons.md): the skill-damage pair of § H1.
 - [findings/monsters/0004-stats.md](../../findings/monsters/0004-stats.md): §§ 1–9 (the reading), § 10 (the boundary),
@@ -883,7 +883,7 @@ fn:sub_005A1910_UModFast@0x005A1910, run:2026-10-15-mon-stats)
   33 packs; `monstats: 30863 checks, 0 mismatches`, chained monspawn 188 628 and collision 15 165 checks, 0 mismatches.
   The row 0 edit taints no claim (only the champion-chance roll reads it).
   Its *Re-analysis 2026-10-15* addendum recomputes the 825 stat-6 rescales under each x87 precision and rounding mode
-  (`tools/monstats.py fpsens`), the corroboration of § E1's control word (architect ruling 2026-10-15).
+  (`tools/monstats.py fpsens`), the corroboration of § E1's control word (a review ruling of 2026-10-15).
 - [findings/monsters/0001-level-pool.md § 5](../../findings/monsters/0001-level-pool.md#5-the-monster-level-sub_00573cb0_monstatsinit):
   the level and `L`.
 - [findings/monsters/0003-special-monsters.md § 4](../../findings/monsters/0003-special-monsters.md#4-specialmodsapply-and-the-per-handler-draw-table):

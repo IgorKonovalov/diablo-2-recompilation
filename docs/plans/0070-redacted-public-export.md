@@ -2627,6 +2627,26 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   save/d2s; "architect" 2 (monsters/stats, combat/README, both published before). `reviewed-pages.txt`: the eight
   added. *Backlog:* [archivist: export builder sub_ anchor cells and the run-id case](../backlog/2026-11-17-architect-archivist-export-builder-sub-anchor-cells-and-run-case.md)
   (179 *Entry points* rows on published pages read `—` or bare arrows; X2's `run:` rule is case-sensitive);
-  [spec-writer: export cut residue after x13b](../backlog/2026-11-17-architect-spec-writer-export-cut-residue-after-x13b.md)
+  [spec-writer: export cut residue after x13b](../backlog/archive/2026-11-17-architect-spec-writer-export-cut-residue-after-x13b.md)
   (special's plan sentence, collision's log-line names, the published residue above, skills/missiles B1's constant).
   Gate green.
+- 2026-11-17, spec-writer, lane/x14s (export residue after x13b). Reword only: no claim, tag, anchor or count changed;
+  line counts above every named table kept (21 `table` lines checked, each on its header). (1) monsters/special
+  *Inputs and oracles*: the plan 0018/0014 sentence now states the fact ("The model of this spec takes the place of
+  every special-path oracle the earlier spawn model read from the logs: …"), its counts, tag and run kept; the two tool
+  names moved to the Evidence bullet of monsters/0002 § 9. The sentence is now in the cut (special's drops 10 → 9
+  units, 11.2 % → 10.5 % words). (2) drlg/collision: the log-line names outside the worked example say what the line
+  records: `COR` → corpse-mark lines (entry table, § F5 bullets, the seven-callers table and its header, § D rows 528,
+  529, 532, an open question), `DC` → `deadCol`-test lines, `SN` → a pass-entry line logged at the server's
+  population pass (the address now in a parenthetical) and the pass-entry snapshots (§ D row 7), `MTT`/`MK0` → 1 777
+  tile-placement lines, no mask-test line (§ Inputs); the run ids stay in the tags. (3) items/inventory K1: "The first
+  inventory run's 10 of 10 …" for the sentence-initial `Run:` id (still in the parenthetical); monsters/stats Evidence:
+  "the scope ruling of plan 0025 Phase 1", "(a review ruling of 2026-10-15)"; combat/README Evidence: "and its
+  review", "the review ruling on the creation draws (plan 0045 P1.2)"; sim/frame K7: "the function names the rows
+  carry". (4) skills/missiles B1: `Init(1397049683)`, "a constant whose four bytes spell `SEIS` high byte first", as
+  rng/seeds; no hex, no allowlist change. (5) monsters/ai/README "the rev 5 AI run": kept as the review accepted it; no
+  plainer name found (ai/machinery names the run only by its id). Seen, not in the entry: path/README's corpse table
+  and chain/README's oracle table keep `COR`/`SN`-style log-line names in the cut. Checks: full build (89 pages, 0
+  dropped); `export_check … --repo workspace/export-repo/` 0 failures, 1076 warnings, the same set as the cut of
+  42269df1; span equality 31 495 spans, 0 differ, fence lines 367 differ, as on the base cut; touched specs 10.5 %
+  to 21.9 % words dropped; builds deleted. Gate green.
