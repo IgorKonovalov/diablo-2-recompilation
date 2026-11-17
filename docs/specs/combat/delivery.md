@@ -867,7 +867,7 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   (12 000 cases, 0 mismatches).
 - [skills/0003](../../findings/skills/0003-handlers.md) §§ 1 (the `srvprgfunc` entries, the finisher's tail and stock
   use, the dated 2026-10-21 note), 2 (item casts, the dated 2026-10-21 notes), 3 (the stat-event handlers, their registrations and draws), 13 (draws per event), as fixed by
-  the architect's P1.3 review (plan 0045 log).
+  plan 0045's P1.3 review ([log](../../plans/done/0045-skills-missiles-machinery.md#implementation-log)).
 - Tables: [DifficultyLevels](../../tables/DifficultyLevels.md), [MonStats](../../tables/MonStats.md),
   [ItemStatCost](../../tables/ItemStatCost.md), [States](../../tables/States.md).
 - Upstream: [rng](../rng/README.md), [monsters/stats § C](../monsters/stats.md#c-the-player-count-sub_00573930_monplayerbonus).

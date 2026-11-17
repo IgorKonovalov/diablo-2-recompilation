@@ -42,11 +42,11 @@ flowchart LR
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [dispatch.md](dispatch.md) | the request, the checks, the start and do functions, costs, delay, periodic and aura skills, item skills and casts, the skill packet, progressive charges, the stat-event handlers, summons, monster skill use, ammunition and wear, the tier-A start and do functions | reviewed |
-| [missiles.md](missiles.md) | creation, the damage block, the missile's seed, the frame pass and the do function, motion, collision, the hit and its packet, the function tables, the tier-A missile functions, the re-seed sites, the end of life | reviewed |
-| [catalogue.md](catalogue.md) | every numbered start, do, progressive, item and periodic-state entry and every missile do, hit and damage entry a stock row uses: tests, outputs, boundaries, and every draw by seed; the plan 0046 Phase 2 sample | reviewed |
+| File | Covers |
+|---|---|
+| [dispatch.md](dispatch.md) | the request, the checks, the start and do functions, costs, delay, periodic and aura skills, item skills and casts, the skill packet, progressive charges, the stat-event handlers, summons, monster skill use, ammunition and wear, the tier-A start and do functions |
+| [missiles.md](missiles.md) | creation, the damage block, the missile's seed, the frame pass and the do function, motion, collision, the hit and its packet, the function tables, the tier-A missile functions, the re-seed sites, the end of life |
+| [catalogue.md](catalogue.md) | every numbered start, do, progressive, item and periodic-state entry and every missile do, hit and damage entry a stock row uses: tests, outputs, boundaries, and every draw by seed; the plan 0046 Phase 2 sample |
 
 Names are ours ([skills/0001](../../findings/skills/0001-dispatch.md), [skills/0002](../../findings/skills/0002-missiles.md),
 [skills/0003](../../findings/skills/0003-handlers.md), `re/types/skills.h`). Primitives (`Step`, `Range`, `RangeB`,

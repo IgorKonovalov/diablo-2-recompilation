@@ -52,7 +52,7 @@ even for a classic game, so classic and expansion games read the same tables.
 
 Loose files on disk are only looked at when the game runs with `-direct` (or when no archive is open at all), and
 then they beat every archive. In a
-normal run a loose file never overrides an archive. This is confirmed in runs that put a debugger on the game before
+normal run a loose file never overrides an archive. This is confirmed in runs that watched the game from before
 its start-up code: the archive opens, the sorted list after each open and every file lookup match these rules, a run
 with loose files but no `-direct` read none of them, and the same kind of files with `-direct` were read from disk.
 Only the place of the two optional archives in the middle of the list (the install has neither) and the case with no

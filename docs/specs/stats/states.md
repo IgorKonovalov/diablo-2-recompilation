@@ -94,7 +94,7 @@ stateDiagram-v2
   type, so an object answers 0; `UNIT_TestStateBit` has no type test. `UNIT_SetStateBit` sets unit flag `+0xC8` bit 3
   when the States record's `+0x12` bit 0 (`disguise`) is set, and clears it only when no state with that bit is left.
   The States flag columns are read through the loader's 40 bit-sets, bits 0..39 once each (`curse` bit 11,
-  `plrstaydeath` 13, `monstaydeath` 14, `exp` 30, `life` 32). Objdump and r2 beside the Ghidra reading.
+  `plrstaydeath` 13, `monstaydeath` 14, `exp` 30, `life` 32).
   (fn:UNIT_HasState@0x00639DF0, fn:UNIT_TestStateBit@0x00625B70, fn:UNIT_SetStateBit@0x00625A70,
   fn:STATES_IsCurse@0x0063A420, fn:STATES_StaysOnDeath@0x0063A4A0, fn:STATES_IsExp@0x0063A6B0, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i), [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
 
@@ -180,8 +180,8 @@ Step notes:
   less than 0. (0x0056E9C9–0x0056EA4A, run:2026-10-21-shortfalls2)
 - B1. [C] The duration is in frames and is not rounded: end frame = frame + duration at 5 054 applies, 4 826 of them
   not a multiple of 25. The monster gate refuses every timed state on a monster (type 1) whose MonStats `+0x0D` bit 0
-  is set or whose MonStats2 `+0x05` bit 1 is clear (columns not named): objdump, with the raw bytes agreeing at six
-  sites. (0x0056E9C7–0x0056EA08, fn:sub_00451FE0_MonStats2Rec@0x00451FE0, run:2026-10-17-stats,
+  is set or whose MonStats2 `+0x05` bit 1 is clear (columns not named; the raw bytes agreeing at six
+  sites). (0x0056E9C7–0x0056EA08, fn:sub_00451FE0_MonStats2Rec@0x00451FE0, run:2026-10-17-stats,
   run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)) The range 0x0056E9A7–0x0056E9C3 is the States bounds test.
 - B2. [C] **Callers.** `STATE_ApplyTimed` has 25 call sites in 25 functions and no abs32 reference: open wounds
   (state 62, 200 frames), prevent-heal, the aura target callback (§ F), the shrines (§ G) and B1 itself once
@@ -190,7 +190,7 @@ Step notes:
   ([combat/delivery](../combat/delivery.md)) with the same list shape: each makes one plain list,
   `STATLIST_Alloc(pool, 2, a length-derived end, the attacker's type, its guid)` (6 and −1 without an attacker), sets
   its state (2, 115, 11, 1), a remove callback, and links it with damage; the 17 logged poison lists are plain, with
-  `0x2`, an end frame and `+0x08` 1 (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i); the four bodies with objdump, [stats/0002 § 12](../../findings/stats/0002-states.md#12-plan-0066-batch-s4e-part-5e-the-elemental-appliers-lists-run2026-11-16-sweep2-s4e-emu-static)). The remove
+  `0x2`, an end frame and `+0x08` 1 (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i); [stats/0002 § 12](../../findings/stats/0002-states.md#12-plan-0066-batch-s4e-part-5e-the-elemental-appliers-lists-run2026-11-16-sweep2-s4e-emu-static)). The remove
   callbacks differ: poison and burn set `STATE_DefaultRemoveCB` (0x0056E900), cold 0x0057AD80, freeze 0x0057B170
   (what the last two do at expiry was not read). (fn:STATEVENT_OpenWounds@0x005BFE60,
   fn:sub_0057D810_PreventHealHook@0x0057D810, fn:COMBAT_ApplyPoison@0x0057AC50, fn:COMBAT_ApplyBurn@0x0057ADD0,
@@ -208,7 +208,7 @@ Step notes:
   of it. Of `STATE_GroupClear`'s nine call sites only `0x005BEE15` lies in the use entries (`0x005BE130..0x005BF3D0`).
   (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0, fn:STATE_GroupClear@0x0056C740,
   0x005BEE15, [items/0012 § 9](../../findings/items/0012-use-inventory.md#9-corrections); the nine sites and no abs32
-  reference, a second tool: [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i); the use kinds:
+  reference (a second tool, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)); the use kinds:
   [items/use § E](../items/use.md#e-the-kinds), a potion's amount and rate [§ F](../items/use.md#f-kinds-3-and-4-the-amount-and-the-two-draws))
 
 ### C. Expiry and removal
@@ -236,13 +236,13 @@ Step notes:
   ([aggregate § G](aggregate.md#g-the-maxima-the-rescale-and-the-stat-callback)). (fn:STATLIST_Unlink@0x006269F0,
   run:2026-10-17-stats)
 - C1. [C] **The 300 expiries are met: 449 lists freed over three runs**, each on its own end frame (lateness 0) and
-  each event run's free set as predicted. run:2026-10-17-stats freed 123 (potion states 178–180 79, state 21 18,
-  state 113 11, poison 7, 86 5, shrines 130/131 2, Conviction 1), run:2026-10-20-shortfalls 30 (the Druid's shapes 24,
-  the Sorceress armours 3, `palc-wells1` 3) and run:2026-10-21-shortfalls2 296 in its 1 401 event-12 runs (the potion
+  each event run's free set as predicted. The recorded run (run:2026-10-17-stats) freed 123 (potion states 178–180 79, state 21 18,
+  state 113 11, poison 7, 86 5, shrines 130/131 2, Conviction 1), the recorded run (run:2026-10-20-shortfalls) 30 (the Druid's shapes 24,
+  the Sorceress armours 3, `palc-wells1` 3) and the recorded run (run:2026-10-21-shortfalls2) 296 in its 1 401 event-12 runs (the potion
   states 100, 106 and 178–180 153, `poison` 49, `skilldelay` 48, `defense_curse` 42, the shrine states 133 and 134 4).
   (fn:EVENT_TimedListExpire@0x00580800, fn:UNIT_ExpireTimedLists@0x00627460, run:2026-10-17-stats,
   run:2026-10-20-shortfalls, run:2026-10-21-shortfalls2)
-- C2. [C] The calls in C2's order are read with objdump and r2 beside the Ghidra reading, and the freed state's bit
+- C2. [C] The calls run in C2's order, and the freed state's bit
   was off at the next states line in 147 of 148 logged frees. (fn:STATE_DefaultRemoveCB@0x0056E900,
   fn:STATE_Set@0x00639DB0, run:2026-10-17-stats, run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)) [I] The dead-unit branch, and the one free whose bit stayed on,
   were not met.
@@ -340,8 +340,8 @@ Step notes:
   `hp + stat 74`. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stats)
 - E2. [I] **The floor at 256** (one life point): a poisoned or wounded player's tick never takes life below 256, so
   poison and open wounds cannot kill a player. No poisoned tick reached it: 0 floored in 1 431 poisoned ticks of
-  run:2026-10-21-shortfalls2 (none in run:2026-10-20-shortfalls), and open wounds never hit the player. The count is
-  final for plan 0047: on the staged route (a 30-life character kept alive in Normal by flat damage reduction) the
+  the recorded run (run:2026-10-21-shortfalls2) (none in run:2026-10-20-shortfalls), and open wounds never hit the player. The count is
+  final (plan 0047): on the staged route (a 30-life character kept alive in Normal by flat damage reduction) the
   stock items that give it also regenerate life or resist and shorten poison; a character with more life drained to
   the floor by poison alone was not tried, so this is no stock-data limit, and that route is out of the plan
   (run:2026-10-21-shortfalls2).
@@ -399,7 +399,7 @@ Step notes:
   made 61 aura state lists and ended 59, each unlinked by `sub_005701B0_PlayerSetSkill` (through
   `UNIT_UnlinkStatList`) when the next aura key changed the right skill, before the list's timed end; each unlink's
   writes checked, and no aura list was freed by event 12 in those sessions. This is a second end path beside the timed
-  expiry of § C, which ended the one aura state of run:2026-10-17-stats (9 on and off events there). The plan's 50 aura
+  expiry of § C, which ended the one aura state of the recorded run (run:2026-10-17-stats) (9 on and off events there). The plan's 50 aura
   on and off events are met: 120. (fn:sub_005701B0_PlayerSetSkill@0x005701B0, fn:UNIT_UnlinkStatList@0x006277E0,
   fn:EVENT_TimedListExpire@0x00580800, run:2026-10-20-shortfalls, run:2026-10-17-stats)
 - F3. [I] **Range and filter.** A unit counts when its squared distance to the caster (subtiles) is ≤ `range²` in the
@@ -412,7 +412,7 @@ Step notes:
   ([multiplayer/0001 § 4, MP25 prediction](../../findings/multiplayer/0001-cases.md#mp25-prediction-which-aurafilter-bits-pass-a-player-2026-10-17-lanerbs2),
   fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0, fn:sub_00554DE0_UnitsSameParty@0x00554DE0,
   fn:sub_00554200_UnitsHostile@0x00554200)
-- F3. [C] **`0x10000` passes a player only in the caster's party.** In plan 0044's two-client run a Paladin's Might
+- F3. [C] **`0x10000` passes a player only in the caster's party.** In the two-client run (plan 0044) a Paladin's Might
   (`aurafilter` `0x12003`) passed the filter for the other player 16 times while the two shared a party, and was refused
   17 times with neither partied and 28 times with the two hostile. Scope: one aura of the `0x12003` group, outside town;
   the offensive auras (`0x8000`) were not run. (fn:sub_0056B3E0_SkillUnitFilter@0x0056B3E0, run:2026-10-20-two-clients,
@@ -430,12 +430,12 @@ Step notes:
 ### G. Shrines and wells
 
 § G is inferred but for the effect table G2, the stamina shrine's stat 28 and remove callback, and the shrine
-lists' curse flag, which the step notes confirm: run:2026-10-17-stats operated 7 shrines and 5 wells, run:2026-10-20-shortfalls 3 shrines
-(codes 14 twice, 6 once) and no well, and run:2026-10-21-shortfalls2 6 shrines (codes 11 once, 12 three times, two
+lists' curse flag, which the step notes confirm: the recorded run (run:2026-10-17-stats) operated 7 shrines and 5 wells, the recorded run (run:2026-10-20-shortfalls) 3 shrines
+(codes 14 twice, 6 once) and no well, and the recorded run (run:2026-10-21-shortfalls2) 6 shrines (codes 11 once, 12 three times, two
 recharges on a full player) and no well, every one predicted: 21 against the plan's 50 operates and the 20 that the
-draw-freedom check asks per kind. The count is final for plan 0047 as a slot-time ruling, not a stock-data limit: one
+draw-freedom check asks per kind. The count is final as a slot-time ruling (plan 0047), not a stock-data limit: one
 explore-and-operate session (`sor-shrines2`) listed one shrine, about one operate in 12 minutes, and `palc-wells2` was
-not run, so a well's cure was not tried in that phase (the plan 0047 review of 2026-10-21).
+not run, so a well's cure was not tried in that phase (plan 0047 review, 2026-10-21).
 
 ```
 G1. OBJOP_Shrine(object, player):                                      [I] (fn:OBJOP_Shrine@0x00583C70, tbl:Shrines.txt:reset)
@@ -468,16 +468,16 @@ G6. a well (OperateFn 22, 0x00585720), with charges left (object data +0x04):   
 
 Step notes:
 
-- G2. [C] **The effect table.** `g_ShrineEffects` read with r2 gives codes 6..15 as G2, and no other code a state.
+- G2. [C] **The effect table.** `g_ShrineEffects` gives codes 6..15 as G2, and no other code a state.
   (data:g_ShrineEffects@0x006E1850, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i))
 - G2. [C] **Shrine states are curses.** States 128–137 carry the `curse` bit, so a shrine's list has flag `0x20`: the
   6 logged shrine lists (states 128, 130, 131, 136) have flags `0x22` and their rows `curse` = 1; the 3 timed shrines
-  of run:2026-10-17-stats (codes 10 once, 8 twice) made lists with the duration `Duration in frames` and the table's
+  of the recorded run (run:2026-10-17-stats) (codes 10 once, 8 twice) made lists with the duration `Duration in frames` and the table's
   stat with value `Arg0`. (tbl:States.txt:curse, tbl:Shrines.txt:Duration in frames, run:2026-10-17-stats,
   run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)) [I] So a shrine's list is "the" curse of B1: it replaces a monster's curse, and a
   curse replaces it (B1's one-curse rule).
 - G2. [C] The state is not always the States row's `stat`: shrine 6 writes 171 with state 128 although row 128
-  (`shrine_armor`) names `armorclass` (the table read with r2, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)). (data:g_ShrineEffects@0x006E1850,
+  (`shrine_armor`) names `armorclass` ([stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)). (data:g_ShrineEffects@0x006E1850,
   tbl:States.txt:stat) [I] The skill shrine's +2 skills come from a reader of state 134, not from a stat (open
   question).
 - G4. [C] **The stamina shrine's state.** Both logged stamina-shrine applies set remove callback 0x00583A40 and stat
@@ -509,7 +509,7 @@ Step notes:
 - H. [C] **The damaging aura's draw.** Sanctuary's run calls `sub_005CF3A0_AuraHitDo`, which calls
   `SKILLS_RollElemDamage` (at 0x005CF5D5), which draws `RNG_RangeB` (at 0x0056E132) on the caster's seed once in each
   run that draws (865 runs, 865 steps; the run did not count the units each run hit). The checker asserted each of the 865 drawing runs' exit seed against its entry advanced by its logged draws, and
-  746 of the next runs of the same caster entered on that exit: chained pairs in the ADR-0014 sense (the checker's
+  746 of the next runs of the same caster entered on that exit: chained pairs (ADR-0014; the checker's
   `aura_chained_pairs`, keyed by the caster unit, since the 2026-10-20 re-check; 115 next runs entered elsewhere and
   4 drawing runs had no next run in their log). The game seed
   moved in one aura run, when a kill dropped an item; a kill also steps the dead monster's own seeds. The draw is the
@@ -580,6 +580,7 @@ leaves the cache. (fn:sub_00580610_LifeRegenTick@0x00580610, run:2026-10-17-stat
 
 ## Evidence
 
+- How the statements above were read, by statement: A2: objdump and r2 beside the Ghidra reading; B1: read with objdump; B2: the four bodies with objdump; C2: read with objdump and r2 beside the Ghidra reading; G2: read with r2; G2: the table read with r2.
 - [stats/0002](../../findings/stats/0002-states.md) § 1–7 (the code reading), § 8 (the run), *Leads used* (3 verdicts),
   *Phase 0 surprise (f)* (the setters of the 56 unnamed States rows).
 - [stats/experiments § run:2026-10-17-stats](../../findings/stats/experiments.md#run2026-10-17-stats): the applies,

@@ -34,10 +34,10 @@ flowchart LR
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [aggregate.md](aggregate.md) | the list tree and the cache, propagation and recompute, `op` 1–13, the reads, the maxima and their rescale, item requirements and the equipment refresh, dual wield, set bonuses, passive stat lists | reviewed |
-| [states.md](states.md) | the state bit and its list, the timed apply (curses, refresh, refuse, replace), expiry, removal, the `group` clear, the regeneration tick, auras, shrines and wells, the draws per event kind | reviewed |
+| File | Covers |
+|---|---|
+| [aggregate.md](aggregate.md) | the list tree and the cache, propagation and recompute, `op` 1–13, the reads, the maxima and their rescale, item requirements and the equipment refresh, dual wield, set bonuses, passive stat lists |
+| [states.md](states.md) | the state bit and its list, the timed apply (curses, refresh, refuse, replace), expiry, removal, the `group` clear, the regeneration tick, auras, shrines and wells, the draws per event kind |
 
 Names of functions, structs and fields are ours ([stats/0001](../../findings/stats/0001-aggregate.md),
 [stats/0002](../../findings/stats/0002-states.md), `re/types/stats.h`). `MulDiv(a, b, c)` is the helper of
@@ -62,44 +62,44 @@ in 1/256 points. A stat key is `stat << 16 | param`. Time is in game frames, the
 
 | Kind | What | Tag |
 |---|---|---|
-| value oracles | a skill's own calc results where the formula reads unit state (data/calc's unit-reading variables); the shrine to-hit and damage values (`SHRINE_StatValue` cases 19 and 21); monster AI; the combat appliers that put a state on the player (poison, cold, open wounds) are inputs; the item's required level and the strength and dexterity the requirement check reads through `0x0062B450`, as the run record names them | [C] (run:2026-10-17-stats) |
+| value oracles | a skill's own calc results where the formula reads unit state (data/calc's unit-reading variables); the shrine to-hit and damage values (`SHRINE_StatValue` cases 19 and 21); monster AI; the combat appliers that put a state on the player (poison, cold, open wounds) are inputs; the item's required level and the strength and dexterity the requirement check reads, as the recorded sessions name them (`0x0062B450`) | [C] (run:2026-10-17-stats) |
 | modelled inputs | the passive calcs, evaluated with the level the list records in stat 351 | [C] (fn:SKILLS_RefreshPassive@0x00646D60, run:2026-10-17-stats) |
 | no remainder (since the 2026-10-20 re-check) | the 180 wearer set lists of the full Trang-Oul's Avatar (full blocks with a `state` and an `oskill` property), taken as logged at the run, are predicted by the kept checker: values stored `<< ValShift`, the `state` block writing stat 98 with param 176 and value 1, so all 5 749 wearer set lists are checked ([aggregate § J](aggregate.md#j-set-bonuses)) | [C] (fn:sub_00660120_SetBonusApply@0x00660120, fn:PROP_Func24_ParParam@0x0065F390, run:2026-10-17-stats) |
 
-[C] Under this boundary run:2026-10-17-stats reproduced 18 sessions of six characters with 0 mismatches: every link,
-unlink, propagation and cache write of the player's tree in order, every read in the 50-frame windows, the stat
-callback and its rescale, the requirement checks, the set masks, toggles and lists, the passive lists, every apply,
-expiry, tick, aura run and duration, and the shrines and wells reached. (run:2026-10-17-stats)
+Under this boundary, the model of this subsystem reproduces 18 recorded sessions of six characters with 0
+mismatches: every link, unlink, propagation and cache write of the player's tree in order, every read in the 50-frame
+windows, the stat callback and its rescale, the requirement checks, the set masks, toggles and lists, the passive
+lists, every apply, expiry, tick, aura run and duration, and the shrines and wells reached. [C] (run:2026-10-17-stats)
 
-[C] Under the same boundary run:2026-10-20-shortfalls (plan 0047 Phase 2) reproduced 10 sessions with 0 mismatches,
-among them curse requests on monsters, the aura ends by the skill switch and the different-state group clears
-([states](states.md)), and the kept run list re-checks byte for byte with the same checker. (run:2026-10-20-shortfalls)
+Under the same boundary, the model reproduces 10 further sessions with 0 mismatches, among them curse requests on
+monsters, the aura ends by the skill switch and the different-state group clears ([states](states.md)).
+[C] (run:2026-10-20-shortfalls, plan 0047 Phase 2; the kept run list re-checks byte for byte with the same checker)
 
-[C] Under the same boundary run:2026-10-21-shortfalls2 (plan 0047 Phase 2b) reproduced 14 sessions with 0
-mismatches, among them the curse resistance cut on the player, group 3's nested clears and 296 expiries
-([states](states.md)); the kept run lists of the two earlier runs re-check byte for byte with its checker.
-(run:2026-10-21-shortfalls2)
+Under the same boundary, the model reproduces 14 more sessions with 0 mismatches, among them the curse resistance
+cut on the player, group 3's nested clears and 296 expiries ([states](states.md)). [C] (run:2026-10-21-shortfalls2,
+plan 0047 Phase 2b; the kept run lists of the two earlier runs re-check byte for byte with its checker)
 
-The stat values that plans 0034 and 0037 took as value oracles stay oracles: run:2026-10-16-combat logs values, not
-lists, and the level-up maxima of run:2026-10-16-player were compared only for consistency (the P2 review ruled that
-none is replaced). A reimplementation that models this subsystem computes those values; the earlier runs do not yet
+The stat values that the combat and character specs take as value oracles stay oracles: their recordings hold
+values, not lists, and their level-up maxima were compared only for consistency (run:2026-10-16-combat,
+run:2026-10-16-player, plans 0034 and 0037; the P2 review ruled that none is replaced). A reimplementation that models this subsystem computes those values; the earlier runs do not yet
 check that composition.
 
 ## Draw order
 
-[C] Seed invariance was logged at the entry and the exit of every event of eight kinds (game seed and acting unit's
-seed): link 12 868, unlink 12 853, own write 101 995, toggle 19 525, apply 6 232, expire 2 749, tick 54 719, aura
-2 763 unchanged. Those kinds draw nothing, except a damaging aura's drawing run below. (run:2026-10-17-stats)
+Events of eight kinds draw nothing: link, unlink, own write, toggle, apply, expire, tick and aura leave the game
+seed and the acting unit's seed unchanged, except a damaging aura's drawing run below. [C] (run:2026-10-17-stats:
+seed invariance logged at the entry and the exit of every event, link 12 868, unlink 12 853, own write 101 995,
+toggle 19 525, apply 6 232, expire 2 749, tick 54 719, aura 2 763 unchanged)
 
-[C] A damaging aura's run (Sanctuary) that draws moves the caster's unit seed by one `RNG_RangeB`, in the elemental
-damage roll (phase 3's): 865 drawing runs, 865 steps, each exit asserted against the logged draws; 746 chained pairs,
-115 next runs entered elsewhere, 4 drawing runs with no next run in their log (`tools/stats.py`'s counts, keyed by the
-caster unit). The run did not count the units each run hit.
-(fn:SKILLS_RollElemDamage@0x0056E0C0, fn:RNG_RangeB@0x0045C3E0, run:2026-10-17-stats)
+A damaging aura's run (Sanctuary) that draws moves the caster's unit seed by one `RNG_RangeB`, in the elemental
+damage roll `SKILLS_RollElemDamage` (phase 3's). [C] (fn:SKILLS_RollElemDamage@0x0056E0C0, fn:RNG_RangeB@0x0045C3E0,
+run:2026-10-17-stats: 865 drawing runs, 865 steps, each exit asserted against the logged draws; 746 chained pairs,
+115 next runs entered elsewhere, 4 drawing runs with no next run in their log, the stats model's counts keyed by the
+caster unit; the run did not count the units each run hit)
 
-[I] The draw is one per run whatever the number of units hit: do 66 makes its one `SKILLS_RollElemDamage` call
-(at 0x005CF5D5) before its target pass, and the pass copies the packet it fills to every unit hit (`rep movs` at
-0x005CF367). (fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0,
+The draw is one per run whatever the number of units hit: do 66 makes its one `SKILLS_RollElemDamage` call before
+its target pass, and the pass copies the packet it fills to every unit hit with one `rep movs`. [I] (0x005CF5D5, 0x005CF367,
+fn:sub_005CF3A0_AuraHitDo@0x005CF3A0, fn:sub_005CF2A0_AuraHitUnitCb@0x005CF2A0,
 [skills/0011 § 3](../../findings/skills/0011-paladin.md#3-the-aura-functions-do-65-66-81-82), [stats/0002 § 7](../../findings/stats/0002-states.md#7-events-inputs-outputs-draws)) Details:
 [states § H](states.md#h-draws-per-event-kind).
 

@@ -353,7 +353,7 @@ C8. SkillLevelBonus(unit, entry) → i32:                              [I] (fn:s
 
 - C8. The cap of 3 on stat 97 (`cmp eax, 3; jle`, 0x0064424C) applies to a skill of the player's own class and to a
   non-player whose base points are above 0; a player's skill of another class takes stat 97 uncapped. `+0x2C` is a
-  per-entry word added as it is; the finding does not follow its writers. Every sum is a plain 32-bit add and the
+  per-entry word added as it is; its writers are not followed. Every sum is a plain 32-bit add and the
   cap a signed compare (`jle`), so a negative stat 97 is added as it is; `SkillPage` is loaded with `movsx` (0x00644204), and
   the layer `8·class + page − 1` reaches `STATS_GetUnitStat` as its low 16 bits (`movzx`, 0x006254CC). No step draws. [I]
   (fn:sub_00644180_SkillLevelBonus@0x00644180, fn:sub_00644150_ShrineSkillBonus@0x00644150, 0x0064424C,

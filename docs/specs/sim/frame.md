@@ -378,7 +378,7 @@ E3. EventFree(rec):                                               [C] (all of E3
 - E3b. [C] **Cancel and free-all, the code's map** (ADR-0015; `cancel`, 150 cases): `UNIT_CancelEvents(game, unit, kind, a)` frees, in chain order
   (newest first), each record whose kind byte equals `kind` and whose `a` equals `a` when `a` ≠ 0; `UnitCancelEventsByCb`
   the same on the callback, with no zero shortcut; `UnitFreeAllEvents` frees every record, clears its `unit` field and
-  sets the chain head to 0. Thin but sufficient, as the finding says: `a` compared even when 0 separates 10, a callback of
+  sets the chain head to 0. Thin but sufficient: `a` compared even when 0 separates 10, a callback of
   0 taken as "any" 3, the chain walked oldest first 5, and each fails all it separates. (run:2026-10-30-frame-emu-2,
   fn:UNIT_CancelEvents@0x00540E60, fn:sub_00540EA0_UnitCancelEventsByCb@0x00540EA0, fn:sub_00540EE0_UnitFreeAllEvents@0x00540EE0)
 - E4. [I] **The state-54 branch:** `UninterruptibleEnd(unit, 0)` clears state 54 and, if the unit has a game, under state 92

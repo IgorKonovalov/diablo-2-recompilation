@@ -20,20 +20,20 @@ which order, which seed each stage steps, and what each stage passes on.
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [tc.md](tc.md) | monster TC choice, level upgrade, pick loop, NoDrop scaling, sub-TC recursion and ratios, auto item-type TCs, the hand-off to item creation | reviewed |
-| [quality.md](quality.md) | the drop quality roll: early returns, `itemratio` row, unique/set/rare/magic tests, superior/normal/low, magic find; codes 0–7 | reviewed (plan 0010, 2026-10-14) |
-| [uniques-sets.md](uniques-sets.md) | item creation by quality: pre-switch overrides, unique and set candidate filters, the weighted pick on the item seed, the made-uniques set, durability and the fallback chain | reviewed (plan 0019, 2026-10-14) |
-| [affixes.md](affixes.md) | after the switch's builders: alvl, the magic-affix pick (filter, weighted draw), magic and rare builds with rare names, superior and low rows, staff mods, the automagic pick | reviewed (plan 0021) |
-| [properties.md](properties.md) | base stats on the unit seed (quantity, durability, defense, picture), the property roll per `func`, stat storage, the ethereal and socket rolls | reviewed (plan 0024) |
-| [sockets-runewords.md](sockets-runewords.md) | after creation: the client and server insert tests, the gem/rune mod groups, the runeword match, the runeword rolls on the completing child's item seed, the two socket-count setters | reviewed (plan 0029, 2026-10-15) |
-| [vendors.md](vendors.md) | vendor stock and gambling: the store seed, the candidate lists, when stock is built, reset and marked stale, the stock build and the stock upgrade, the gamble window (level, base, upgrade, quality) and the gamble list order, the hand-off to item creation | draft (plan 0031) |
-| [cube.md](cube.md) | the Horadric Cube: the first-fit `CubeMain` row match, the input claims, the output ilvl, the output kinds and their creation records, the crafted builder (quality 8), the creation-side roll of quality-0 records, the copies' seeds, the cow portal and the Pandemonium stubs | draft (plan 0030) |
-| [economy.md](economy.md) | the item economy: the price core (buy, sell, repair) and the gamble price, buy, sell and repair, gold payment and caps, the gold pile amount, the death loss, hire, resurrect and identify costs, durability, quantity and charge wear, replenish | reviewed (plan 0043, 2026-10-19) |
-| [use.md](use.md) | item use: the request gate and the drain's order, the use requests, the dispatch by use kind, consumption, potions and their two draws, rejuvenation, identify, the cube, keys | reviewed (plan 0060) |
-| [inventory.md](inventory.md) | where an item goes: pages and rows, the placement search, the stash, belts, stacks, the cursor, pickup, the ground drop's cell, a ground item's expiry and sweep | reviewed (plan 0060) |
-| [quest-drops.md](quest-drops.md) | quest state in item creation: the quest TC switch (B6) and the killer, the quest seed and the scripted drops on it (Andariel's gems, the Hellforge, the Cow King, Baal), the quest items and their duplicate checks, Charsi's imbue, Larzuk's socket, Anya's personalization and the given items, the `boss` level exception | reviewed (plan 0032, 2026-10-16) |
+| File | Covers |
+|---|---|
+| [tc.md](tc.md) | monster TC choice, level upgrade, pick loop, NoDrop scaling, sub-TC recursion and ratios, auto item-type TCs, the hand-off to item creation |
+| [quality.md](quality.md) | the drop quality roll: early returns, `itemratio` row, unique/set/rare/magic tests, superior/normal/low, magic find; codes 0–7 |
+| [uniques-sets.md](uniques-sets.md) | item creation by quality: pre-switch overrides, unique and set candidate filters, the weighted pick on the item seed, the made-uniques set, durability and the fallback chain |
+| [affixes.md](affixes.md) | after the switch's builders: alvl, the magic-affix pick (filter, weighted draw), magic and rare builds with rare names, superior and low rows, staff mods, the automagic pick |
+| [properties.md](properties.md) | base stats on the unit seed (quantity, durability, defense, picture), the property roll per `func`, stat storage, the ethereal and socket rolls |
+| [sockets-runewords.md](sockets-runewords.md) | after creation: the client and server insert tests, the gem/rune mod groups, the runeword match, the runeword rolls on the completing child's item seed, the two socket-count setters |
+| [vendors.md](vendors.md) | vendor stock and gambling: the store seed, the candidate lists, when stock is built, reset and marked stale, the stock build and the stock upgrade, the gamble window (level, base, upgrade, quality) and the gamble list order, the hand-off to item creation |
+| [cube.md](cube.md) | the Horadric Cube: the first-fit `CubeMain` row match, the input claims, the output ilvl, the output kinds and their creation records, the crafted builder (quality 8), the creation-side roll of quality-0 records, the copies' seeds, the cow portal and the Pandemonium stubs |
+| [economy.md](economy.md) | the item economy: the price core (buy, sell, repair) and the gamble price, buy, sell and repair, gold payment and caps, the gold pile amount, the death loss, hire, resurrect and identify costs, durability, quantity and charge wear, replenish |
+| [use.md](use.md) | item use: the request gate and the drain's order, the use requests, the dispatch by use kind, consumption, potions and their two draws, rejuvenation, identify, the cube, keys |
+| [inventory.md](inventory.md) | where an item goes: pages and rows, the placement search, the stash, belts, stacks, the cursor, pickup, the ground drop's cell, a ground item's expiry and sweep |
+| [quest-drops.md](quest-drops.md) | quest state in item creation: the quest TC switch (B6) and the killer, the quest seed and the scripted drops on it (Andariel's gems, the Hellforge, the Cow King, Baal), the quest items and their duplicate checks, Charsi's imbue, Larzuk's socket, Anya's personalization and the given items, the `boss` level exception |
 
 ## Data flow
 

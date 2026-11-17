@@ -328,7 +328,7 @@ C5. OutVertsToCells(ring): every vertex ÷ 8 (signed);                [C] (fn:su
   compares the new node with the head: before the head when `LevelAdjLess(new, head)`, after it otherwise. Into a list of
   two or more nodes it does not compare with the head, so a node that sorts before the head is not put before it; a node
   that does not sort before the head goes where C2 puts it. Where a node that sorts before the head goes instead is not
-  written in a finding (Open questions). (fn:sub_0066B720_LevelAdjInsert@0x0066B720,
+  read yet (Open questions). (fn:sub_0066B720_LevelAdjInsert@0x0066B720,
   [drlg/0008 § 13](../../findings/drlg/0008-outdoor.md#13-reading-check-the-logged-windows), [§ Plan 0038 batch S4a](../../findings/drlg/0008-outdoor.md#plan-0038-batch-s4a-2026-10-16))
 - [I] **A reimplementation keeps the list in C2's full order.** Of the act link model's 177 inserts, 19 go into a list of
   two or more nodes; in 5 the new node sorts before the head, and in all 5 the head is on another side, so the
@@ -654,7 +654,7 @@ G3. BorderSubGroup(rec, g) → bool:                                    [C] (fn:
   reimplementation tests the computed piece against `baseDef + 62`, or the sub-index against 63, not against a bare 62.
   (fn:sub_0066F990_BorderSubRecord@0x0066F990, fn:sub_0066F3B0_BorderSubFits@0x0066F3B0,
   [drlg/0008 § 7](../../findings/drlg/0008-outdoor.md#7-the-border-stamps-lvlsub-tag_type-2))
-- G4. Four points of the match and the stamp are not in a finding and are listed under *Open questions*: the DS1 layer
+- G4. Four points of the match and the stamp are not read yet and are listed under *Open questions*: the DS1 layer
   read, a sub-index-63 cell in a replacement variant, which cells "the others" are, and `N < 0` in G3.
 - [C] **`BordType`**: 0 = one `RangeB(groups)` picks the start group, and the record stops after its first stamp; 1 = every
   group is tried and stamped at most once; 2 = every group is stamped at every matching position. Stock: `Border - Cliffs`
@@ -1414,7 +1414,7 @@ J5. OutKurastLevel (79 … 82):                                        [C] (fn:s
           PlaceRandom(631, 0);  Fill(651 …);  Fill(649, 650);  Fill(648)
       82: Place(0, 0, 652, 0)                                        ; the bridge, explicit index: no draw
       ; the arguments 80 and 81 leave out, OutFillRandom's shuffle width and fit test, and
-      ; PlaceRandom(631, 0)'s pad and sides are not in a finding: Open questions
+      ; PlaceRandom(631, 0)'s pad and sides are not read yet: Open questions
     Fill = OutFillRandom(lo, hi, max):                               [C] (fn:sub_0067EED0_OutFillRandom@0x0067EED0, run:2026-10-15-drlg-outdoor)
       list ← the shuffle of all cw·ch cells                          ; 2·cw·ch level draws
       for each cell: d ← lo + Range(L.seed, hi − lo + 1)             ; drawn also when hi = lo
@@ -1591,7 +1591,7 @@ L3. BarricadeRavine(L):                                               [C] (fn:su
   run:2026-10-15-drlg-outdoor)
 - L4. [C] **Gates.** Each edge's first `0x400` cell gets one gate, file −1: 909 top, 908 bottom, 910 left, 907 right.
   (fn:sub_0067DB50_BarricadeGates@0x0067DB50, run:2026-10-15-drlg-outdoor)
-- L4. Which row or column is each edge, and the direction each is scanned in, are not in a finding (*Open questions*).
+- L4. Which row or column is each edge, and the direction each is scanned in, are not read yet (*Open questions*).
 - L4. [C] **Caves**, `g_A5CaveEntries` (`i32[3][5]` `{level, file, far, defTall, defWide}`): `(112, 0, 0, 913, 914)`,
   `(117, 0, 1, 983, 984)`, `(117, 0, 0, 985, 986)`. For each row of the level, in table order: a wide level (`L.h < L.w`)
   gets `Place(far ? cw − 2 : 0, 2, defWide, file)`, a tall one `Place(2, far ? ch − 2 : 0, defTall, file)`. No fit test, no
@@ -1600,7 +1600,7 @@ L3. BarricadeRavine(L):                                               [C] (fn:su
   match callback and `Def` map: DS1 main index 48 names the border or ravine piece expected, 49 the Barricade piece 915–930
   (987–1002 on snow) it becomes; sub 31 of main 48 is the wildcard −5. (fn:sub_0067E0E0_BarricadeLvlSub@0x0067E0E0,
   fn:sub_0067E000_BarricadeSubDefMap@0x0067E000, fn:sub_0067E080_BarricadeSubMatch@0x0067E080, run:2026-10-15-drlg-outdoor)
-- L5. Whether the Act V match callback also refuses a seam opening, as G4's match does, is not in a finding (*Open
+- L5. Whether the Act V match callback also refuses a seam opening, as G4's match does, is not read yet (*Open
   questions*).
 - L5. [C] **The stamp `Def` map**, `g_A5SubDefMap` (`i32[10][5]` `{main, subLo, subHi, defDirt, defSnow}`). For a DS1
   wall cell with `main = (W >> 20) & 0x3F` and `sub = (W >> 8) & 0xFF`, main 48 or 49, the first row with that `main` and
@@ -1623,7 +1623,7 @@ L3. BarricadeRavine(L):                                               [C] (fn:su
   `y ← 2·Range(L.seed, ch ÷ 2)`; a Barricade 1–8 piece (915–922) there becomes `Def + 16` (931–938, file −1). Then two more
   `Range` draws, always, start a full scan for the rest. Fewer than 3 is a fatal error. (fn:sub_0067E240_BarricadePrisons@0x0067E240,
   run:2026-10-15-drlg-outdoor)
-- L6. The fallback scan's order is not in a finding (*Open questions*).
+- L6. The fallback scan's order is not read yet (*Open questions*).
 - [C] The prisons' fallback scan places prisons in Frigid Highlands for map seed 312: 2 by the scan in each of the two
   windows, every draw matched. (fn:sub_0067E240_BarricadePrisons@0x0067E240, run:2026-10-16-sweep-mazes,
   [drlg/0008 § Plan 0038 batch H5e](../../findings/drlg/0008-outdoor.md#plan-0038-batch-h5e-run2026-10-16-sweep-mazes))

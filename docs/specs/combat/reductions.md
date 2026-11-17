@@ -147,7 +147,7 @@ A2. DamagePercent(ctx) → i32:                                         [C] (fn:
   hireling were not reached in the run; `COMBAT_DamagePercent` emulated over 2 500 cases returns A2's values, 400 in
   111 and 25 in 40, every branch separated. [C] (0x0057C129–0x0057C132, 0x0057C0D4, run:2026-11-16-sweep2-s5e,
   [combat/0001 § 19](../../findings/combat/0001-formulas.md#19-plan-0066-batch-s5e-part-1-emulated-reduction-and-to-hit-leaves-run2026-11-16-sweep2-s5e)) `Unit+0xC4` bit 31's
-  meaning is not named by the finding. [I] (0x0057C0B6)
+  meaning is not named. [I] (0x0057C0B6)
 - A2. **P = 17 for a player hitting a player.** Plan 0044's two-client run logged 230 attack events between two
   hostile players, 70 melee hits with the left-button Attack and 160 Nova missiles, and every logged reduction percent
   was 17 (226 lines; 4 melee misses have none). Scope: the physical and lightning fields, a player attacker; the fire,

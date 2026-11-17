@@ -24,7 +24,7 @@ because the two runs of the real game were small.
 
 | Kind | What it is | Where it stops |
 |---|---|---|
-| **Seen in a game** | Two runs of the real game, three kept logs, with the server's calls logged and compared with a prediction. Seeds, amounts, cells and frames were read from the log. The first run was one fresh process, and two of its requests carried a field written by a debugger (named below; they stay readings). The second used a fresh process per session and forced nothing. | They cover a few cases: 17 potion uses by one Sorceress, 80 ground drops, 118 ground searches; each count is given where it is used. Only the expiry amounts and the 16 stored rates were checked against a table committed before the kept sessions. The rest compare the reading with the log case by case, on inputs the log gives: that checks the code against its reading, and says nothing of which inputs occur. |
+| **Seen in a game** | Two runs of the real game, three kept logs, with the server's calls logged and compared with a prediction. Seeds, amounts, cells and frames were read from the log. The first run was one fresh process, and two of its requests carried a field written by hand (named below; they stay readings). The second used a fresh process per session and forced nothing. | They cover a few cases: 17 potion uses by one Sorceress, 80 ground drops, 118 ground searches; each count is given where it is used. Only the expiry amounts and the 16 stored rates were checked against a table committed before the kept sessions. The rest compare the reading with the log case by case, on inputs the log gives: that checks the code against its reading, and says nothing of which inputs occur. |
 | **Emulated** | The game's own code run in an emulator on made-up inputs, and compared bit for bit with the project's model ([how we know](how-we-know.md)). It shows what the code does with the bytes it is given. | It is not a game. It says nothing about which inputs a game produces. Many runs stop at a named call into another function, and what is after that call is not covered. |
 | **Confirmed by a second reading** | The instructions read again with a second tool, or a scan of every call of or store into the thing named. The spec counts it confirmed. | It covers what the code says, as far as the scan reaches, not that a game reached it. |
 | **Read from the code** | The instructions were read, and nothing ran. | It can be wrong in ways no run has checked. |
@@ -252,7 +252,7 @@ Seen in a game: **`0x19` (item to the cursor) moved neither the player's nor the
 and the cursor drop `0x17` likewise (80 of 80). This bounds those two seeds around the handler only. By the reading,
 a stash page that the packet names needs no open stash for a **placed** item: the item is on the cursor, so the
 "busy" test passes; it needs a room in town. **One forced case ran** (in the first run): a placement to the stash page in town with no stash
-open was accepted, but only after the page field was written into the packet by a debugger, which the real client
+open was accepted, but only after the page field was written into the packet by hand, which the real client
 cannot send, so it stays a reading.
 
 ### Belts
@@ -282,7 +282,7 @@ flowchart TD
   text about the remastered game says the same, and a death with a belt holding items above the fourth box is among the
   [cases left open](#what-is-not-known-yet).
 - **One forced case:** a belt placement to box 12 of a 12-box belt stayed in box 12, after the box field was written into
-  the packet by a debugger. The stock route, and whether a smaller belt's overflow later takes the item, were not run.
+  the packet by hand. The stock route, and whether a smaller belt's overflow later takes the item, were not run.
 
 ### Stacks
 

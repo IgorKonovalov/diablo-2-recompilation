@@ -444,8 +444,7 @@ flowchart TD
 
 ### T. The tier AIs
 
-Each entry is the think function as pseudocode, with its draw order and its evidence. Every entry's block is the code reading of its
-catalogue finding, `[I]`, and its first boundary is `[C]` per [README § G](README.md#g-the-first-boundary). "The map" in a `[C]` line below is the map from the think's inputs to its first callee or return, each emulated case's boundary (ADR-0021), and nothing after it. Where a row is under
+Each entry is the think function as pseudocode, with its draw order and its evidence. Every entry's block is a code reading, `[I]`, and its first boundary is `[C]` per [README § G](README.md#g-the-first-boundary). "The map" in a `[C]` line below is the map from the think's inputs to its first callee or return, each emulated case's boundary (ADR-0021), and nothing after it. Where a row is under
 sentence H1, "H1 holds" means [the sentence](README.md#h-past-the-first-boundary) for the decisions and logs in that table, and no more.
 All 18 rows have no `init`; all have row kind 1 except 61 and 67 (kind 0), so the think runs only with a target but for those two.
 Only rows 29 and 61 have an `alt`. [C] (data:g_MonAiTable@0x0073CA18, [MonAI](../../../tables/MonAI.md), [run:2026-11-16-sweep2-s1f](../../../findings/ai/experiments.md#run2026-11-16-sweep2-s1f))

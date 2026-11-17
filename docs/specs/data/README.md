@@ -19,11 +19,11 @@ game is created. It draws no random numbers.
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [excel.md](excel.md) | MPQ precedence and file lookup, `.bin` vs `.txt`, record addressing, code and name links, the treasure-class index space, monster references, string-table keys (stored indices), cell values, the `.txt` compiler | reviewed |
-| [calc.md](calc.md) | the formula bytecode in `*code.bin`: encoding and opcodes, the `.txt` compiler, the evaluator `CALC_Eval`, the skills/missiles/items contexts, their function tables and variables | reviewed |
-| [strings.md](strings.md) | string tables at run time: load order and condition, index → text, key → index, hash probing, UTF-8 → UTF-16, the 5382 rule, fallbacks and fatal paths | reviewed |
+| File | Covers |
+|---|---|
+| [excel.md](excel.md) | MPQ precedence and file lookup, `.bin` vs `.txt`, record addressing, code and name links, the treasure-class index space, monster references, string-table keys (stored indices), cell values, the `.txt` compiler |
+| [calc.md](calc.md) | the formula bytecode in `*code.bin`: encoding and opcodes, the `.txt` compiler, the evaluator `CALC_Eval`, the skills/missiles/items contexts, their function tables and variables |
+| [strings.md](strings.md) | string tables at run time: load order and condition, index → text, key → index, hash probing, UTF-8 → UTF-16, the 5382 rule, fallbacks and fatal paths |
 
 Per-table record layouts are not specs. They live in [`docs/tables/`](../../tables/README.md), one doc per
 table, and the container formats in [`docs/formats/`](../../formats/) ([excel-bin](../../formats/excel-bin.md),

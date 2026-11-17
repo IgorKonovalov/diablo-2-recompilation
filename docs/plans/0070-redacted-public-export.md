@@ -2114,3 +2114,50 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `test_mon_sweep`, `test_chain`; gate green. **For the spec-writer:** place the two blocks as their Place lines say;
   row 9 keeps `seed: illustrative` and `values: computed` (every cell answer is the model's collision test on our toy
   grid); the pool caption names levels by the table's names, as the wiki's own pool paragraph does.
+- 2026-11-17, spec-writer, lane/x13a (export readiness part A, backlog entry items 1–4, 6). Reword only: no claim, tag
+  or anchor removed (front-matter counts unchanged, gate E6 green); evidence moved into the parenthetical after a tag or
+  into an evidence-only parenthetical, a `run:`/plan/ADR subject replaced by the fact ("the recorded run (run:…)",
+  "(plan 0044)"), a code-address call target named from `re/symbols.csv`, tool words moved out of the claim text (a
+  mid-sentence tool parenthetical's tool segment moved to a new first Evidence bullet "How the statements above were
+  read", per spec). Measured with `tools/export_build.py` on the cut-2 manifest plus the eleven pages (scratch manifest,
+  `workspace/export-x13a`), words dropped and pseudocode blocks kept, Open questions and Evidence counted:
+
+  | Spec | Words dropped before | after | Blocks kept before | after |
+  |---|---|---|---|---|
+  | items/vendors | 27.1 % | 10.3 % | 12/12 | 12/12 |
+  | items/inventory | 32.8 % | 13.8 % | 13/18 | 18/18 |
+  | items/use | 30.4 % | 17.7 % | 9/11 | 11/11 |
+  | combat/README | 33.7 % | 19.6 % | 8/8 | 8/8 |
+  | stats/README | 28.4 % | 13.7 % | 1/1 | 1/1 |
+  | stats/aggregate | 38.9 % | 9.0 % | 10/10 | 10/10 |
+  | stats/states | 34.9 % | 13.6 % | 9/9 | 9/9 |
+  | save/d2s | 36.5 % | 21.7 % | 30/36 | 35/36 |
+  | skills/catalogue | 30.0 % | 22.2 % | 3/21 | 21/21 |
+  | conformance/README | 17.1 % | 17.1 % | 1/1 | 1/1 |
+  | monsters/ai/catalogue | 21.4 % | 15.7 % | 131/148 | 131/148 |
+
+  (2) skills/catalogue: every code-address call target in the pseudocode named (73 lines, the `re/symbols.csv` name
+  without its `sub_` prefix, the address kept in the line's tail); the unnamed ones (the fatal path, a filter callback,
+  a static table, `0x0056EBE0`, `0x00570590`) described without a name, the address in the tail; the four in-block
+  constants of 6+ hex digits written as bits or decimal (`0x80000001`, `0x01020304`, `0x4020000`, `0x7FFFFFFF`); the
+  mermaid diagrams' addresses named. Still out of the cut: its worked-example table (28 rows, X6, not named in the
+  manifest) and its seed values (`0x280687C4`…, X1; an `allow-hex.txt` `section` line would admit them, as for the
+  other worked examples): both architect-owned. conformance/README stays out: it is a guide to running
+  `tools/golden.py` on our committed sample and the regenerated v1 set, neither of which the export ships; what a case
+  holds is the golden-trace format's, so an export-facing page would be that format doc's, not a reword of this one.
+  (3) monsters/ai/catalogue: the provenance sentence ("The block was checked against its anchored instructions (the
+  finding's prose agrees)" and its eight correction variants) left 21 rows, now "The block is read from the code"; the
+  rows, the dated corrections and the clone's added room test moved to a new first Evidence bullet; also the 23
+  `p` lines' "(think 0x…, the plan 0069 Phase 4 model)" and the 11 entry-call rows' "from 0x… only" reworded (the
+  addresses kept in their evidence parentheticals). Today 21 rows, not the entry's "about 90", carried the sentence.
+  (4) Residue: data/excel (the archivist queue), combat/delivery and combat/README (the P1.3 review), items/economy
+  (the three "architect review" notes, moved to Evidence), monsters/stats (the ruling, its anchor kept, the ruling in
+  Evidence), path/README H2, hirelings/README, combat/reductions, sim/frame, skills/dispatch, monsters/pool and
+  drlg/outdoor ("not in a finding" → "not read yet", 6), monsters/ai/machinery and quirks/README (the backlog route,
+  "the finding's"), items/inventory's "the reverser's raise"; the Status column of the nine subsystem overview READMEs'
+  *Files* tables removed (a spec's status is its front matter and the research map). (6) wiki/inventory's legend row
+  and two forced cases ("a field written by hand"), wiki/game-data's "watched the game from before its start-up code".
+  Not done here: items (5) and (7) and the part-B specs. Doubts for the review: the "the recorded run (run:…)"
+  substitution reads stiffly in a few places ("the 325 of the recorded run and the 40 of the recorded run"); vendors'
+  Baal-chain item and d2s's "the other callers" and summary-lines sentences still drop (`broken`, 82, 80 and 29 words);
+  monsters/ai/catalogue R142a still says "the finding's". Gate green.

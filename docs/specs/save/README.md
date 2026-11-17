@@ -21,9 +21,9 @@ fixes the map seed of its next game. This page is the map; the algorithm is in [
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [d2s.md](d2s.md) | write and read order, checksum, header field sources and targets, `gf` stats, skills, item lists, the item bitstream as a function of the runtime item, property-list framing | reviewed |
+| File | Covers |
+|---|---|
+| [d2s.md](d2s.md) | write and read order, checksum, header field sources and targets, `gf` stats, skills, item lists, the item bitstream as a function of the runtime item, property-list framing |
 
 Not covered here: what each item property means (`items/properties`), the runeword and affix id mappings
 (`items/sockets-runewords`, `items/affixes`), and how the saved values were rolled (`items/*`). Network

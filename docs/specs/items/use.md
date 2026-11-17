@@ -70,7 +70,7 @@ columns are bytecode ([data/calc](../data/calc.md)); `eval` below is `ITEMS_Eval
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | `g_ItemUseFns` | 31 `{test, use}` pairs; `use` in entries 1..11 only, `test` in entry 1 only | data:g_ItemUseFns@0x00741790, [Misc](../../tables/Misc.md#the-use-dispatch-pspell-selects-a-g_itemusefns-entry) | [C] |
-| exempt opcodes | `0x14`, `0x15`, `0x3C`, `0x43`, `0x66` | 0x0054D7DC, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan | [C] (ADR-0021, ADR-0029 (c)): they reach the import's call |
+| exempt opcodes | `0x14`, `0x15`, `0x3C`, `0x43`, `0x66` | 0x0054D7DC, run:2026-11-04-ground-emu, run:2026-11-04-lock-scan | [C] (ADR-0021, ADR-0029 § c): they reach the import's call |
 | refused state, modes | state 54; modes 0 and `0x11` | fn:sub_0054D750_SrvPacketDispatch@0x0054D750, run:2026-11-04-ground-emu | [C] (ADR-0015) |
 | request position reach | 50 per axis, as `u16`: refused when `abs(pos − u16(v)) > 50`, signed, with a 32-bit `neg`, so a difference of −2³¹ passes; `pos` is the static path's dwords for unit types 2, 4, 5, else the dynamic path's `u16`, 0 with no path; the 50 is the callers' `EBX` | fn:sub_00548EF0_PktPosFar@0x00548EF0, 0x0054B222, 0x0054B602 | [C] (ADR-0021) (family `pos`, 1 500 cases, run:2026-11-16-sweep2-s4e-emu, [items/0013 § 12](../../findings/items/0013-grids-belts-stacks.md#12-plan-0066-batch-s4e-part-3-the-request-handlers-and-the-pickup-under-emulation-run2026-11-16-sweep2-s4e-emu)) |
 
@@ -80,14 +80,14 @@ columns are bytecode ([data/calc](../data/calc.md)); `eval` below is `ITEMS_Eval
 
 The evidence for one statement can be of four kinds, and each is named at the statement.
 
-- **`[C]` (ADR-0021)**, run:2026-11-03-use-emu (7 320 cases, 11 families, 0 mismatches, 0 stops): the code's map from declared
+- **`[C]` (ADR-0021)**, the recorded run (run:2026-11-03-use-emu) (7 320 cases, 11 families, 0 mismatches, 0 stops): the code's map from declared
   scratch bytes up to a named callee's entry. **The callee and everything after it are not covered**, "after, `[I]`". Not a
   run of the game, and not what the game stores at those offsets or when the code runs. A family's cases end at the
   entry's first callee, so 0 mismatches holds that far. [C] (fn:sub_005BF240_ItemUse@0x005BF240, run:2026-11-03-use-emu)
-- **`[C]` (ADR-0021, ADR-0029 (c))**, run:2026-11-04-lock-scan: the gate's passes stop at the call instruction of an import,
+- **`[C]` (ADR-0021, ADR-0029 § c)**, the recorded run (run:2026-11-04-lock-scan): the gate's passes stop at the call instruction of an import,
   and nothing after that call is covered. [C] (0x0054D7DC, run:2026-11-04-lock-scan)
-- **`[C]` live**, run:2026-11-04-inventory-2: 17 stock potion uses by one Sorceress in one process, one seed chain, no forced
-  state. It rests on two different grounds, per the `lane/p60b` check ([items/0016 § Mismatches](../../findings/items/0016-harness-inventory-run2.md#mismatches-and-what-failed-at-the-first-check)): the **stored rate** of the 16 fresh-list uses
+- **`[C]` live**, the recorded run (run:2026-11-04-inventory-2): 17 stock potion uses by one Sorceress in one process, one seed chain, no forced
+  state. It rests on two different grounds: the **stored rate** of the 16 fresh-list uses
   on the **a-priori table** committed before the kept sessions; the **two draws, their seeds and the doubled amount** on the
   model evaluated **per case on the log's inputs**, so that check is of the code against its reading on inputs the log
   gives, not blind to them, and it says nothing of which inputs occur. [C] (run:2026-11-04-inventory-2, 0x005BE525, 0x005BE6CF)
@@ -112,7 +112,7 @@ flowchart TD
 ```
 
 ```
-A1. Drain (queue 1, FIFO, all clients and games):                    [C] queue 1 popped until −1, each message to SrvProcessClientMessage, its one call of SrvPacketDispatch, the return read by neither frame (objdump and the raw scan, 0x0052D02C–0x0052D034, 0x0053F459, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)); [I] FIFO, all clients and games, the lock (fn:sub_006BEAD0_NetQueuePop@0x006BEAD0, fn:sub_0053F3D0_SrvProcessClientMessage@0x0053F3D0, 0x0053F45E)
+A1. Drain (queue 1, FIFO, all clients and games):                    [C] queue 1 popped until −1, each message to SrvProcessClientMessage, its one call of SrvPacketDispatch, the return read by neither frame (0x0052D02C–0x0052D034, 0x0053F459, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)); [I] FIFO, all clients and games, the lock (fn:sub_006BEAD0_NetQueuePop@0x006BEAD0, fn:sub_0053F3D0_SrvProcessClientMessage@0x0053F3D0, 0x0053F45E)
       while a packet pops:
         lock the client's game
         r: i32 ← SrvPacketDispatch(packet)
@@ -120,10 +120,10 @@ A1. Drain (queue 1, FIFO, all clients and games):                    [C] queue 1
 
 A2. SrvPacketDispatch(op: u8, …) → i32:
       if op = 0 or op > 0x66 or row(op) is empty: return 3           [C] (ADR-0015) (family dispatch, fn:sub_0054D750_SrvPacketDispatch@0x0054D750, run:2026-11-04-ground-emu)
-      if op ∈ {0x14, 0x15, 0x3C, 0x43, 0x66}: pass                   [C] (ADR-0021, ADR-0029 (c)) (0x0054D7DC, run:2026-11-04-lock-scan)
+      if op ∈ {0x14, 0x15, 0x3C, 0x43, 0x66}: pass                   [C] (ADR-0021, ADR-0029 § c) (0x0054D7DC, run:2026-11-04-lock-scan)
       else if op = 0x41: pass if mode = 0x11, else return 0          [C] (ADR-0015) for the return; the pass as the line above, one case, state 0 (0x0054D7DC, run:2026-11-04-ground-emu)
       else if the player has state 54 or mode ∈ {0, 0x11}: return 0  [C] (ADR-0015) (fn:sub_0057EEC0_PlayerModeAllowed@0x0057EEC0, run:2026-11-04-ground-emu)
-      else: pass                                                     [C] (ADR-0021, ADR-0029 (c)) (0x0054D7DC, run:2026-11-04-lock-scan)
+      else: pass                                                     [C] (ADR-0021, ADR-0029 § c) (0x0054D7DC, run:2026-11-04-lock-scan)
       pass: call IsBadCodePtr(row(op).fn)                            ; the emulated pass stops at this call
       if it returned non-zero: fatal                                 [I] (0x0054D7E6)
       return row(op).fn(…)                                           [C] (0x0054D818; run:2026-11-04-inventory-2: 178 `PKT` lines entered at their opcode's row of g_SrvPacketTable, return address 0x0054D81A, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
@@ -134,7 +134,7 @@ A2. SrvPacketDispatch(op: u8, …) → i32:
   too. No item request is reordered, batched or rate-limited. Scope: `SrvProcessClientMessage`, `SrvPacketDispatch` and
   `PlayerModeAllowed`'s bodies, not each handler's whole closure. (fn:sub_0054D750_SrvPacketDispatch@0x0054D750,
   fn:sub_0053F3D0_SrvProcessClientMessage@0x0053F3D0, [items/0014 § 4](../../findings/items/0014-ground-items.md#4-one-drain))
-- A1. [C] **A "refusal" return (2, 3) has no effect beyond the handler's own**: neither `SrvProcessClientMessage` nor the drain loop reads the dispatch's return (objdump and the raw scan). So in this spec a handler "returns 3" with
+- A1. [C] **A "refusal" return (2, 3) has no effect beyond the handler's own**: neither `SrvProcessClientMessage` nor the drain loop reads the dispatch's return. So in this spec a handler "returns 3" with
   nothing further, and whatever the handler already did stands. (0x0053F459, 0x0053F45E, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 - A1. [I] **What leaves the drain** is a pickup out of reach: it starts a walk, and the pickup runs in a later frame's mode
   pass ([items/inventory § I](inventory.md#i-pickup)). The other item handlers of §§ B and [items/inventory § D](inventory.md#d-the-requests),
@@ -142,15 +142,15 @@ A2. SrvPacketDispatch(op: u8, …) → i32:
   followed. (fn:sub_00548A50_InteractWalkTo@0x00548A50, 0x00580E73, 0x00553380)
 - A2. [C] (ADR-0015) The refusals, 428 cases over each opcode 0..`0x68`, `0x80`, `0xFF` × mode 1, 0, `0x11` and state 54 at mode 6: control
   `nogate` fails 258, `noexempt` 15. (fn:sub_0054D750_SrvPacketDispatch@0x0054D750, run:2026-11-04-ground-emu)
-- A2. [C] (ADR-0021, ADR-0029 (c)) **The passes reach the `IsBadCodePtr` call with the opcode's table row pushed**, 106 of 106; the next
+- A2. [C] (ADR-0021, ADR-0029 § c) **The passes reach the `IsBadCodePtr` call with the opcode's table row pushed**, 106 of 106; the next
   row's word matches 0, and the 106 hold 91 distinct words. `0x41` in mode `0x11` is one case, at state 0. **After that call, all
   `[I]`: the import's result, the fatal branch, the handler's call.** The import (slot `0x006CC34C`, `KERNEL32!IsBadCodePtr`) is a
   stop at its call instruction: no value is given and nothing after it runs. What it does is not evidenced.
   (0x0054D7DC, run:2026-11-04-lock-scan, run:2026-11-04-ground-emu, data:g_SrvPacketTable@0x006E0D18)
-- A2. [I] Not reached: `Game+0x1DC4` above 1, where the gate first overwrites that word with `0x00410A80`'s return.
+- A2. [I] Not reached: `Game+0x1DC4` above 1, where the gate first overwrites that word with a callee's return (`0x00410A80`).
   (0x0054D7C0, 0x0054D7CE)
 - A2. [C] The gate draws nothing on this path: `PlayerModeAllowed(1, 0, 0)` returns before its RNG line because its second
-  argument is 0: objdump reads the pushes 0, 0, 1 and the test at 0x0057EEFB jumping to 0x0057EFF2, from which no draw is reachable; the
+  argument is 0 (0x0057EEFB, 0x0057EFF2), and from there no draw is reachable; the
   player's seed is the same at every `PKR` and the next `PKT`, 175 of 175, which agrees. (0x0057EEFB, 0x0057EF75, run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 
 ### B. The use requests
@@ -357,7 +357,7 @@ F1h. Returns 1 when any slot reached F1e's add or passed F1f's allocation, len +
       ; an amount the class scale, the doubling or the shift takes to ≤ 0 as i32 counts as ≤ 0
       ; so every amount ≤ 0 returns 0: C2's clear and message 0x7C, and D1 uses nothing up. A null record or a bad state also returns 0 (0x005BE41C)
 
-F2. A fresh list:                                                    [C] for a player user: 16 fresh lists with words 2, end, user type 0 at 0x005BE602 (UAL), then STATE_Set, the callback and LinkToUnit read by objdump (run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)); [I] the non-player branch (0x005BE5E8–0x005BE673)
+F2. A fresh list:                                                    [C] for a player user: 16 fresh lists with words 2, end, user type 0 at 0x005BE602 (UAL), then STATE_Set, the callback and LinkToUnit (run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)); [I] the non-player branch (0x005BE5E8–0x005BE673)
       STATLIST_Alloc(game+0x1C, 2, end, user type, user id);  its state;  STATE_Set(user, state, 1)
       a non-player user: UNIT_CancelEvents(3, 0), event 3 at frame + 1
       the remove callback 0x0056E900;  STATLIST_LinkToUnit(user, list, 1)
@@ -402,7 +402,7 @@ Step notes:
 - F3, F4. [C] 800 cases: all 7 classes, other classes and types, odd and negative amounts, a null unit. In a game only the Sorceress's factors ran (`v` life, `2v` mana). (fn:sub_0062A5D0_PotionLifeMul@0x0062A5D0, fn:sub_0062A620_PotionManaMul@0x0062A620, run:2026-11-03-use-emu)
 - F. [I] **Stock totals**, in stored units (`calc1 << 8`, the class factor): `hp1` 30 gives 7 680 for a Sorceress, 11 520 for an Amazon, 15 360 for a Barbarian, i.e. 30, 45 or 60 life. The stored rate truncates: `hp3` (100, `len` 171) gives 25 600 ÷ 171 = 149 per frame, 25 479 over the 171 frames, 99 life and a remainder. Stock `ValShift` of stats 26 and 74 is blank, so 0. (tools/item_inventory.py, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0)
 - F. [C] (ADR-0021) **Kind 4** (`ItemUseStatPlain`) is this loop without the class scale and the draws: 800 cases with the seed compared, no stock row. The controls that separate the draws are `stat3`'s, and `stat4` holds no golem case. (fn:sub_005BE7B0_ItemUseStatPlain@0x005BE7B0, run:2026-11-03-use-emu)
-- F. [C] **Healing and mana potions do not run the group clear**: kind 3 has no call of `STATE_GroupClear` in its body or anywhere under it (objdump, 2 003 functions), and `GroupClear`'s 9 callers by the raw scan hold none in kind 3 ([stats/states B3](../stats/states.md)). How the stored rate reaches life is [stats/states E2](../stats/states.md). (0x005BE3F0, 0x005BEE15, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
+- F. [C] **Healing and mana potions do not run the group clear**: kind 3 has no call of `STATE_GroupClear` in its body or anywhere under it (2 003 functions), and `GroupClear`'s 9 callers by the raw scan hold none in kind 3 ([stats/states B3](../stats/states.md)). How the stored rate reaches life is [stats/states E2](../stats/states.md). (0x005BE3F0, 0x005BEE15, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 
 ### G. Kind 5: rejuvenation
 
@@ -493,7 +493,7 @@ H6. Keys have no use entry: KeyConsume(player):                      [C] (ADR-00
 ### I. What the columns gate
 
 - [I] **`useable` (`+0x11D`) is a required test of both use requests, `0x20` and `0x26`**, and it does not select a kind. Its absence sets the refuse flag, so the handler returns 3. A `useable` row with no `pSpell` (`hpo`, `rps`, …) passes the test and does nothing: `ItemUse` returns 0, and D1 returns 0 with nothing used unless the code is one of D2's four. (fn:sub_00628C20_ItemIsUseable@0x00628C20, 0x0055E212, 0x00562433)
-- [C] (data) The counts behind it: the getter has 5 calls, 2 of them those requests', and `useable` has 10 `u8` matches. The gate itself stays the `[I]` above: no family of run:2026-11-03-use-emu enters either handler. (`static.txt` of run:2026-11-03-use-emu, 0x0055E212, 0x00562433, [the a69 route](../../backlog/archive/2026-11-04-architect-reverser-a69-review-finding-notes.md))
+- [C] (data) The counts behind it: the getter has 5 calls, 2 of them those requests', and `useable` has 10 `u8` matches. The gate itself stays the `[I]` above: no family of the recorded run (run:2026-11-03-use-emu) enters either handler. (`static.txt` of run:2026-11-03-use-emu, 0x0055E212, 0x00562433, [the a69 route](../../backlog/archive/2026-11-04-architect-reverser-a69-review-finding-notes.md))
 - [C] **`belt` (`+0x130`), `durwarning` and `qntwarning` gate no use**: the raw scan finds `ItemBeltByte` at 3 sites (the client name builder, `BeltOverflow`, `BeltFreeSlot`), `ItemDurWarning` at none, `ItemQntWarning` at 1 (client), and no abs32 pointer to any of them, so no table holds them. `autobelt` gates only placement ([items/inventory § F](inventory.md#f-belts)). (fn:sub_00621ED0_ItemBeltByte@0x00621ED0, fn:sub_006297A0_ItemDurWarning@0x006297A0, fn:sub_00629800_ItemQntWarning@0x00629800, [items/0012 § 7](../../findings/items/0012-use-inventory.md#7-what-the-columns-gate), [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h))
 - [C] `sub_0063C830_BeltBoxQuery` has one caller, `0x004979AD` in the client's item name builder, and no abs32 reference ([items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)). [I] It tests `useable` and `belt` both 1 with size 1 × 1, so a client rule on this reading: out of scope. (fn:sub_0063C830_BeltBoxQuery@0x0063C830)
 
@@ -506,7 +506,7 @@ H6. Keys have no use entry: KeyConsume(player):                      [C] (ADR-00
 | Kinds 2, 6, 9 | 0 in the entry's own body | | [C] direct calls: objdump and the raw scan, § E (fn:sub_005BEDA0_ItemUseTimedState@0x005BEDA0, `rcg-summary.txt`, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) |
 | The gate | 0 on this path | | [C] as A2 (0x0057EEFB, 0x0057EF75, run:2026-11-04-inventory-2, [items/experiments § S4a/S4b](../../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h)) |
 
-- [I] **No bound past the boundaries.** The counts hold only up to each entry's first callee, except the 17 live uses of § F, whose seed chain shows no other draw on the user's seed. Under `0x0055E000`, `0x0055E0D0`, `0x0055F140`, `0x00561E70`, `0x00562590` and the entries 1, 2, 5, 6, 7, 9 lie 2 097..2 115 functions with 118 holding a seed step (119 under entry 3: its own), indirect calls unfollowed, the steps at depth 5 or more, among them the room population and level creation, which no reading here connects to a use. The narrow closures: test `0x005BE130` 559 functions and 0 with a step, entry 8 `0x005BF060` 574 and 0, `0x0055EDC0` 636 and 0. (`rcg-summary.txt` of run:2026-11-03-use-emu, fn:sub_005BF240_ItemUse@0x005BF240)
+- [I] **No bound past the boundaries.** The counts hold only up to each entry's first callee, except the 17 live uses of § F, whose seed chain shows no other draw on the user's seed. Under the five use functions (`0x0055E000`, `0x0055E0D0`, `0x0055F140`, `0x00561E70`, `0x00562590`) and the entries 1, 2, 5, 6, 7, 9 lie 2 097..2 115 functions with 118 holding a seed step (119 under entry 3: its own), indirect calls unfollowed, the steps at depth 5 or more, among them the room population and level creation, which no reading here connects to a use. The narrow closures: test `0x005BE130` 559 functions and 0 with a step, entry 8 `0x005BF060` 574 and 0, `0x0055EDC0` 636 and 0. (`rcg-summary.txt` of run:2026-11-03-use-emu, fn:sub_005BF240_ItemUse@0x005BF240)
 
 ## Outputs
 
@@ -514,7 +514,7 @@ The user's stats or a stat list of a state with its end and event 12; the user's
 
 ## Worked example
 
-Two stock `hp1` uses of a Sorceress at vitality 165, frames 111 and 909 of run:2026-11-04-inventory-2 (session `pot`; committed in `docs/findings/items/0016-predictions-main2-r2.pred`, first and fourth rows, and reproduced with `tools/item_inventory.py`'s `Unit.range`). [C] (run:2026-11-04-inventory-2, fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0)
+Two stock `hp1` uses of a Sorceress at vitality 165, frames 111 and 909 of the recorded run (run:2026-11-04-inventory-2) (session `pot`). [C] (run:2026-11-04-inventory-2; committed in `docs/findings/items/0016-predictions-main2-r2.pred`, first and fourth rows, and reproduced with `Unit.range` of `tools/item_inventory.py`; fn:sub_005BE3F0_ItemUsePotion@0x005BE3F0)
 
 | | frame 111 | frame 909 |
 |---|---|---|
@@ -538,6 +538,7 @@ Two stock `hp1` uses of a Sorceress at vitality 165, frames 111 and 909 of run:2
 
 ## Evidence
 
+- How the statements above were read, by statement: the two grounds of the live uses, the `lane/p60b` check ([items/0016 § Mismatches](../../findings/items/0016-harness-inventory-run2.md#mismatches-and-what-failed-at-the-first-check)); A1: objdump and the raw scan; the queue drain of the pseudocode's A1: objdump and the raw scan; F2's fresh list after STATE_Set: read by objdump; A2: objdump reads the pushes 0, 0, 1 and the test at 0x0057EEFB jumping to 0x0057EFF2; F: objdump.
 - [items/0012](../../findings/items/0012-use-inventory.md): requests, dispatch, kinds, columns, draws.
 - [items/0014](../../findings/items/0014-ground-items.md) §§ Answer, 4: the gate and the drain; head: the imports of ADR-0029.
 - [items/0016](../../findings/items/0016-harness-inventory-run2.md): the live potion uses, and the ground of each live claim.

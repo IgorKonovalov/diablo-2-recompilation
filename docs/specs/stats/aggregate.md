@@ -122,8 +122,8 @@ flowchart TD
 - A2. [C] A plain list (`STATLIST_Alloc`: 0x3C bytes, zeroed) holds the unit it is linked to (`+0x04`), the type and
   guid of the unit that made it (`+0x08`, `+0x0C`: the allocator's fourth and fifth arguments; the set code passes the
   unit's type and guid), flags (`+0x10`), state (`+0x14`), end frame (`+0x18`), skill and skill level (`+0x1C`,
-  `+0x20`), its own entries (`+0x24`) and the parent list (`+0x34`): the logged fields at 5 054 apply returns, `+0x08`
-  equal to the source type, and the stores read with objdump. Its remove callback (`+0x38`) is written by
+  `+0x20`), its own entries (`+0x24`) and the parent list (`+0x34`) (the logged fields at 5 054 apply returns, `+0x08`
+  equal to the source type). Its remove callback (`+0x38`) is written by
   `STATLIST_SetRemoveCallback` (39 rel32 callers) and called by `STATLIST_Unlink` when it is non-zero, with `EDX` the
   list's state and the list pushed (0x00626BD2..0x00626BE7). An extended list (`UnitStatListCreate`: 0x64 bytes, flag
   bit 31, stored at the unit's `+0x5C`) holds its unit at `+0x44` and at `+0x58` one block of
@@ -139,7 +139,7 @@ flowchart TD
   exceeds 8 the array shrinks by 4 entries through the pool); a missing key is inserted. `SetStatEx` replaces an entry
   and removes it when the new value is 0 (198 entries emptied, absent from the next tree; no zero own entry).
   (fn:STATLIST_FindIndex@0x00624B90, fn:STATLIST_AddStat@0x00627030, fn:STATLIST_RemoveEntry@0x00624D10,
-  fn:STATLIST_SetStatEx@0x006270B0, run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i); `AddStat` under ADR-0021, 2 500 cases,
+  fn:STATLIST_SetStatEx@0x006270B0, run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i); `AddStat` emulated (ADR-0021), 2 500 cases,
   run:2026-11-16-sweep2-s4e-emu, [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu))
   [I] Both propagate the difference (§ C): `AddStat`'s parent propagation was not run under emulation. On a player's
   own list a changed key is recorded for the client when the stat has ISC `+0x05` bit 4 (`Saved`) and is not 6, 8,
@@ -181,7 +181,7 @@ B3. UNIT_ToggleStatListByState(unit, state, off):                      [C] (fn:U
   `0x40000000`, no damage calls `STATLIST_DisableDamageStats` when it has not (each propagates the list's
   damage-related entries), and the other two combinations return; otherwise it is linked as B1 and `+0x04` ← the unit.
   (fn:sub_00627910_StatListLinkOwner@0x00627910, fn:STATLIST_DisableDamageStats@0x00627A40,
-  fn:STATLIST_EnableDamageStats@0x00627860, 0x00627956, 0x0062796D; objdump beside the Ghidra reading, [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu))
+  fn:STATLIST_EnableDamageStats@0x00627860, 0x00627956, 0x0062796D; [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu))
 - B1, B2. [C] Linking without damage (the dual-wield second weapon, 32 links) and the `0x20000000` re-evaluation on
   link and unlink were among the predicted events. (run:2026-10-17-stats)
 
@@ -323,7 +323,7 @@ Step notes:
   op 2's gates and adds `MulDiv(b0, (p × b) >> opParam, 100)` (1 347 terms); ops 10 and 12 (and any op above 13) go
   to the next entry (670, 643); no stock row has op 3, 10 or 12 (the 359 rows' `op` cells). (0x0062632D–0x0062639B,
   0x00626658, fn:sub_00626200_StatEvaluate@0x00626200, run:2026-11-16-sweep2-s4e-emu, [stats/0001 § 11](../../findings/stats/0001-aggregate.md#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu)) Ops 6 and 7 as code are
-  run:2026-10-27-p51s-emu's ([stats/0001 § 10](../../findings/stats/0001-aggregate.md#10-op-6-and-7-under-emulation-run2026-10-27-p51s-emu-plan-0051-phase-1b)). [C] Ops 6 and 7 appear only on the unspawnable *of Dawn* and *of Sunlight*: the 36
+  emulated in a run of their own (run:2026-10-27-p51s-emu, [stats/0001 § 10](../../findings/stats/0001-aggregate.md#10-op-6-and-7-under-emulation-run2026-10-27-p51s-emu-plan-0051-phase-1b)). [C] Ops 6 and 7 appear only on the unspawnable *of Dawn* and *of Sunlight*: the 36
   `…/time` property codes, the 36 stats with op 6 or 7, are named in every property-code column of the affix, unique,
   set, runeword, gem and cube tables by those two `magicsuffix` rows only (`ac/time`, `spawnable` 0).
   (fn:STAT_ByTimeValue@0x0065CA30, tbl:ItemStatCost.txt:op, tbl:MagicSuffix.txt:spawnable,
@@ -342,7 +342,7 @@ Step notes:
   to the base maxima by the stat-point code: `PLAYER_SpendStatPoint` needs stat 4 above 0; energy adds
   `ManaPerMagic × n << 6` to mana (when n > 0) and max mana and clamps mana to it, vitality adds
   `LifePerVitality × n << 6` to max life and (n > 0) life, clamps, then `StaminaPerVitality` the same for stamina,
-  with n = 1 (objdump beside the Ghidra reading, [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu)). (0x00626511–0x00626606, fn:PLAYER_SpendStatPoint@0x00570D60,
+  with n = 1 ([stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu)). (0x00626511–0x00626606, fn:PLAYER_SpendStatPoint@0x00570D60,
   fn:CHARSTATS_GetRecord@0x004833E0, 0x00570ADB, 0x00570BC3, 0x00570C1A, tbl:CharStats.txt:ManaPerMagic)
 - D1. [C] **`ByTime(p)` (op 6/7).** The source is `Encode` 4: bits 0–1 a period `q`, bits 2–11 `lo + 256`, bits
   12–21 `hi + 256`. With the phase `x` from `sub_0061C100_ActTimeOfDay`: `a ← |x − 90q|`, rounded to a multiple of 15
@@ -382,7 +382,7 @@ Step notes:
   above `MinAccr` and below `MinAccr << ValShift` is returned as it is: `maxhp` (`MinAccr` 1, `ValShift` 8) keeps
   1..255 and gives 256 for 0 or less. An absent entry returns 0, unfloored; the stored entries are not clamped. The
   ops' base reads and the take test of ops 2/3 pass a NULL record, so they read unfloored. 4 000 emulated cases, 211
-  floored; the threshold `MinAccr << ValShift` as a control fails 79. No read of run:2026-10-17-stats reached the
+  floored; the threshold `MinAccr << ValShift` as a control fails 79. No read of the recorded run (run:2026-10-17-stats) reached the
   floor. (fn:sub_00624F60_StatListGetValue@0x00624F60, fn:sub_00624ED0_StatListGetBaseValue@0x00624ED0,
   0x00624FC5–0x00624FD1, 0x00624F25–0x00624F31, tbl:ItemStatCost.txt:fMin, tbl:ItemStatCost.txt:MinAccr,
   run:2026-11-16-sweep2-s4e-emu, [stats/0001 § 11](../../findings/stats/0001-aggregate.md#11-plan-0066-batch-s4e-part-1-the-stats-family-under-emulation-run2026-11-16-sweep2-s4e-emu))
@@ -420,10 +420,10 @@ Step notes:
   (fn:sub_0055B800_MonStatCallback@0x0055B800)
 - G3. [C] The callback's other cases: keys 7..204 map through the index bytes at 0x0055BE04 to 11 cases: 7, 9, 11,
   83, {97, 107}, 98, {126, 127}, 151, 188, 204, the other keys to the return; so 107 runs 97's code and 126 runs
-  127's (the unit alone passed to 0x0056DFA0). Zero-crossing writes in the logs: 98 `state` sets or clears that state
+  127's (only the unit is passed; 0x0056DFA0). Zero-crossing writes in the logs: 98 `state` sets or clears that state
   with the group clear ([states § D](states.md#d-the-group-clear); 360), 83, 97, 127 and 188 refresh the passives
   (`SKILLS_RefreshPassive`, 4 158), a write of 204 links and unlinks (4). (fn:sub_0055B800_MonStatCallback@0x0055B800,
-  run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i); the switch bytes with objdump, [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu))
+  run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i); [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu))
   [C] Before the switch the callback registers a stat's item events: with ItemStatCost `itemevent1` (`+0x48`, s16)
   above 0 and its fourth argument non-zero it calls `AddStatEvent` with `itemevent1`/`itemeventfunc1` (`+0x4C`) and,
   when `itemevent2` (`+0x4A`) is above 0, with `itemevent2`/`itemeventfunc2` (`+0x4E`), unless 0x005C0BE0 finds a node
@@ -431,7 +431,7 @@ Step notes:
   0x005C0B50, which marks a matching node in use (word `+0x02` bit 0) with bit 1 and unlinks and frees the first one
   not in use. `AddStatEvent` returns 0 for a `func` above 0x31 or a null `g_StatEventFuncs` entry.
   (fn:sub_0056E740_AddStatEvent@0x0056E740, data:g_StatEventFuncs@0x007325B0, 0x0055B867, 0x0055B8DE, 0x005C0BE0,
-  0x005C0B50, objdump [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu); the three helpers under ADR-0015 and ADR-0021, 3 000 cases, run:2026-11-16-sweep2-s4e-emu,
+  0x005C0B50, the three helpers emulated (ADR-0015 and ADR-0021), 3 000 cases, run:2026-11-16-sweep2-s4e-emu,
   [stats/0001 § 13](../../findings/stats/0001-aggregate.md#13-plan-0066-batch-s4e-part-5e-the-stat-event-list-under-emulation-run2026-11-16-sweep2-s4e-emu))
   [I] What the fourth argument means (the callback is entered with it, not with a crossing of 0, so "registers when
   the value goes to or from 0" is a reading); 107 acts only for a player whose class is the skill row's `+0xC`
@@ -440,7 +440,7 @@ Step notes:
   what the cases of 83, 97, 107, 126, 127, 188 and 204 do beyond the logged passive refreshes and links.
   (tbl:ItemStatCost.txt:itemevent1)
 - G3. [C] The event registration reads `itemevent1/2` as `s16` and registers only an id `> 0`: a blank cell (−1) and
-  id 0 (`hitbymissile`) register nothing (objdump beside the Ghidra reading, [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu)). Which ids are ever dispatched is
+  id 0 (`hitbymissile`) register nothing ([stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu)). Which ids are ever dispatched is
   [skills/dispatch § K](../skills/dispatch.md#k-stat-event-handlers). (fn:sub_0055B800_MonStatCallback@0x0055B800,
   0x0055B867, 0x0055B8A3, fn:sub_0056E740_AddStatEvent@0x0056E740,
   [data/0006 § 2.3](../../findings/data/0006-loaded-tables-and-bundles.md#23-events-event-id-012-and-what-is-dispatched))
@@ -490,7 +490,7 @@ Step notes:
 - H3. [I] The `item_req_percent` term changed no outcome in its 814 checks (a reading without it predicts the same),
   and the level test, the class test (item class 7 any class, a player its own class, a monster only class-4 items
   when `sub_00463900_MonClassCheck` gives 560 or 561) and the type-18 test decided none. The required level and the
-  strength and dexterity values the check reads through `0x0062B450` (called only with a non-zero third argument)
+  strength and dexterity values the check reads (`0x0062B450`, called only with a non-zero third argument)
   were value oracles of the run. (0x0062EB63–0x0062EBBE, fn:sub_00463900_MonClassCheck@0x00463900)
 - H3. [C] Under emulation, on the path `ItemAutoEquipSlot` takes (a third argument of 0, so neither `0x00625820` nor
   `0x0062B450` is called) and the level requirement's quality-default path, each of these tests decided cases:
@@ -508,7 +508,7 @@ Step notes:
 - H4. [C] **The refresh also runs with no player action, from the act clock.** `sub_0052D7B0_ActsClockPass` walks
   the five act slots and, for a slot whose `sub_0061C040_ActClockTick` returns non-zero, calls
   `sub_0055FDE0_PlayerEquipRefresh(…, 1)` for each client's player, which calls `EquipReqRefresh` with 0
-  (0x0052D7D2, 0x0052D822, 0x0055FDE8; objdump beside frame/0001's reading, [stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). The commonest gap between two
+  (0x0052D7D2, 0x0052D822, 0x0055FDE8; [stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). The commonest gap between two
   refreshes is 136 frames in 22 of the 28 kept logs; in six s1017 logs it is 1 (bursts after actions)
   (run:2026-10-17-stats, run:2026-10-20-shortfalls, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)). (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0,
   fn:sub_0052D7B0_ActsClockPass@0x0052D7B0, fn:sub_0055FDE0_PlayerEquipRefresh@0x0055FDE0) [I] That the idle 136 is
@@ -520,7 +520,7 @@ Step notes:
 - H6. [C] Sockets change only the item's own lists ([items/properties § F](../items/properties.md#f-ethereal-and-sockets)),
   which reach the wearer through the item's cache (A4): the fillers' lists hang under their item's list (8 124 nodes),
   none under the unit list (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)). `ITEMS_MakeEthereal` sets flag `0x400000` on its argument
-  and writes that argument's stats only (21..24, 159, 160 for a type-45 base, else 31; objdump beside items/0006,
+  and writes that argument's stats only (21..24, 159, 160 for a type-45 base, else 31;
   [stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). (fn:STATLIST_LinkToUnit@0x00626E10, fn:ITEMS_MakeEthereal@0x0065E4D0) [I] That ethereal touches only the
   item's own lists across the flag's other users (19 `push 0x400000` in 12 functions, not read).
 - H7. [C] **An item's per-level (op 4/5) value is not refreshed when the wearer levels up.** After the Paladin's
@@ -541,7 +541,7 @@ Step notes:
   and 418; an Assassin's second weapon was not reached. (fn:UNIT_CanDualWield@0x006235A0)
 - I3. [C] The weapon switch (`sub_005616A0_PlayerSwapWeapons`, whose one caller is `sub_0054CE70_SwapWeaponsReq`,
   0x0054CEB0) detaches each occupied hand through H2 (0x005617C4, 0x005617D8, each behind its own test) and attaches
-  the other side's through H1 (0x0056192B): read with objdump and r2, and over 76 logged swaps the detaches and
+  the other side's through H1 (0x0056192B), and over 76 logged swaps the detaches and
   attaches touch `bl` 4 and 5 only (4+5 → 4+5 24, 4+5 → 4 26, 4 → 4+5 26). (fn:sub_005616A0_PlayerSwapWeapons@0x005616A0,
   fn:sub_0054CE70_SwapWeaponsReq@0x0054CE70, run:2026-10-17-stats, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i), [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
 
@@ -609,14 +609,14 @@ Step notes:
   (`add func` 1) or when *k* other members are worn (`add func` 2): a control swapping funcs 1 and 2 mispredicts 2 039
   of 3 905 calls, the stock none (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)). `add func` 0 (blank) puts the aprop in the main list at
   creation, where it always counts: `ItemApplyProps` builds such an `aprop` block with state 0 and flags 0x40, as a
-  `prop` block (0x0065FFE3, 0x0065FFF2, 0x00660032; objdump beside items/0006, [stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). (data:g_SetBonusStates@0x006EE424,
+  `prop` block (0x0065FFE3, 0x0065FFF2, 0x00660032; [stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). (data:g_SetBonusStates@0x006EE424,
   fn:SETITEMS_GetMemberIndex@0x0062B3A0, fn:sub_0065FEC0_ItemApplyProps@0x0065FEC0, tbl:SetItems.txt:add func)
 - J3. [C] **Stat 71 sums.** The marker stat 71 (`value`) is an ordinary entry, so the wearer's full stat 71 is the
   sum of the active sets' ids (set id 0 adds nothing) plus any other stat-71 entry under it: the sum of the set lists'
   71 in all 4 996 trees, 2 850 with two or more sets (run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)). The lookup reads stat 71 of each
   set list itself, not the cache, so the sum does not disturb it: for each of the six `g_SetBonusStates` it takes the
   unit's list of that state and compares `StatListGetBaseStat(list, 71, 0)` (the own entries) with the set id
-  (objdump, [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu)). (0x00663C93, 0x00663BDD, 0x00663BC4, 0x0062539A, data:g_SetBonusStates@0x006EE424,
+  ([stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu)). (0x00663C93, 0x00663BDD, 0x00663BC4, 0x0062539A, data:g_SetBonusStates@0x006EE424,
   fn:STATLIST_AddStat@0x00627030)
 - J4. [C] The ten stock named Sets param cells: 4 are first found in the skills table (Trang-Oul's), 6 in the states
   table, none in two tables (a full-table check, [stats/experiments § S4d part 1](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-1-of-2-static-second-sources-and-full-table-checks-lanen66i)). (tbl:Sets.txt:FParam5) [I] A param naming a skill, a montype
@@ -635,10 +635,9 @@ Step notes:
 - K2. [C] The list is rebuilt only when 351 differs from the skill's current level (with bonuses), and freed while
   the skill's `aurastate` is on the unit or the unit lacks the skill; the remove callback of a state list rebuilds the
   passives in that state ([states § C](states.md#c-expiry-and-removal)). 7 900 calls on the equal branch changed
-  nothing and 988 rebuilt with a new 351; the 351 test and both free paths read with objdump and r2.
+  nothing and 988 rebuilt with a new 351.
   (fn:SKILLS_RefreshPassive@0x00646D60, fn:SKILLS_RefreshPassivesInState@0x00646F20, run:2026-10-17-stats, [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i))
-- K3. [C] The skills' `aura` bit has 9 readers, the `+0x04` tests of mask byte 0x006CE27C (raw scan and objdump,
-  [stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)): `EVENT_SelectedAuraTick`, `AuraSelect`, `PlayerSetSkill` twice, `MissileCreate`, `ITEMAURA_Start`,
+- K3. [C] The skills' `aura` bit has 9 readers, the `+0x04` tests of mask byte 0x006CE27C ([stats/experiments § S4d part 2](../../findings/stats/experiments.md#addendum-2026-11-15-plan-0066-batch-s4d-part-2-of-2-new-checks-over-the-kept-stats-logs-and-static-second-sources-lanen66i)): `EVENT_SelectedAuraTick`, `AuraSelect`, `PlayerSetSkill` twice, `MissileCreate`, `ITEMAURA_Start`,
   `ITEMAURA_Stop`, `SummonInitStats`, `MERCAI_PickSkill` ([stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). [C] No stock row hands skills 127–129 to a
   hireling (`Skill1`..`Skill6`), a monster or summon (MonStats' skill columns) or an item through an `aura` property:
   the only two cells naming them are the `skill` properties (func 22) of the uniques *Bloodtree Stump* (`par6` 129) and
@@ -659,8 +658,7 @@ Step notes:
   reaches 122 drawing functions through `PlayerSkillReselect` → `PlayerSetSkill` → `AuraSelect` → `SKILLS_SrvDo` →
   `PlayerModeCmd` → `PlayerModeAllowed`: past its three early returns (a null unit, a non-player without `+0xC4`
   bit 9, no inventory) it calls `PlayerSkillReselect` (0x0055DEA0), which calls `PlayerSetSkill` for a side whose
-  wanted skill is set, found, not the current one, and not given 2 or 7 by `SKILLS_CanUse` (objdump beside frame/0001,
-  [stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_00660120_SetBonusApply@0x00660120,
+  wanted skill is set, found, not the current one, and not given 2 or 7 by `SKILLS_CanUse` ([stats/0001 § 14](../../findings/stats/0001-aggregate.md#14-plan-0066-batch-s4e-part-5f-the-static-remainders-run2026-11-16-sweep2-s4e-emu-static)). (fn:sub_0055DBC0_EquipReqRefresh@0x0055DBC0, fn:sub_00660120_SetBonusApply@0x00660120,
   fn:sub_0055DA70_PlayerSkillReselect@0x0055DA70, fn:RNG_Range@0x0045C390)
 - [I] Whether a stock refresh reaches that draw (it needs a refresh that restores a wanted skill; the path crosses the
   allocator, so it was not emulated). (fn:sub_0055DA70_PlayerSkillReselect@0x0055DA70, 0x0057026C, 0x0056FFFD)
@@ -717,6 +715,7 @@ tbl:CharStats.txt:LifePerVitality, run:2026-10-17-stats)
 
 ## Evidence
 
+- How the statements above were read, by statement: A2: the stores read with objdump; B1: objdump beside the Ghidra reading; D1: objdump beside the Ghidra reading; G3: the switch bytes with objdump; objdump [stats/0001 § 12](../../findings/stats/0001-aggregate.md#12-plan-0066-batch-s4e-part-5d-addstats-removal-under-emulation-and-the-static-remainders-run2026-11-16-sweep2-s4e-emu); G3: objdump beside the Ghidra reading; H4: objdump beside frame/0001's reading; H6: objdump beside items/0006; I3: read with objdump and r2; J2: objdump beside items/0006; J3: objdump; K2: the 351 test and both free paths read with objdump and r2; K3: raw scan and objdump; the refresh events of the draw order: objdump beside frame/0001.
 - [stats/0001](../../findings/stats/0001-aggregate.md) § 1–8 (the code reading), § 9 (the run), *Leads used*
   (12 verdicts, one contradicted), *Phase 0 surprises* (b), (e).
 - [stats/experiments § run:2026-10-17-stats](../../findings/stats/experiments.md#run2026-10-17-stats): 18 sessions,
