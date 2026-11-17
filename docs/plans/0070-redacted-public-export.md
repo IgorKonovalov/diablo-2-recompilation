@@ -472,3 +472,38 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   Battle.net lines (the Battle.net ban stays strict: the line is dropped, never published). `docs/export/README.md`
   updated to match. Cost: about 2.9 M in all (was 3.9 M–5.6 M); first cut about 2.6 M. Next: Phases 2, 2b, 4 and 5,
   side by side; then 3.
+- 2026-11-17 — **Phase 2 done** (archivist, lane/x70c; Tier A review requested in the backlog). `tools/export_check.py`
+  (rules X1 to X12; `CUT_DIR`, `--repo DIR`, or both; `--manifest`, `--identity`, `--no-git-identity`),
+  `tools/test_export_check.py` (75 checks), fixtures in `tools/gate/fixtures/export/`, gate rule E20 in
+  `tools/gate.py` (runs the self-tests; the gate does not run the check on `docs/`). **Text rules as a function:**
+  `export_check.check_text(unit, identity=None)` returns `[(rule, line, detail)]` for X1 to X5 and X9 on one unit
+  (a sentence, item, row or fenced block; a fence inside the unit is tracked); `text_rules(unit)` returns the rule
+  set. Both read the git identity once (cached); the builder should call `text_rules` with that default.
+  **Fixtures:** `clean` (a cut with a table, mermaid, pseudocode and a verified schematic folder) and `pass-*`
+  (emulated and "attack-speed breakpoint" pass X9, "not confirmed by a run:" passes X2, a 25-row table the manifest
+  names passes X6, a warning-only X12 case) pass; one `X<n>-*` bad case per rule X1 to X11, including a Battle.net
+  menu line (X9), and the schematic cases: no marker, hash mismatch, an extra file, no `schematic.json`, an
+  `index.html` with an external URL, an `index.html` with a `src` outside its folder (all X11) and an image outside
+  an illustration folder (X8). `repo/clean` and `repo/X7-*`, `X9`, `X10-*`, `X11` cover `--repo`. The `.git` directory
+  cases are built at run time. The test also runs the check on an unredacted copy of three specs (rng, items, drlg
+  READMEs): X1, X2 and X3 fail as required. **Late change (orchestrator, Phase 5 lane):** X2's `data:` and the other
+  anchors match only when a name character follows (`data:ItemTypes`), so prose such as "Game data: tables, strings
+  and formulas" passes; fixture `pass-x2-data-prose` and two unit checks.
+  **Choices the review should confirm:** (1) *The schematic marker*, which Phase 2b's generators must write: the byte
+  string `d2recon-schematic/1` inside every `.gif`, `.png`, `index.html` and `steps.json` of the folder;
+  `schematic.json` is `{"marker": "d2recon-schematic/1", "files": {"<relative path>": "<sha256>"}}` listing every
+  file but itself; frame files may sit in subfolders (`frames/f1.png`). (2) X6 matches a manifest `table` line by
+  the page's route, not by line number (the redactor moves lines): a page may hold as many oversized tables as the
+  manifest names for it. (3) `report.txt` at the cut root is skipped (the builder writes it there; it is never
+  published). (4) In `--repo` mode X1 to X4 and X9 scan every text file but the lockfile, X5 is not applied (the
+  files are not pseudocode), and any path outside the plan's table plus `site/package-lock.json` is X11, so the
+  check on a repository that already holds a cut needs the cut mode on its `site/` content, not `--repo` alone.
+  (5) Heuristics: X1 and X3 also flag bare hex of 6 and of 7 to 40 digits when it holds a digit and a letter a to f;
+  X3's repository paths (`docs/`, `re/`, `tools/`, `workspace/`) match only when not preceded by a letter, digit or
+  `/` (so the export repository's own `site/src/content/docs/` passes); X4's generic absolute path needs a leading
+  space, quote or bracket; X12 is noisy by design. (6) X7 in repo mode allows `igorkonovalov.github.io`,
+  `github.com/IgorKonovalov` and `github.com/${…}`, any `creativecommons.org` page, and `registry.npmjs.org` in the
+  lockfile only.
+  **`--repo workspace/export-repo/` result:** green, 0 failures, 0 warnings, after two rule narrowings that were
+  false positives on correct text: `docs/` inside `site/src/content/docs/` (README) and `startsWith('data:')`
+  (the link checker). `LICENSE`'s creativecommons.org text passes X7. Nothing for Phase 4 to fix.

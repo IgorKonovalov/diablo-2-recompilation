@@ -42,6 +42,8 @@ Implements the fast tier of `.claude/skills/architect/references/evidence-rules.
                seed, illustrates, caption), repeats an id, names no script in tools/, or has an `illustrates`
                link that does not resolve: `python3 -I tools/site_build.py check` (registered at the
                lane/site1 review)
+           E20 the publish check's self-tests fail: `python3 -I tools/test_export_check.py` (plan 0070
+               Phase 2; fixtures in tools/gate/fixtures/export/). The gate does not run the check on docs/
            (a rule in DEMOTED is reported as a warning until the files it flags are fixed: plan 0053)
   warnings W1 a [C]/[I] line or table row with no anchor
            W2 a table with a Tag column has a row with an empty tag cell
@@ -1371,6 +1373,7 @@ RULES = [
     ("E17", "mermaid blocks draw, labels intact"),
     ("E18", "quirks index matches the specs (tools/quirks.py check)"),
     ("E19", "illustration blocks parse and resolve (tools/site_build.py check)"),
+    ("E20", "the export publish check's self-tests pass (tools/test_export_check.py)"),
     ("E10", "no tags, anchors or addresses in the wiki"),
     ("E11", "wiki pages based_on reviewed specs"),
     ("E12", "wiki sections link a spec"),
@@ -1457,6 +1460,7 @@ def run_gate(root, cache_root=None):
     check_mermaid_render(parsed, cache_root or root, rep)
     check_quirks(root, rep)
     check_illustrations(root, rep)
+    check_export_tests(root, rep)
     # W3: a symbol is cited when its name appears in some spec or finding
     # (one pass over the corpus: the names are [A-Za-z0-9_]+, so a word-set lookup equals the
     # bounded regex search; a name with another character falls back to the search)
@@ -1511,6 +1515,22 @@ def check_illustrations(root, rep):
             rep.err("E19", "docs/" + lm.group(1), int(lm.group(2)), lm.group(3))
     if not m or (out.returncode and not rep.errors.get("E19")):
         rep.err("E19", "tools/site_build.py", 1, f"site_build.py check failed (exit {out.returncode}): "
+                f"{(out.stderr or out.stdout).strip()[-200:]}")
+
+
+def check_export_tests(root, rep):
+    """E20: run tools/test_export_check.py (about 0.3 s) from this gate's own tools/ directory."""
+    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_export_check.py")
+    if not os.path.isfile(tool):
+        return
+    out = subprocess.run([sys.executable, "-I", tool], capture_output=True, text=True)
+    m = re.search(r"^TEST export_check: (\d+) checks, (\d+) failed", out.stdout, re.M)
+    rep.count("E20", int(m.group(1)) if m else 1)
+    for line in out.stdout.splitlines():
+        if line.startswith("FAIL "):
+            rep.err("E20", "tools/test_export_check.py", 1, line[5:])
+    if not m or (out.returncode and not rep.errors.get("E20")):
+        rep.err("E20", "tools/test_export_check.py", 1, f"self-tests failed (exit {out.returncode}): "
                 f"{(out.stderr or out.stdout).strip()[-200:]}")
 
 
