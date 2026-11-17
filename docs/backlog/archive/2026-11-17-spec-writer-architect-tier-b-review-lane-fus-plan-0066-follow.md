@@ -2,11 +2,11 @@
 from: spec-writer
 to: architect
 date: 2026-11-17
-status: open
+status: done
 context:
-  - ../plans/done/0066-simulation-inferred-claims-sweep.md
-  - ../plans/0066-inventory/README.md
-resolution: ""
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/0066-inventory/README.md
+resolution: "accept with one fix (inventory L link); gate full green"
 ---
 
 **Tier B review (Sonnet) of `lane/fus`**, the spec-writer follow-ups of plan 0066 after its close. No owner decision.
@@ -22,3 +22,10 @@ resolution: ""
   table docs' sections); the code-side remainders stay `[I]`.
 - **quirks** Q376, Q506 `[C]` (C 426 / I 121 → C 428 / I 119; class 7 and total rows updated, `tools/quirks.py check` 0).
 - Research-map rows: only their tag counts and `updated` dates (gate E15). Inventory *Phase 3* lines, README § 6/§ 7.
+
+Verdict (architect, Tier B, Sonnet): accept with one fix. About ten raised statements spot-checked against
+experiments.md § H6d, 0002-rates, the Skills/Properties/Objects table docs: counts and scopes match (105/111/139+14, 4 834,
+25 059 of 48 118, 3 074/34, 186/152, 0 of 734); the floors are scoped to monsters, and the left-hand term, schedule
+`+0x44`, block's 1, cap and wrap stay `[I]`. No absolute word in a new `[C]` without its count. `quirks.py check` 0 errors.
+Fix: items/inventory's `[L]` for classes 0x152/0x153 cited "(A1)", not the Objects table section that holds the
+check; link added. Note: timing C2's "17 005" SUNIT_AnimInit calls is in the plan inventory row, not in the H6d entry.

@@ -741,7 +741,7 @@ An item's page, cell, mode and location byte; a belt box; a body location; the c
 - [L] **`0x18` to page 4 and `0x23` past `numboxes` by a stock route** (§ E, § F): each ran only with a written packet field; whether a smaller belt's overflow takes such an item.
 - [L] A player's stock mask at `path+0x4C` against `0x804`, and so whether pickup's line test ever takes the unmark branch (items/0014 case 14).
 - [L] **A monster's drop in a longer life**, and whether a chest's drop was among the 27: a session that logs the source.
-- [L] The object classes `0x152`, `0x153` behind rows 10 and 11: no code path that creates them was read; no stock DS1 preset or `ObjGroup` row places them (A1).
+- [L] The object classes `0x152`, `0x153` behind rows 10 and 11: no code path that creates them was read; no stock DS1 preset or `ObjGroup` row places them ([Objects § Guild Vault and Trophy Case](../../tables/Objects.md#guild-vault-and-trophy-case-rows-338-and-339-plan-0066-s4e-follow-up)).
 - [L] Who writes `0x007A5218`, the client's set: UI, out of scope (ADR-0025).
 - [L] **A death with a belt holding boxes above 3** (F6): src:maxroll-death, of D2R, says the extra rows empty to the inventory, then the ground, which F6's reading gives; not run in 1.14d. ([items/0017 B8](../../findings/items/0017-community-cross-check.md#belts))
 - [L] src:d2dfg-blizzard: `belts.txt`'s box rectangles are "for Server verification purposes". That is a D2R text: in 1.14d, by direct calls, no server code reads them (A2, A3), so add no server test. ([items/0017 B3](../../findings/items/0017-community-cross-check.md#belts))
