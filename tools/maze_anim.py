@@ -28,11 +28,11 @@ fixed to the final level's bounds. Drawn like the game builds a room's tiles (dr
 (0, 30, 0/1) hidden, an orientation-3 wall paired with its orientation-4 tile; no shadows, lighting or rarity
 variants. Stdlib only.
 
---schematic (ADR-0036, the public export's mode): rooms as labelled boxes with their doors and the level's entry and
-exit marks (Levels Vis, not placed in a room: that needs the DS1 wall layer); no tile, no DS1 layout, no game palette.
+--schematic (ADR-0036, the public export's mode): rooms as labelled boxes with their doors and the entry and exit
+marks on the room boxes that hold a warp (the slot numbers of the room's preset, ds1.room_warp_slots: no cell position);
+no tile, no DS1 layout, no game palette.
 It draws with our fixed palette and the 5x7 font, never imports or opens an art decoder (ds1 tile layers, dt1, dc6,
-palette, maze_render), and the steps, calculations and captions are those of the full mode, except the warp lines (they
-come from the DS1 wall layer). Every file carries the schematic marker (PNG tEXt chunk, GIF comment, HTML comment,
+palette, maze_render), and the steps, calculations and captions are those of the full mode. Every file carries the schematic marker (PNG tEXt chunk, GIF comment, HTML comment,
 steps.json key \"schematic_only\") and schematic.json lists the files with their sha256. The full mode never writes the
 marker. The default DIR gets a -schematic suffix.
 """
@@ -320,10 +320,28 @@ def wlabel(lv, level, dest):
     return "%s: %s" % (kind, lv.get(dest, {}).get("name", "LEVEL %d" % dest))
 
 
+def warp_rooms(root, level, rooms, lv):
+    """The schematic mode's warps: [(room index, slot m, dest level, None, None)] for the rooms whose preset holds a
+    warp slot m with Levels Vis m != 0. The one read of the DS1 wall layer is ds1.room_warp_slots, which returns the
+    slot numbers only (ADR-0036 ruling, plan 0070 Phase 7): no coordinate leaves it."""
+    import ds1
+    vis, out = lv[level]["vis"], []
+    for qi, q in enumerate(rooms):
+        if q["file"]:
+            low = q["file"].replace("\\", "/").lower()
+            rel = low[low.find("data/global/tiles/") + 18:] if "data/global/tiles/" in low else low
+            with open(os.path.join(root, "data", "global", "tiles", rel), "rb") as fh:
+                for m in sorted(ds1.room_warp_slots(fh.read())):
+                    dest = vis[m] if m < len(vis) else 0
+                    if dest:
+                        out.append((qi, m, dest, None, None))
+    return out
+
+
 def timeline(level, steps, rooms, total, lv, warps):
     """The frames and captions of both modes: [(frame state, rooms converted so far, lead room, caption)]. The text
-    and calculations are the same in the full and the schematic mode (the schematic mode has no warps: they come from
-    the DS1 wall layer, which it does not read)."""
+    and calculations are the same in the full and the schematic mode; the warp rooms come from warp_rooms() in the
+    schematic mode (room, slot and destination only, no cell position)."""
     n = len(rooms)
     out = []
     for st in steps:
@@ -547,7 +565,8 @@ def build_schematic(root, level, seed):
     palette and the 5x7 font. No tile, no DS1 layout, no game palette: reads the tables of the user's own files only."""
     steps, rooms, total = trace(root, level, seed)
     lv = _levels(root)
-    tlv = timeline(level, steps, rooms, total, lv, [])
+    warps = warp_rooms(root, level, rooms, lv)
+    tlv = timeline(level, steps, rooms, total, lv, warps)
     idx, pal = anim_common.schem_palette()
     C = idx
     x0 = min(q["rect"][0] for q in rooms)
@@ -559,7 +578,6 @@ def build_schematic(root, level, seed):
     ox, oy = (CW - gw * ms) // 2, 24 + (LH - 24 - gh * ms) // 2
     CH = LH + 5 * 18 + 8
     all_links = steps[-1]["links"]
-    warps = sorted(d for d in lv[level]["vis"] if d)
 
     def box(cv, x, y, w, h, col):
         for yy in range(max(y, 0), min(y + h, CH)):
@@ -602,15 +620,21 @@ def build_schematic(root, level, seed):
                 anim_common.text(cv, CW, CH, x + 6, y + 36, ("F%d" % (int(rooms[i]["how"].rsplit("File", 1)[1]))), C["dim"], 1)
         for a, b in (all_links if conv else st["links"]):
             door(cv, a, b)
-        if conv and lead is None:                                       # final frame: the level's entry and exit marks
-            for j, dest in enumerate(warps):
+        if conv and lead is None:                   # final frame: the warp rooms' entry and exit marks (box centre, no cell)
+            seen = {}
+            for qi, m, dest, _fx, _fy in warps:
+                x, y, w, h = px(rooms[qi]["rect"])
+                j = seen[qi] = seen.get(qi, -1) + 1
+                cx, cy = x + w // 2, y + h // 2 + 26 * j
+                r_ = max(8, min(w, h) // 4)
+                for t in range(-r_, r_ + 1):
+                    w_ = r_ - abs(t)
+                    box(cv, cx - w_, cy + t, 2 * w_ + 1, 1, C["warp"])
                 lab = wlabel(lv, level, dest)
-                yy = 30 + 22 * j
-                for t in range(-6, 7):
-                    w_ = 6 - abs(t)
-                    box(cv, 14 + 6 - w_, yy + 6 + t, 2 * w_ + 1, 1, C["warp"])
-                anim_common.text(cv, CW, CH, 32, yy, lab, C["warp"], 1)
-            anim_common.text(cv, CW, CH, 14, 30 + 22 * len(warps), "LEVEL ENTRY AND EXIT FROM LEVELS VIS (ROOM NOT SHOWN)",
+                lw, lx, ly = len(lab) * 6 + 6, min(max(cx - len(lab) * 3 - 3, 2), CW - len(lab) * 6 - 8), max(y - 12 - 12 * j, 24)
+                box(cv, lx, ly, lw, 11, C["panel"])
+                anim_common.text(cv, CW, CH, lx + 3, ly + 2, lab, C["warp"], 1)
+            anim_common.text(cv, CW, CH, 14, LH - 14, "CYAN DIAMOND: ROOM HOLDING A WARP (SLOT AND LEVELS VIS), POSITION IN ROOM NOT SHOWN",
                              C["dim"], 1)
         # caption strip
         box(cv, 0, LH, CW, CH - LH, C["panel"])
@@ -638,8 +662,8 @@ MARKS_FULL = """<li>Blue outline: placed room; yellow: this step's room; green l
 cyan diamond: a warp (entry or exit stairs) from the preset map, labelled with the level it leads to.</li>"""
 MARKS_SCHEM = """<li>Schematic drawing: each room is a labelled box (R and its number; after the conversion steps also its Def
 and the preset file index). Blue outline: placed room; yellow: this step's room; a green bar on a shared edge: a door
-between two rooms. The final frame lists the level's entry and exit by Levels Vis (cyan diamond); the schematic does
-not read the preset maps, so it does not say which room holds them.</li>"""
+between two rooms. The final frame puts a cyan diamond on each room box that holds a warp, labelled with the level it leads to
+(Levels Vis of the warp slot the room's preset holds); where in the room the warp sits is not shown.</li>"""
 
 
 def write_html(path, caps, W, H, schematic=False):

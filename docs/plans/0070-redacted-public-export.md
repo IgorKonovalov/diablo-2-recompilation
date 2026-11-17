@@ -960,3 +960,21 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
     narrowed and the check rerun; (c) run the build and the link check locally (never run here); (d) create the
     repository, set Pages to GitHub Actions, open the first pull request, merge when green; (e) the licence stays
     CC BY 4.0 unless changed before the first push. The checklist is in Phase 7.
+- 2026-11-17 — **Maze schematic: entry and exit marks on the room boxes** (archivist, lane/x70w; owner feedback: "on
+  maze there is no exit/entry marks on last step on the map"). The schematic's final frame now marks each room box that
+  holds a warp with a cyan diamond at the box centre, labelled `ENTRY:`/`EXIT:` and the destination level as in the
+  full mode, and the corner legend is one line ("room holding a warp, position in room not shown"). Source choice: the
+  specs give no room-level fact (warps.md § D and LvlPrest § Warp slots are per-record DS1 surveys; the model's
+  `warp_grid` is keyed by cell), and a copied Def-to-slot table would dump that survey and drift. So a narrow helper,
+  `ds1.room_warp_slots(data)` in `tools/ds1.py`, runs the existing `_scan_cells` rule and returns a `frozenset` of
+  slot numbers only; `maze_anim.warp_rooms()` is its one caller, mapping (room, slot) through Levels `Vis`; no cell,
+  coordinate or layer reaches drawing code. `test_anim_schematic.py` blocks `_scan_cells` except under the helper,
+  admits `parse` and the `layers` key to the helper (and `_scan_cells` reached through it) beside `PresetUnitData.ds1`,
+  and checks the return is a frozenset of ints below 8. The two warp lines of the steps are now equal between the
+  modes (`ART_LINES` keeps only the icon and name-card lines); the "ROOM NOT SHOWN" legend and the help line
+  (`MARKS_SCHEM`) are reworded. Full mode: the unchanged command on `main` and on the branch gives 46 equal files.
+  Rebuilt the cut (`export_build.py` into `workspace/export`): `export_check.py` 0 failures; `test_anim_schematic.py`,
+  `test_export_check.py` (117), `test_export_build.py` (41) green. Looked at the final maze frame (level 36, seed
+  0xC0FFEE): diamonds on R1 (entry, Catacombs Level 2) and R17 (exit, Catacombs Level 4). This is a second DS1 read
+  in the schematic mode, so it needs an architect ruling under ADR-0036: review request filed in
+  `docs/backlog/2026-11-17-archivist-architect-plan-0070-maze-schematic-warp-marks-review-request.md`.

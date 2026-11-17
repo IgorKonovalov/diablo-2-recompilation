@@ -785,6 +785,13 @@ def _scan_cells(f):
     return out
 
 
+def room_warp_slots(data):
+    """The warp slots m (< 8, qualifying cells of orientation 10/11, DRLG_PresetMapScan's rule) that one preset DS1
+    (the file's bytes) holds, as a frozenset of ints. Nothing else leaves it: no cell, no coordinate, no layer. The
+    schematic export (ADR-0036) reads a preset only through this call, to know which room box holds which warp."""
+    return frozenset(int(m) for m in _scan_cells(parse(data))["slot"])
+
+
 def _slots_str(sc):
     s = ",".join("%d" % m for m in sorted(sc["slot"]))
     extra = []
