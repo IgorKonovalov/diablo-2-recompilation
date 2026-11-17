@@ -92,10 +92,13 @@ class Outdoor(unittest.TestCase):
 
     def test_eleven_frames_and_no_clipping(self):
         del K.TEXT_CLIPPED[:], K.CAPTION_CUT[:]
+        # seeds 1, 2, 3 and 8 put the neighbour on the south, east, west and north side (review of lane/x12c); a panel
+        # with more lines than it holds raises in the tool
         for seed, diff, theme in ((0xC0FFEE, 0, "dark"), (0xC0FFEE, 0, "light"), (3103, 0, "dark"), (2027, 1, "dark"),
-                                  (12345, 2, "light"), (99, 0, "dark")):
+                                  (12345, 2, "light"), (99, 0, "dark"), (1, 0, "dark"), (2, 0, "light"), (3, 0, "dark"),
+                                  (8, 0, "light")):
             frames, caps, _R = outdoor_anim.build(DATA, seed, diff, theme)
-            self.assertEqual(len(frames), 11)
+            self.assertEqual(len(frames), 11, seed)
             self.assertEqual(len(caps), 11)
         self.assertEqual(K.TEXT_CLIPPED, [])
         self.assertEqual(K.CAPTION_CUT, [])
@@ -124,6 +127,60 @@ class Outdoor(unittest.TestCase):
             firsts = [e for k, e in R.events if k == "place" and e["first"]]
             self.assertEqual([d for e in firsts for d in e["draws"]], R.draws)
             self.assertEqual(len({e["d"] for e in firsts}), len(firsts))
+
+    def test_the_wrappers_go_when_the_run_raises(self):
+        # review of lane/x12c: the five methods are removed in a finally
+        real = drlg.Outdoor.corner_flood
+
+        def boom(O):
+            raise RuntimeError("boom")
+        drlg.Outdoor.corner_flood = boom
+        try:
+            seen = {}
+            real_run = drlg.Outdoor.run
+
+            def run_and_keep(O):
+                seen["O"] = O
+                return real_run(O)
+            drlg.Outdoor.run = run_and_keep
+            try:
+                with self.assertRaises(RuntimeError):
+                    outdoor_anim.trace(DATA, 0xC0FFEE, 0)
+            finally:
+                drlg.Outdoor.run = real_run
+        finally:
+            drlg.Outdoor.corner_flood = real
+        for n in outdoor_anim.WRAPPED:
+            self.assertNotIn(n, seen["O"].__dict__)
+
+    def test_the_neighbour_band_on_each_side(self):
+        # seeds 1, 2, 3, 8: south, east, west, north. The band touches the grid on that side, along the neighbour's
+        # stretch, and stays off the key column, the panel and the caption
+        G = outdoor_anim
+        for seed, side in ((1, 3), (2, 2), (3, 0), (8, 1)):
+            R = G.trace(DATA, seed, 0)
+            n = R.O.adj[0]
+            self.assertEqual(n["side"], side)
+            x, y, w, h = G.neighbour_band(R, n)
+            gx1, gy1 = G.GX + R.O.cw * G.CW + 1, G.GY + R.O.ch * G.CH + 1
+            self.assertTrue(w > 0 and h > 0, (seed, w, h))
+            self.assertTrue(x >= 220 and x + w <= G.PX and y >= 30 and y + h <= G.CAP_Y - 40, (seed, x, y, w, h))
+            if side in (0, 2):
+                self.assertEqual(x + w + 2 if side == 0 else x - 2, G.GX if side == 0 else gx1)
+                self.assertTrue(G.GY <= y and y + h <= gy1)
+            else:
+                self.assertEqual(y + h + 2 if side == 1 else y - 2, G.GY if side == 1 else gy1)
+                self.assertTrue(G.GX <= x and x + w <= gx1)
+
+    def test_the_straight_turn_row(self):
+        # E3: a straight turn's codes (in = out, doubled) give the edge piece's own row, 1 + the direction index
+        for d in ((-1, 0), (0, -1), (1, 0), (0, 1)):
+            a = drlg.e2(2 * d[0]) + 2 * d[1]
+            k = drlg.CORNER[40 + a + 9 * a]
+            self.assertEqual(k, outdoor_anim.straight_row(d), d)
+        st = steps(run(["3103"], "o-row"))
+        self.assertIn("row 1 of the style table", " ".join(st[6]["calc"]))
+        self.assertNotIn("row 2", " ".join(st[6]["calc"]))
 
     def test_every_placement_is_in_one_segment_or_the_preset(self):
         for seed in (0xC0FFEE, 3103, 2027, 12345):

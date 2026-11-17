@@ -40,6 +40,17 @@ PX, PW = 520, 420                          # the right panel
 SIDE = ["WEST", "NORTH", "EAST", "SOUTH"]  # a ring segment going up, right, down, left runs along this edge
 DIRSIDE = {(0, -1): 0, (1, 0): 1, (0, 1): 2, (-1, 0): 3}
 DIFFN = ["normal", "nightmare", "hell"]
+WRAPPED = ("place", "ring_build", "seam_mark", "border_build", "corner_flood")
+PANEL_LINES = 11                           # the most text lines the right panel holds under its title
+
+
+GOING = {(-1, 0): "west", (0, -1): "north", (1, 0): "east", (0, 1): "south"}
+
+
+def straight_row(d):
+    """The style-table row a straight turn's corner lookup gives: the edge piece's own row, 1 + its direction index
+    (outdoor E2a and E3: in N, out N gives row 2; in W, out W row 1)."""
+    return 1 + drlg.DIRIDX[d]
 
 
 def seed_hex(lo, hi):
@@ -108,8 +119,11 @@ def trace(root, seed, diff):
         R.events.append(("flood", dict(before=before, after=snap(O), seed=(O.seed.lo, O.seed.hi))))
 
     O.place, O.ring_build, O.seam_mark, O.border_build, O.corner_flood = w_place, w_ring, w_mark, w_border, w_flood
-    O.run()
-    del O.place, O.ring_build, O.seam_mark, O.border_build, O.corner_flood     # back to the class's methods
+    try:
+        O.run()
+    finally:                 # back to the class's methods, also when the run raises (review of lane/x12c)
+        for n in WRAPPED:
+            O.__dict__.pop(n, None)
     R.seed_out = (O.seed.lo, O.seed.hi)
     R.draws = list(O.seed.log)
     return R
@@ -160,23 +174,36 @@ def cell_xy(cx, cy):
     return GX + cx * CW, GY + cy * CH
 
 
-def draw_neighbours(k, R):
-    """Each neighbour in the level's adjacency list, as a box at its true offset in cells, clipped to the free area."""
+BAND = 8                                   # the neighbour's band beside the grid, in pixels
+
+
+def neighbour_band(R, n):
+    """The band drawn beside the grid on the neighbour's side, along the stretch of that side the neighbour's rectangle
+    covers: -> (x, y, w, h). Drawing only (review of lane/x12c: a box at the neighbour's true offset hid the key on the
+    west side, overran the panel on the east and vanished on the north)."""
     O = R.O
-    for n in O.adj:
-        r = n["rect"]
-        x0 = GX + (r[0] - R.rect[0]) * CW // 8
-        y0 = GY + (r[1] - R.rect[1]) * CH // 8
-        x1, y1 = x0 + r[2] * CW // 8, y0 + r[3] * CH // 8
-        x0, x1, y0, y1 = max(x0, 12), min(x1, PX - 10), max(y0, GY), min(y1, CAP_Y - 28)
-        if x1 - x0 < 8 or y1 - y0 < 8:
-            continue
-        # the part of the neighbour beside the grid is clipped by the grid itself, drawn after
-        lab = links_anim.nm(n["nbr"])
-        k.rect(x0, y0, x1 - x0, y1 - y0, "bg")
-        k.outline(x0, y0, x1 - x0, y1 - y0, "dim", 1)
-        k.text_c((x0 + x1) // 2, max(y0, GY + O.ch * CH) + 8, lab, "dim", 2)
-        k.text_c((x0 + x1) // 2, max(y0, GY + O.ch * CH) + 30, "LEVEL %d, %s SIDE" % (n["nbr"], SIDE[n["side"]]), "dim", 2)
+    L, r = R.rect, n["rect"]
+    gx1, gy1 = GX + O.cw * CW + 1, GY + O.ch * CH + 1
+    if n["side"] in (0, 2):
+        a = max(GY, GY + (r[1] - L[1]) * CH // 8)
+        b = min(gy1, GY + (r[1] + r[3] - L[1]) * CH // 8)
+        x = GX - BAND - 2 if n["side"] == 0 else gx1 + 2
+        return x, a, BAND, b - a
+    a = max(GX, GX + (r[0] - L[0]) * CW // 8)
+    b = min(gx1, GX + (r[0] + r[2] - L[0]) * CW // 8)
+    y = GY - BAND - 2 if n["side"] == 1 else gy1 + 2
+    return a, y, b - a, BAND
+
+
+def draw_neighbours(k, R):
+    """Each neighbour in the level's adjacency list: a band beside the grid on its side, and its name under the grid."""
+    O = R.O
+    for j, n in enumerate(O.adj):
+        x, y, w, h = neighbour_band(R, n)
+        k.rect(x, y, w, h, "dim")
+        ly = GY + O.ch * CH + 16 + 44 * j
+        k.text_c(GX + O.cw * CW // 2, ly, "NEIGHBOUR: %s (LEVEL %d)" % (links_anim.nm(n["nbr"])[:20], n["nbr"]), "dim", 2)
+        k.text_c(GX + O.cw * CW // 2, ly + 20, "ON THE %s SIDE: THE BAND" % SIDE[n["side"]], "dim", 2)
 
 
 def draw_grid(k, R, st, hot=(), seam=(), opening=(), lines=True):
@@ -232,6 +259,8 @@ def panel(k, lines, title=None):
     k.rect(PX, GY, PW, 6 * CH + 1, "panel")
     k.outline(PX, GY, PW, 6 * CH + 1, "dim", 1)
     y = GY + 8
+    # a line past the panel's frame would be drawn over it (review of lane/x12c: the seam mark's 12 lines)
+    assert len(lines) <= PANEL_LINES + (0 if title else 1), (title, len(lines))
     if title:
         k.text(PX + 8, y, title, "acc", 2, True)
         y += 26
@@ -343,7 +372,7 @@ def build(root, seed, diff, theme):
     panel(k, ["%d CELLS ON THE SEAM SEGMENT," % len(seam_cells), "FROM (%d, %d) TO (%d, %d)" % (
         seam_cells[0][0], seam_cells[0][1], seam_cells[-1][0], seam_cells[-1][1]), "",
         "CELL BIT 0X1: BORDER", "WARP-SLOT FLAG 0X%X ON EACH" % gval, "= 0X10 << %d: SLOT %d" % (slot, slot), "",
-        "SLOT %d OF THE LEVEL" % slot, "NAMES LEVEL %d" % nbr, "(%s)" % links_anim.nm(nbr)[:30], "",
+        "SLOT %d OF THE LEVEL" % slot, "NAMES LEVEL %d" % nbr, "(%s)" % links_anim.nm(nbr)[:30],
         "NO DRAW IS MADE"], "SEAM MARK")
     k.legend(GX - 280, CAP_Y - 20, [("warp", "SEAM CELL (OUTLINE)")], 1)
     k.caption("The seam mark sets the border bit, 0x1, and the warp-slot flag on every cell of the flagged segment, end "
@@ -401,11 +430,10 @@ def build(root, seed, diff, theme):
         if s["open"]:
             oc = s["open"][0]
             ov = s["end"][0][oc[1]][oc[0]]
-            pl.append("SEAM OPENING AT (%d, %d):" % oc)
-            pl.append("  INDEX %d, BIT 0X400" % ((ov >> 16) & 0xF))
+            pl.append("OPENING (%d, %d): INDEX %d, 0X400" % (oc[0], oc[1], (ov >> 16) & 0xF))
             calc.append("Seam opening: the segment's middle cell (%d, %d) gets file index %d and bit 0x400, written after "
-                        "its edge piece, so the rotation's index for that cell is overwritten (the draw was made)."
-                        % (oc[0], oc[1], (ov >> 16) & 0xF))
+                        "its edge piece, so the index the rotation gave that cell is overwritten; the rotation still "
+                        "counted the cell." % (oc[0], oc[1], (ov >> 16) & 0xF))
         if s["corner"]:
             c = s["corner"]
             cidx = (s["end"][0][c["y"]][c["x"]] >> 16) & 0xF
@@ -421,9 +449,9 @@ def build(root, seed, diff, theme):
             elif not again:
                 pl.append("  USED BEFORE: NO DRAW")
             if again:
-                calc.append("The vertex at (%d, %d) is a straight turn: the corner lookup gives row 2 of the style table, "
-                            "the edge piece %d again, placed at the end cell with the next file index %d." % (
-                                c["x"], c["y"], c["d"], cidx))
+                calc.append("The vertex at (%d, %d) is a straight turn: the corner lookup gives row %d of the style table, "
+                            "the row of the edge piece going %s, so the edge piece %d again, placed at the end cell with "
+                            "the next file index %d." % (c["x"], c["y"], straight_row(s["d"]), GOING[s["d"]], c["d"], cidx))
             else:
                 calc.append("Corner piece %d placed at the segment's end (%d, %d); it replaces the edge piece there." % (
                     c["d"], c["x"], c["y"]))
@@ -445,7 +473,7 @@ def build(root, seed, diff, theme):
                 e["first"] for e in s["edge"]) else ", with no draw (used before)"
             cap += "; "
         if s["open"]:
-            cap += "the middle cell of the seam becomes the seam opening, index forced after its rotation draw; "
+            cap += "the middle cell of the seam becomes the seam opening, its file index forced after the rotation gave it one; "
         if not s["corner"]:
             cap += "no piece at the end cell, the turn having no corner"
         elif again:
@@ -527,6 +555,7 @@ def build(root, seed, diff, theme):
     # ---- the final grid
     fcell = R.O.cell
     free = sum(1 for y in range(O.ch) for x in range(O.cw) if not fcell[y][x] & 0x1B81)
+    nofoot = sum(1 for y in range(O.ch) for x in range(O.cw) if not fcell[y][x] & 0x200)
     oc = opens[0]
     ov = fcell[oc[1]][oc[0]]
     st = dict(grids=snap(O), roles=dict(roles))
@@ -537,21 +566,22 @@ def build(root, seed, diff, theme):
     panel(k, ["SEED OUT " + seed_hex(*R.seed_out), "DRAWS IN THE WINDOW: %d" % len(R.draws), "",
               "OPENING CELL (%d, %d): 0X%X" % (oc[0], oc[1], ov), "  INDEX %d (BITS 16 TO 19)" % ((ov >> 16) & 0xF),
               "  0X400 SEAM OPENING", "  0X200 PRESET FOOTPRINT", "  0X1 BORDER", "",
-              "CELLS WITH NONE OF THE MASK", "BITS 0X1B81: %d" % free], "FINAL CELL BITS")
+              "CELLS WITHOUT THE FOOTPRINT", "BIT 0X200: %d" % nofoot], "FINAL CELL BITS")
     k.legend(GX - 280, CAP_Y - 20, LEGEND, 1)
     capf = ("The window ends with %d draws. The seam opening cell holds 0x%X: file index %d, the opening bit 0x400, the "
             "footprint bit 0x200 and the border bit 0x1. %s" % (
                 len(R.draws), ov, (ov >> 16) & 0xF,
-                "No cell is free (none of the occupied-mask bits 0x1B81 is clear), so the rooms pass makes no out room "
-                "here, only the embedded preset." if free == 0 else
-                "%d cell%s still free (none of the occupied-mask bits 0x1B81 set)." % (free, "" if free == 1 else "s")))
+                "Every cell carries the footprint bit 0x200, of a border piece or the preset, so the rooms pass makes "
+                "no out room here, only the embedded presets." if nofoot == 0 else
+                "%d cell%s without the footprint bit 0x200." % (nofoot, "" if nofoot == 1 else "s")))
     k.caption(capf, CAP_Y, 76)
     frames.append(k.done())
-    caps.append(dict(text="The window ends after %d draws; %d cells are free." % (len(R.draws), free),
+    caps.append(dict(text="The window ends after %d draws; %d cells lack the footprint bit." % (len(R.draws), nofoot),
                      calc=["Seed after the window: %s (low:high)." % seed_cap(*R.seed_out),
                            "Cell (%d, %d) = 0x%X: index %d, opening 0x400, footprint 0x200, border 0x1." % (
                                oc[0], oc[1], ov, (ov >> 16) & 0xF),
-                           "Free cells (none of the mask 0x1B81): %d." % free,
+                           "Cells without the footprint bit 0x200: %d; cells free for a placement (no bit of the "
+                           "occupied mask 0x1B81 set): %d." % (nofoot, free),
                            "Level draws in order (low words): %s." % ", ".join(str(d) for d in R.draws)]))
     return frames, caps, R
 

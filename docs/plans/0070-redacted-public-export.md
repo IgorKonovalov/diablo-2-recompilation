@@ -1922,3 +1922,41 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   **Doubts:** (1) the "cell (C, R)" labels and D/I letters are in the frames' key, not the caption. (2) A second level
   (Valley of Snakes, seam pairs and a special area) would add Act II's pair; not built. (3) The neighbour box is drawn
   at its true offset and clipped; for other seeds the neighbour can lie on another side and is clipped to the free area.
+- 2026-11-17, architect, review of lane/x12c (Opus, Tier A): **accept with fixes**, 6: misread 2, overclaim 1, other 3.
+  Checked: frames viewed in both themes (0xc0ffee 0, 1, 2, 6, 7, 8, 9, 10; map seed 3103 0, 1, 2, 6, 7, 9; seeds 2, 3
+  and 8 for the neighbour on the east, west and north sides) and every step text of 0xc0ffee and 3103, against outdoor
+  § B (cell and grid0 bits), C3–C5 (ring from v0 up the W side, the seam vertex), D1–D2 (rotation, first use draws,
+  one past the draw), E1 (seam mark: `0x1`, `0x10 << k`, end cell included, no draw), E2 (edge pieces from `v + d` to
+  `n`, the opening at `min + len ÷ 2`, `0x40400` on level 17), E3 (a straight turn: the edge piece's row again), E4 and
+  H7 (`Place(1, 1, 108, −1)`). Map seed 3103 normal is worked example 1 to the word: the nine draws, rect, seed in and
+  out, `0x40601` at (1, 5), grid0 `0x40` on (0 … 2, 5) (the lane's test asserts them). **Tracing:** the five wrappers
+  hold only the instance's methods; the recorded run equals a plain run for six seeds and difficulties (grids, seed,
+  draws). **Rulings.** (a) Level 17 only: kept. Row 12 asks one act; it is the one window whose draws are the border pass
+  and one preset, readable whole; Valley of Snakes is not required. (b) Doubt 1: kept, the key is in every frame and
+  the caption says it in words. (c) Doubt 3: fixed, below. **Fixes** (`tools/outdoor_anim.py`,
+  `tools/test_outdoor_anim.py`): (1) misread: the straight turn's step text said "row 2 of the style table" on every
+  seed; row 2 is the edge piece going north, and level 17's seam turn on the south side goes west (row 1, piece 4). The
+  row is now `1 + DIRIDX[d]`, named with its direction; a test reads `g_BorderCornerIdx` for the four straight turns
+  and the 3103 text. (2) overclaim: the seam segment's caption and step text put the opening "after its rotation draw"
+  ("the draw was made") on a segment whose piece was used before and drew nothing: now "after the rotation gave it one",
+  "the rotation still counted the cell"; the block caption likewise. (3) misread: the final frame said "none of the
+  occupied-mask bits 0x1B81 is clear" (inverted: a cell is free when none is set) and drew the no-out-room conclusion
+  from the placement mask; it now counts the cells without the footprint bit `0x200` (0: every cell holds a border
+  piece or the preset, as worked example 1 says) and keeps the free count in the step text. (4) other: the wrappers were
+  removed after `O.run()` with no `finally`; now a `finally`, and a test raises inside the run. (5) other: the seam
+  mark's panel had 12 lines and its last ran over the frame; one blank dropped, the opening put on one line, and the
+  panel asserts its 11 lines (the clip test builds ten runs). (6) other: the neighbour box at its true offset hid the
+  key column when the neighbour is west (seed 3), overran into the panel gap when east (seed 2) and vanished when north
+  (seed 8): the four sides are about equally common over 1 197 runs. It is now a band beside the grid along the
+  neighbour's stretch, with its name and side under the grid; a test for the four sides. **Block**
+  (`workspace/phase11/blocks-batch2.md`, "Outdoor (x12c)", corrected there for 2). The Place line resolves to
+  `docs/wiki/levels.md` "Outdoor levels", after the bullet ending at outdoor § M, before "When the act generator is
+  done". **Cut:** the block placed in the lane's `levels.md` for one build (restored after), `export_build.py --out
+  workspace/export-x12c-review`: 71 pages, 0 dropped, the folder built; `export_check` 0 failures, 866 warnings, none
+  on `world/levels.md`; every caption sentence present with the seed and values lines; the folder passes
+  `verify_illustration` with the allow-hex list (the step texts' `0x40601`, `0x1B81` are spec values under six hex
+  digits; draws are low words in decimal); the build was removed. Tests green: `test_outdoor_anim` (14),
+  `test_schematic_kit`, `test_anim_schematic`, `test_export_build` (154), `test_export_check` (191); gate green.
+  `test_anim_schematic` failed once with 2 errors and passed on three reruns: its fixed output folder
+  `workspace/render/test-anim` is shared through the symlink by lanes running at once (not this lane's). **For the
+  spec-writer:** place the block as its Place line says; `values: computed`, `seed: illustrative`.
