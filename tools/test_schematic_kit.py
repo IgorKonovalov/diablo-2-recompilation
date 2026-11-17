@@ -475,6 +475,23 @@ class Captions(unittest.TestCase):
                 special_anim.build(DATA, "zombie1", diff, 1, seed, "dark")
         self.assertEqual(K.CAPTION_CUT, [])
 
+    def test_no_text_runs_past_the_canvas(self):
+        # review of lane/x11s: frame 1320's last frame listed its ranks past the right edge ("19," then nothing)
+        import frame_anim
+        import rng_anim
+        import seedtree_anim
+        import timing_anim
+        K.TEXT_CLIPPED.clear()
+        frame_anim.build(1320, "dark")
+        frame_anim.build(1321, "light")
+        timing_anim.build("cast", 20, 14, 256, 0, 7, "dark")
+        rng_anim.build(12345, 8, 100, "dark")
+        seedtree_anim.build(0xC0FFEE, 0, [1, 2, 3], 3, "light")
+        k = K.Kit(100, 20)
+        k.text(10, 2, "X" * 20)
+        self.assertEqual(K.TEXT_CLIPPED, ["X" * 20])          # the guard itself
+        K.TEXT_CLIPPED.clear()
+
 
 if __name__ == "__main__":
     unittest.main()

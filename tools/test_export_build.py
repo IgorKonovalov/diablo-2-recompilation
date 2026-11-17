@@ -415,7 +415,16 @@ def main():
                                                    "seed: none", "illustrates: x", "caption: Hi.", "```"]},
                                     tmp, out, al, "H")
         txt = "\n".join(l for b in res for l in b["lines"])
-        ok("No seed is drawn on." in txt and "Seed:" not in txt, "review of lane/x11b: a generator with no seed gets no seed label")
+        ok("The picture takes no seed." in txt and "Seed:" not in txt, "review of lane/x11b: a generator with no seed gets no seed label")
+        ok("computed by our model" in txt, "values: computed is the default")
+        res = eb.illustration_block(pg, {"lines": ["```illustration", "id: i4", "tool: maze_anim.py", "args: --frame 1320",
+                                                   "seed: none", "values: restated", "illustrates: x", "caption: Hi.", "```"]},
+                                    tmp, out, al, "H")
+        txt = "\n".join(l for b in res for l in b["lines"])
+        ok("The picture restates the spec; nothing shown is observed in the game." in txt and "computed by our model" not in txt,
+           "review of lane/x11s: values: restated drops the model label")
+        ok("bad values" in eb.parse_illustration("id: i5\ntool: t.py\nargs:\nseed: none\nvalues: guessed\nillustrates: x\ncaption: c.")[1],
+           "values takes computed or restated only")
         shutil.rmtree(os.path.join(out, "site", "public", "illustrations"), ignore_errors=True)
         # Phase 9 review: a route stem on a `page` line; an over-limit table the manifest does not name goes whole,
         # a named one (by its source header line, front matter counted) stays, and the cut passes X6 either way

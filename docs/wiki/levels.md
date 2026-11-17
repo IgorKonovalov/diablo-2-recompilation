@@ -241,6 +241,23 @@ caption: Catacombs Level 3 (level 36) built room by room. A level draw picks the
   and base + 16, the level type's per-build file rotation does (9b) (drlg overview, steps 9a and 9b).
 ```
 
+```illustration
+id: drlg-maze-level47
+tool: maze_anim.py
+args: 47 0xc0ffee
+seed: illustrative
+illustrates: ../specs/drlg/maze.md#e-start-shapes ../specs/drlg/maze.md#c-random-growth
+  ../specs/drlg/maze.md#f-the-chain-per-level-type ../specs/drlg/maze.md#d-special-rooms
+  ../specs/drlg/maze.md#h-themes ../specs/drlg/README.md#algorithm
+caption: Sewers Level 1 (level 47) built room by room, for a different start shape and theme count than the
+  Catacombs level. This level starts with a ring: rooms grown north, west and south of the first room and joined
+  back to it, where the Catacombs level starts with two arms (maze § E1, § E3). Random growth follows (§ C), then the
+  Sewers finisher's dock path: two rooms grown north and two east, each pair ending in a fixed, locked room (the
+  previous-level room and the dock), a free room below the dock, and the next-level special attached as a new room,
+  which recomputes its parent's Def (§ F2, § D). The theme pass locks up to max(2, rooms ÷ 5 + 1) free rooms as their
+  Theme records, here three of fourteen rooms where the Catacombs level has four of seventeen (§ H).
+```
+
 ## Outdoor levels
 
 The outdoor levels are those listed per act in [outdoor § A](../specs/drlg/outdoor.md#a-the-window): Act I's

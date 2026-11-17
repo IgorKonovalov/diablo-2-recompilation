@@ -228,10 +228,11 @@ def build(N, theme):
     k.outline(330, 44, 610, 340, "dim")
     k.text(344, 60, "THEN THE FLUSH AND THE NEXT LOOP PASS", "acc", 2, True)
     k.text(344, 100, "NEXT: A DRAIN OR MORE, THEN THE TICK AT %d" % (N + 1), "txt", 2, True)
-    k.text(344, 140, "RUNNING THIS FRAME: %s" % (", ".join("%d" % p[0] for p in PASSES if p[3] is None or N % p[3] == 0 or p[3] == 1)), "dim", 2)
-    k.text(344, 170, "(AND THE WALKS 4 TO 13)", "dim", 2)
-    k.text(344, 200, "SKIPPED THIS FRAME: %s" % (", ".join("%d" % p[0] for p in PASSES if p[3] and p[3] > 1 and N % p[3]) or "NONE"),
-           "dim", 2)
+    k.text(344, 140, "RUNNING THIS FRAME:", "dim", 2)        # the list on its own line: it ran past the panel (review of lane/x11s)
+    k.text(344, 166, ", ".join("%d" % p[0] for p in PASSES if p[3] is None or N % p[3] == 0 or p[3] == 1), "dim", 2)
+    k.text(344, 192, "(AND THE WALKS 4 TO 13)", "dim", 2)
+    k.text(344, 232, "SKIPPED THIS FRAME:", "dim", 2)
+    k.text(344, 258, ", ".join("%d" % p[0] for p in PASSES if p[3] and p[3] > 1 and N % p[3]) or "NONE", "dim", 2)
     k.caption("The order inside a tick is fixed, so a draw on a seed two passes share always comes from the earlier "
               "pass first (frame B, J).", CAP_Y, 76)
     frames.append(k.done())

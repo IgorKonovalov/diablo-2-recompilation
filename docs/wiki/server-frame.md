@@ -83,6 +83,26 @@ flowchart TD
   R20 --> R21["21 between the ticks: the drain first"]
 ```
 
+```illustration
+id: frame-tick-passes
+tool: frame_anim.py
+args: --frame 1320
+seed: none
+values: restated
+illustrates: ../specs/sim/frame.md#b-gametick ../specs/sim/frame.md#c-the-message-drain
+  ../specs/sim/frame.md#d-the-unit-events-the-control-the-pass-the-runners
+  ../specs/sim/frame.md#j-draws-per-pass-and-the-shared-seeds
+caption: One server tick at the frame counter 1320, pass by pass. Between ticks the drain applies the queued
+  messages (rank 21, § C). The tick raises the counter before its first pass and then runs ranks 1 to 20 in order
+  (§ B): the act clocks, the frame statistics, the new rooms, the ten walks over the unit event lists, which take
+  missiles, players, monsters, objects and items each as an every-frame walk and then the walk of this frame's slot,
+  the counter mod 64 (§ D), then the room sync, the frame reset, the clearing of the removal notes, and the three periodic passes. Those
+  run when the counter divides by 20, 12 and 11, which 1320 does, and the sweep runs every frame but works only
+  when the counter divides by 1500 (§ B). Each frame names what the pass can draw and on which seeds, as § J states
+  them. The frames draw the pass list as the spec states it; the only computed values are the divisibility tests on
+  the counter.
+```
+
 The table's last column is each pass's route to a draw, from [§ J](../specs/sim/frame.md#j-draws-per-pass-and-the-shared-seeds). **"None" means by
 direct reach:** the call graphs do not follow indirect calls (54 and 57 of them in ranks 1 and 15, and so on). Each pass's own code, and its "none" with the
 stops the spec names, is checked by a second reading, a second call-graph walker; what lies past a stop (the refresh's aura route, an item's free,

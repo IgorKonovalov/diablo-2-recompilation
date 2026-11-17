@@ -61,6 +61,7 @@ def outline_rect(cv, W, H, x, y, w, h, col, t=1):
 
 
 CAPTION_CUT = []        # the captions Kit.caption had to cut (a test asserts the generators leave it empty)
+TEXT_CLIPPED = []       # text lines that run past the canvas edge (review of lane/x11s; a test asserts none)
 
 
 def text_w(s, sc=2):
@@ -118,6 +119,8 @@ class Kit:
 
     # ---- text
     def text(self, x, y, s, col="txt", sc=2, bold=False):
+        if x < 0 or x + text_w(s, sc) + (1 if bold else 0) > self.W:
+            TEXT_CLIPPED.append(s)
         anim_common.text(self.cv, self.W, self.H, x, y, s, self.c(col), sc)
         if bold:
             anim_common.text(self.cv, self.W, self.H, x + 1, y, s, self.c(col), sc)
