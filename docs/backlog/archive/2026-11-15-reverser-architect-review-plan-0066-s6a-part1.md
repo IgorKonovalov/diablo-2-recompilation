@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-15
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../plans/0066-inventory/anim-timing.md
   - ../../plans/0066-inventory/anim-movement.md
   - ../../plans/0066-inventory/anim-README.md

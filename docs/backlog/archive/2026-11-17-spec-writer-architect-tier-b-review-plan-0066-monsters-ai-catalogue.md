@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-17
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../plans/0066-inventory/monsters-ai-catalogue.md
 resolution: "Tier B accept with fixes (1): R114a 'every event' scoped; see plan 0066 log 2026-11-17"
 ---

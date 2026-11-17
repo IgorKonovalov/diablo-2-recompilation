@@ -122,7 +122,7 @@ three runs reproduce it with 0 mismatches: [run:2026-10-17-quests](../../finding
 pass, the quest timers (one-shots), the quest-seed draws of NPC 331, the eclipse arm, the cairn order on the `bkd ` use,
 the Dark Wanderer and Anya's reward, the NPC 266 draws, the level-entry and item-use steps reached, the portal's three
 draws and its refusal in a town, placement, Meshif's stepping type-5 return, the Harrogath portal, packet 0x48's clear,
-the resurrection's move and the "no draw" travel rows. [Plan 0066](../../plans/0066-simulation-inferred-claims-sweep.md)
+the resurrection's move and the "no draw" travel rows. [Plan 0066](../../plans/done/0066-simulation-inferred-claims-sweep.md)
 added, from new checks over the kept logs, second-tool scans of the code image and tables, and an emulation of the
 free-cell search: the logged boss credits, services and object steps, the event raisers, the registry, the game record's
 writers, the timer cadence, the stock placement scans and the free-cell search at other sizes and steps. `[I]` for this

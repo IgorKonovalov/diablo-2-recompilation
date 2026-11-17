@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/skills/0002-missiles.md
   - ../../specs/skills/dispatch.md
 resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): all seven items in [skills/dispatch](../../specs/skills/dispatch.md) § K (handlers 8, 10, 18, 31 in the table, handler 9's formula in K2, K2's remainder list narrowed) and I4 (Kick's start [C], flag 2's meaning left to I1)."

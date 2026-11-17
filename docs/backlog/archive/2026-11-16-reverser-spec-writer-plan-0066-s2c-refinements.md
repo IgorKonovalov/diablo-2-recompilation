@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../plans/0066-inventory/skills-missiles.md
   - ../../findings/skills/0002-missiles.md
 resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): part 1 applied the missiles, catalogue and README items; part 2 the dispatch items: constants 22 (StateDo147Attached's state-114 lookup), C's durability path (the defender's, [I]), I4's 13 mastery callers, E1–E2's bit-6 writers and readers with the client-range counts, mode 14's start MonModeStartSeq clearing bit 6 (entry table, A2, E2, M1, note 6), I1's 0x005D8B10 in SkillDo75GrimWard's range, in [skills/dispatch](../../specs/skills/dispatch.md)."

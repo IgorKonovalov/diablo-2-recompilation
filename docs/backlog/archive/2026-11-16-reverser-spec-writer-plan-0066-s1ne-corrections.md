@@ -6,7 +6,7 @@ status: done
 context:
   - ../../findings/ai/experiments.md#run2026-11-16-sweep2-s1ne
   - ../../findings/ai/0001-machinery.md#14-plan-0066-batch-s1ne-part-1-twelve-maps-emulated-the-routes-read-2026-11-16-lanen66ne
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
 resolution: "Plan 0066 Phase 3, monsters/ai cluster part 1 (lane/n66ai): items 1–16 in the specs: README C4 rewritten (C2 and C3 kept [I] with C2b and a reverser entry for n ≤ 0), C1's no-record exit, E1's order and IsBadCodePtr, F1 and F2; machinery D2's null control, A7's unsigned shift, T22a's IsUndead bits, T13a's distance first, E4's scan order, B8b, B4, B7's low byte, note on row 125, A3, A6 and E1 (KeepNear) ([README](../../specs/monsters/ai/README.md), [machinery](../../specs/monsters/ai/machinery.md))."
 ---
 

@@ -1,6 +1,6 @@
 # 0038 — Inferred-claims sweep: raising `[I]` to `[C]` in the reviewed specs
 
-> **Status:** done 2026-11-10 (closed by the owner where it stands, as the architect recommended at plan 0066's approval; every row not raised by then stays `[I]`, deferred; the method continues in [plan 0066](../0066-simulation-inferred-claims-sweep.md)); approved 2026-10-16, by the owner, to run unattended
+> **Status:** done 2026-11-10 (closed by the owner where it stands, as the architect recommended at plan 0066's approval; every row not raised by then stays `[I]`, deferred; the method continues in [plan 0066](0066-simulation-inferred-claims-sweep.md)); approved 2026-10-16, by the owner, to run unattended
 > **Created:** 2026-10-16
 > **Owner skill(s):** architect (Phase 0), reverser, spec-writer
 > **Related ADRs:** 0001-target-toolchain-evidence-sources, 0003-runtime-experiments, 0004-boundary-oracles-in-reproduction, 0008-two-client-harness, 0010-forced-path-runs, 0011-harness-slots, 0013-forced-path-runs-cell-level, 0014-scope-game-simulation

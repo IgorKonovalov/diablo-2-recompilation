@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/quests/0001-progression.md
   - ../../findings/quests/0002-travel.md
 resolution: "Plan 0066 Phase 3 (lane/n66qr, 2026-11-16): A6's read side (QUESTS_SendGameRecord's SaveBytes, the callbacks never reading it) written in; travel C3's 'draws again' was already removed by plan 0063 Phase 3, the table half raised. [quests/progression](../../specs/quests/progression.md#a-the-quest-record)"

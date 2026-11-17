@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/quests/0001-progression.md
 resolution: "Plan 0066 Phase 3 (lane/n66qr, 2026-11-16): Radament's two site triples listed, Andariel's level pass rewriting a credited killer stated, the A2Q1 and A4Q3 StepBits sites given their NpcGate owners. [quests/progression](../../specs/quests/progression.md#h-the-quests)"
 ---

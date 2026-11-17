@@ -4,7 +4,7 @@ to: archivist
 date: 2026-11-16
 status: open
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
+  - ../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../findings/items/0013-grids-belts-stacks.md
   - ../findings/stats/0001-aggregate.md
 resolution: ""

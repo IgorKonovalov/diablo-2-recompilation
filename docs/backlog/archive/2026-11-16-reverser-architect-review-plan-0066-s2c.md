@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/skills/0002-missiles.md
   - ../../../tools/skills_s2c.py
 resolution: "Tier B check 2026-11-16: accept with fixes (3: overclaim 2, stale cross-reference 1+1); S2c whole merged into main."

@@ -4,9 +4,9 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/items/0013-grids-belts-stacks.md
-resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–6 in items/use and items/inventory; item 7 needs no text, no spec describes GameFindUnit's per-type lists [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–6 in items/use and items/inventory; item 7 needs no text, no spec describes GameFindUnit's per-type lists [log](../../plans/done/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 3 (`lane/n66z`, run:2026-11-16-sweep2-s4e-emu part 3) ran the item request handlers and

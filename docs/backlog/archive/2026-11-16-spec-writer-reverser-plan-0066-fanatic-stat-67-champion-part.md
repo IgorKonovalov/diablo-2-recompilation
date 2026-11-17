@@ -4,7 +4,7 @@ to: reverser
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/anim/experiments.md
   - ../../specs/monsters/stats.md
 resolution: "Closed at the plan 0066 Phase 3 anim review (architect, Tier A, 2026-11-16): no contradiction, no read needed. monsters/stats § G defines \"champion part\" as the flag-1 body of champion without its velocity, and G3 gives the velocity by mod id: 37 fanatic the clamp only, 16 and 38 + 20 (both [C], run:2026-10-15-mon-stats). The two logged fanatic units at 175 (75 + clamp at Velocity 4) agree with it; anim/timing J5 and anim/movement A3 already state 175."

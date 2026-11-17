@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../wiki/animation.md
   - ../../specs/anim/movement.md
 resolution: "Refreshed wiki/animation from anim/README, timing and movement (the run-to-walk turn now states movement D2's 75 turns in the drain's frame and the 6 later mode sets, open item removed; the monster strike's code 1 and 2 corrected) and wiki/quirks from quirks/README (class table recounted to 538 entries, the raised quirks stated confirmed)."

@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-15
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md#implementation-log
   - ../../findings/quests/0002-travel.md#16-plan-0066-batch-s3a-the-travel-lines-re-checked-2026-11-15-lanen66g
 resolution: "Plan 0066 Phase 3 (lane/n66qr, 2026-11-16): travel Outputs rewritten (e3 for a level change within one act, none for an act change, [C] on 341 and 87; the guard [I]); progression word 4's TownLevelLeave row and the e3 events row re-read. [quests/travel](../../specs/quests/travel.md#outputs)"
 ---

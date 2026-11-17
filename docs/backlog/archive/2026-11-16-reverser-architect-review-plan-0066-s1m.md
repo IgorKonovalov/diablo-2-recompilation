@@ -4,7 +4,7 @@ to: architect
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/ai/experiments.md
   - ../../plans/0066-inventory/README.md
 resolution: "Tier B check accept with fixes (3); see plan 0066 log entry 'Tier B check of S1m'"

@@ -4,9 +4,9 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/items/0011-economy.md
-resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items/economy F (max buy read, unused), G3, B2/B3 order, B6, D5, Encode 4, H7/H8 (32-bit idiv, none-queued test), H2 [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items/economy F (max buy read, unused), G3, B2/B3 order, B6, D5, Encode 4, H7/H8 (32-bit idiv, none-queued test), H2 [log](../../plans/done/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 The request: what is needed, from whom, and why. Not blocking / blocking <what>.

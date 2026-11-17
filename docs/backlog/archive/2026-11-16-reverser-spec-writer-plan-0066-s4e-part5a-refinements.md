@@ -4,10 +4,10 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/items/0013-grids-belts-stacks.md
   - ../../findings/items/0014-ground-items.md
-resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–7 in items/inventory and items/use [log](../../plans/0066-simulation-inferred-claims-sweep.md)"
+resolution: "Applied in plan 0066 Phase 3, the stats/items cluster (lane/n66si): items 1–7 in items/inventory and items/use [log](../../plans/done/0066-simulation-inferred-claims-sweep.md)"
 ---
 
 Plan 0066 batch S4e part 5a (`lane/n66z`, run:2026-11-16-sweep2-s4e-emu part 5a) ran the placement search on full

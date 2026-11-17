@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/ai/experiments.md
   - ../../plans/0066-inventory/monsters-ai-machinery.md
   - ../../plans/0066-inventory/monsters-ai-README.md

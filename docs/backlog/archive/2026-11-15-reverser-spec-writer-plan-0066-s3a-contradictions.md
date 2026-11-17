@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-15
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md#implementation-log
   - ../../findings/quests/0001-progression.md#18-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-2026-11-15-lanen66g
   - ../../findings/quests/experiments.md#addendum-2026-11-15-plan-0066-batch-s3a-the-kept-quest-logs-re-checked-lanen66g
 resolution: "Plan 0066 Phase 3 (lane/n66qr, 2026-11-16): C4 rewritten per quest (quests 13 and 19 [C], the maps as read [I]); word 37's rows left [I] as the item says; row 196's party gate and row 16's ClearSteps words written in. [quests/progression](../../specs/quests/progression.md#c-the-join-and-the-game-creators-history)"

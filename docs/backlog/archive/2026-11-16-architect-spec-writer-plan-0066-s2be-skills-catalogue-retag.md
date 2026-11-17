@@ -4,10 +4,10 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/skills/0003-handlers.md
   - ../../plans/0066-inventory/skills-catalogue.md
-resolution: "Done (lane/n66sk, Phase 3 skills cluster part 1): items 1-6 applied (H5's block order corrected, M5, B1's callbacks, do 13's return, the worked example's two branches, Q4's do 137); the H2c moves and the 22 not settled stay [I]. [plan log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-skills-cluster-re-tagged-part-1-spec-writer-lanen66sk-skillsreadme-missiles-and-catalogue-resume-note)"
+resolution: "Done (lane/n66sk, Phase 3 skills cluster part 1): items 1-6 applied (H5's block order corrected, M5, B1's callbacks, do 13's return, the worked example's two branches, Q4's do 137); the H2c moves and the 22 not settled stay [I]. [plan log](../../plans/done/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-skills-cluster-re-tagged-part-1-spec-writer-lanen66sk-skillsreadme-missiles-and-catalogue-resume-note)"
 ---
 
 Plan 0066 batch S2be (`lane/n66sb`, Tier A audit 2026-11-16) settled rows of skills/catalogue; the lane filed no entry for Phase 3. For the skills cluster's re-tag (claims and anchors in [skills/0003 §§ 18–20](../../findings/skills/0003-handlers.md#18-plan-0066-batch-s2be-part-1-the-catalogues-after-parts-routed-re-seed-callbacks-from-the-kept-runs-2026-11-16-lanen66sb); lines of `docs/specs/skills/catalogue.md` at `b5999f5e`, match by text; the inventory rows say which half is `[C]`). Not blocking.

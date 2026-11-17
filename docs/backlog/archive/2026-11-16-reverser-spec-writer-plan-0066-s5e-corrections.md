@@ -4,9 +4,9 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../findings/combat/0001-formulas.md
-resolution: "Applied at plan 0066 Phase 3, combat cluster (lane/n66y): items 1-15 in combat/reductions, to-hit, damage and delivery, the tags of item 14 as ruled ([plan log](../../plans/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-combat-cluster-re-tagged-spec-writer-lanen66y))"
+resolution: "Applied at plan 0066 Phase 3, combat cluster (lane/n66y): items 1-15 in combat/reductions, to-hit, damage and delivery, the tags of item 14 as ruled ([plan log](../../plans/done/0066-simulation-inferred-claims-sweep.md#2026-11-16--phase-3-the-combat-cluster-re-tagged-spec-writer-lanen66y))"
 ---
 
 Plan 0066 batch S5e (`lane/n66t`) found these against the combat specs at `b5999f5e`, from the emulation

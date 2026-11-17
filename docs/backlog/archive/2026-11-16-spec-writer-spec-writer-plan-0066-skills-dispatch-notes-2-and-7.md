@@ -4,7 +4,7 @@ to: spec-writer
 date: 2026-11-16
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../../specs/quirks/README.md
 resolution: "Plan 0066 Phase 3, skills cluster (lane/n66sk): [skills/dispatch](../../specs/skills/dispatch.md) note 7 [C] (S2c) and note 2's unused-result half [C] on S5b's read, its floor half [I] (row 64's H2a route); Q262 and Q263 cite dispatch n2 and n7 again and the quirks Coverage table's weaker-duplicate column is empty for dispatch ([quirks](../../specs/quirks/README.md))."
 ---

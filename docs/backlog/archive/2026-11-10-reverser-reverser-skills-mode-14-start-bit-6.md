@@ -4,7 +4,7 @@ to: reverser
 date: 2026-11-10
 status: done
 context:
-  - ../../plans/0066-simulation-inferred-claims-sweep.md#implementation-log
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md#implementation-log
   - ../../findings/skills/experiments.md
 resolution: "Mode 14's start is 0x005A7870 (g_MonModeRecords record 14), sub_005A7870_MonModeStartSeq: SUNIT_SetMode(14), clears bit 6 at 0x005A7884, tail-jumps to SKILLS_StartUsedSkill; MonSeqFrame runs the do with the bit clear on code 1 or 2. Plan 0066 S2c part 2, [skills/0002 § 16](../../findings/skills/0002-missiles.md#16-plan-0066-batch-s2c-part-2-bit-6-the-flag-bits-packets-and-the-creators-2026-11-16-lanen66q); rewordings in [the S2c refinements entry](2026-11-16-reverser-spec-writer-plan-0066-s2c-refinements.md)."
 ---

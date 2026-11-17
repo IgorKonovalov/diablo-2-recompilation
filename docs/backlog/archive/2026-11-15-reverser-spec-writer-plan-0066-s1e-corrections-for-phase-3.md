@@ -5,7 +5,7 @@ date: 2026-11-15
 status: done
 context:
   - ../../findings/ai/experiments.md#run2026-11-15-sweep2-s1e
-  - ../../plans/0066-simulation-inferred-claims-sweep.md
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
 resolution: "2026-11-17, spec-writer (plan 0066 Phase 3, monsters/ai part 2, `lane/n66ai2`): all six in [monsters/ai/catalogue](../../specs/monsters/ai/catalogue.md): 1 R51's pick block and R51p; 2 R129's block (n = 0 tests entry 0, the first store dead); 3 the Notation row and Reimplementation note 3 (one map), with quirks Q515; 4 R50c; 5 R23b; 6 R105's `AiShadowSkillRoll` head (0, 1 or 3 draws, `melee` unread). Inventory rows 420, 385, 3 and 518, 288, 72, 229."
 ---
 

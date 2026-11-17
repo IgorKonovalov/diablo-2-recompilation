@@ -4,7 +4,7 @@ to: spec-writer, archivist
 date: 2026-11-15
 status: open
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
+  - ../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../findings/items/experiments.md#addendum-2026-11-15-plan-0066-batches-s4a-and-s4b-new-checks-over-the-kept-economy-and-inventory-logs-and-static-second-sources-lanen66h
 resolution: ""
 ---

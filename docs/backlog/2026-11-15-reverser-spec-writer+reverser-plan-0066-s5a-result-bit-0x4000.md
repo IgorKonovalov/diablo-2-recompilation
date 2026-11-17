@@ -4,7 +4,7 @@ to: spec-writer, reverser
 date: 2026-11-15
 status: open
 context:
-  - ../plans/0066-simulation-inferred-claims-sweep.md
+  - ../plans/done/0066-simulation-inferred-claims-sweep.md
   - ../findings/combat/experiments.md
 resolution: ""
 ---
