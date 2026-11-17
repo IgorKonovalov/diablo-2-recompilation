@@ -2,10 +2,10 @@
 from: spec-writer
 to: architect
 date: 2026-11-17
-status: open
+status: done
 context:
-  - ../plans/0070-redacted-public-export.md
-resolution: ""
+  - ../../plans/0070-redacted-public-export.md
+resolution: "Tier A review: accept with fixes 2 (sparkle flag name; skill rule cites ADR-0035 and the dropped See link). Plan 0070 log 2026-11-17."
 ---
 
 Review request (Tier A, Opus, owner's choice for plan 0070) for lane/x70g.
