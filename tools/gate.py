@@ -1373,7 +1373,7 @@ RULES = [
     ("E17", "mermaid blocks draw, labels intact"),
     ("E18", "quirks index matches the specs (tools/quirks.py check)"),
     ("E19", "illustration blocks parse and resolve (tools/site_build.py check)"),
-    ("E20", "the export publish check's self-tests pass (tools/test_export_check.py)"),
+    ("E20", "the export publish check's and builder's self-tests pass (tools/test_export_check.py, test_export_build.py)"),
     ("E10", "no tags, anchors or addresses in the wiki"),
     ("E11", "wiki pages based_on reviewed specs"),
     ("E12", "wiki sections link a spec"),
@@ -1519,19 +1519,21 @@ def check_illustrations(root, rep):
 
 
 def check_export_tests(root, rep):
-    """E20: run tools/test_export_check.py (about 0.3 s) from this gate's own tools/ directory."""
-    tool = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_export_check.py")
-    if not os.path.isfile(tool):
-        return
-    out = subprocess.run([sys.executable, "-I", tool], capture_output=True, text=True)
-    m = re.search(r"^TEST export_check: (\d+) checks, (\d+) failed", out.stdout, re.M)
-    rep.count("E20", int(m.group(1)) if m else 1)
-    for line in out.stdout.splitlines():
-        if line.startswith("FAIL "):
-            rep.err("E20", "tools/test_export_check.py", 1, line[5:])
-    if not m or (out.returncode and not rep.errors.get("E20")):
-        rep.err("E20", "tools/test_export_check.py", 1, f"self-tests failed (exit {out.returncode}): "
-                f"{(out.stderr or out.stdout).strip()[-200:]}")
+    """E20: run tools/test_export_check.py and tools/test_export_build.py from this gate's own tools/ directory."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    for name in ("export_check", "export_build"):
+        tool = os.path.join(here, f"test_{name}.py")
+        if not os.path.isfile(tool):
+            continue
+        out = subprocess.run([sys.executable, "-I", tool], capture_output=True, text=True)
+        m = re.search(rf"^TEST {name}: (\d+) checks, (\d+) failed", out.stdout, re.M)
+        rep.count("E20", int(m.group(1)) if m else 1)
+        for line in out.stdout.splitlines():
+            if line.startswith("FAIL "):
+                rep.err("E20", f"tools/test_{name}.py", 1, line[5:])
+        if not m or (out.returncode and not rep.errors.get("E20")):
+            rep.err("E20", f"tools/test_{name}.py", 1, f"self-tests failed (exit {out.returncode}): "
+                    f"{(out.stderr or out.stdout).strip()[-200:]}")
 
 
 def staged_snapshot(root, also, dest):

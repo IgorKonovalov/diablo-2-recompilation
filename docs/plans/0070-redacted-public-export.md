@@ -1,6 +1,6 @@
 # 0070 — The redacted public export: what leaves the machine, how it is redacted, and the check that guards it (ADR-0009, ADR-0035)
 
-> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2, 2b, 4 and 5 done 2026-11-17; re-cut 2026-11-16 for three later owner decisions (simplification,
+> **Status:** in progress: Phase 1 done 2026-11-16; Phases 2, 2b, 3, 4 and 5 done 2026-11-17; re-cut 2026-11-16 for three later owner decisions (simplification,
 > schematic illustrations per ADR-0036, the cheapest residue option); approved (owner, 2026-11-16: "1 b / 2 keep / 3 github pages, similar to @../Ritmolux/ documentation /
 > 4 yes / 5 go as recommended"; the account: "My account, like Ritmolux"; hosting recorded in ADR-0035)
 > **Created:** 2026-11-16
@@ -290,7 +290,8 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   `--schematic`, and makes no network request; every page has a `title` and a `sidebar.order`; every drop is a report
   line (page, heading, rule, text); the two wiki illustrations reach `site/public/illustrations/<id>/` with their
   caption on the page; the check is green on the first cut, apart from the export-only pages if Phase 5 has not
-  landed; the log holds the trial's counts, with each page's share of dropped sentences. Tier B check.
+  landed; the log holds the trial's counts, with each page's share of dropped sentences. Tier B check. **Done
+  2026-11-17** (Tier A review, accept with fixes).
 
 ### Phase 4 — The export repository's files
 - **Owner skill:** archivist
@@ -330,6 +331,13 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
 
 ### Phase 9 — The second cut's redaction review
 - **Owner skill:** architect
+- **Before the cut (Phase 3 review, 2026-11-17).** The archivist adds one redactor rule first, so that rows and bullets
+  carrying an anchor are rewritten, not dropped (the trial dropped 44% of the specs' units, mostly for that): inside any
+  unit, `fn:Name@0x…`, `data:Name@0x…` and `tbl:Name` become `` `Name` `` when `Name` itself holds no hex, `sub_` or
+  `DAT_`; a `struct:Name+0x…` token, a `run:` id, a finding id or link and a `src:` id are removed as tokens; a cell left
+  empty becomes `—`; a list or parenthetical left empty goes. Every rewrite is a report line (`REWRITE`, page, heading,
+  before, after), and the simplifier then runs on the rewritten unit, so a residue still drops it. The check is
+  unchanged. Rerun the trial and log the new share per spec before Phase 9 starts. Tier B check.
 - **What:** add the reviewed specs to the manifest, cut afresh, and run the Tier A redaction review above. Read every
   drop line of the six sampled specs and the drop counts of every spec. A spec that loses more than a quarter of its
   sentences, or one whose remaining text no longer reads as whole, stays out of the manifest.
@@ -669,3 +677,131 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   failures, 0 warnings, exit 0; this closes the done-when item the lane left open. Noted for later phases: the
   config needs `site/src/cut.json` (Phase 3's builder writes it, with `groups`); X7's `github.com/IgorKonovalov`
   allowance is narrowed to the export repository at Phase 7 (Phase 2 review, ruling 6). Fixes count: tools 3.
+- 2026-11-17 — **Owner decision: game-math hex passes by a short allowlist** (owner, via the orchestrator; implemented in
+  lane/x70b). Hex values that are game math, not code addresses, are not X1/X3 failures: RNG seeds used as illustrative
+  examples, the RNG multiplier and similar named constants, the randomness page's worked example, and the draw values in
+  the schematic animations' calculation panels. Three mechanisms in `tools/export_check.py` (`load_allow`, `Allow`,
+  `SectionTracker`, `RE_DRAW_CTX`), one reviewed config file, `docs/export/allow-hex.txt` (architect-owned, a reason on
+  every line): (1) **values**, matched in any spelling: `6AC690C5` (the RNG multiplier), `0000029A` (the 666 second word of
+  an initialised seed), `AA55AA55` (the save file's signature word), `0xC0FFEE` (the illustrations' seed), `00003039`
+  (12345, the randomness example's seed); (2) **sections**, `section <page> <heading start> :: <reason>`: any hex of 6+
+  digits under that heading of that page (the check follows the manifest's page to route map): the worked examples of
+  randomness, levels (both), seed-to-world, characters, quests (two sections) and saves, 7 entries; (3) a **scoped rule in
+  schematic illustration folders** for `steps.json` and `index.html`: hex passes only in the shapes the generators print
+  for a draw, `{hi:lo}` seed states, `{start, 666} = {hex, 666}` and `lo`/`seed`/`draw` `= 0x…`. **Never allowed, by
+  any of the three:** a value in the code image's range `0x00400000`-`0x007FFFFF` (the loader refuses such a values entry;
+  a section or draw-shape value that falls in the range still fails, and the simplifier drops its unit: the saves
+  example's `0x6D6D80` is one, dropped), a `sub_`/`DAT_` name, a `+0x` offset, a hex after `_` or `+`. The allowance applies
+  to X1 and X3 only. **ADR-0031** governs constants of the code image (table data and values the binary holds: `PathDirTables`,
+  `ActClockTables`); the allowlist respects it because it holds no value of the image's range and no table content: the
+  multiplier is an arithmetic constant that the randomness page already states in words and the specs state, and every
+  other entry is an input our own examples chose or a value computed from one. The multiplier is the one entry the
+  reviewer should weigh against ADR-0031 (it is also a code-image immediate); the owner's decision names it. Fixtures and
+  tests (`tools/test_export_check.py`, 101 checks): an allowed seed passes, the same value outside the allowlist fails, an
+  image-range entry is refused with `load_allow`, an address next to an allowed value still fails, the draw shapes pass
+  only in a folder and an address in a folder fails (built at run time from the `clean` fixture).
+- 2026-11-17 — **Phase 3 done** (archivist, lane/x70b; Tier A review requested by the owner). `tools/export_build.py`,
+  `tools/test_export_build.py` (31 checks; gate E20 now runs both test files), `docs/export/allow-hex.txt`, the allowance
+  in `tools/export_check.py`, one text change in `tools/tc_anim.py` (below). **What it does:** redactor (front matter,
+  *Open questions*, evidence parentheticals, anchor-only columns, address column of pseudocode lines, `sub_XXXXXXXX_`
+  prefixes), simplifier (units: sentence of a paragraph, list item with its children, table row, fenced block, quote;
+  caption sentences; a heading that fails takes its section; an empty section goes; `[L]` is rule `XL`), link rewriter
+  (manifest pages to routes relative to the linking page's URL directory, anchors kept only if the heading survives;
+  every other link keeps its text), illustration runner (`maze_anim.py` and `tc_anim.py` only, `python3 -I … <root>
+  <args> --schematic --out <folder>`; a tool without the mode or a failed run is a report line). `--out` is refused unless
+  `workspace/export` or `workspace/export-<name>`; no network module. `report.txt` at the cut root: per-rule drop counts,
+  a per-page row (units, units dropped, share) and one `DROP <page> | <heading> | <rule> | <kind> | <text>` line per drop.
+  **Choices the review should confirm:** (1) *The GIF is linked, not embedded.* A Markdown image of a public file needs the
+  base path: a relative `../../illustrations/…` is an asset import to Astro and a root-absolute `/illustrations/…` ignores
+  the base, so the page carries `[Animation: <id> (GIF)](…)`, `[Step through <id>](…/index.html)` and the caption, plus
+  one added sentence ("Seed: illustrative … computed by our model, not observed in the game"). Inline embedding needs a
+  small rehype step in `astro.config.mjs` (Phase 4's file) that prefixes the base to `/illustrations/` image sources;
+  decision for the architect. (2) Evidence parentheticals are recognised by a token grammar (anchor, run id, address,
+  finding link or id, ADR/plan word, date, `see`/`and`/`at`/`addendum`); a parenthetical with any other word stays and
+  its unit goes to the simplifier. (3) The `XL` rule (an `[L]` tag anywhere outside *Open questions*) is the builder's own,
+  not the check's. (4) `tools/tc_anim.py`: the creation-record line wrote `Game+0x6A 3` (an in-memory offset, X1) and
+  "as logged for drops"; it now reads "Creation record for drops: item version 101, ladder 0, …" in both modes (the
+  steps-equality test still holds, 5 tests OK). The value 3 is no longer shown; its meaning was not in the line.
+  **First cut** (25 pages, merged with `main` at 4685ecae): `export_build.py` then `export_check.py workspace/export`:
+  **0 failures**, 326 X12 warnings (noise by design; nominative names and table row names). Illustrations in
+  `site/public/illustrations/drlg-maze-level36/` (43 frames) and `items-tc-andariel-hell/` (87 frames), each with its GIF,
+  `index.html`, `steps.json`, `schematic.json`; the check verifies their hashes, marker and text (draw values by the
+  scoped rule). Drops: 56 report lines, 5172 units, 69 dropped (1.3%): X1 33, X3 5, X9 19; by kind 38 list items (X9,
+  the characters page's Battle.net lines, the glossary's offsets), 13 sentences, 2 rows (`0x6D6D80` in the saves
+  example), 1 table, 2 caption sentences (the illustrations' "computed by tools/…" sentence, X3). Pages with drops: the
+  glossary 34 of 161 units (21%), monster-ai 20 of 354 (5.6%, 13 are children of 7 dropped bullets), animation 2 (1.2%),
+  quirks 1 (1.0%), server-frame 3, characters 2, items 2, then one each on randomness, levels, items-other-paths, saves,
+  pathing; 14 pages none. The two illustration blocks do not appear in the drops.
+  **Trial cut** (every reviewed spec added: 65 specs, status `reviewed`, in groups `s-<subsystem>`; manifest and output
+  in scratch and `workspace/export-trial/`, never in git): 90 pages, 19223 units, 6310 dropped; of the 65 specs 14051
+  units, **6241 dropped (44.4%)**. Drops per rule (a unit may carry several): X1 4876, X2 3048, X3 1580, X5 214, X9 114,
+  open-questions 63 sections, children of dropped items 18; by kind (specs): 2814 table rows, 2147 list items, 703
+  fenced blocks, 527 sentences, 79 sections, 7 tables. The check on the trial cut: **11 failures, all X6** (tables of
+  21 to 135 body rows the manifest does not name: drlg/maze 23, drlg/outdoor 21, items/properties 25, items/vendors 36,
+  monsters/ai 23, quirks 26, 73, 135, 22, 30 and 59), 703 X12 warnings, no X1 to X5, X7 to X11 residue: the simplifier
+  leaves nothing the check would fail. Share of dropped units per spec, dropped/units: anim/README 12/36 (33%); anim/movement
+  49/83 (59%); anim/timing 111/214 (52%); chain/README 49/142 (34%); combat/README 74/146 (51%); combat/damage 43/88
+  (49%); combat/delivery 80/169 (47%); combat/reductions 40/104 (38%); combat/to-hit 39/107 (36%); conformance/README
+  22/82 (27%); data/README 5/25 (20%); data/calc 60/208 (29%); data/excel 101/230 (44%); data/strings 33/129 (26%);
+  drlg/README 76/109 (70%); drlg/collision 165/374 (44%); drlg/lifecycle 142/219 (65%); drlg/maze 87/218 (40%);
+  drlg/outdoor 145/483 (30%); drlg/preset 109/200 (54%); drlg/room-tiles 91/171 (53%); drlg/warps 104/195 (53%);
+  hirelings/README 82/236 (35%); items/affixes 126/261 (48%); items/cube 158/311 (51%); items/economy 122/251 (49%);
+  items/inventory 118/216 (55%); items/properties 106/268 (40%); items/quality 61/186 (33%); items/quest-drops 140/263
+  (53%); items/sockets-runewords 111/227 (49%); items/tc 126/273 (46%); items/trade 42/137 (31%); items/uniques-sets
+  90/207 (44%); items/use 52/126 (41%); items/vendors 98/223 (44%); monsters/README 13/28 (46%); monsters/ai/README
+  87/203 (43%); monsters/ai/catalogue 386/1230 (31%); monsters/ai/machinery 84/168 (50%); monsters/pool 126/218 (58%);
+  monsters/spawn 130/280 (46%); monsters/special 156/371 (42%); monsters/stats 133/358 (37%); objects/README 159/338
+  (47%); path/README 136/227 (60%); path/search 80/183 (44%); player/README 1/7 (14%); player/creation 100/211 (47%);
+  player/party 23/101 (23%); quests/README 8/37 (22%); quests/progression 228/529 (43%); quests/travel 94/200 (47%);
+  quirks/README 263/683 (38%); rng/README 30/56 (54%); rng/seeds 86/115 (75%); save/d2s 168/302 (56%); sim/frame 109/245
+  (44%); skills/README 27/57 (47%); skills/catalogue 81/161 (50%); skills/dispatch 179/336 (53%); skills/missiles
+  117/186 (63%); stats/README 19/32 (59%); stats/aggregate 88/142 (62%); stats/states 61/130 (47%). 21 specs lose more
+  than half their units, 61 of 65 more than a quarter. Reading: the second cut as built keeps under three fifths of
+  the specs and mostly their prose and pseudocode; most losses are table rows and bullets that carry an anchor, an
+  address or a finding id inside the unit, which the redactor does not strip (it removes parentheticals and whole
+  columns only, never an anchor inside a row), so a cheaper redactor rule (strip `fn:Name@0x…` inside a cell or bullet
+  to `Name`) would recover many; that is a design choice for the architect before Phase 8/9, not made here. Also noted:
+  X12 warnings 703 on the trial. Next: the architect's Tier A review, then Phase 6.
+- 2026-11-17 — **Phase 3 review: accept with fixes (6); Phase 3 done** (architect, Opus Tier A, lane/x70b). Read the
+  builder, both test files, the allowance in the check, the allowlist, gate E20 and the `tc_anim.py` caption change; cut
+  afresh into `workspace/export-review/` and checked it. **Fixes (applied in the review commit):** (1) *The image range
+  was too narrow* (blocking grade): `0x00400000`-`0x007FFFFF` covers `.text` and part of `.rdata` only; the pinned
+  `Game.exe` maps to `0x009B9FFF` (SizeOfImage `0x5BA000`; `.data`/`.bss` from `0x705000`, 125 symbols above
+  `0x7FFFFF`, the highest `0x00994C88`), so a `.data` address passed inside a worked-example section. `IMAGE_HI` is now
+  `0x009B9FFF`, and X1's bare all-digit address shape covers `00[4-9]…`. (2) *The log's "a draw-shape value in the range
+  still fails" was false*: the folder rule returned before the range test. Now only the brace seed states (`{hi:lo}`,
+  `{start, 666}`) admit an in-range value (the TC illustration's `{a28ed4c0:00507fab}` is one); `lo =`, `seed`, `draw`
+  shapes refuse it. (3) *Pins*: with the true range, three worked-example values fell in it (`0090CE87` randomness step
+  4, `0090CE8A` the Den of Evil's first maze room, `0x800010` the saves example's flags) besides `0x6D6D80`. A new
+  allowlist form `pin <hex> <docs path> :: <reason>` admits one in-range value on one page; the loader refuses a pin
+  that `re/symbols.csv` names. The four are pinned, so the saves row of `0x6D6D80` is back; a section still admits no
+  in-range value. (4) *A `[L]` tag fails X2* in the check, not only the builder's `XL`. (5) *X3 fails a working-docs
+  path* (`specs/…`, `tables/`, `formats/`, `findings/`, `plans/`, `adrs/`, `backlog/`): the glossary carried 126
+  `See specs/…` pointers, repository paths under ADR-0035's no-tie rule. The redactor now drops a `See <links>.`
+  sentence whose links are all labelled by a path, and (6) a parenthetical made only of in-memory offsets
+  (`` (`unit+0x20`) ``). Tests: check 112, builder 36, all pass. **Rulings.** The allowlist is the owner's decision and
+  no wider: five values (none in the image's range), seven sections (each a wiki worked example, its heading scope ending
+  at the next heading of its level; read: illustrative seeds and values computed from them), four pins. *The multiplier
+  `6AC690C5`* stays: ADR-0031 governs constants a rule can't give and asks for the rule where one exists; the
+  multiplier is the rule itself, a reimplementation can't do without it, it holds no table content, and the specs and
+  the randomness page already state it. *`0x6D6D80`*: the drop was the conservative reading; it is a computed checksum,
+  now pinned. (a) *Anchors inside a unit*: rewrite, don't drop; written as a Phase 9 prerequisite above. (b) *GIF linked
+  vs embedded*: embed, with a rehype step in Phase 4's config; before Phase 6 ([entry](../backlog/2026-11-17-architect-archivist-plan-0070-before-phase-6-neutral-marker-inline.md)).
+  (c) *`XL`*: accepted, and now also a check rule (fix 4). (d) *The 11 X6 tables*: second-cut matter; at Phase 9 each is
+  named in the manifest with a reason (our own step or decision tables) or left out (a list of game-table rows). The
+  link layout (`../../illustrations/…`, routes as directories) and the caption's added sentence are accepted. **First
+  cut, rebuilt** (`export_build.py --out workspace/export-review`, then `export_check.py`): 25 pages, **0 failures**,
+  326 X12 warnings; 50 drop lines (X1 27, X3 4, X9 19); the glossary 29 of 161 units (18%), monster-ai 20 of 354. Hand
+  greps of the cut for tool names, method words, the working repository's name, the owner's paths, anchors and
+  addresses: none, except below. **Readability (Phase 6 reads these):** the front page and randomness read whole. The
+  glossary keeps every entry's sense but loses the core seed vocabulary the wiki links to (Map seed, Game seed, Item
+  seed and five more) and keeps a repository note in its preamble and five method-only entries; [entry](../backlog/2026-11-17-architect-spec-writer-glossary-export-readiness-plan-0070.md)
+  to the spec-writer. monster-ai's *The first call* and *Past the first call* are about our method and no longer read
+  whole after the drops ("So the 12 614 …" points at a dropped row; "They are exactly the decisions …" at a dropped
+  sentence); Phase 6 decides between a spec-writer rewrite and a manifest directive that drops a named section. The two
+  illustration pages read whole; their calc text names spec sections (`tc.md D`), acceptable. **A tie missed at the
+  Phase 2 review:** the schematic marker `d2recon-schematic/1` is the working repository's project name, in every
+  published illustration file, and `schematic.json` names our tools; renamed before Phase 6 (the archivist entry
+  above). Request [closed](../backlog/archive/2026-11-17-archivist-architect-review-plan-0070-phase-3-builder-redactor-simplifi.md).
+  Ledger: verdict accept with fixes, 6 fixes: misread 1 (the image range), overclaim 1 (the draw-shape claim),
+  omission 3 (pins for the true range, `[L]` in the check, working-docs paths), other 1 (the offset parenthetical).
