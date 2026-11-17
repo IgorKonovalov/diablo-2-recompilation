@@ -770,7 +770,7 @@ RunList(lists->a14, every); RunList(lists->bucket[4], frame);     // fifth list 
   not what the code gives. `SKILLS_TargetCheck` (skills/0002 § 21, run:2026-11-16-sweep2-s2ae5) clears every target
   with the bit clear and keeps one with it set that is not a type-1 unit in mode 12 for a skill without `TargetCorpse`,
   so the bit is not "dead" there either; the table doc's wording is routed to the archivist
-  ([backlog](../../backlog/2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name.md)).
+  ([backlog](../../backlog/archive/2026-11-16-architect-archivist-plan-0066-s2ae-skills-table-c4-bit1-name.md)).
 - [I] **`weapsel`** (`+0x168`): no server read of a Skills `+0x168` (the 11 `[r+0x168]` operands are other records:
   `PlayerData+0x168` in the packet handlers, `0x006222A3`, …). **`leftskill`** (`+0x07` bit 6): one test, client
   (`0x004AA498`). Both are client choices on stock data. (`FLAG weapsel`, `FLAG leftskill`)

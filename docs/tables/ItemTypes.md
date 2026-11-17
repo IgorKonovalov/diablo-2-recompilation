@@ -178,7 +178,7 @@ The per-type columns the repair, price and wear code is expected to read. Offset
   `*_closure_repair_differs` = 0, `economy_survey.py types`).
 - `[I]` **`ItemCanRepair`** (fn:sub_0062E660_ItemCanRepair@0x0062E660): an identified, non-ethereal item with missing
   charges can be repaired; otherwise its own type must have `Repair`, and then a repairable stack (throwable,
-  stackable, not ethereal) or an item with durability can. So the 13 `nodurability` crossbows of a `Repair` type,
+  stackable, not ethereal) or an item with durability can. So the 13 `nodurability` bases of a `Repair` type (12 crossbows and the Phase Blade `7cr`),
   bows and `tpot` are refused unless they have charges ([items/0011 § 5](../findings/items/0011-economy.md#5-callers-buy-sell-repair-the-client-copy)).
 - `[I]` **`StaffMods`** (`+0x01F`) gates the price's staff-mod term: the term runs for every `item_singleskill`
   (stat 107) entry unless the type's byte is 7, which no stock type has (the bytes are 1..6 or 255)

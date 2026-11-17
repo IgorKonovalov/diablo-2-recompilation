@@ -2,12 +2,12 @@
 from: reverser
 to: archivist
 date: 2026-11-16
-status: open
+status: done
 context:
-  - ../plans/done/0066-simulation-inferred-claims-sweep.md
-  - ../findings/items/0013-grids-belts-stacks.md
-  - ../findings/stats/0001-aggregate.md
-resolution: ""
+  - ../../plans/done/0066-simulation-inferred-claims-sweep.md
+  - ../../findings/items/0013-grids-belts-stacks.md
+  - ../../findings/stats/0001-aggregate.md
+resolution: "All four checks run 2026-11-17. (1) CubeMain: quality token tmp in rows 142-145 only, all disabled; no enabled row gives quality 9 [../tables/CubeMain.md]. (2) Rows 338/339: 0 units in all 2274 DS1 files, in no ObjGroup row, and no 338/339 dword in 8 KB of Game.exe data from 0x00731EA0 [../tables/Objects.md]. (3) Skills 127-129: no Hireling or MonStats skill cell and no aura property names them; only two uniqueitems skill-property cells (Bloodtree Stump par6 129, Bloodletter par7 127) [../tables/Skills.md]. (4) The 36 /time codes: only ac/time, on magicsuffix of Dawn and of Sunlight, spawnable blank [../tables/Properties.md]. The findings' rows (items/0013 87 and 17, stats/aggregate 40 and 15) stay with their owners to raise."
 ---
 
 Plan 0066 batch S4e closed with these rows "not settled; stays `[I]`" for want of table checks the reverser lane

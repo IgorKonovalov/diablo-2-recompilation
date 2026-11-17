@@ -160,9 +160,9 @@ fn:COMBAT_LengthImmunities@0x0057C140, run:2026-10-16-combat, tbl:States.txt:sta
   (`poison`, `preventheal`, `openwounds` in stock data) regenerates by its full stat 74 minus the base list's, so the
   bleed or poison counts and the base regeneration does not. Reproduced in 6 181 monster ticks (combat/0001 § 15, [combat/delivery](../specs/combat/delivery.md) E4).
   (fn:sub_005A6920_MonRegenEvent@0x005A6920, 0x005A6935–0x005A6A2B, run:2026-10-16-combat, tbl:States.txt:life)
-- `[I]` **Flag bit 38 (`meleeonly`)** is read by `UNIT_HasStateFlag(attacker, 38)` at `0x0056F19A`: an attacker with
+- `[C]` **Flag bit 38 (`meleeonly`)** is read by `UNIT_HasStateFlag(attacker, 38)` at `0x0056F19A`: an attacker with
   such a state (`wolf` 139, `bear` 140) delivers its melee hit directly, without the charged-skill finisher.
-  (fn:UNIT_HasStateFlag@0x0063A7B0, fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0, tbl:States.txt:meleeonly)
+  (fn:UNIT_HasStateFlag@0x0063A7B0, fn:sub_0056C2D0_AttackDeliverMeleeOnly@0x0056C2D0, tbl:States.txt:meleeonly; [combat/0001 § 18](../findings/combat/0001-formulas.md) confirms the branch at 0x0056F19A-0x0056F1AE and the full-table check: `meleeonly` is 1 on rows 139 and 140 only)
 
 - `[I]` **State row 22 `spiderlay`** is tested by row 26 `Arach` ([ai/0003](../findings/ai/0003-pool-b.md) § 2.10, plan 0052 P1.2 batch 2):
   below `aip5` percent life, in melee range, the spider lays (`Skill1`, no target) only while `UNIT_HasState(U, 22)` is

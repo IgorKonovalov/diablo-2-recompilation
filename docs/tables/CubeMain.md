@@ -248,7 +248,7 @@ decodes with no token left over (`unexplained=0`). Two rows as `rows` prints the
 | count | value | rows |
 |---|---:|---|
 | rows | 151 | 0–150 |
-| `enabled` 1 | 146 | not 142–146 (the five quality-9 `tmp` recipes) |
+| `enabled` 1 | 146 | not 142–146: 142–145 are the four quality-9 `tmp` recipes, 146 the disabled tempered-weapon mod |
 | `ladder` 1 | 21 | rune upgrades 104–122 (`r14` → `r15` and up), the elite upgrades 131–132 |
 | `version` 0 / 100 | 55 / 96 | |
 | `min diff`, `class`, `param`, `value`, any `mod` chance, `output b`, `output c` | 0 rows | blank everywhere |
@@ -318,6 +318,15 @@ These are compiler facts. They say how a cell is stored, not what the transmute 
   60 to be refused there). Each builds with `tools/d2s.py build` and loads in the game
   ([run:2026-10-15-cube-saves](../formats/experiments.md#run2026-10-15-cube-saves);
   [d2s.md § Cube recipe saves](../formats/d2s.md#cube-recipe-saves)).
+
+## Quality-9 outputs (plan 0066 S4e follow-up)
+
+- `[C]` Over the 151 stock rows (`output`, `output b`, `output c`), the quality token `tmp` (quality 9, the output
+  block's `+0x06`, [items/0013](../findings/items/0013-grids-belts-stacks.md)) appears in four rows only: 142 and 143
+  (`useitem,tmp`) and 144 and 145 (`usetype,tmp`), all in `output` (b and c blank). All four have `enabled` blank, so no
+  enabled stock row gives an output of quality 9. Row 146 (`useitem`, a mod on a tempered weapon) is also disabled and
+  does not set a quality. No other quality token is a numeric 9. This settles only the table half of
+  items/inventory 87; the creation request's `+0x30` writers and direct stores to the item's quality byte stay with the reverser.
 
 ## Open questions
 
