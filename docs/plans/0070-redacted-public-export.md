@@ -2702,3 +2702,8 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   it). Tests: export_build 202, export_check 193, widgets 274, publish 44, anim_schematic 5, all green;
   `export_check … --repo workspace/export-repo/`: 0 failures; gate green. Merge over b854ef38: one conflict, this log's
   tail (append on both sides; keep both).
+- 2026-11-18 — **Phase 11 batches 1 and 2 served.** The owner pushed the export repository's `main` (five cut commits:
+  batch 1 and the rng widget, batch 2, the builder's code-span fix with part A's ten specs, part B's eight specs, the
+  named `sub_` anchors); the Pages run passed, and the randomness page, `widgets/rng-stepper/widget.js`,
+  `spec-items/properties/`, `spec-rng/seeds/` and `world/levels/` answer 200. The site now serves 89 manifest pages,
+  22 new animations and one widget.
