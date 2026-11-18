@@ -1,6 +1,6 @@
 # Plans index
 
-Next free number: **0071**
+Next free number: **0072**
 
 Lane runs (agent usage, review verdicts, fix counts by category) are logged in the [lane run ledger](metrics.md).
 
@@ -76,6 +76,7 @@ Lane runs (agent usage, review verdicts, fix counts by category) are logged in t
 | [0068](done/0068-game-files-coverage.md) | Game files coverage: the last loaded tables (`MonItemPercent` first), the COF bundles, and a ledger for every file kind | done | **closed 2026-11-10** (Phase 4 Tier A review, accept with fixes); approved by the owner 2026-11-10; P1 table docs and the coverage ledger (archivist), P2 the readers and the bundles (reverser static, data/0006), P3 the COF bundle format and parser (archivist), P4 the specs (spec-writer): `MonItemPercent` read by no code, the skill-level bonus (skills/dispatch C8), event ids 4 and 8 never dispatched; two reverser harness entries open |
 | [0069](0069-monster-ai-bestiary-tour.md) | Monster AI bestiary tour: the catalogue's harness rows of plan 0066 (H1a–H1d, H1g, H1h; 237 statements) | approved | **approved by the owner 2026-11-10 (as recommended: Q1 (a), Q2 (a)); Phase 1a running (`lane/n69a`, 2026-11-15)**; scope 241 statements (211 after Phase 1a's 30 moves to H1p), about 3.4M tokens; one slot (2), after 0065 P2 |
 | [0070](0070-redacted-public-export.md) | The redacted public export: an allowlist of pages, the redaction per ADR-0009's five risks, `tools/export_check.py` before anything leaves the machine; a Starlight site on GitHub Pages under the owner's account (ADR-0035) | in progress | **approved by the owner 2026-11-16** (scope (b): wiki and glossary first, then the specs; tags kept; host per ADR-0035; cut on request; CC BY 4.0); Phase 1 done (the manifest: 24 pages, six groups); re-cut 2026-11-16 for three owner decisions: the export may simplify (a logged simplifier replaces the spec residue batches, old Phase 8), schematic animations enter the export (ADR-0036, new Phase 2b), the cheapest residue option (no residue batch; X9 narrowed to tool names); Phases 2, 2b, 3, 4 and 5 done 2026-11-17; Phase 6, the first cut's redaction review, accepted with fixes 2026-11-17; next Phase 7, the owner's read and first publish (checklist in the plan); about 2.6M tokens for the first cut, 2.9M in all; no slot, no Ghidra |
+| [0071](0071-mermaid-github-rendering.md) | Mermaid blocks that pass gate rule E17 but GitHub refuses to draw ("Unable to render rich display", e.g. wiki/levels.md): GitHub's error text first, then E17 made to fail where GitHub fails, then the refused blocks rewritten by their owning lanes | draft | not approved (queue limited to 0066 and 0070); next Phase 1, the owner's capture of GitHub's error text; no slot, no Ghidra |
 
 ## Run order (set 2026-11-10, plans 0063–0068)
 
