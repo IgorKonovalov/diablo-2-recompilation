@@ -183,6 +183,20 @@ bonus map above. A few of the tool's illustrations, for stock records (the tool'
 - a Paladin's hit recovery (`PAGHHTH`, 5 frames at speed 256) lasts 10, 9, 8, 7, 6, 5, 4 frames at 0, 7, 15, 27, 48,
   86, 200 FHR.
 
+```widget
+id: breakpoints-calculator
+widget: breakpoints
+fallback: anim-schedule-cast-fcr20
+illustrates: ../specs/anim/timing.md#j-the-rate-unit_animsetrate ../specs/anim/timing.md#k-breakpoints-derived
+caption: Choose an action, type a frame count, a start frame, an animation speed and the item stat for that action, and
+  see its length in frames and its breakpoints. The item stat gives a bonus of 120 x s / (120 + s), toward zero; the
+  bonus gives the factor (a cast 100 plus the bonus, at most 175; a get-hit or a block 50 plus it, a block under Holy
+  Shield 100 plus it; an attack the bonus plus stat 68, 100 on a new player with the weapon's speed term, between 15 and 175); the rate is speed x factor / 100;
+  and the length is the larger of 2 and 256 x (frames - start) / rate, rounded up (timing § J1, J2, K1). Each shorter
+  length has a least factor and, from it, a least item stat (K2, K3), derived, not read from a table. Not shown: the
+  rates of movement and knockback, the dual-wield and sequence terms and the shapeshift base.
+```
+
 The lengths the formulas give equal the schedule's lengths at every rate the run logged. The logs hold records with the
 same frames and speed as these two: a Sorceress's cast at 0, 20, 40 and 50 FCR lasted 14, 12, 11 and 11 frames, and a
 Paladin's hit recovery at 0, 24 and 48 FHR lasted 10, 8 and 6. The formulas for the other rates rest on that and on

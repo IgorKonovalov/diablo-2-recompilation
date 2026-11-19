@@ -454,6 +454,25 @@ Step notes:
   (`Normal` 1, `NormalDivisor` 1), an uber base needs `d ≤ −1` for low quality. [I] (0x00558921–0x00558986,
   tbl:ItemRatio.txt:Normal, tbl:ItemRatio.txt:NormalDivisor)
 
+```widget
+id: quality-chances
+widget: quality
+fallback: text
+illustrates: quality.md#c-shared-terms-and-magic-find quality.md#d-unique-set-rare-and-magic-tests
+  quality.md#e-superior-normal-low
+caption: Type an item level, a base item's quality level, a magic find, an item-ratio record (2 to 5, the records of
+  the table under Inputs) and the four ratio words, and see each quality test's chance c and the chance to win it. d is
+  the item level minus the quality level; each of the unique, set, rare and magic tests takes c = (row value - d divided
+  by its divisor) x 128, divides it by the magic find factor (diminished for unique, set and rare with the constants 250,
+  500 and 600, plain magic find + 100 for magic, none at magic find 0), raises it to the row's minimum, then reduces it
+  by its ratio word, c - ratio x c divided by 1024 (§ C, § D). The superior and normal tests use the row terms
+  alone (§ E). A c below 1 wins with no draw; otherwise one draw from 0 to c - 1 wins below 128, so a test wins with a
+  chance of about 128 in c, and a test that is not certain hands the rest on to the next one. A type that is always
+  magic skips the magic test, a type that never rolls rare skips the rare test, a type that is always normal takes no
+  test, and a magic find of -100 or below goes straight to the superior test. The first four ratio words are
+  illustrative.
+```
+
 ### F. Boundaries (named only)
 
 What item creation does with the code is owned by `items/uniques-sets` (plan 0019, [uniques-sets.md](uniques-sets.md)),

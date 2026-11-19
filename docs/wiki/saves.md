@@ -72,6 +72,17 @@ The checksum is simple ([save/d2s § B](../specs/save/d2s.md#b-checksum)): start
 file, rotate the 32-bit sum left by one bit and add the byte. The four checksum bytes (offset `0x00C`) count as 0
 while summing, both when writing and when reading.
 
+```widget
+id: checksum-stepper
+widget: checksum
+fallback: text
+illustrates: ../specs/save/d2s.md#b-checksum
+caption: Type up to 32 bytes in hex and see the checksum sum grow one byte at a time: the sum starts at 0, and for each
+  byte the 32-bit sum is rotated left by one bit and the byte is added, modulo 2 to the power 32 (saves § B1). The four
+  bytes at offsets 12 to 15, where a save holds its own checksum, count as 0 whatever is typed there. The bytes are toy
+  bytes typed by hand, not a save.
+```
+
 When a save is loaded ([save/d2s § D3–D5](../specs/save/d2s.md#d3d5-reading-a-save)):
 
 1. A file shorter than 8 bytes or with the wrong magic number fails with 9, which reaches the player as it is. A

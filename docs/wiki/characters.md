@@ -470,6 +470,20 @@ Once hired, the mercenary's stats come from the `Hireling` row whose level band 
 The experience needed for level `L` is cubic: `(L + 1) × L² × Exp/Lvl`. This was checked on 72 level settings,
 covering every band.
 
+```widget
+id: merc-stats
+widget: merc
+fallback: text
+illustrates: ../specs/hirelings/README.md#g-the-stats-per-level-merc_setlevel
+caption: Type a mercenary level and see its stats from an invented hire table of three level bands. The band is the row
+  whose level band holds L, and d = L - the band's level (hirelings § G). Strength, dexterity and damage add their
+  per-level column times d divided by 8, resistances divide by 4, and the divisions truncate toward zero, so a level
+  below the first band, where d is negative, rounds toward 0; life is (HP + HP/Lvl x d) x 256 with a floor of 40 x 256,
+  defence and attack rating add the column times d, each stat has its floor, and the experience figures follow
+  ExpForLevel(L, e) = (L + 1) x L x L x e. Not shown: the skills and the other stats of the monster the mercenary is
+  created as.
+```
+
 Three things make these numbers differ from the hire list:
 
 - **Divisions truncate toward zero** here, while the list rounds down. Below the first band (for example a level-30

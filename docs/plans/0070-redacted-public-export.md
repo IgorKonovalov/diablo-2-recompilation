@@ -2747,7 +2747,7 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   the other's size is dropped, the step with the signs left, (0, 0) gives the `octant.zero` parameter 6), recomputed
   25 of 25 against `path_anim.DIR_OCTANT` by a new test check; no spec states that rule yet, so **row 31's block is held
   out of the cut** until spec-path/search § A2 does
-  ([backlog](../backlog/2026-11-19-architect-spec-writer-path-dir-octant-rule.md)). (2) The wall parser now takes an
+  ([backlog](../backlog/archive/2026-11-19-architect-spec-writer-path-dir-octant-rule.md)). (2) The wall parser now takes an
   optional sign and ASCII digits only, in the widget and the twin alike, with a fixture case of nine odd wall texts
   (`3.0`, `1e0`, `0x7`, `1_0`, three parts, spaces, signs). (3) Per-pass final state is acceptable: neither the caption
   nor the intro claims a step per expansion, and the candidate row's "watch the search" is met by the pass slider.
@@ -2858,3 +2858,98 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
     AR, its percent and DEF is not shown.
   - **Fix (other).** (6) Breakpoints' length text says 1 when the rate is 0, and the event text gives E2's bound. The
     block drafts in `workspace/phase11/blocks-batch3-x16a.md` carry fixes 4 and 5 in the row 24 and 25 captions.
+- 2026-11-19, spec-writer, lane/x16s (Phase 11 batch 3 placed; two backlog entries). **Blocks** (from
+  `workspace/phase11/blocks-batch3-x16a.md`, `-x16b.md`, `-x16c.md`, text, `fallback` and `illustrates` kept; the
+  x16a file lacked its last closing fence, added on placement):
+
+  | Row | Block id | Page | Section, place |
+  |---|---|---|---|
+  | 23 | `tohit-calculator` | wiki/combat | "Will it hit? The chance to hit", end of section (before "## Defence"; the draft's "before Building the damage" skips Defence and Block) |
+  | 24 | `damage-reduced-toy` | wiki/combat | "Draw order and chaining", right after its fallback `combat-melee-hit-toy` (the draft's places come before that illustration, where the builder refuses a fallback not yet built) |
+  | 25 | `breakpoints-calculator` | wiki/animation | "Breakpoints", after the two stock-record bullets |
+  | 26 | `monstat-scaler` | wiki/monsters | "Stats at creation", after step 6 |
+  | 27 | `merc-stats` | wiki/characters | "The mercenary's stats per level", after the cubic-experience paragraph |
+  | 28 | `quality-chances` | spec-items/quality | end of § E, before "### F. Boundaries" (the x16b review's ruling) |
+  | 29 | `checksum-stepper` | wiki/saves | "The checksum", after its first paragraph |
+  | 30 | `seedtree-expander` | wiki/randomness | "Rooms: one draw each", right after `rng-seed-tree-c0ffee` |
+  | 31 | `path-search-toy-grid` | spec-path/search | end of § L3, before "#### L4" (the lane/x16s review's ruling; drafted on wiki/pathing after `path-search-toy-room`; released: § A2 below) |
+
+  **Caption changes:** two. Row 25: "and the logged runs" cut from its *Not shown* sentence, which the builder dropped
+  (X9). Row 31: one sentence added on the octant ("the direction toward the target that picks the root's direction and
+  each child's row of the fan is the octant, which search § A2 states cell by cell: …, a target on the node itself
+  gives direction 6"), rewrapped. The other captions were checked against their spec sections and found consistent
+  with their pages' text; they keep the reviewed wording.
+  **Backlog, octant rule** (closed): search § A2 gains a `[C]` bullet stating `PathDirOctant` by cases (a term whose
+  double is at most the other's size goes to 0, the index of the signed step, `(0, 0)` gives 6), recomputed here over
+  the table doc's 25 listed values, 25 of 25 (the listing `tools/test_path_survey.py` compares with the image), the
+  same as the x16c review's check against `path_anim.DIR_OCTANT`; anchors data:g_DirOctant, fn:PathDirOctant,
+  run:2026-11-03-path-emu-2, the table doc and ADR-0031; it says the equality is on the image's elements and the table
+  stays listed. First draft dropped whole from the cut as `broken` (an "ADR-0031's" possessive inside the item):
+  rewritten with the references in the trailing parenthesis, and the step order written out (the cut drops the Inputs
+  anchor column, so the symbol name alone did not lead to the steps). Search C 117 → 118, updated 2026-11-19, the
+  research map row's tags and date with it; wiki/pathing's `based_on` date moved to 2026-11-19.
+  **Backlog, K1 vs E2** (closed): timing K1 keeps `n(r)` and the sources' count `N(r) = n(r) − 1` and bounds the event
+  frames by a new `steps(r) = ⌈256 (F − S) / r⌉ − 1`, E2's N; a `[C]` K1 note states the no-step exception from E2's
+  own evidence (104 emulated no-step schedules with an event, run:2026-11-16-sweep2-s6e; no logged schedule meets it).
+  L4's "`T + N`, `N = n − 1`" scoped to an action with a step. Timing C 175 → 176, updated 2026-11-19, the map row
+  with it. No new evidence used.
+  **Cut:** `export_build.py --out workspace/export-x16s` (the builder refuses an `--out` outside `workspace/`): 89
+  pages, 0 dropped; 10 widget folders (the 9 new and rng), fallback picture for rows 24, 25, 30 and 31, text fallback
+  for 23, 26 to 29; no caption sentence and none of the new spec text dropped (the only DROP on touched units is the
+  pre-existing timing § K tool sentence); `export_check workspace/export-x16s --repo workspace/export-repo/` **0
+  failures**, 1 084 warnings, all X12, none on a new caption or the new A2/K1 text. The folder was removed. Gate green.
+  **Open for the review:** (1) the path widget's `tables.step` and `tables.fan` are `"rows": "page"`, printed on
+  spec-path/search (Inputs, § L3) but not on wiki/pathing, where the block's Place line puts it; by the x16b ruling on
+  quality ("rows the page around it already shows") the block may belong on the search spec page, which has no
+  illustration for it to fall back on. (2) No browser run (ADR-0037's owed run at the redaction review). (3)
+  wiki/animation's W4 on timing is left as it was (dated 2026-11-16), the K1 change not restated there; the page's
+  no-step sentence already agrees with E2.
+- 2026-11-19, architect, review of lane/x16s (Opus, Tier A) and **the redaction review of the cut it makes** (Phase 11
+  batch 3's nine widgets; ADR-0037). **Tier A: accept with fixes**, 1: misread 1.
+  - **Checked.** Search § A2's octant bullet recomputed over the table doc's 25-line listing of `g_DirOctant` column 0
+    (the listing `tools/test_path_survey.py` compares with the image): the stated cases (a term whose double is at most
+    the other's size set to 0, the index of the signed step in Inputs' order, `(0, 0)` 6) give 25 of 25. The tag holds
+    as ADR-0031 frames it: an equality on the image's elements, no claim on how the table was made, the table still
+    listed under the owner's ruling (ADR-0031, What a rule excludes), so the spec states the description without
+    turning the table into a rule. Anchors resolve (`0x00678D10`, `0x006F1518`, `0x005539B0` in `re/symbols.csv`;
+    run:2026-11-03-path-emu-2 in path/experiments). The caption's "a target on the node itself gives direction 6" is
+    true of `PathDirCell`: one branch of the cut runs, so `(0, 0)` comes only from `dx = dy = 0`. Timing K1: `steps(r)`
+    equals E2's `N`; with a step it equals `n − 1`, with none (`n = 2`) it is 0; the `[C]` note carries E2's own
+    evidence (104 emulated no-step schedules with an event, run:2026-11-16-sweep2-s6e) and claims no new run; L4's
+    scope is right. Counts and the map rows match the gate. Captions against their spec sections: rows 23 to 30 are
+    the reviewed drafts, the row 25 cut is the X9 sentence. **Rulings:** (1) row 31's `tables.step` and `tables.fan`
+    are the eight steps (Inputs, Tables) and the fan's eight rows (§ L3's table), both on spec-path/search, neither on
+    wiki/pathing; by the x16b ruling the block moves to the search spec page, at the end of § L3, after the fan table.
+    The rows cannot become `toy`: they are the image's values and the widget's search needs them. The builder has no
+    text fallback for `path` (`twins.fallback_table`), so the fallback stays the `path-search-toy-room` picture, built
+    from wiki/pathing earlier in the cut and copied into the widget folder (no rule ties a fallback to its page).
+    (2) wiki/animation's W4 on timing stays: it predates this lane (the spec was already 2026-11-17), and the page's
+    two sentences on the subject (the no-step case "holds under emulation", line 99; "`N = n - 1`, the last step",
+    line 209) agree with K1 as rewritten; the date moves at the next wiki refresh of that page, with movement's W4.
+  - **Fix (misread).** (1) Row 31 moved from wiki/pathing to spec-path/search § L3 (`illustrates` made page-relative,
+    `fallback` kept); its caption names the fan table above and the eight steps under Inputs, and refers to §§ A2, L2
+    without "search"; the lane's log row 31 and the octant entry's resolution corrected.
+  **Redaction review: pass; this cut's widgets may be published** (`tools/export_publish.py --push`, the owner's),
+  with the one layout fix below already in `workspace/export-repo/`. Cut (lane head plus the fix): `export_build.py
+  --out workspace/export-x16s-review`, 89 pages, 0 dropped, 10 widget folders (the 9 new and rng), picture fallbacks
+  for rows 24, 25, 30, 31, text for 23, 26 to 29; no widget DROP (the first build with `fallback: text` on row 31
+  dropped it, "no text fallback for the widget path"); the A2 bullet, the K1 note, `steps(r)` and all nine captions
+  are in the cut; `export_check … --repo workspace/export-repo/` **0 failures, 1 084 warnings**, all X12 in the classes
+  earlier reviews ruled on, none on a new caption or the new A2 and K1 text. Widget folders scanned: no paths, tool,
+  `fn:`, `run:` or `sub_` tokens; the only hex values are `0x10000`, `0x100000`, `0x7FFF`; the four fallback pictures
+  are first frames of reviewed schematics. **Real site build** in a scratch copy of the export checkout (the cut and
+  `workspace/export-repo/` copied over, the Astro caches removed): `SITE_BASE=/arpg-1-14d-notes/ npm run build` 90
+  pages; `check-site-links.mjs dist` 12 026 links in 115 pages, all resolve. **Chromium headless** (Playwright,
+  served under the base): the eight pages that carry the ten widgets (characters/combat, running/animation,
+  world/monsters, characters/characters, spec-items/quality, characters/saves, foundations/randomness,
+  spec-path/search) in dark and light at 1280 px and dark at 375 px: the CSP meta (`connect-src 'none'`,
+  `form-action 'none'`) on each, no console error or warning, no failed request, every image loads, every widget
+  mounts and its output changes when its first input does (the checksum's text input driven by hand: rotate, then
+  add, offsets 12 to 15 counted as 0); rng shows `015B2E77` for 12345; the path widget's default run gives passes 22,
+  27 and 32 and the five corners of its fallback's caption. **One defect, fixed:** at 375 px characters/saves was 427
+  px wide: the checksum widget's preset `<select>` sizes to its longest option.
+  `workspace/export-repo/site/src/styles/site.css` now gives `.widget-host .widget-field` `min-width: 0; max-width: 100%` and `.widget-host input, select`
+  `max-width: 100%` (three lines, prepared for the owner as ADR-0037 says); rebuilt, all 24 page loads are clean and
+  no page is wider than its viewport; `export_check` unchanged. ADR-0037's owed browser run for batch 3 is done.
+  **Manifest:** `docs/export/reviewed-pages.txt` unchanged (no new page). Scratch builds and copies deleted. Gate
+  green. Ledger: verdict accept with fixes, 1 (misread 1).
