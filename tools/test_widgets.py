@@ -50,6 +50,10 @@ MUTATIONS = {
     "tohit": ("tdiv(Math.imul(rule.percentBase, ar), (ar + df) | 0)", "tdiv(Math.imul(rule.percentBase, ar), (ar + df + 1) | 0)"),
     "damage": ("draw = low % gapLen;", "draw = (low + 1) % gapLen;"),
     "breakpoints": ("let q = Math.floor((spd * fac) / 100);", "let q = Math.floor((spd * fac) / 101);"),
+    "regen": ("d = tdiv(manaMax, k);", "d = tdiv(manaMax, k + 1);"),
+    "grid": ("if (sc > best) {", "if (sc >= best) {"),
+    "calc": ("r = right === 0 ? 0 : Math.trunc(left / right) | 0;", "r = right === 0 ? 0 : Math.ceil(left / right) | 0;"),
+    "price": ("const half = tdiv(gem, rule.half);", "const half = tdiv(gem, rule.half + 1);"),
 }
 
 
@@ -69,7 +73,9 @@ def octant_rule(zero):
 
 
 # strings the mounted widget shows for its default inputs (the first fixture case): a value of the twin's output
-MOUNT_SHOWS = {"monstat": ["268"], "merc": ["4305280", "68864"], "quality": ["28594", "1792"], "checksum": ["0007FCB4"]}
+MOUNT_SHOWS = {"monstat": ["268"], "merc": ["4305280", "68864"], "quality": ["28594", "1792"], "checksum": ["0007FCB4"],
+               "calc": ["1 3 9 4", "Value returned: 3"], "grid": ["9, 3", "Placed 5 of 5"], "price": ["Buy price 1000, sell price 500"],
+               "regen": ["10400", "After 10 frames"]}
 
 
 def bump_first_number(v):
@@ -174,6 +180,46 @@ def main():
             # damage's worked example: min 32 and max 87 with enhanced damage 405 give 41369 and 112473
             w = next((c["expect"] for c in fixture["cases"] if c["inputs"]["wmin"] == 32 and c["inputs"]["wmax"] == 87), {})
             ok((w.get("lo"), w.get("hi")) == (41369, 112473), "damage: the damage page's worked example, lo 41369 and hi 112473")
+        def case(**kw):
+            """The fixture case whose inputs hold these values."""
+            return next((c["expect"] for c in fixture["cases"] if all(c["inputs"].get(k) == v for k, v in kw.items())), {})
+        if name == "calc":
+            # calc section D: both branches of a condition are read (four variable reads for a then-value of lvl), a
+            # byte of 0x14 and above ends nothing but 0x00, 0x02, 0x03 and above 0x16 do, the operand that starts
+            # at the end returns 0, and a lone ?: gives 0
+            e0 = fixture["cases"][0]["expect"]
+            ok(sum(1 for r in e0["rows"] if r["op"] == 4) == 4 and e0["result"] == 3, "calc: both branches of the condition are read (D step 4a)")
+            ok(case(formula="07 05 17 07 06").get("result") == 5 and case(formula="02 07 05").get("how") == "end",
+               "calc: a byte above 0x16 and 0x02 end the evaluation (D 4k, 4l)")
+            ok(case(formula="07 03 07 04 16 00").get("result") == 4 and case(formula="07 03 16 00").get("result") == 3,
+               "calc: a ?: with fewer than three values keeps the else-value (D step note 4j)")
+            ok(case(formula="04").get("how") == "cut" and case(formula="01").get("how") == "cut", "calc: an operand that starts at the end returns 0 (D step 3)")
+            ok(case(formula="09 00 00 00 80 07 FF 13 00").get("how") == "trap", "calc: the smallest value divided by -1 is not evaluated (D 4g)")
+            ok(case(formula="07 05 07 03 01 00 00").get("rows", [{}] * 3)[2].get("stack") == [5, 3, 0], "calc: a call past the table pushes 0 and keeps the arguments (D 4c)")
+        if name == "grid":
+            # inventory B1: on an empty page one cell high lands at (W-1, H-1) for a player, (W-1, 0) for another owner;
+            # taller at (0, 0); the wiki's worked case: five 1 x 1 items on a 10 x 4 page go to column 9 bottom up, then column 8 row 3
+            g0, g1 = case(gw=10, gh=4, owner=0, shapes="1x1 1x1 1x1 1x1 1x1"), case(gw=10, gh=4, owner=1, shapes="1x1 1x1 1x1 1x1 1x1")
+            ok([(r["col"], r["row"]) for r in g0["rows"]] == [(9, 3), (9, 2), (9, 1), (9, 0), (8, 3)], "grid: the inventory page's worked case (five 1 x 1 items, 10 x 4)")
+            ok(g1["rows"][0]["col"] == 9 and g1["rows"][0]["row"] == 0, "grid: another owner's one-cell-high item lands at (W-1, 0) (B1)")
+            ok(all((c["expect"]["rows"][0]["col"], c["expect"]["rows"][0]["row"]) == (0, 0) for c in fixture["cases"]
+                   if c["inputs"]["shapes"].startswith(("2x2", "2x4"))), "grid: a taller first item lands at (0, 0) for both owners (B1)")
+        if name == "price":
+            ok(case(grade=1, cost=1000, sockets=0, eth=0, kind=0, ident=1, auto=0).get("value") == [500, 500], "price: a low item loses half of each value (C4)")
+            ok(case(sockets=3, gem=1400, grade=2).get("sockets") == [1000 + 3 * 700, 1000 + 3 * 700], "price: each child adds half its cost to both values (C7)")
+            e = case(eth=1, kind=0, sockets=0, cost=1000, grade=2)
+            ok(e.get("value") == [1000, 250] and case(kind=1, eth=0, grade=2, cost=1000, sockets=0).get("value") == [1000, 250],
+               "price: an ethereal item and a class item each quarter the sell value only (C8)")
+            ok(case(grade=7, recMult=3000, recAdd=-250, ident=0, cost=1000).get("terms") == [0, 0], "price: an unidentified item takes no terms (C2)")
+            ok(any(c["inputs"]["cost"] > 65535 and c["inputs"]["recMult"] != 0 and c["inputs"]["grade"] in (5, 7) for c in fixture["cases"]),
+               "price: a case reaches the large form of AddTerm")
+        if name == "regen":
+            # states E2: stat 74 added whatever its sign, held at the maximum and at 256; E3: mode 3 gains only from a bonus of 1000
+            rr = case(lifeReg=-3000, life=1000, ticks=5).get("rows", [])
+            ok(bool(rr) and rr[-1]["life"] == 256 and rr[-1]["lifeWhy"] == "floor", "regen: a poisoned life is held at 256 (E2)")
+            ok(case(mode=3, stamBonus=999).get("rows", [{}, {}])[1].get("stamWhy") == "none" and case(mode=3, stamBonus=1000).get("rows", [{}, {}])[1].get("stamWhy") == "gain",
+               "regen: mode 3 gains stamina only with a bonus of 1000 or more (E3)")
+            ok(case(noMana=1, manaFlat=-30, mana=50, ticks=4).get("rows", [{}] * 5)[1].get("manaWhy") == "state", "regen: state 85 leaves the recovery term only (E4)")
         # X13 on the sources first: the gate catches a refused script at commit time, and node never runs one
         src = open(os.path.join(folder, "widget.js"), encoding="utf-8").read()
         xp = ec.js_problems(src, ec.git_identity()) + ec.json_problems(

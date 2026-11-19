@@ -524,10 +524,11 @@ class EvalError(Exception):
     pass
 
 
-def evaluate(code, env, length=None, trace=None):
+def evaluate(code, env, length=None, trace=None, steps=None):
     """Value of the expression at code[0:]. env: None (the compile-time fold: no variable reader, no
     functions) or an object with var(index) and call(fn, a, b, c, argc) and nfuncs/argc(fn). trace: a set that
-    receives every opcode dispatched."""
+    receives every opcode dispatched. steps: a list that receives (position, opcode, stack before) at every dispatch
+    and (length, None, stack) when the loop runs past the end (the widget of docs/specs/data/calc.md section D)."""
     if length is None:
         length = len(code)
     if length <= 0:
@@ -544,6 +545,8 @@ def evaluate(code, env, length=None, trace=None):
     p = 0
     while p < length:
         op = code[p]
+        if steps is not None:
+            steps.append((p, op, list(st)))
         p += 1
         if trace is not None:
             trace.add(op)
@@ -563,6 +566,8 @@ def evaluate(code, env, length=None, trace=None):
             push(struct.unpack_from({7: "<b", 8: "<h", 9: "<i"}[op], code, p)[0])
             p += n
         elif op == 1:
+            if p >= length:     # step 3 of the page's section D: an operand that starts at or past the end returns 0
+                return 0
             fn = code[p]
             p += 1
             if env is None or fn >= env.nfuncs:
@@ -639,6 +644,8 @@ def evaluate(code, env, length=None, trace=None):
             push(b if cond != 0 else a)
         else:       # 0x00, 0x02, 0x03 and anything above 0x16 end the expression
             return st.pop() if st else 0
+    if steps is not None:
+        steps.append((length, None, list(st)))
     return 0
 
 

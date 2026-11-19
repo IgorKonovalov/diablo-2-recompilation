@@ -538,6 +538,11 @@ def fallback_tohit(fx):
 
 FALLBACKS["tohit"] = fallback_tohit
 
+import twins_x17a  # noqa: E402  (the calc, grid, price and regen twins)
+TWINS.update(twins_x17a.TWINS)
+CASES.update(twins_x17a.CASES)
+FALLBACKS.update(twins_x17a.FALLBACKS)
+
 
 
 def fallback_table(name, fx):

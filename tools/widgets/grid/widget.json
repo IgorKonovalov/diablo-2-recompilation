@@ -1,0 +1,41 @@
+{
+ "marker": "widget-only/1",
+ "name": "grid",
+ "rule": { "maxItems": 12, "perfect": 255 },
+ "inputs": {
+  "gw": { "min": 1, "max": 10, "default": 10 },
+  "gh": { "min": 1, "max": 8, "default": 4 },
+  "owner": { "min": 0, "max": 1, "default": 0 },
+  "shapes": { "default": "1x1 1x1 1x1 1x1 1x1" }
+ },
+ "presets": {
+  "rows": "toy",
+  "items": [
+   { "name": "five small items, empty page", "gw": 10, "gh": 4, "owner": 0, "shapes": "1x1 1x1 1x1 1x1 1x1" },
+   { "name": "mixed sizes, a player", "gw": 10, "gh": 4, "owner": 0, "shapes": "2x2 1x1 1x3 2x1 1x2 3x1" },
+   { "name": "mixed sizes, a hireling", "gw": 10, "gh": 4, "owner": 1, "shapes": "2x2 1x1 1x3 2x1 1x2 3x1" },
+   { "name": "a page that fills up", "gw": 6, "gh": 4, "owner": 0, "shapes": "2x2 2x2 2x2 2x2 2x2 2x2 1x1" }
+  ]
+ },
+ "text": {
+  "intro": "Type the size of each item as width x height, one digit from 1 to 4 each, apart by spaces; the items are put in turn on a toy page of the size chosen. The table gives the spot the search picks for each one, and the grid shows the page at the end. The sizes offered first are illustrative.",
+  "caps": {
+   "gw": "Page width in cells",
+   "gh": "Page height in cells",
+   "owner": "Owner: a player (0) or any other (1)",
+   "shapes": "Items (width x height, up to 12)"
+  },
+  "presetLabel": "Illustrative pages",
+  "presetNone": "choose one",
+  "columns": { "rows": "toy", "items": ["Item", "Size", "Spot (column, row)", "Score of the spot"] },
+  "none": "no spot fits",
+  "noScore": "not scored",
+  "gridHead": "The page after the last item (letters in the order given, . free):",
+  "errBad": "A token is not a size of two digits from 1 to 4 around an x:",
+  "errLong": "More than 12 items were typed; nothing is placed.",
+  "liveHead": "Placed",
+  "liveOf": "of",
+  "liveItems": "items.",
+  "note": "Computed by our model of the placement search, not observed in the game. Left out: the size an item really has, the other pages and their sizes, a page that already holds items, and what happens after the spot is chosen. Columns and rows count from 0."
+ }
+}

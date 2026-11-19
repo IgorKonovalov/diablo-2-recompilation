@@ -1,0 +1,1840 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1000,
+     1000
+    ],
+    "sockets": [
+     1000,
+     1000
+    ],
+    "ethereal": [
+     1000,
+     1000
+    ],
+    "value": [
+     1000,
+     1000
+    ],
+    "npc": [
+     1000,
+     500
+    ],
+    "ceiling": 500,
+    "buy": 1000,
+    "sell": 500
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 1,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     -500,
+     -500
+    ],
+    "added": [
+     500,
+     500
+    ],
+    "sockets": [
+     500,
+     500
+    ],
+    "ethereal": [
+     500,
+     500
+    ],
+    "value": [
+     500,
+     500
+    ],
+    "npc": [
+     500,
+     250
+    ],
+    "ceiling": 250,
+    "buy": 500,
+    "sell": 250
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 5,
+    "ident": 1,
+    "recMult": 2048,
+    "recAdd": 300,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     2300,
+     2300
+    ],
+    "added": [
+     3300,
+     3300
+    ],
+    "sockets": [
+     3300,
+     3300
+    ],
+    "ethereal": [
+     3300,
+     3300
+    ],
+    "value": [
+     3300,
+     3300
+    ],
+    "npc": [
+     3300,
+     1650
+    ],
+    "ceiling": 1650,
+    "buy": 3300,
+    "sell": 1650
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 7,
+    "ident": 1,
+    "recMult": 3000,
+    "recAdd": -250,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     2679,
+     2679
+    ],
+    "added": [
+     3679,
+     3679
+    ],
+    "sockets": [
+     3679,
+     3679
+    ],
+    "ethereal": [
+     3679,
+     3679
+    ],
+    "value": [
+     3679,
+     3679
+    ],
+    "npc": [
+     3679,
+     1839
+    ],
+    "ceiling": 1839,
+    "buy": 3679,
+    "sell": 1839
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 7,
+    "ident": 0,
+    "recMult": 3000,
+    "recAdd": -250,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1000,
+     1000
+    ],
+    "sockets": [
+     1000,
+     1000
+    ],
+    "ethereal": [
+     1000,
+     1000
+    ],
+    "value": [
+     1000,
+     1000
+    ],
+    "npc": [
+     1000,
+     500
+    ],
+    "ceiling": 500,
+    "buy": 1000,
+    "sell": 500
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 1,
+    "autoMult": 512,
+    "autoAdd": 40,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     540,
+     540
+    ],
+    "added": [
+     1540,
+     1540
+    ],
+    "sockets": [
+     1540,
+     1540
+    ],
+    "ethereal": [
+     1540,
+     1540
+    ],
+    "value": [
+     1540,
+     1540
+    ],
+    "npc": [
+     1540,
+     770
+    ],
+    "ceiling": 770,
+    "buy": 1540,
+    "sell": 770
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 1,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 1,
+    "autoMult": 512,
+    "autoAdd": 40,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     -500,
+     -500
+    ],
+    "added": [
+     500,
+     500
+    ],
+    "sockets": [
+     500,
+     500
+    ],
+    "ethereal": [
+     500,
+     500
+    ],
+    "value": [
+     500,
+     500
+    ],
+    "npc": [
+     500,
+     250
+    ],
+    "ceiling": 250,
+    "buy": 500,
+    "sell": 250
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 7,
+    "ident": 1,
+    "recMult": 1024,
+    "recAdd": 5,
+    "auto": 1,
+    "autoMult": -300,
+    "autoAdd": 15,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     728,
+     728
+    ],
+    "added": [
+     1728,
+     1728
+    ],
+    "sockets": [
+     1728,
+     1728
+    ],
+    "ethereal": [
+     1728,
+     1728
+    ],
+    "value": [
+     1728,
+     1728
+    ],
+    "npc": [
+     1728,
+     864
+    ],
+    "ceiling": 864,
+    "buy": 1728,
+    "sell": 864
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 3,
+    "gem": 1400,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1000,
+     1000
+    ],
+    "sockets": [
+     3100,
+     3100
+    ],
+    "ethereal": [
+     3100,
+     3100
+    ],
+    "value": [
+     3100,
+     3100
+    ],
+    "npc": [
+     3100,
+     1550
+    ],
+    "ceiling": 1550,
+    "buy": 3100,
+    "sell": 1550
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 5,
+    "ident": 1,
+    "recMult": 100,
+    "recAdd": 1,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 6,
+    "gem": 99999,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     98,
+     98
+    ],
+    "added": [
+     1098,
+     1098
+    ],
+    "sockets": [
+     301092,
+     301092
+    ],
+    "ethereal": [
+     301092,
+     301092
+    ],
+    "value": [
+     301092,
+     301092
+    ],
+    "npc": [
+     301056,
+     150528
+    ],
+    "ceiling": 100000,
+    "buy": 301056,
+    "sell": 100000
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 1,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1000,
+     1000
+    ],
+    "sockets": [
+     1000,
+     1000
+    ],
+    "ethereal": [
+     1000,
+     250
+    ],
+    "value": [
+     1000,
+     250
+    ],
+    "npc": [
+     1000,
+     125
+    ],
+    "ceiling": 125,
+    "buy": 1000,
+    "sell": 125
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 1,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1000,
+     1000
+    ],
+    "sockets": [
+     1000,
+     1000
+    ],
+    "ethereal": [
+     1000,
+     1000
+    ],
+    "value": [
+     1000,
+     250
+    ],
+    "npc": [
+     1000,
+     125
+    ],
+    "ceiling": 125,
+    "buy": 1000,
+    "sell": 125
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 1,
+    "gem": 3,
+    "eth": 1,
+    "kind": 1,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1000,
+     1000
+    ],
+    "sockets": [
+     1001,
+     1001
+    ],
+    "ethereal": [
+     1001,
+     250
+    ],
+    "value": [
+     1001,
+     62
+    ],
+    "npc": [
+     1001,
+     31
+    ],
+    "ceiling": 31,
+    "buy": 1001,
+    "sell": 31
+   }
+  },
+  {
+   "inputs": {
+    "cost": 100000,
+    "grade": 7,
+    "ident": 1,
+    "recMult": 4096,
+    "recAdd": 999,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 100000,
+    "first": [
+     100000,
+     100000
+    ],
+    "terms": [
+     398311,
+     398311
+    ],
+    "added": [
+     498311,
+     498311
+    ],
+    "sockets": [
+     498311,
+     498311
+    ],
+    "ethereal": [
+     498311,
+     498311
+    ],
+    "value": [
+     498311,
+     498311
+    ],
+    "npc": [
+     497664,
+     248832
+    ],
+    "ceiling": 100000,
+    "buy": 497664,
+    "sell": 100000
+   }
+  },
+  {
+   "inputs": {
+    "cost": 100000,
+    "grade": 7,
+    "ident": 1,
+    "recMult": 4096,
+    "recAdd": 999,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1600,
+    "buy": 600,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 100000,
+    "first": [
+     100000,
+     100000
+    ],
+    "terms": [
+     398311,
+     398311
+    ],
+    "added": [
+     498311,
+     498311
+    ],
+    "sockets": [
+     498311,
+     498311
+    ],
+    "ethereal": [
+     498311,
+     498311
+    ],
+    "value": [
+     498311,
+     498311
+    ],
+    "npc": [
+     777600,
+     291600
+    ],
+    "ceiling": 100000,
+    "buy": 777600,
+    "sell": 100000
+   }
+  },
+  {
+   "inputs": {
+    "cost": 2000000,
+    "grade": 5,
+    "ident": 1,
+    "recMult": 5000,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 2000000,
+    "first": [
+     2000000,
+     2000000
+    ],
+    "terms": [
+     9765000,
+     9765000
+    ],
+    "added": [
+     11765000,
+     11765000
+    ],
+    "sockets": [
+     11765000,
+     11765000
+    ],
+    "ethereal": [
+     11765000,
+     11765000
+    ],
+    "value": [
+     11765000,
+     11765000
+    ],
+    "npc": [
+     11764736,
+     5882368
+    ],
+    "ceiling": 100000,
+    "buy": 11764736,
+    "sell": 100000
+   }
+  },
+  {
+   "inputs": {
+    "cost": 2000000,
+    "grade": 7,
+    "ident": 1,
+    "recMult": 100000,
+    "recAdd": 100000,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 2048,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 2000000,
+    "first": [
+     2000000,
+     2000000
+    ],
+    "terms": [
+     195400000,
+     195400000
+    ],
+    "added": [
+     197400000,
+     197400000
+    ],
+    "sockets": [
+     197400000,
+     197400000
+    ],
+    "ethereal": [
+     197400000,
+     197400000
+    ],
+    "value": [
+     197400000,
+     197400000
+    ],
+    "npc": [
+     394799104,
+     98699776
+    ],
+    "ceiling": 100000,
+    "buy": 394799104,
+    "sell": 100000
+   }
+  },
+  {
+   "inputs": {
+    "cost": 70000,
+    "grade": 7,
+    "ident": 1,
+    "recMult": 70000,
+    "recAdd": -70000,
+    "auto": 1,
+    "autoMult": 100000,
+    "autoAdd": -100000,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 70000,
+    "first": [
+     70000,
+     70000
+    ],
+    "terms": [
+     11390000,
+     11390000
+    ],
+    "added": [
+     11460000,
+     11460000
+    ],
+    "sockets": [
+     11460000,
+     11460000
+    ],
+    "ethereal": [
+     11460000,
+     11460000
+    ],
+    "value": [
+     11460000,
+     11460000
+    ],
+    "npc": [
+     11459584,
+     5729792
+    ],
+    "ceiling": 100000,
+    "buy": 11459584,
+    "sell": 100000
+   }
+  },
+  {
+   "inputs": {
+    "cost": 65535,
+    "grade": 5,
+    "ident": 1,
+    "recMult": 1024,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 65535,
+    "first": [
+     65535,
+     65535
+    ],
+    "terms": [
+     65535,
+     65535
+    ],
+    "added": [
+     131070,
+     131070
+    ],
+    "sockets": [
+     131070,
+     131070
+    ],
+    "ethereal": [
+     131070,
+     131070
+    ],
+    "value": [
+     131070,
+     131070
+    ],
+    "npc": [
+     130048,
+     65024
+    ],
+    "ceiling": 65024,
+    "buy": 130048,
+    "sell": 65024
+   }
+  },
+  {
+   "inputs": {
+    "cost": 65536,
+    "grade": 5,
+    "ident": 1,
+    "recMult": 1024,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 65536,
+    "first": [
+     65536,
+     65536
+    ],
+    "terms": [
+     65536,
+     65536
+    ],
+    "added": [
+     131072,
+     131072
+    ],
+    "sockets": [
+     131072,
+     131072
+    ],
+    "ethereal": [
+     131072,
+     131072
+    ],
+    "value": [
+     131072,
+     131072
+    ],
+    "npc": [
+     131072,
+     65536
+    ],
+    "ceiling": 65536,
+    "buy": 131072,
+    "sell": 65536
+   }
+  },
+  {
+   "inputs": {
+    "cost": 65536,
+    "grade": 5,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 7,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 65536,
+    "first": [
+     65536,
+     65536
+    ],
+    "terms": [
+     7,
+     7
+    ],
+    "added": [
+     65543,
+     65543
+    ],
+    "sockets": [
+     65543,
+     65543
+    ],
+    "ethereal": [
+     65543,
+     65543
+    ],
+    "value": [
+     65543,
+     65543
+    ],
+    "npc": [
+     65536,
+     32768
+    ],
+    "ceiling": 32768,
+    "buy": 65536,
+    "sell": 32768
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 0,
+    "buy": 0,
+    "maxbuy": 1,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1,
+    "first": [
+     1,
+     1
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1,
+     1
+    ],
+    "sockets": [
+     1,
+     1
+    ],
+    "ethereal": [
+     1,
+     1
+    ],
+    "value": [
+     1,
+     1
+    ],
+    "npc": [
+     0,
+     0
+    ],
+    "ceiling": 0,
+    "buy": 1,
+    "sell": 1
+   }
+  },
+  {
+   "inputs": {
+    "cost": 0,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 0,
+    "first": [
+     0,
+     0
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     0,
+     0
+    ],
+    "sockets": [
+     0,
+     0
+    ],
+    "ethereal": [
+     0,
+     0
+    ],
+    "value": [
+     0,
+     0
+    ],
+    "npc": [
+     0,
+     0
+    ],
+    "ceiling": 0,
+    "buy": 1,
+    "sell": 1
+   }
+  },
+  {
+   "inputs": {
+    "cost": 3,
+    "grade": 1,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 3,
+    "first": [
+     3,
+     3
+    ],
+    "terms": [
+     -1,
+     -1
+    ],
+    "added": [
+     2,
+     2
+    ],
+    "sockets": [
+     2,
+     2
+    ],
+    "ethereal": [
+     2,
+     2
+    ],
+    "value": [
+     2,
+     2
+    ],
+    "npc": [
+     2,
+     1
+    ],
+    "ceiling": 1,
+    "buy": 2,
+    "sell": 1
+   }
+  },
+  {
+   "inputs": {
+    "cost": 3,
+    "grade": 1,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 2,
+    "gem": 5,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 3,
+    "first": [
+     3,
+     3
+    ],
+    "terms": [
+     -1,
+     -1
+    ],
+    "added": [
+     2,
+     2
+    ],
+    "sockets": [
+     6,
+     6
+    ],
+    "ethereal": [
+     6,
+     6
+    ],
+    "value": [
+     6,
+     6
+    ],
+    "npc": [
+     6,
+     3
+    ],
+    "ceiling": 3,
+    "buy": 6,
+    "sell": 3
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 0,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1000,
+     1000
+    ],
+    "sockets": [
+     1000,
+     1000
+    ],
+    "ethereal": [
+     1000,
+     1000
+    ],
+    "value": [
+     1000,
+     1000
+    ],
+    "npc": [
+     1000,
+     500
+    ],
+    "ceiling": 0,
+    "buy": 1000,
+    "sell": 1
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": -5,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1000,
+     1000
+    ],
+    "sockets": [
+     1000,
+     1000
+    ],
+    "ethereal": [
+     1000,
+     1000
+    ],
+    "value": [
+     1000,
+     1000
+    ],
+    "npc": [
+     1000,
+     500
+    ],
+    "ceiling": 0,
+    "buy": 1000,
+    "sell": 1
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 20
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1000,
+     1000
+    ],
+    "sockets": [
+     1000,
+     1000
+    ],
+    "ethereal": [
+     1000,
+     1000
+    ],
+    "value": [
+     1000,
+     1000
+    ],
+    "npc": [
+     1000,
+     500
+    ],
+    "ceiling": 500,
+    "buy": 800,
+    "sell": 500
+   }
+  },
+  {
+   "inputs": {
+    "cost": 500000,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 99
+   },
+   "expect": {
+    "cost": 500000,
+    "first": [
+     500000,
+     500000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     500000,
+     500000
+    ],
+    "sockets": [
+     500000,
+     500000
+    ],
+    "ethereal": [
+     500000,
+     500000
+    ],
+    "value": [
+     500000,
+     500000
+    ],
+    "npc": [
+     499712,
+     249856
+    ],
+    "ceiling": 100000,
+    "buy": 4998,
+    "sell": 100000
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1,
+    "grade": 1,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 99
+   },
+   "expect": {
+    "cost": 1,
+    "first": [
+     1,
+     1
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     1,
+     1
+    ],
+    "sockets": [
+     1,
+     1
+    ],
+    "ethereal": [
+     1,
+     1
+    ],
+    "value": [
+     1,
+     1
+    ],
+    "npc": [
+     1,
+     0
+    ],
+    "ceiling": 0,
+    "buy": 1,
+    "sell": 1
+   }
+  },
+  {
+   "inputs": {
+    "cost": 999999,
+    "grade": 2,
+    "ident": 1,
+    "recMult": 0,
+    "recAdd": 0,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 2048,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 33
+   },
+   "expect": {
+    "cost": 999999,
+    "first": [
+     999999,
+     999999
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     999999,
+     999999
+    ],
+    "sockets": [
+     999999,
+     999999
+    ],
+    "ethereal": [
+     999999,
+     999999
+    ],
+    "value": [
+     999999,
+     999999
+    ],
+    "npc": [
+     1998848,
+     499712
+    ],
+    "ceiling": 100000,
+    "buy": 1339244,
+    "sell": 100000
+   }
+  },
+  {
+   "inputs": {
+    "cost": -50,
+    "grade": 7,
+    "ident": 1,
+    "recMult": -100,
+    "recAdd": -100,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": 1024,
+    "buy": 512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 0,
+    "first": [
+     0,
+     0
+    ],
+    "terms": [
+     -100,
+     -100
+    ],
+    "added": [
+     -100,
+     -100
+    ],
+    "sockets": [
+     -100,
+     -100
+    ],
+    "ethereal": [
+     -100,
+     -100
+    ],
+    "value": [
+     -100,
+     -100
+    ],
+    "npc": [
+     -100,
+     -50
+    ],
+    "ceiling": -50,
+    "buy": 1,
+    "sell": 1
+   }
+  },
+  {
+   "inputs": {
+    "cost": 1000,
+    "grade": 5,
+    "ident": 1,
+    "recMult": -2000,
+    "recAdd": -9999,
+    "auto": 0,
+    "autoMult": 0,
+    "autoAdd": 0,
+    "sockets": 0,
+    "gem": 0,
+    "eth": 0,
+    "kind": 0,
+    "sell": -512,
+    "buy": -512,
+    "maxbuy": 100000,
+    "reduce": 0
+   },
+   "expect": {
+    "cost": 1000,
+    "first": [
+     1000,
+     1000
+    ],
+    "terms": [
+     -11952,
+     -11952
+    ],
+    "added": [
+     -10952,
+     -10952
+    ],
+    "sockets": [
+     -10952,
+     -10952
+    ],
+    "ethereal": [
+     -10952,
+     -10952
+    ],
+    "value": [
+     -10952,
+     -10952
+    ],
+    "npc": [
+     0,
+     0
+    ],
+    "ceiling": 0,
+    "buy": 1,
+    "sell": 1
+   }
+  },
+  {
+   "inputs": {
+    "cost": 5000000,
+    "grade": 9,
+    "ident": -1,
+    "recMult": 99999999,
+    "recAdd": 99999999,
+    "auto": 2,
+    "autoMult": 99999999,
+    "autoAdd": -99999999,
+    "sockets": 9,
+    "gem": -8,
+    "eth": 3,
+    "kind": -1,
+    "sell": 99999999,
+    "buy": -99999999,
+    "maxbuy": 99999999,
+    "reduce": 150
+   },
+   "expect": {
+    "cost": 2000000,
+    "first": [
+     2000000,
+     2000000
+    ],
+    "terms": [
+     0,
+     0
+    ],
+    "added": [
+     2000000,
+     2000000
+    ],
+    "sockets": [
+     2000000,
+     2000000
+    ],
+    "ethereal": [
+     2000000,
+     500000
+    ],
+    "value": [
+     2000000,
+     500000
+    ],
+    "npc": [
+     195300000,
+     0
+    ],
+    "ceiling": 0,
+    "buy": 1953000,
+    "sell": 1
+   }
+  }
+ ]
+}

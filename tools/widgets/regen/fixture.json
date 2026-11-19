@@ -1,0 +1,4385 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2600,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2700,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2800,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2900,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 3000,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 1
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 40
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2600,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2700,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2800,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2900,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 3000,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 11,
+      "life": 14400,
+      "lifeWhy": "up",
+      "stam": 3100,
+      "stamWhy": "gain",
+      "mana": 7400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 12,
+      "life": 14800,
+      "lifeWhy": "up",
+      "stam": 3200,
+      "stamWhy": "gain",
+      "mana": 7800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 13,
+      "life": 15200,
+      "lifeWhy": "up",
+      "stam": 3300,
+      "stamWhy": "gain",
+      "mana": 8200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 14,
+      "life": 15600,
+      "lifeWhy": "up",
+      "stam": 3400,
+      "stamWhy": "gain",
+      "mana": 8600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 15,
+      "life": 16000,
+      "lifeWhy": "up",
+      "stam": 3500,
+      "stamWhy": "gain",
+      "mana": 9000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 16,
+      "life": 16400,
+      "lifeWhy": "up",
+      "stam": 3600,
+      "stamWhy": "gain",
+      "mana": 9400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 17,
+      "life": 16800,
+      "lifeWhy": "up",
+      "stam": 3700,
+      "stamWhy": "gain",
+      "mana": 9800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 18,
+      "life": 17200,
+      "lifeWhy": "up",
+      "stam": 3800,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 19,
+      "life": 17600,
+      "lifeWhy": "up",
+      "stam": 3900,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 20,
+      "life": 18000,
+      "lifeWhy": "up",
+      "stam": 4000,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 21,
+      "life": 18400,
+      "lifeWhy": "up",
+      "stam": 4100,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 22,
+      "life": 18800,
+      "lifeWhy": "up",
+      "stam": 4200,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 23,
+      "life": 19200,
+      "lifeWhy": "up",
+      "stam": 4300,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 24,
+      "life": 19600,
+      "lifeWhy": "up",
+      "stam": 4400,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 25,
+      "life": 20000,
+      "lifeWhy": "up",
+      "stam": 4500,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 26,
+      "life": 20400,
+      "lifeWhy": "up",
+      "stam": 4600,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 27,
+      "life": 20800,
+      "lifeWhy": "up",
+      "stam": 4700,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 28,
+      "life": 21200,
+      "lifeWhy": "up",
+      "stam": 4800,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 29,
+      "life": 21600,
+      "lifeWhy": "up",
+      "stam": 4900,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 30,
+      "life": 22000,
+      "lifeWhy": "up",
+      "stam": 5000,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 31,
+      "life": 22400,
+      "lifeWhy": "up",
+      "stam": 5100,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 32,
+      "life": 22800,
+      "lifeWhy": "up",
+      "stam": 5200,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 33,
+      "life": 23200,
+      "lifeWhy": "up",
+      "stam": 5300,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 34,
+      "life": 23600,
+      "lifeWhy": "up",
+      "stam": 5400,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 35,
+      "life": 24000,
+      "lifeWhy": "up",
+      "stam": 5500,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 36,
+      "life": 24400,
+      "lifeWhy": "up",
+      "stam": 5600,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 37,
+      "life": 24800,
+      "lifeWhy": "up",
+      "stam": 5700,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 38,
+      "life": 25200,
+      "lifeWhy": "up",
+      "stam": 5800,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 39,
+      "life": 25600,
+      "lifeWhy": "up",
+      "stam": 5900,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 40,
+      "life": 26000,
+      "lifeWhy": "up",
+      "stam": 6000,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 9000,
+    "lifeMax": 30000,
+    "lifeReg": -3000,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 5
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 9000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 6000,
+      "lifeWhy": "down",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 3000,
+      "lifeWhy": "down",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 1000,
+    "lifeMax": 30000,
+    "lifeReg": -3000,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 5
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 1000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 0,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 2600,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 2700,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 2800,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 2900,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 10000,
+      "lifeWhy": "none",
+      "stam": 3000,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 20000,
+    "lifeMax": 30000,
+    "lifeReg": 9000,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 5
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 20000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 29000,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 30000,
+      "lifeWhy": "cap",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 30000,
+      "lifeWhy": "cap",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 30000,
+      "lifeWhy": "cap",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 30000,
+      "lifeWhy": "cap",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 300,
+    "lifeMax": 30000,
+    "lifeReg": -100,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 4
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 300,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 2,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2050,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2150,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2250,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2350,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2450,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 255,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 2,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 255,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 255,
+      "stamWhy": "none",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 256,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 2,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 256,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 306,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 356,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 406,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 456,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 506,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 556,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 606,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 656,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 706,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 756,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 6,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2050,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2150,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2250,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2350,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2450,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 250,
+    "mode": 5,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2350,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2700,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 3050,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 3400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 3750,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 4100,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 4450,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 4800,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 5150,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 5500,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 20000,
+    "stamMax": 25600,
+    "stamBonus": -50,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 20000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 20050,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 20100,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 20150,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 20200,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 20250,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 20300,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 20350,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 20400,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 20450,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 20500,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 3,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 1000,
+    "mode": 3,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 3100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 4200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 5300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 6400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 7500,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 8600,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 9700,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 10800,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 11900,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 13000,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 999,
+    "mode": 3,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 5000,
+    "mode": 4,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 7100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 12200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 17300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 22400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 1000,
+    "mode": 0,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 3100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 4200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 5300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 6400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 7500,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 8600,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 9700,
+      "stamWhy": "gain",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 10800,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 11900,
+      "stamWhy": "gain",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 13000,
+      "stamWhy": "gain",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 200,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 2000,
+      "stamWhy": "none",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 25000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 5
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 25000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 25100,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 25200,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 25300,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 25400,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 25500,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 25600,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 25600,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 7000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 0,
+    "stamMax": 1000,
+    "stamBonus": 77,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 6
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 0,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 5,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 10,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 15,
+      "stamWhy": "gain",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 20,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 25,
+      "stamWhy": "gain",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 30,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 0,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3001,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3002,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 3003,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 3004,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 3005,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2600,
+      "stamWhy": "gain",
+      "mana": 3006,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2700,
+      "stamWhy": "gain",
+      "mana": 3007,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2800,
+      "stamWhy": "gain",
+      "mana": 3008,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2900,
+      "stamWhy": "gain",
+      "mana": 3009,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 3000,
+      "stamWhy": "gain",
+      "mana": 3010,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 100000,
+    "manaK": 3,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 4333,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 5666,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 6999,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 8332,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 9665,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2600,
+      "stamWhy": "gain",
+      "mana": 10998,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2700,
+      "stamWhy": "gain",
+      "mana": 12331,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2800,
+      "stamWhy": "gain",
+      "mana": 13664,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2900,
+      "stamWhy": "gain",
+      "mana": 14997,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 3000,
+      "stamWhy": "gain",
+      "mana": 16330,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10,
+    "manaK": 100,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2600,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2700,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2800,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2900,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 3000,
+      "stamWhy": "gain",
+      "mana": 10,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 0,
+    "manaMax": 0,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 0,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2600,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2700,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2800,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2900,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 3000,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 100,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 4
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 6200,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": -100,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 4
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": -250,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 4
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 2400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 1800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 1200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 600,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 2000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": -900,
+    "noMana": 0,
+    "ticks": 6
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 2000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 1500,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 1000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 500,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2600,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 500,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": -900,
+    "noMana": 0,
+    "ticks": 3
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 500,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 9990,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 70,
+    "noMana": 0,
+    "ticks": 4
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 9990,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 1,
+    "ticks": 10
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 5,
+      "life": 12000,
+      "lifeWhy": "up",
+      "stam": 2500,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 6,
+      "life": 12400,
+      "lifeWhy": "up",
+      "stam": 2600,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 7,
+      "life": 12800,
+      "lifeWhy": "up",
+      "stam": 2700,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 8,
+      "life": 13200,
+      "lifeWhy": "up",
+      "stam": 2800,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 9,
+      "life": 13600,
+      "lifeWhy": "up",
+      "stam": 2900,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 10,
+      "life": 14000,
+      "lifeWhy": "up",
+      "stam": 3000,
+      "stamWhy": "gain",
+      "mana": 3000,
+      "manaWhy": "state"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 50,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": -30,
+    "noMana": 1,
+    "ticks": 4
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 50,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 20,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 4,
+      "life": 11600,
+      "lifeWhy": "up",
+      "stam": 2400,
+      "stamWhy": "gain",
+      "mana": 0,
+      "manaWhy": "state"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 9900,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 300,
+    "noMana": 1,
+    "ticks": 3
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 9900,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "state"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "state"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 12000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 2
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 12000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 10000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 10000,
+    "lifeMax": 30000,
+    "lifeReg": 400,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": 0,
+    "manaMax": 16777215,
+    "manaK": 1,
+    "manaBonus": 1000,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 3
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 10000,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 0,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 10400,
+      "lifeWhy": "up",
+      "stam": 2100,
+      "stamWhy": "gain",
+      "mana": 7381968,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 10800,
+      "lifeWhy": "up",
+      "stam": 2200,
+      "stamWhy": "gain",
+      "mana": 14763936,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 11200,
+      "lifeWhy": "up",
+      "stam": 2300,
+      "stamWhy": "gain",
+      "mana": 16777215,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": -5,
+    "lifeMax": -5,
+    "lifeReg": 400,
+    "stam": -5,
+    "stamMax": 25600,
+    "stamBonus": 0,
+    "mode": 1,
+    "mana": -5,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": -3
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 0,
+      "lifeWhy": "start",
+      "stam": 0,
+      "stamWhy": "start",
+      "mana": 0,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 256,
+      "lifeWhy": "floor",
+      "stam": 100,
+      "stamWhy": "gain",
+      "mana": 400,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "life": 99999999,
+    "lifeMax": 99999999,
+    "lifeReg": 99999999,
+    "stam": 2000,
+    "stamMax": 25600,
+    "stamBonus": 9999999,
+    "mode": 1,
+    "mana": 3000,
+    "manaMax": 10000,
+    "manaK": 1,
+    "manaBonus": 0,
+    "manaFlat": 0,
+    "noMana": 0,
+    "ticks": 99
+   },
+   "expect": {
+    "rows": [
+     {
+      "tick": 0,
+      "life": 99999999,
+      "lifeWhy": "start",
+      "stam": 2000,
+      "stamWhy": "start",
+      "mana": 3000,
+      "manaWhy": "start"
+     },
+     {
+      "tick": 1,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "gain",
+      "mana": 3400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 2,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 3800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 3,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 4200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 4,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 4600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 5,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 5000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 6,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 5400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 7,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 5800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 8,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 6200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 9,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 6600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 10,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 7000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 11,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 7400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 12,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 7800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 13,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 8200,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 14,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 8600,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 15,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 9000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 16,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 9400,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 17,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 9800,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 18,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 19,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 20,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 21,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 22,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 23,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 24,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 25,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 26,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 27,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 28,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 29,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 30,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 31,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 32,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 33,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 34,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 35,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 36,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 37,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 38,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 39,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     },
+     {
+      "tick": 40,
+      "life": 99999999,
+      "lifeWhy": "cap",
+      "stam": 25600,
+      "stamWhy": "full",
+      "mana": 10000,
+      "manaWhy": "regen"
+     }
+    ]
+   }
+  }
+ ]
+}
