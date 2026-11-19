@@ -103,7 +103,7 @@ fenced block, never with a link or an image.
   | `seed` | `illustrative`, or the record that names it |
   | `illustrates` | the spec sections it shows, as relative links with `#anchor`s, separated by spaces or commas; a long list continues on indented lines |
   | `caption` | a short paragraph restating the sections named in `illustrates`, plus the model label and anything the tool leaves out that a reader could take for shown |
-  | `values` | optional: `computed` (the default; the builder appends "Every value shown is computed by our model, not observed in the game.") or `restated`, for frames that restate a spec's list with no model behind them (the builder appends "The picture restates the spec; nothing shown is observed in the game."). `seed: none` is for a generator that draws on no seed |
+  | `values` | optional: `computed` (the default; the builder appends "Every value shown is computed by our model, not observed in the game.") or `restated`, for frames that restate a spec's list with no model behind them (the builder appends "The picture restates the spec; nothing shown is observed in the game."), or `recorded`, for a model run on one recorded game's inputs, its seed among them, and checked against that game's log (the builder appends "The inputs, the seed among them, come from one recorded game; every value after them is computed by our model, which reproduces each value that game logged." in place of the seed and values labels). `seed: none` is for a generator that draws on no seed |
 
   ````markdown
   ```illustration

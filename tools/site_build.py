@@ -420,8 +420,8 @@ def parse_illustration(text):
     for k in d:
         if k not in ILLUS_KEYS and k != "values":
             err.append("unknown key '%s'" % k)
-    if d.get("values", "computed") not in ("computed", "restated"):
-        err.append("values '%s' is not computed or restated" % d["values"])
+    if d.get("values", "computed") not in ("computed", "restated", "recorded"):
+        err.append("values '%s' is not computed, restated or recorded" % d["values"])
     if d.get("id") and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", d["id"]):
         err.append("id '%s' is not [A-Za-z0-9_-]+" % d["id"])
     if d.get("tool") and not re.fullmatch(r"[A-Za-z0-9_]+\.py", d["tool"]):

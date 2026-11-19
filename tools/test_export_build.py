@@ -399,7 +399,8 @@ def main():
                                                       "outdoor_anim.py",
                                                       "pack_anim.py", "pool_anim.py",
                                                       "combat_anim.py", "hire_anim.py", "affix_anim.py",
-                                                      "objects_anim.py", "missile_anim.py"), "schematic tools only")
+                                                      "objects_anim.py", "missile_anim.py",
+                                                      "quest_anim.py", "cube_anim.py", "collision_anim.py"), "schematic tools only")
     ok(eb.tool_has_schematic("maze_anim.py") and eb.tool_has_schematic("tc_anim.py")
        and not eb.tool_has_schematic("site_build.py") and not eb.tool_has_schematic("../x.py"), "tool_has_schematic")
     # end to end on a small docs tree
@@ -500,8 +501,15 @@ def main():
         txt = "\n".join(l for b in res for l in b["lines"])
         ok("The picture restates the spec; nothing shown is observed in the game." in txt and "computed by our model" not in txt,
            "review of lane/x11s: values: restated drops the model label")
+        res = eb.illustration_block(pg, {"lines": ["```illustration", "id: i6", "tool: maze_anim.py", "args: --frame 1320",
+                                                   "seed: recorded", "values: recorded", "illustrates: x", "caption: Hi.", "```"]},
+                                    tmp, out, al, "H")
+        txt = "\n".join(l for b in res for l in b["lines"])
+        ok("come from one recorded game" in txt and "Seed:" not in txt and "takes no seed" not in txt
+           and "not observed" not in txt and "nothing shown is observed" not in txt,
+           "review of lane/x17b: values: recorded replaces both the seed and the values label")
         ok("bad values" in eb.parse_illustration("id: i5\ntool: t.py\nargs:\nseed: none\nvalues: guessed\nillustrates: x\ncaption: c.")[1],
-           "values takes computed or restated only")
+           "values takes computed, restated or recorded only")
         shutil.rmtree(os.path.join(out, "site", "public", "illustrations"), ignore_errors=True)
         # Phase 9 review: a route stem on a `page` line; an over-limit table the manifest does not name goes whole,
         # a named one (by its source header line, front matter counted) stays, and the cut passes X6 either way

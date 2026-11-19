@@ -266,7 +266,8 @@ def fill_slots(T, r, it, slots, game):
                     sl[1] = idx
 
 
-def match_input(T, r, k, items, claimed, slots, game):
+def match_input(T, r, k, items, claimed, slots, game, claims=None):
+    """B2-B4 for input k. claims: a list that receives the 1-based ordinals of the items the input claims, in order."""
     inp = r["ins"][k]
     if not inp["flags"] & 3:
         return True
@@ -283,6 +284,8 @@ def match_input(T, r, k, items, claimed, slots, game):
             fill_slots(T, r, it, slots, game)
         if ordn <= 48:
             claimed[ordn - 1] = True
+        if claims is not None:
+            claims.append(ordn)
         got += 1
         if T.raw(it["cls"])[0x132]:
             exact = False
@@ -1112,13 +1115,17 @@ def describe(T, out, fr):
     return "item", "/".join(nm[:3]), "-", "low %08x" % lo
 
 
-def cmd_vector(ns):
-    T = Tables(ns.excel)
+def vector_data(excel, log, n):
+    """One transmute's draws in order (what `vector` prints), as data: a dict with T, tx, res, the cube's contents
+    (`c`) and `seq`, the printed lines in order as ("draw", k, seed name, before, after, what, range, result), ("note",
+    text) or ("unit"/"item", seed pair) for a seed the line before created. None when the log holds no n-th
+    transmute. Raises Mismatch as `check` does."""
+    T = Tables(excel)
     affixes.PROPS_HOOK = items_chain.make_hook(T.P)
     S = collections.Counter()
     notes = collections.defaultdict(list)
     pdt = (0, 0)
-    for line in open(ns.log, errors="replace"):
+    for line in open(log, errors="replace"):
         if line.startswith("PDT "):
             d = json.loads(line.split(" ", 1)[1])
             pdt = (d["c6c"], d["c70"])
@@ -1135,14 +1142,13 @@ def cmd_vector(ns):
             tr.mute -= 1
 
     tx = None
-    for i, t in enumerate(read_log(ns.log), 1):
-        if i == ns.n:
+    for i, t in enumerate(read_log(log), 1):
+        if i == n:
             tx = t
             break
         check_tx(T, t, S, notes, pdt, made)          # the earlier transmutes, for the made set
     if tx is None:
-        print("no transmute %d in %s" % (ns.n, ns.log))
-        return 1
+        return None
     orig_cr = create_roll
 
     def unmuted_cr(*a, **k):                          # the quality-0 creation roll: props.check_ic is its only caller
@@ -1159,60 +1165,96 @@ def cmd_vector(ns):
     finally:
         rng.step, props.check_ic, g["create_roll"] = tr.orig, orig_ic, orig_cr
     c = tx.c
-    code = lambda cls: T.code(cls).rstrip(b"\0 ").decode()
+    seq, final, x, gs_ok = [], [], None, False
+    try:
+        cur = {"game": seedpair(c["gs"])}
+        ngs = 0
+        seen = set()
+        copies = [d["it"] for t, d in tx.ev if t == "CCPX"]
+        oracles = [d["gs"] for t, d in tx.ev if t == "COWT" and d["t"] in ("spot", "portal")]
+        for k, ((low, high), out, fr) in enumerate(tr.ev, 1):
+            seed, what, rg, r = describe(T, out, fr)
+            if seed == "game" and cur["game"] != (low, high) and oracles:
+                gs = oracles.pop(0)                        # the cow portal's spot search and portal object (ADR-0004)
+                seq.append(("note", "-- game seed after a boundary oracle (cow portal spot search / portal object): %s" % gs))
+                cur["game"] = seedpair(gs)
+            if seed == "item" and cur.get("item") != (low, high) and high == 666:
+                seq.append(("note", "-- item seed reset to {S, 666} = %s (a fallback helper's reseed, items/0008 § 8.1)" % fmt((low, high))))
+                cur["item"] = (low, high)
+            if cur.get(seed) != (low, high) and (low, high) in seen:
+                raise Mismatch("draw %d: the %s seed goes back to %s, an earlier state: a builder that failed before a "
+                               "fallback is walked by tools/items_chain.py after the fallback's draws, so this transmute "
+                               "has no single printable order (check reproduces it)" % (k, seed, fmt((low, high))))
+            if cur.get(seed) != (low, high):
+                raise Mismatch("draw %d: %s seed not continuous (%s, then a draw from %s)" % (
+                    k, seed, fmt(cur[seed]) if seed in cur else "none yet", fmt((low, high))))
+            cur[seed] = out
+            seen.add(out)
+            seq.append(("draw", k, seed, (low, high), out, what, rg, r))
+            if what.startswith("game-seed step"):
+                ngs += 1                                   # SUnitCreate's step, then ItemSeedInit's (items/0008 § 8.2)
+                if ngs % 2:
+                    cur["unit"] = (out[0], 666)
+                    seq.append(("note", "-> unit seed init(low) = %s" % fmt(cur["unit"])))
+                else:
+                    cur["item"] = (out[0], 666)
+                    seq.append(("note", "-> start seed %08x, item seed {start, 666} = %s" % (out[0], fmt(cur["item"]))))
+                    if "ItemCopy" in what:
+                        cp = copies.pop(0)
+                        cur["unit"] = seedpair(cp["useed"])
+                        seq.append(("note", "-> unit seed restored from the copy stream, init(source Unit+0x28) = %s" % cp["useed"]))
+        x = [d for t, d in tx.ev if t == "CUBX"][0]
+        if oracles and cur["game"] != seedpair(x["gs"]):
+            cur["game"] = seedpair(oracles.pop())
+            seq.append(("note", "-- game seed after a boundary oracle (cow portal spot search / portal object): %s" % fmt(cur["game"])))
+        eq("game seed at CUBX = the trace's", fmt(cur["game"]), x["gs"])
+        gs_ok = True
+        for it in (x["items"] if res.get("produced") else []):
+            eq("final item seed = the trace's", fmt(cur["item"]), it["seed"])
+            eq("final unit seed = the trace's", fmt(cur["unit"]), it["useed"])
+            final.append(it)
+    except Mismatch as e:                              # what `vector` printed before the refusal, for cmd_vector
+        e.partial = dict(T=T, res=res, c=c, seq=seq, cubx=x if gs_ok else None, final=final)
+        raise
+    return dict(T=T, tx=tx, res=res, c=c, seq=seq, cubx=x, final=final, ndraws=len(tr.ev))
+
+
+def cmd_vector(ns):
+    try:
+        D = vector_data(ns.excel, ns.log, ns.n)
+    except Mismatch as e:                              # print the lines before the refusal, as before vector_data
+        if hasattr(e, "partial"):
+            print_vector(ns, e.partial)
+        raise
+    if D is None:
+        print("no transmute %d in %s" % (ns.n, ns.log))
+        return 1
+    print_vector(ns, D)
+    print("%d draws; each seed continuous from its creation to CUBX" % D["ndraws"])
+    return 0
+
+
+def print_vector(ns, D):
+    T, res, c = D["T"], D["res"], D["c"]
     print("transmute %d of %s: reproduced by `check` (every logged value equal)" % (ns.n, os.path.basename(ns.log)))
+    code = lambda cls: T.code(cls).rstrip(b"\0 ").decode()
     print("game: %s, difficulty %d, player class %d, level %d" % (
         "expansion" if c["exp"] else "classic", c["diff"], c["pcls"], base_of({"b": c["pb"]}).get((12, 0), 0)))
     print("cube (list order): %s" % ", ".join("%s q%d ilvl %d" % (code(it["cls"]), it["q"], it["ilvl"])
                                               for it in c["items"]))
     print("rows reaching the matcher: %s; matched row %s" % (res["reached"], res["row"]))
     print("game seed at CUBE_Transmute: %s" % c["gs"])
-    cur = {"game": seedpair(c["gs"])}
-    ngs = 0
-    seen = set()
-    copies = [d["it"] for t, d in tx.ev if t == "CCPX"]
-    oracles = [d["gs"] for t, d in tx.ev if t == "COWT" and d["t"] in ("spot", "portal")]
     print("%-3s %-5s %-17s %-17s %-62s %-20s %s" % ("#", "seed", "before", "after", "draw", "range", "result"))
-    for k, ((low, high), out, fr) in enumerate(tr.ev, 1):
-        seed, what, rg, r = describe(T, out, fr)
-        if seed == "game" and cur["game"] != (low, high) and oracles:
-            gs = oracles.pop(0)                        # the cow portal's spot search and portal object (ADR-0004)
-            print("    -- game seed after a boundary oracle (cow portal spot search / portal object): %s" % gs)
-            cur["game"] = seedpair(gs)
-        if seed == "item" and cur.get("item") != (low, high) and high == 666:
-            print("    -- item seed reset to {S, 666} = %s (a fallback helper's reseed, items/0008 § 8.1)" % fmt((low, high)))
-            cur["item"] = (low, high)
-        if cur.get(seed) != (low, high) and (low, high) in seen:
-            raise Mismatch("draw %d: the %s seed goes back to %s, an earlier state: a builder that failed before a "
-                           "fallback is walked by tools/items_chain.py after the fallback's draws, so this transmute "
-                           "has no single printable order (check reproduces it)" % (k, seed, fmt((low, high))))
-        if cur.get(seed) != (low, high):
-            raise Mismatch("draw %d: %s seed not continuous (%s, then a draw from %s)" % (
-                k, seed, fmt(cur[seed]) if seed in cur else "none yet", fmt((low, high))))
-        cur[seed] = out
-        seen.add(out)
-        print("%-3d %-5s %-17s %-17s %-62s %-20s %s" % (k, seed, fmt((low, high)), fmt(out), what, rg, r))
-        if what.startswith("game-seed step"):
-            ngs += 1                                   # SUnitCreate's step, then ItemSeedInit's (items/0008 § 8.2)
-            if ngs % 2:
-                cur["unit"] = (out[0], 666)
-                print("    -> unit seed init(low) = %s" % fmt(cur["unit"]))
-            else:
-                cur["item"] = (out[0], 666)
-                print("    -> start seed %08x, item seed {start, 666} = %s" % (out[0], fmt(cur["item"])))
-                if "ItemCopy" in what:
-                    cp = copies.pop(0)
-                    cur["unit"] = seedpair(cp["useed"])
-                    print("    -> unit seed restored from the copy stream, init(source Unit+0x28) = %s" % cp["useed"])
-    x = [d for t, d in tx.ev if t == "CUBX"][0]
-    if oracles and cur["game"] != seedpair(x["gs"]):
-        cur["game"] = seedpair(oracles.pop())
-        print("    -- game seed after a boundary oracle (cow portal spot search / portal object): %s" % fmt(cur["game"]))
-    eq("game seed at CUBX = the trace's", fmt(cur["game"]), x["gs"])
-    print("game seed at CUBX: %s" % x["gs"])
-    for it in (x["items"] if res.get("produced") else []):
-        eq("final item seed = the trace's", fmt(cur["item"]), it["seed"])
-        eq("final unit seed = the trace's", fmt(cur["unit"]), it["useed"])
+    for e in D["seq"]:
+        if e[0] == "note":
+            print(("    " + e[1]))
+        else:
+            _, k, seed, bf, af, what, rg, r = e
+            print("%-3d %-5s %-17s %-17s %-62s %-20s %s" % (k, seed, fmt(bf), fmt(af), what, rg, r))
+    if D["cubx"] is None:
+        return
+    print("game seed at CUBX: %s" % D["cubx"]["gs"])
+    for it in D["final"]:
         print("final item: %s q%d ilvl %d, start %08x, unit seed %s, item seed %s, flags %08x" % (
             code(it["cls"]), it["q"], it["ilvl"], it["start"], it["useed"], it["seed"], it["fl"]))
         print("  prefixes %s %s, suffixes %s %s, rare names %s" % (
@@ -1221,8 +1263,6 @@ def cmd_vector(ns):
         for st, f_, e in it["sub"]:
             print("  list state %d flags %#x: %s" % (st, f_, e))
         print("  base entries: %s" % it["b"])
-    print("%d draws; each seed continuous from its creation to CUBX" % len(tr.ev))
-    return 0
 
 
 def main(argv):
