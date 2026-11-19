@@ -269,3 +269,7 @@ Diablo II and Lord of Destruction are trademarks of Blizzard Entertainment. This
 affiliated with or endorsed by Blizzard. It contains no game assets, executables or data tables
 (short illustrative rows at most), only original documentation produced by analysing a legally
 owned copy.
+
+Our own work is licensed by content type: code (`tools/`, `re/ghidra_scripts/`, `.claude/hooks/`)
+under the MIT License ([LICENSE-CODE](LICENSE-CODE)), everything else, the documentation included,
+under CC BY 4.0 ([LICENSE](LICENSE)).
