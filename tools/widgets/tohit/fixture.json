@@ -170,6 +170,30 @@
   },
   {
    "inputs": {
+    "ar": -300,
+    "pct": 0,
+    "def": -100,
+    "alvl": 30,
+    "dlvl": 30
+   },
+   "expect": {
+    "ar": -300,
+    "pct": 0,
+    "def": -100,
+    "alvl": 30,
+    "dlvl": 30,
+    "ar3": -300,
+    "swap": "both",
+    "arAfter": 0,
+    "defAfter": 200,
+    "c1": 0,
+    "c2": 0,
+    "chance": 5,
+    "clamp": "low"
+   }
+  },
+  {
+   "inputs": {
     "ar": 0,
     "pct": 0,
     "def": 0,

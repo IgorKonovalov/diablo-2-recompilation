@@ -72,7 +72,8 @@ def twin_tohit(inputs, data):
     lim = data["inputs"]
     v = {k: clamp(inputs[k], lim[k]["min"], lim[k]["max"]) for k in ("ar", "pct", "def", "alvl", "dlvl")}
     t = combat.tohit_chance(v["ar"], v["def"], v["pct"], v["alvl"], v["dlvl"])
-    swap = "def" if v["def"] < 0 else ("ar" if t["ar3"] < 0 else "none")
+    after_def = t["ar3"] - v["def"] if v["def"] < 0 else t["ar3"]  # A4's first swap, then the second's test
+    swap = {(True, True): "both", (True, False): "def", (False, True): "ar"}.get((v["def"] < 0, after_def < 0), "none")
     clamp_kind = "low" if t["c2"] <= 5 else ("high" if t["c2"] >= 95 else "none")
     return {"ar": v["ar"], "pct": v["pct"], "def": v["def"], "alvl": v["alvl"], "dlvl": v["dlvl"], "ar3": t["ar3"],
             "swap": swap, "arAfter": t["ar"], "defAfter": t["df"], "c1": t["c1"], "c2": t["c2"], "chance": t["c"],
@@ -146,11 +147,7 @@ def twin_breakpoints(inputs, data):
         x = min(x, spec["hi"])
     r = bp_rate(kind, spd, x)
     n = bp_len(F, S, r)
-    fire = None
-    if ev >= S and r > 0:
-        f = max(1, AR.ceil_div((ev - S) << 8, r))
-        if f <= n - 1:
-            fire = f
+    fire = AR.sched_len(F, S, r)[1].get(ev)  # E1's loop, not the closed form: frame ev's step, or none
     lens = {bp_len(F, S, bp_rate(kind, spd, xx)) for xx in range(spec["lo"], spec["hi"] + 1)
             if bp_rate(kind, spd, xx) != 0}
     rows = []
@@ -181,6 +178,7 @@ CASES["tohit"] = [
     {"ar": 400, "pct": 0, "def": -250, "alvl": 30, "dlvl": 30},
     {"ar": -300, "pct": 0, "def": 200, "alvl": 30, "dlvl": 30},
     {"ar": 500, "pct": -100, "def": 200, "alvl": 30, "dlvl": 30},
+    {"ar": -300, "pct": 0, "def": -100, "alvl": 30, "dlvl": 30},
     {"ar": 0, "pct": 0, "def": 0, "alvl": 1, "dlvl": 0},
     {"ar": 100000, "pct": 0, "def": 10, "alvl": 99, "dlvl": 1},
     {"ar": 10, "pct": 0, "def": 100000, "alvl": 1, "dlvl": 99},
@@ -226,7 +224,7 @@ CASES["damage"] = [
     dcase(wmin=-9, wmax=99999, seed=-5, kind="nobody", pct=0),
 ]
 
-BP_BASE = {"kind": "attack", "nfr": 16, "start": 0, "spd": 256, "stat": 0, "term": 0, "evt": 7}
+BP_BASE = {"kind": "attack", "nfr": 16, "start": 0, "spd": 256, "stat": 0, "term": 100, "evt": 7}
 
 
 def bcase(**kw):
@@ -235,29 +233,33 @@ def bcase(**kw):
 
 # breakpoints: each kind at no stat and at a stat that crosses breakpoints; the spec's illustrations (a 14-frame cast at
 # speed 256 with an event at 7, a 5-frame get-hit), a weapon term, a start frame, an event that does not fire, a slow
-# speed that gives a rate of 0, a negative term, the largest stat, a long list of breakpoints, clamped inputs.
+# speed that gives a rate of 0, a stat 68 below 100, the largest stat, a long list of breakpoints, clamped inputs.
 CASES["breakpoints"] = [
     bcase(),
     bcase(stat=50),
     bcase(kind="cast", nfr=14),
     bcase(kind="cast", nfr=14, stat=20),
     bcase(kind="cast", nfr=14, stat=200),
-    bcase(kind="gethit", nfr=5, event=0),
-    bcase(kind="gethit", nfr=5, stat=24, event=0),
-    bcase(kind="block", nfr=6, event=0, stat=10),
-    bcase(kind="blockhs", nfr=6, event=3, stat=40),
-    bcase(nfr=14, start=2, speed=200, term=-30, stat=40, event=2),
-    bcase(nfr=14, term=60, event=13),
+    bcase(kind="gethit", nfr=5, evt=0),
+    bcase(kind="gethit", nfr=5, stat=24, evt=0),
+    bcase(kind="block", nfr=6, evt=0, stat=10),
+    bcase(kind="blockhs", nfr=6, evt=3, stat=40),
+    bcase(nfr=14, start=2, spd=200, term=70, stat=40, evt=2),
+    bcase(nfr=14, term=160, evt=13),
     # the spec's illustrations of K3: a 14-frame cast at speed 256 with the cast rates 9, 37, 63 and 105, and a 5-frame
     # get-hit at the hit recovery rates 7, 15, 27, 48, 86 and 200
     *[bcase(kind="cast", nfr=14, stat=x) for x in (9, 37, 63, 105)],
     *[bcase(kind="gethit", nfr=5, stat=x, evt=0) for x in (7, 15, 27, 48, 86, 200)],
-    bcase(nfr=40, start=1, event=39, stat=15),
-    bcase(nfr=3, start=2, speed=1, event=2),
-    bcase(nfr=1, start=0, speed=1, event=0),
-    bcase(nfr=144, start=0, speed=1024, stat=2000, event=100),
-    bcase(nfr=100, speed=300),
-    bcase(nfr=-4, start=999, speed=0, stat=-8, term=900, event=-1, kind="nothing"),
+    bcase(nfr=40, start=1, evt=39, stat=15),
+    bcase(nfr=3, start=2, spd=1, evt=2),
+    bcase(nfr=1, start=0, spd=1, term=0, evt=0),
+    # the factor's floor 15 with stat 68 at 0, and one-step actions (the rate covers the frames whole): no event fires
+    bcase(term=0),
+    bcase(nfr=1, evt=0),
+    bcase(kind="cast", nfr=2, start=1, spd=512, evt=1),
+    bcase(nfr=144, start=0, spd=1024, stat=2000, evt=100),
+    bcase(nfr=100, spd=300),
+    bcase(nfr=-4, start=999, spd=0, stat=-8, term=900, evt=-1, kind="nothing"),
 ]
 
 

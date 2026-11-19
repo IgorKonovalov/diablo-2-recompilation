@@ -7,6 +7,1247 @@
     "start": 0,
     "spd": 256,
     "stat": 0,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 16,
+    "start": 0,
+    "spd": 256,
+    "stat": 0,
+    "term": 100,
+    "evt": 7,
+    "bonus": 0,
+    "fac": 100,
+    "rt": 256,
+    "n": 16,
+    "fireAt": 7,
+    "rows": [
+     {
+      "m": 16,
+      "fac": 100,
+      "stat": 0
+     },
+     {
+      "m": 15,
+      "fac": 108,
+      "stat": 9
+     },
+     {
+      "m": 14,
+      "fac": 115,
+      "stat": 18
+     },
+     {
+      "m": 13,
+      "fac": 124,
+      "stat": 30
+     },
+     {
+      "m": 12,
+      "fac": 134,
+      "stat": 48
+     },
+     {
+      "m": 11,
+      "fac": 146,
+      "stat": 75
+     },
+     {
+      "m": 10,
+      "fac": 161,
+      "stat": 125
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "attack",
+    "nfr": 16,
+    "start": 0,
+    "spd": 256,
+    "stat": 50,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 16,
+    "start": 0,
+    "spd": 256,
+    "stat": 50,
+    "term": 100,
+    "evt": 7,
+    "bonus": 35,
+    "fac": 135,
+    "rt": 345,
+    "n": 12,
+    "fireAt": 6,
+    "rows": [
+     {
+      "m": 12,
+      "fac": 134,
+      "stat": 48
+     },
+     {
+      "m": 11,
+      "fac": 146,
+      "stat": 75
+     },
+     {
+      "m": 10,
+      "fac": 161,
+      "stat": 125
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 0,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 0,
+    "term": 0,
+    "evt": 7,
+    "bonus": 0,
+    "fac": 100,
+    "rt": 256,
+    "n": 14,
+    "fireAt": 7,
+    "rows": [
+     {
+      "m": 14,
+      "fac": 100,
+      "stat": 0
+     },
+     {
+      "m": 13,
+      "fac": 108,
+      "stat": 9
+     },
+     {
+      "m": 12,
+      "fac": 117,
+      "stat": 20
+     },
+     {
+      "m": 11,
+      "fac": 128,
+      "stat": 37
+     },
+     {
+      "m": 10,
+      "fac": 141,
+      "stat": 63
+     },
+     {
+      "m": 9,
+      "fac": 156,
+      "stat": 105
+     },
+     {
+      "m": 8,
+      "fac": 175,
+      "stat": 200
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 20,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 20,
+    "term": 0,
+    "evt": 7,
+    "bonus": 17,
+    "fac": 117,
+    "rt": 299,
+    "n": 12,
+    "fireAt": 6,
+    "rows": [
+     {
+      "m": 12,
+      "fac": 117,
+      "stat": 20
+     },
+     {
+      "m": 11,
+      "fac": 128,
+      "stat": 37
+     },
+     {
+      "m": 10,
+      "fac": 141,
+      "stat": 63
+     },
+     {
+      "m": 9,
+      "fac": 156,
+      "stat": 105
+     },
+     {
+      "m": 8,
+      "fac": 175,
+      "stat": 200
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 200,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 200,
+    "term": 0,
+    "evt": 7,
+    "bonus": 75,
+    "fac": 175,
+    "rt": 448,
+    "n": 8,
+    "fireAt": 4,
+    "rows": [
+     {
+      "m": 8,
+      "fac": 175,
+      "stat": 200
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 0,
+    "term": 100,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 0,
+    "term": 0,
+    "evt": 0,
+    "bonus": 0,
+    "fac": 50,
+    "rt": 128,
+    "n": 10,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 10,
+      "fac": 50,
+      "stat": 0
+     },
+     {
+      "m": 9,
+      "fac": 56,
+      "stat": 7
+     },
+     {
+      "m": 8,
+      "fac": 63,
+      "stat": 15
+     },
+     {
+      "m": 7,
+      "fac": 72,
+      "stat": 27
+     },
+     {
+      "m": 6,
+      "fac": 84,
+      "stat": 48
+     },
+     {
+      "m": 5,
+      "fac": 100,
+      "stat": 86
+     },
+     {
+      "m": 4,
+      "fac": 125,
+      "stat": 200
+     },
+     {
+      "m": 3,
+      "fac": 167,
+      "stat": 4680
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 24,
+    "term": 100,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 24,
+    "term": 0,
+    "evt": 0,
+    "bonus": 20,
+    "fac": 70,
+    "rt": 179,
+    "n": 8,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 8,
+      "fac": 63,
+      "stat": 15
+     },
+     {
+      "m": 7,
+      "fac": 72,
+      "stat": 27
+     },
+     {
+      "m": 6,
+      "fac": 84,
+      "stat": 48
+     },
+     {
+      "m": 5,
+      "fac": 100,
+      "stat": 86
+     },
+     {
+      "m": 4,
+      "fac": 125,
+      "stat": 200
+     },
+     {
+      "m": 3,
+      "fac": 167,
+      "stat": 4680
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "block",
+    "nfr": 6,
+    "start": 0,
+    "spd": 256,
+    "stat": 10,
+    "term": 100,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "block",
+    "nfr": 6,
+    "start": 0,
+    "spd": 256,
+    "stat": 10,
+    "term": 0,
+    "evt": 0,
+    "bonus": 9,
+    "fac": 59,
+    "rt": 151,
+    "n": 11,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 11,
+      "fac": 55,
+      "stat": 6
+     },
+     {
+      "m": 10,
+      "fac": 61,
+      "stat": 13
+     },
+     {
+      "m": 9,
+      "fac": 67,
+      "stat": 20
+     },
+     {
+      "m": 8,
+      "fac": 75,
+      "stat": 32
+     },
+     {
+      "m": 7,
+      "fac": 86,
+      "stat": 52
+     },
+     {
+      "m": 6,
+      "fac": 100,
+      "stat": 86
+     },
+     {
+      "m": 5,
+      "fac": 121,
+      "stat": 174
+     },
+     {
+      "m": 4,
+      "fac": 150,
+      "stat": 600
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "blockhs",
+    "nfr": 6,
+    "start": 0,
+    "spd": 256,
+    "stat": 40,
+    "term": 100,
+    "evt": 3
+   },
+   "expect": {
+    "kind": "blockhs",
+    "nfr": 6,
+    "start": 0,
+    "spd": 256,
+    "stat": 40,
+    "term": 0,
+    "evt": 3,
+    "bonus": 30,
+    "fac": 130,
+    "rt": 332,
+    "n": 5,
+    "fireAt": 3,
+    "rows": [
+     {
+      "m": 5,
+      "fac": 121,
+      "stat": 26
+     },
+     {
+      "m": 4,
+      "fac": 150,
+      "stat": 86
+     },
+     {
+      "m": 3,
+      "fac": 200,
+      "stat": 600
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "attack",
+    "nfr": 14,
+    "start": 2,
+    "spd": 200,
+    "stat": 40,
+    "term": 70,
+    "evt": 2
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 14,
+    "start": 2,
+    "spd": 200,
+    "stat": 40,
+    "term": 70,
+    "evt": 2,
+    "bonus": 30,
+    "fac": 100,
+    "rt": 200,
+    "n": 16,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 16,
+      "fac": 96,
+      "stat": 34
+     },
+     {
+      "m": 15,
+      "fac": 103,
+      "stat": 46
+     },
+     {
+      "m": 14,
+      "fac": 110,
+      "stat": 60
+     },
+     {
+      "m": 13,
+      "fac": 119,
+      "stat": 83
+     },
+     {
+      "m": 12,
+      "fac": 128,
+      "stat": 113
+     },
+     {
+      "m": 11,
+      "fac": 140,
+      "stat": 168
+     },
+     {
+      "m": 10,
+      "fac": 154,
+      "stat": 280
+     },
+     {
+      "m": 9,
+      "fac": 171,
+      "stat": 638
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "attack",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 0,
+    "term": 160,
+    "evt": 13
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 0,
+    "term": 160,
+    "evt": 13,
+    "bonus": 0,
+    "fac": 160,
+    "rt": 409,
+    "n": 9,
+    "fireAt": null,
+    "rows": [
+     {
+      "m": 9,
+      "fac": 156,
+      "stat": 0
+     },
+     {
+      "m": 8,
+      "fac": 175,
+      "stat": 18
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 9,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 9,
+    "term": 0,
+    "evt": 7,
+    "bonus": 8,
+    "fac": 108,
+    "rt": 276,
+    "n": 13,
+    "fireAt": 7,
+    "rows": [
+     {
+      "m": 13,
+      "fac": 108,
+      "stat": 9
+     },
+     {
+      "m": 12,
+      "fac": 117,
+      "stat": 20
+     },
+     {
+      "m": 11,
+      "fac": 128,
+      "stat": 37
+     },
+     {
+      "m": 10,
+      "fac": 141,
+      "stat": 63
+     },
+     {
+      "m": 9,
+      "fac": 156,
+      "stat": 105
+     },
+     {
+      "m": 8,
+      "fac": 175,
+      "stat": 200
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 37,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 37,
+    "term": 0,
+    "evt": 7,
+    "bonus": 28,
+    "fac": 128,
+    "rt": 327,
+    "n": 11,
+    "fireAt": 6,
+    "rows": [
+     {
+      "m": 11,
+      "fac": 128,
+      "stat": 37
+     },
+     {
+      "m": 10,
+      "fac": 141,
+      "stat": 63
+     },
+     {
+      "m": 9,
+      "fac": 156,
+      "stat": 105
+     },
+     {
+      "m": 8,
+      "fac": 175,
+      "stat": 200
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 63,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 63,
+    "term": 0,
+    "evt": 7,
+    "bonus": 41,
+    "fac": 141,
+    "rt": 360,
+    "n": 10,
+    "fireAt": 5,
+    "rows": [
+     {
+      "m": 10,
+      "fac": 141,
+      "stat": 63
+     },
+     {
+      "m": 9,
+      "fac": 156,
+      "stat": 105
+     },
+     {
+      "m": 8,
+      "fac": 175,
+      "stat": 200
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 105,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "cast",
+    "nfr": 14,
+    "start": 0,
+    "spd": 256,
+    "stat": 105,
+    "term": 0,
+    "evt": 7,
+    "bonus": 56,
+    "fac": 156,
+    "rt": 399,
+    "n": 9,
+    "fireAt": 5,
+    "rows": [
+     {
+      "m": 9,
+      "fac": 156,
+      "stat": 105
+     },
+     {
+      "m": 8,
+      "fac": 175,
+      "stat": 200
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 7,
+    "term": 100,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 7,
+    "term": 0,
+    "evt": 0,
+    "bonus": 6,
+    "fac": 56,
+    "rt": 143,
+    "n": 9,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 9,
+      "fac": 56,
+      "stat": 7
+     },
+     {
+      "m": 8,
+      "fac": 63,
+      "stat": 15
+     },
+     {
+      "m": 7,
+      "fac": 72,
+      "stat": 27
+     },
+     {
+      "m": 6,
+      "fac": 84,
+      "stat": 48
+     },
+     {
+      "m": 5,
+      "fac": 100,
+      "stat": 86
+     },
+     {
+      "m": 4,
+      "fac": 125,
+      "stat": 200
+     },
+     {
+      "m": 3,
+      "fac": 167,
+      "stat": 4680
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 15,
+    "term": 100,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 15,
+    "term": 0,
+    "evt": 0,
+    "bonus": 13,
+    "fac": 63,
+    "rt": 161,
+    "n": 8,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 8,
+      "fac": 63,
+      "stat": 15
+     },
+     {
+      "m": 7,
+      "fac": 72,
+      "stat": 27
+     },
+     {
+      "m": 6,
+      "fac": 84,
+      "stat": 48
+     },
+     {
+      "m": 5,
+      "fac": 100,
+      "stat": 86
+     },
+     {
+      "m": 4,
+      "fac": 125,
+      "stat": 200
+     },
+     {
+      "m": 3,
+      "fac": 167,
+      "stat": 4680
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 27,
+    "term": 100,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 27,
+    "term": 0,
+    "evt": 0,
+    "bonus": 22,
+    "fac": 72,
+    "rt": 184,
+    "n": 7,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 7,
+      "fac": 72,
+      "stat": 27
+     },
+     {
+      "m": 6,
+      "fac": 84,
+      "stat": 48
+     },
+     {
+      "m": 5,
+      "fac": 100,
+      "stat": 86
+     },
+     {
+      "m": 4,
+      "fac": 125,
+      "stat": 200
+     },
+     {
+      "m": 3,
+      "fac": 167,
+      "stat": 4680
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 48,
+    "term": 100,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 48,
+    "term": 0,
+    "evt": 0,
+    "bonus": 34,
+    "fac": 84,
+    "rt": 215,
+    "n": 6,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 6,
+      "fac": 84,
+      "stat": 48
+     },
+     {
+      "m": 5,
+      "fac": 100,
+      "stat": 86
+     },
+     {
+      "m": 4,
+      "fac": 125,
+      "stat": 200
+     },
+     {
+      "m": 3,
+      "fac": 167,
+      "stat": 4680
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 86,
+    "term": 100,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 86,
+    "term": 0,
+    "evt": 0,
+    "bonus": 50,
+    "fac": 100,
+    "rt": 256,
+    "n": 5,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 5,
+      "fac": 100,
+      "stat": 86
+     },
+     {
+      "m": 4,
+      "fac": 125,
+      "stat": 200
+     },
+     {
+      "m": 3,
+      "fac": 167,
+      "stat": 4680
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 200,
+    "term": 100,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "gethit",
+    "nfr": 5,
+    "start": 0,
+    "spd": 256,
+    "stat": 200,
+    "term": 0,
+    "evt": 0,
+    "bonus": 75,
+    "fac": 125,
+    "rt": 320,
+    "n": 4,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 4,
+      "fac": 125,
+      "stat": 200
+     },
+     {
+      "m": 3,
+      "fac": 167,
+      "stat": 4680
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "attack",
+    "nfr": 40,
+    "start": 1,
+    "spd": 256,
+    "stat": 15,
+    "term": 100,
+    "evt": 39
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 40,
+    "start": 1,
+    "spd": 256,
+    "stat": 15,
+    "term": 100,
+    "evt": 39,
+    "bonus": 13,
+    "fac": 113,
+    "rt": 289,
+    "n": 35,
+    "fireAt": 34,
+    "rows": [
+     {
+      "m": 35,
+      "fac": 112,
+      "stat": 14
+     },
+     {
+      "m": 34,
+      "fac": 115,
+      "stat": 18
+     },
+     {
+      "m": 33,
+      "fac": 119,
+      "stat": 23
+     },
+     {
+      "m": 32,
+      "fac": 122,
+      "stat": 27
+     },
+     {
+      "m": 31,
+      "fac": 127,
+      "stat": 35
+     },
+     {
+      "m": 30,
+      "fac": 131,
+      "stat": 42
+     },
+     {
+      "m": 29,
+      "fac": 135,
+      "stat": 50
+     },
+     {
+      "m": 28,
+      "fac": 140,
+      "stat": 60
+     },
+     {
+      "m": 27,
+      "fac": 145,
+      "stat": 72
+     },
+     {
+      "m": 26,
+      "fac": 150,
+      "stat": 86
+     },
+     {
+      "m": 25,
+      "fac": 157,
+      "stat": 109
+     },
+     {
+      "m": 24,
+      "fac": 163,
+      "stat": 133
+     },
+     {
+      "m": 23,
+      "fac": 170,
+      "stat": 168
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "attack",
+    "nfr": 3,
+    "start": 2,
+    "spd": 1,
+    "stat": 0,
+    "term": 100,
+    "evt": 2
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 3,
+    "start": 2,
+    "spd": 1,
+    "stat": 0,
+    "term": 100,
+    "evt": 2,
+    "bonus": 0,
+    "fac": 100,
+    "rt": 1,
+    "n": 256,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 256,
+      "fac": 100,
+      "stat": 0
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "attack",
+    "nfr": 1,
+    "start": 0,
+    "spd": 1,
+    "stat": 0,
+    "term": 0,
+    "evt": 0
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 1,
+    "start": 0,
+    "spd": 1,
+    "stat": 0,
+    "term": 0,
+    "evt": 0,
+    "bonus": 0,
+    "fac": 15,
+    "rt": 0,
+    "n": 1,
+    "fireAt": null,
+    "rows": [],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "attack",
+    "nfr": 16,
+    "start": 0,
+    "spd": 256,
+    "stat": 0,
     "term": 0,
     "evt": 7
    },
@@ -231,2259 +1472,12 @@
   {
    "inputs": {
     "kind": "attack",
-    "nfr": 16,
-    "start": 0,
-    "spd": 256,
-    "stat": 50,
-    "term": 0,
-    "evt": 7
-   },
-   "expect": {
-    "kind": "attack",
-    "nfr": 16,
-    "start": 0,
-    "spd": 256,
-    "stat": 50,
-    "term": 0,
-    "evt": 7,
-    "bonus": 35,
-    "fac": 35,
-    "rt": 89,
-    "n": 47,
-    "fireAt": 21,
-    "rows": [
-     {
-      "m": 47,
-      "fac": 35,
-      "stat": 50
-     },
-     {
-      "m": 45,
-      "fac": 36,
-      "stat": 52
-     },
-     {
-      "m": 44,
-      "fac": 37,
-      "stat": 54
-     },
-     {
-      "m": 43,
-      "fac": 38,
-      "stat": 56
-     },
-     {
-      "m": 42,
-      "fac": 39,
-      "stat": 58
-     },
-     {
-      "m": 41,
-      "fac": 40,
-      "stat": 60
-     },
-     {
-      "m": 40,
-      "fac": 41,
-      "stat": 63
-     },
-     {
-      "m": 39,
-      "fac": 42,
-      "stat": 65
-     },
-     {
-      "m": 38,
-      "fac": 43,
-      "stat": 68
-     },
-     {
-      "m": 37,
-      "fac": 44,
-      "stat": 70
-     },
-     {
-      "m": 36,
-      "fac": 45,
-      "stat": 72
-     },
-     {
-      "m": 35,
-      "fac": 47,
-      "stat": 78
-     },
-     {
-      "m": 34,
-      "fac": 48,
-      "stat": 80
-     },
-     {
-      "m": 33,
-      "fac": 49,
-      "stat": 83
-     },
-     {
-      "m": 32,
-      "fac": 50,
-      "stat": 86
-     },
-     {
-      "m": 31,
-      "fac": 52,
-      "stat": 92
-     },
-     {
-      "m": 30,
-      "fac": 54,
-      "stat": 99
-     },
-     {
-      "m": 29,
-      "fac": 56,
-      "stat": 105
-     },
-     {
-      "m": 28,
-      "fac": 58,
-      "stat": 113
-     },
-     {
-      "m": 27,
-      "fac": 60,
-      "stat": 120
-     },
-     {
-      "m": 26,
-      "fac": 62,
-      "stat": 129
-     },
-     {
-      "m": 25,
-      "fac": 65,
-      "stat": 142
-     },
-     {
-      "m": 24,
-      "fac": 67,
-      "stat": 152
-     },
-     {
-      "m": 23,
-      "fac": 70,
-      "stat": 168
-     },
-     {
-      "m": 22,
-      "fac": 74,
-      "stat": 194
-     },
-     {
-      "m": 21,
-      "fac": 77,
-      "stat": 215
-     },
-     {
-      "m": 20,
-      "fac": 81,
-      "stat": 250
-     },
-     {
-      "m": 19,
-      "fac": 85,
-      "stat": 292
-     },
-     {
-      "m": 18,
-      "fac": 90,
-      "stat": 360
-     },
-     {
-      "m": 17,
-      "fac": 95,
-      "stat": 456
-     },
-     {
-      "m": 16,
-      "fac": 100,
-      "stat": 600
-     },
-     {
-      "m": 15,
-      "fac": 108,
-      "stat": 1080
-     },
-     {
-      "m": 14,
-      "fac": 115,
-      "stat": 2760
-     },
-     {
-      "m": 13,
-      "fac": 124,
-      "stat": null
-     },
-     {
-      "m": 12,
-      "fac": 134,
-      "stat": null
-     },
-     {
-      "m": 11,
-      "fac": 146,
-      "stat": null
-     },
-     {
-      "m": 10,
-      "fac": 161,
-      "stat": null
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 0,
-    "term": 0,
-    "evt": 7
-   },
-   "expect": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 0,
-    "term": 0,
-    "evt": 7,
-    "bonus": 0,
-    "fac": 100,
-    "rt": 256,
-    "n": 14,
-    "fireAt": 7,
-    "rows": [
-     {
-      "m": 14,
-      "fac": 100,
-      "stat": 0
-     },
-     {
-      "m": 13,
-      "fac": 108,
-      "stat": 9
-     },
-     {
-      "m": 12,
-      "fac": 117,
-      "stat": 20
-     },
-     {
-      "m": 11,
-      "fac": 128,
-      "stat": 37
-     },
-     {
-      "m": 10,
-      "fac": 141,
-      "stat": 63
-     },
-     {
-      "m": 9,
-      "fac": 156,
-      "stat": 105
-     },
-     {
-      "m": 8,
-      "fac": 175,
-      "stat": 200
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 20,
-    "term": 0,
-    "evt": 7
-   },
-   "expect": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 20,
-    "term": 0,
-    "evt": 7,
-    "bonus": 17,
-    "fac": 117,
-    "rt": 299,
-    "n": 12,
-    "fireAt": 6,
-    "rows": [
-     {
-      "m": 12,
-      "fac": 117,
-      "stat": 20
-     },
-     {
-      "m": 11,
-      "fac": 128,
-      "stat": 37
-     },
-     {
-      "m": 10,
-      "fac": 141,
-      "stat": 63
-     },
-     {
-      "m": 9,
-      "fac": 156,
-      "stat": 105
-     },
-     {
-      "m": 8,
-      "fac": 175,
-      "stat": 200
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 200,
-    "term": 0,
-    "evt": 7
-   },
-   "expect": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 200,
-    "term": 0,
-    "evt": 7,
-    "bonus": 75,
-    "fac": 175,
-    "rt": 448,
-    "n": 8,
-    "fireAt": 4,
-    "rows": [
-     {
-      "m": 8,
-      "fac": 175,
-      "stat": 200
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 0,
-    "term": 0,
-    "evt": 7,
-    "event": 0
-   },
-   "expect": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 0,
-    "term": 0,
-    "evt": 7,
-    "bonus": 0,
-    "fac": 50,
-    "rt": 128,
-    "n": 10,
-    "fireAt": null,
-    "rows": [
-     {
-      "m": 10,
-      "fac": 50,
-      "stat": 0
-     },
-     {
-      "m": 9,
-      "fac": 56,
-      "stat": 7
-     },
-     {
-      "m": 8,
-      "fac": 63,
-      "stat": 15
-     },
-     {
-      "m": 7,
-      "fac": 72,
-      "stat": 27
-     },
-     {
-      "m": 6,
-      "fac": 84,
-      "stat": 48
-     },
-     {
-      "m": 5,
-      "fac": 100,
-      "stat": 86
-     },
-     {
-      "m": 4,
-      "fac": 125,
-      "stat": 200
-     },
-     {
-      "m": 3,
-      "fac": 167,
-      "stat": 4680
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 24,
-    "term": 0,
-    "evt": 7,
-    "event": 0
-   },
-   "expect": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 24,
-    "term": 0,
-    "evt": 7,
-    "bonus": 20,
-    "fac": 70,
-    "rt": 179,
-    "n": 8,
-    "fireAt": null,
-    "rows": [
-     {
-      "m": 8,
-      "fac": 63,
-      "stat": 15
-     },
-     {
-      "m": 7,
-      "fac": 72,
-      "stat": 27
-     },
-     {
-      "m": 6,
-      "fac": 84,
-      "stat": 48
-     },
-     {
-      "m": 5,
-      "fac": 100,
-      "stat": 86
-     },
-     {
-      "m": 4,
-      "fac": 125,
-      "stat": 200
-     },
-     {
-      "m": 3,
-      "fac": 167,
-      "stat": 4680
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "block",
-    "nfr": 6,
-    "start": 0,
-    "spd": 256,
-    "stat": 10,
-    "term": 0,
-    "evt": 7,
-    "event": 0
-   },
-   "expect": {
-    "kind": "block",
-    "nfr": 6,
-    "start": 0,
-    "spd": 256,
-    "stat": 10,
-    "term": 0,
-    "evt": 7,
-    "bonus": 9,
-    "fac": 59,
-    "rt": 151,
-    "n": 11,
-    "fireAt": null,
-    "rows": [
-     {
-      "m": 11,
-      "fac": 55,
-      "stat": 6
-     },
-     {
-      "m": 10,
-      "fac": 61,
-      "stat": 13
-     },
-     {
-      "m": 9,
-      "fac": 67,
-      "stat": 20
-     },
-     {
-      "m": 8,
-      "fac": 75,
-      "stat": 32
-     },
-     {
-      "m": 7,
-      "fac": 86,
-      "stat": 52
-     },
-     {
-      "m": 6,
-      "fac": 100,
-      "stat": 86
-     },
-     {
-      "m": 5,
-      "fac": 121,
-      "stat": 174
-     },
-     {
-      "m": 4,
-      "fac": 150,
-      "stat": 600
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "blockhs",
-    "nfr": 6,
-    "start": 0,
-    "spd": 256,
-    "stat": 40,
-    "term": 0,
-    "evt": 7,
-    "event": 3
-   },
-   "expect": {
-    "kind": "blockhs",
-    "nfr": 6,
-    "start": 0,
-    "spd": 256,
-    "stat": 40,
-    "term": 0,
-    "evt": 7,
-    "bonus": 30,
-    "fac": 130,
-    "rt": 332,
-    "n": 5,
-    "fireAt": null,
-    "rows": [
-     {
-      "m": 5,
-      "fac": 121,
-      "stat": 26
-     },
-     {
-      "m": 4,
-      "fac": 150,
-      "stat": 86
-     },
-     {
-      "m": 3,
-      "fac": 200,
-      "stat": 600
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "attack",
-    "nfr": 14,
-    "start": 2,
-    "spd": 256,
-    "stat": 40,
-    "term": -30,
-    "evt": 7,
-    "speed": 200,
-    "event": 2
-   },
-   "expect": {
-    "kind": "attack",
-    "nfr": 14,
-    "start": 2,
-    "spd": 256,
-    "stat": 40,
-    "term": -30,
-    "evt": 7,
-    "bonus": 30,
-    "fac": 15,
-    "rt": 38,
-    "n": 81,
-    "fireAt": 34,
-    "rows": [
-     {
-      "m": 81,
-      "fac": 15,
-      "stat": 0
-     },
-     {
-      "m": 77,
-      "fac": 16,
-      "stat": 75
-     },
-     {
-      "m": 72,
-      "fac": 17,
-      "stat": 78
-     },
-     {
-      "m": 67,
-      "fac": 18,
-      "stat": 80
-     },
-     {
-      "m": 64,
-      "fac": 19,
-      "stat": 83
-     },
-     {
-      "m": 61,
-      "fac": 20,
-      "stat": 86
-     },
-     {
-      "m": 58,
-      "fac": 21,
-      "stat": 89
-     },
-     {
-      "m": 55,
-      "fac": 22,
-      "stat": 92
-     },
-     {
-      "m": 53,
-      "fac": 23,
-      "stat": 95
-     },
-     {
-      "m": 51,
-      "fac": 24,
-      "stat": 99
-     },
-     {
-      "m": 48,
-      "fac": 25,
-      "stat": 102
-     },
-     {
-      "m": 47,
-      "fac": 26,
-      "stat": 105
-     },
-     {
-      "m": 45,
-      "fac": 27,
-      "stat": 109
-     },
-     {
-      "m": 44,
-      "fac": 28,
-      "stat": 113
-     },
-     {
-      "m": 42,
-      "fac": 29,
-      "stat": 117
-     },
-     {
-      "m": 41,
-      "fac": 30,
-      "stat": 120
-     },
-     {
-      "m": 39,
-      "fac": 31,
-      "stat": 125
-     },
-     {
-      "m": 38,
-      "fac": 32,
-      "stat": 129
-     },
-     {
-      "m": 37,
-      "fac": 33,
-      "stat": 133
-     },
-     {
-      "m": 36,
-      "fac": 34,
-      "stat": 138
-     },
-     {
-      "m": 35,
-      "fac": 35,
-      "stat": 142
-     },
-     {
-      "m": 34,
-      "fac": 36,
-      "stat": 147
-     },
-     {
-      "m": 33,
-      "fac": 37,
-      "stat": 152
-     },
-     {
-      "m": 32,
-      "fac": 38,
-      "stat": 157
-     },
-     {
-      "m": 31,
-      "fac": 40,
-      "stat": 168
-     },
-     {
-      "m": 30,
-      "fac": 41,
-      "stat": 174
-     },
-     {
-      "m": 29,
-      "fac": 42,
-      "stat": 180
-     },
-     {
-      "m": 28,
-      "fac": 43,
-      "stat": 187
-     },
-     {
-      "m": 27,
-      "fac": 45,
-      "stat": 200
-     },
-     {
-      "m": 26,
-      "fac": 47,
-      "stat": 215
-     },
-     {
-      "m": 25,
-      "fac": 49,
-      "stat": 232
-     },
-     {
-      "m": 24,
-      "fac": 50,
-      "stat": 240
-     },
-     {
-      "m": 23,
-      "fac": 53,
-      "stat": 270
-     },
-     {
-      "m": 22,
-      "fac": 55,
-      "stat": 292
-     },
-     {
-      "m": 21,
-      "fac": 58,
-      "stat": 330
-     },
-     {
-      "m": 20,
-      "fac": 61,
-      "stat": 377
-     },
-     {
-      "m": 19,
-      "fac": 64,
-      "stat": 434
-     },
-     {
-      "m": 18,
-      "fac": 67,
-      "stat": 507
-     },
-     {
-      "m": 17,
-      "fac": 71,
-      "stat": 638
-     },
-     {
-      "m": 16,
-      "fac": 75,
-      "stat": 840
-     }
-    ],
-    "capped": true
-   }
-  },
-  {
-   "inputs": {
-    "kind": "attack",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 0,
-    "term": 60,
-    "evt": 7,
-    "event": 13
-   },
-   "expect": {
-    "kind": "attack",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 0,
-    "term": 60,
-    "evt": 7,
-    "bonus": 0,
-    "fac": 60,
-    "rt": 153,
-    "n": 24,
-    "fireAt": 12,
-    "rows": [
-     {
-      "m": 24,
-      "fac": 59,
-      "stat": 0
-     },
-     {
-      "m": 23,
-      "fac": 61,
-      "stat": 2
-     },
-     {
-      "m": 22,
-      "fac": 64,
-      "stat": 5
-     },
-     {
-      "m": 21,
-      "fac": 67,
-      "stat": 8
-     },
-     {
-      "m": 20,
-      "fac": 71,
-      "stat": 13
-     },
-     {
-      "m": 19,
-      "fac": 74,
-      "stat": 16
-     },
-     {
-      "m": 18,
-      "fac": 79,
-      "stat": 23
-     },
-     {
-      "m": 17,
-      "fac": 83,
-      "stat": 29
-     },
-     {
-      "m": 16,
-      "fac": 88,
-      "stat": 37
-     },
-     {
-      "m": 15,
-      "fac": 94,
-      "stat": 48
-     },
-     {
-      "m": 14,
-      "fac": 100,
-      "stat": 60
-     },
-     {
-      "m": 13,
-      "fac": 108,
-      "stat": 80
-     },
-     {
-      "m": 12,
-      "fac": 117,
-      "stat": 109
-     },
-     {
-      "m": 11,
-      "fac": 128,
-      "stat": 157
-     },
-     {
-      "m": 10,
-      "fac": 141,
-      "stat": 250
-     },
-     {
-      "m": 9,
-      "fac": 156,
-      "stat": 480
-     },
-     {
-      "m": 8,
-      "fac": 175,
-      "stat": 2760
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 9,
-    "term": 0,
-    "evt": 7
-   },
-   "expect": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 9,
-    "term": 0,
-    "evt": 7,
-    "bonus": 8,
-    "fac": 108,
-    "rt": 276,
-    "n": 13,
-    "fireAt": 7,
-    "rows": [
-     {
-      "m": 13,
-      "fac": 108,
-      "stat": 9
-     },
-     {
-      "m": 12,
-      "fac": 117,
-      "stat": 20
-     },
-     {
-      "m": 11,
-      "fac": 128,
-      "stat": 37
-     },
-     {
-      "m": 10,
-      "fac": 141,
-      "stat": 63
-     },
-     {
-      "m": 9,
-      "fac": 156,
-      "stat": 105
-     },
-     {
-      "m": 8,
-      "fac": 175,
-      "stat": 200
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 37,
-    "term": 0,
-    "evt": 7
-   },
-   "expect": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 37,
-    "term": 0,
-    "evt": 7,
-    "bonus": 28,
-    "fac": 128,
-    "rt": 327,
-    "n": 11,
-    "fireAt": 6,
-    "rows": [
-     {
-      "m": 11,
-      "fac": 128,
-      "stat": 37
-     },
-     {
-      "m": 10,
-      "fac": 141,
-      "stat": 63
-     },
-     {
-      "m": 9,
-      "fac": 156,
-      "stat": 105
-     },
-     {
-      "m": 8,
-      "fac": 175,
-      "stat": 200
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 63,
-    "term": 0,
-    "evt": 7
-   },
-   "expect": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 63,
-    "term": 0,
-    "evt": 7,
-    "bonus": 41,
-    "fac": 141,
-    "rt": 360,
-    "n": 10,
-    "fireAt": 5,
-    "rows": [
-     {
-      "m": 10,
-      "fac": 141,
-      "stat": 63
-     },
-     {
-      "m": 9,
-      "fac": 156,
-      "stat": 105
-     },
-     {
-      "m": 8,
-      "fac": 175,
-      "stat": 200
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 105,
-    "term": 0,
-    "evt": 7
-   },
-   "expect": {
-    "kind": "cast",
-    "nfr": 14,
-    "start": 0,
-    "spd": 256,
-    "stat": 105,
-    "term": 0,
-    "evt": 7,
-    "bonus": 56,
-    "fac": 156,
-    "rt": 399,
-    "n": 9,
-    "fireAt": 5,
-    "rows": [
-     {
-      "m": 9,
-      "fac": 156,
-      "stat": 105
-     },
-     {
-      "m": 8,
-      "fac": 175,
-      "stat": 200
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 7,
-    "term": 0,
-    "evt": 0
-   },
-   "expect": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 7,
-    "term": 0,
-    "evt": 0,
-    "bonus": 6,
-    "fac": 56,
-    "rt": 143,
-    "n": 9,
-    "fireAt": 1,
-    "rows": [
-     {
-      "m": 9,
-      "fac": 56,
-      "stat": 7
-     },
-     {
-      "m": 8,
-      "fac": 63,
-      "stat": 15
-     },
-     {
-      "m": 7,
-      "fac": 72,
-      "stat": 27
-     },
-     {
-      "m": 6,
-      "fac": 84,
-      "stat": 48
-     },
-     {
-      "m": 5,
-      "fac": 100,
-      "stat": 86
-     },
-     {
-      "m": 4,
-      "fac": 125,
-      "stat": 200
-     },
-     {
-      "m": 3,
-      "fac": 167,
-      "stat": 4680
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 15,
-    "term": 0,
-    "evt": 0
-   },
-   "expect": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 15,
-    "term": 0,
-    "evt": 0,
-    "bonus": 13,
-    "fac": 63,
-    "rt": 161,
-    "n": 8,
-    "fireAt": 1,
-    "rows": [
-     {
-      "m": 8,
-      "fac": 63,
-      "stat": 15
-     },
-     {
-      "m": 7,
-      "fac": 72,
-      "stat": 27
-     },
-     {
-      "m": 6,
-      "fac": 84,
-      "stat": 48
-     },
-     {
-      "m": 5,
-      "fac": 100,
-      "stat": 86
-     },
-     {
-      "m": 4,
-      "fac": 125,
-      "stat": 200
-     },
-     {
-      "m": 3,
-      "fac": 167,
-      "stat": 4680
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 27,
-    "term": 0,
-    "evt": 0
-   },
-   "expect": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 27,
-    "term": 0,
-    "evt": 0,
-    "bonus": 22,
-    "fac": 72,
-    "rt": 184,
-    "n": 7,
-    "fireAt": 1,
-    "rows": [
-     {
-      "m": 7,
-      "fac": 72,
-      "stat": 27
-     },
-     {
-      "m": 6,
-      "fac": 84,
-      "stat": 48
-     },
-     {
-      "m": 5,
-      "fac": 100,
-      "stat": 86
-     },
-     {
-      "m": 4,
-      "fac": 125,
-      "stat": 200
-     },
-     {
-      "m": 3,
-      "fac": 167,
-      "stat": 4680
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 48,
-    "term": 0,
-    "evt": 0
-   },
-   "expect": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 48,
-    "term": 0,
-    "evt": 0,
-    "bonus": 34,
-    "fac": 84,
-    "rt": 215,
-    "n": 6,
-    "fireAt": 1,
-    "rows": [
-     {
-      "m": 6,
-      "fac": 84,
-      "stat": 48
-     },
-     {
-      "m": 5,
-      "fac": 100,
-      "stat": 86
-     },
-     {
-      "m": 4,
-      "fac": 125,
-      "stat": 200
-     },
-     {
-      "m": 3,
-      "fac": 167,
-      "stat": 4680
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 86,
-    "term": 0,
-    "evt": 0
-   },
-   "expect": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 86,
-    "term": 0,
-    "evt": 0,
-    "bonus": 50,
-    "fac": 100,
-    "rt": 256,
-    "n": 5,
-    "fireAt": 1,
-    "rows": [
-     {
-      "m": 5,
-      "fac": 100,
-      "stat": 86
-     },
-     {
-      "m": 4,
-      "fac": 125,
-      "stat": 200
-     },
-     {
-      "m": 3,
-      "fac": 167,
-      "stat": 4680
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 200,
-    "term": 0,
-    "evt": 0
-   },
-   "expect": {
-    "kind": "gethit",
-    "nfr": 5,
-    "start": 0,
-    "spd": 256,
-    "stat": 200,
-    "term": 0,
-    "evt": 0,
-    "bonus": 75,
-    "fac": 125,
-    "rt": 320,
-    "n": 4,
-    "fireAt": 1,
-    "rows": [
-     {
-      "m": 4,
-      "fac": 125,
-      "stat": 200
-     },
-     {
-      "m": 3,
-      "fac": 167,
-      "stat": 4680
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "attack",
-    "nfr": 40,
-    "start": 1,
-    "spd": 256,
-    "stat": 15,
-    "term": 0,
-    "evt": 7,
-    "event": 39
-   },
-   "expect": {
-    "kind": "attack",
-    "nfr": 40,
-    "start": 1,
-    "spd": 256,
-    "stat": 15,
-    "term": 0,
-    "evt": 7,
-    "bonus": 13,
-    "fac": 15,
-    "rt": 38,
-    "n": 263,
-    "fireAt": 41,
-    "rows": [
-     {
-      "m": 263,
-      "fac": 15,
-      "stat": 0
-     },
-     {
-      "m": 250,
-      "fac": 16,
-      "stat": 19
-     },
-     {
-      "m": 233,
-      "fac": 17,
-      "stat": 20
-     },
-     {
-      "m": 218,
-      "fac": 18,
-      "stat": 22
-     },
-     {
-      "m": 208,
-      "fac": 19,
-      "stat": 23
-     },
-     {
-      "m": 196,
-      "fac": 20,
-      "stat": 24
-     },
-     {
-      "m": 189,
-      "fac": 21,
-      "stat": 26
-     },
-     {
-      "m": 179,
-      "fac": 22,
-      "stat": 27
-     },
-     {
-      "m": 173,
-      "fac": 23,
-      "stat": 29
-     },
-     {
-      "m": 164,
-      "fac": 24,
-      "stat": 30
-     },
-     {
-      "m": 156,
-      "fac": 25,
-      "stat": 32
-     },
-     {
-      "m": 152,
-      "fac": 26,
-      "stat": 34
-     },
-     {
-      "m": 145,
-      "fac": 27,
-      "stat": 35
-     },
-     {
-      "m": 141,
-      "fac": 28,
-      "stat": 37
-     },
-     {
-      "m": 135,
-      "fac": 29,
-      "stat": 39
-     },
-     {
-      "m": 132,
-      "fac": 30,
-      "stat": 40
-     },
-     {
-      "m": 127,
-      "fac": 31,
-      "stat": 42
-     },
-     {
-      "m": 124,
-      "fac": 32,
-      "stat": 44
-     },
-     {
-      "m": 119,
-      "fac": 33,
-      "stat": 46
-     },
-     {
-      "m": 115,
-      "fac": 34,
-      "stat": 48
-     },
-     {
-      "m": 113,
-      "fac": 35,
-      "stat": 50
-     },
-     {
-      "m": 109,
-      "fac": 36,
-      "stat": 52
-     },
-     {
-      "m": 107,
-      "fac": 37,
-      "stat": 54
-     },
-     {
-      "m": 103,
-      "fac": 38,
-      "stat": 56
-     },
-     {
-      "m": 101,
-      "fac": 39,
-      "stat": 58
-     },
-     {
-      "m": 98,
-      "fac": 40,
-      "stat": 60
-     },
-     {
-      "m": 96,
-      "fac": 41,
-      "stat": 63
-     },
-     {
-      "m": 94,
-      "fac": 42,
-      "stat": 65
-     },
-     {
-      "m": 91,
-      "fac": 43,
-      "stat": 68
-     },
-     {
-      "m": 90,
-      "fac": 44,
-      "stat": 70
-     },
-     {
-      "m": 87,
-      "fac": 45,
-      "stat": 72
-     },
-     {
-      "m": 86,
-      "fac": 46,
-      "stat": 75
-     },
-     {
-      "m": 84,
-      "fac": 47,
-      "stat": 78
-     },
-     {
-      "m": 82,
-      "fac": 48,
-      "stat": 80
-     },
-     {
-      "m": 80,
-      "fac": 49,
-      "stat": 83
-     },
-     {
-      "m": 78,
-      "fac": 50,
-      "stat": 86
-     },
-     {
-      "m": 77,
-      "fac": 51,
-      "stat": 89
-     },
-     {
-      "m": 76,
-      "fac": 52,
-      "stat": 92
-     },
-     {
-      "m": 74,
-      "fac": 53,
-      "stat": 95
-     },
-     {
-      "m": 73,
-      "fac": 54,
-      "stat": 99
-     }
-    ],
-    "capped": true
-   }
-  },
-  {
-   "inputs": {
-    "kind": "attack",
-    "nfr": 3,
-    "start": 2,
-    "spd": 256,
-    "stat": 0,
-    "term": 0,
-    "evt": 7,
-    "speed": 1,
-    "event": 2
-   },
-   "expect": {
-    "kind": "attack",
-    "nfr": 3,
-    "start": 2,
-    "spd": 256,
-    "stat": 0,
-    "term": 0,
-    "evt": 7,
-    "bonus": 0,
-    "fac": 15,
-    "rt": 38,
-    "n": 7,
-    "fireAt": null,
-    "rows": [
-     {
-      "m": 7,
-      "fac": 15,
-      "stat": 0
-     },
-     {
-      "m": 6,
-      "fac": 17,
-      "stat": 20
-     },
-     {
-      "m": 5,
-      "fac": 21,
-      "stat": 26
-     },
-     {
-      "m": 4,
-      "fac": 25,
-      "stat": 32
-     },
-     {
-      "m": 3,
-      "fac": 34,
-      "stat": 48
-     },
-     {
-      "m": 2,
-      "fac": 50,
-      "stat": 86
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "attack",
     "nfr": 1,
     "start": 0,
     "spd": 256,
     "stat": 0,
-    "term": 0,
-    "evt": 7,
-    "speed": 1,
-    "event": 0
-   },
-   "expect": {
-    "kind": "attack",
-    "nfr": 1,
-    "start": 0,
-    "spd": 256,
-    "stat": 0,
-    "term": 0,
-    "evt": 7,
-    "bonus": 0,
-    "fac": 15,
-    "rt": 38,
-    "n": 7,
-    "fireAt": null,
-    "rows": [
-     {
-      "m": 7,
-      "fac": 15,
-      "stat": 0
-     },
-     {
-      "m": 6,
-      "fac": 17,
-      "stat": 20
-     },
-     {
-      "m": 5,
-      "fac": 21,
-      "stat": 26
-     },
-     {
-      "m": 4,
-      "fac": 25,
-      "stat": 32
-     },
-     {
-      "m": 3,
-      "fac": 34,
-      "stat": 48
-     },
-     {
-      "m": 2,
-      "fac": 50,
-      "stat": 86
-     }
-    ],
-    "capped": false
-   }
-  },
-  {
-   "inputs": {
-    "kind": "attack",
-    "nfr": 144,
-    "start": 0,
-    "spd": 256,
-    "stat": 2000,
-    "term": 0,
-    "evt": 7,
-    "speed": 1024,
-    "event": 100
-   },
-   "expect": {
-    "kind": "attack",
-    "nfr": 144,
-    "start": 0,
-    "spd": 256,
-    "stat": 2000,
-    "term": 0,
-    "evt": 7,
-    "bonus": 113,
-    "fac": 113,
-    "rt": 289,
-    "n": 128,
-    "fireAt": 7,
-    "rows": [
-     {
-      "m": 128,
-      "fac": 113,
-      "stat": 1938
-     },
-     {
-      "m": 127,
-      "fac": 114,
-      "stat": 2280
-     },
-     {
-      "m": 126,
-      "fac": 115,
-      "stat": 2760
-     },
-     {
-      "m": 125,
-      "fac": 116,
-      "stat": 3480
-     },
-     {
-      "m": 124,
-      "fac": 117,
-      "stat": 4680
-     },
-     {
-      "m": 123,
-      "fac": 118,
-      "stat": 7080
-     },
-     {
-      "m": 122,
-      "fac": 119,
-      "stat": 14280
-     },
-     {
-      "m": 121,
-      "fac": 120,
-      "stat": null
-     },
-     {
-      "m": 120,
-      "fac": 121,
-      "stat": null
-     },
-     {
-      "m": 119,
-      "fac": 122,
-      "stat": null
-     },
-     {
-      "m": 118,
-      "fac": 123,
-      "stat": null
-     },
-     {
-      "m": 117,
-      "fac": 124,
-      "stat": null
-     },
-     {
-      "m": 116,
-      "fac": 125,
-      "stat": null
-     },
-     {
-      "m": 115,
-      "fac": 126,
-      "stat": null
-     },
-     {
-      "m": 114,
-      "fac": 127,
-      "stat": null
-     },
-     {
-      "m": 113,
-      "fac": 128,
-      "stat": null
-     },
-     {
-      "m": 112,
-      "fac": 129,
-      "stat": null
-     },
-     {
-      "m": 111,
-      "fac": 131,
-      "stat": null
-     },
-     {
-      "m": 110,
-      "fac": 132,
-      "stat": null
-     },
-     {
-      "m": 109,
-      "fac": 133,
-      "stat": null
-     },
-     {
-      "m": 108,
-      "fac": 134,
-      "stat": null
-     },
-     {
-      "m": 107,
-      "fac": 135,
-      "stat": null
-     },
-     {
-      "m": 106,
-      "fac": 136,
-      "stat": null
-     },
-     {
-      "m": 105,
-      "fac": 138,
-      "stat": null
-     },
-     {
-      "m": 104,
-      "fac": 139,
-      "stat": null
-     },
-     {
-      "m": 103,
-      "fac": 140,
-      "stat": null
-     },
-     {
-      "m": 102,
-      "fac": 142,
-      "stat": null
-     },
-     {
-      "m": 101,
-      "fac": 143,
-      "stat": null
-     },
-     {
-      "m": 100,
-      "fac": 145,
-      "stat": null
-     },
-     {
-      "m": 99,
-      "fac": 146,
-      "stat": null
-     },
-     {
-      "m": 98,
-      "fac": 148,
-      "stat": null
-     },
-     {
-      "m": 97,
-      "fac": 149,
-      "stat": null
-     },
-     {
-      "m": 96,
-      "fac": 150,
-      "stat": null
-     },
-     {
-      "m": 95,
-      "fac": 152,
-      "stat": null
-     },
-     {
-      "m": 94,
-      "fac": 154,
-      "stat": null
-     },
-     {
-      "m": 93,
-      "fac": 156,
-      "stat": null
-     },
-     {
-      "m": 92,
-      "fac": 157,
-      "stat": null
-     },
-     {
-      "m": 91,
-      "fac": 159,
-      "stat": null
-     },
-     {
-      "m": 90,
-      "fac": 161,
-      "stat": null
-     },
-     {
-      "m": 89,
-      "fac": 163,
-      "stat": null
-     }
-    ],
-    "capped": true
-   }
-  },
-  {
-   "inputs": {
-    "kind": "attack",
-    "nfr": 100,
-    "start": 0,
-    "spd": 256,
-    "stat": 0,
-    "term": 0,
-    "evt": 7,
-    "speed": 300
-   },
-   "expect": {
-    "kind": "attack",
-    "nfr": 100,
-    "start": 0,
-    "spd": 256,
-    "stat": 0,
-    "term": 0,
-    "evt": 7,
-    "bonus": 0,
-    "fac": 15,
-    "rt": 38,
-    "n": 674,
-    "fireAt": 48,
-    "rows": [
-     {
-      "m": 674,
-      "fac": 15,
-      "stat": 0
-     },
-     {
-      "m": 640,
-      "fac": 16,
-      "stat": 19
-     },
-     {
-      "m": 596,
-      "fac": 17,
-      "stat": 20
-     },
-     {
-      "m": 557,
-      "fac": 18,
-      "stat": 22
-     },
-     {
-      "m": 534,
-      "fac": 19,
-      "stat": 23
-     },
-     {
-      "m": 502,
-      "fac": 20,
-      "stat": 24
-     },
-     {
-      "m": 484,
-      "fac": 21,
-      "stat": 26
-     },
-     {
-      "m": 458,
-      "fac": 22,
-      "stat": 27
-     },
-     {
-      "m": 442,
-      "fac": 23,
-      "stat": 29
-     },
-     {
-      "m": 420,
-      "fac": 24,
-      "stat": 30
-     },
-     {
-      "m": 400,
-      "fac": 25,
-      "stat": 32
-     },
-     {
-      "m": 388,
-      "fac": 26,
-      "stat": 34
-     },
-     {
-      "m": 372,
-      "fac": 27,
-      "stat": 35
-     },
-     {
-      "m": 361,
-      "fac": 28,
-      "stat": 37
-     },
-     {
-      "m": 346,
-      "fac": 29,
-      "stat": 39
-     },
-     {
-      "m": 337,
-      "fac": 30,
-      "stat": 40
-     },
-     {
-      "m": 325,
-      "fac": 31,
-      "stat": 42
-     },
-     {
-      "m": 317,
-      "fac": 32,
-      "stat": 44
-     },
-     {
-      "m": 305,
-      "fac": 33,
-      "stat": 46
-     },
-     {
-      "m": 295,
-      "fac": 34,
-      "stat": 48
-     },
-     {
-      "m": 288,
-      "fac": 35,
-      "stat": 50
-     },
-     {
-      "m": 279,
-      "fac": 36,
-      "stat": 52
-     },
-     {
-      "m": 273,
-      "fac": 37,
-      "stat": 54
-     },
-     {
-      "m": 264,
-      "fac": 38,
-      "stat": 56
-     },
-     {
-      "m": 259,
-      "fac": 39,
-      "stat": 58
-     },
-     {
-      "m": 251,
-      "fac": 40,
-      "stat": 60
-     },
-     {
-      "m": 247,
-      "fac": 41,
-      "stat": 63
-     },
-     {
-      "m": 240,
-      "fac": 42,
-      "stat": 65
-     },
-     {
-      "m": 233,
-      "fac": 43,
-      "stat": 68
-     },
-     {
-      "m": 229,
-      "fac": 44,
-      "stat": 70
-     },
-     {
-      "m": 223,
-      "fac": 45,
-      "stat": 72
-     },
-     {
-      "m": 219,
-      "fac": 46,
-      "stat": 75
-     },
-     {
-      "m": 214,
-      "fac": 47,
-      "stat": 78
-     },
-     {
-      "m": 210,
-      "fac": 48,
-      "stat": 80
-     },
-     {
-      "m": 205,
-      "fac": 49,
-      "stat": 83
-     },
-     {
-      "m": 200,
-      "fac": 50,
-      "stat": 86
-     },
-     {
-      "m": 197,
-      "fac": 51,
-      "stat": 89
-     },
-     {
-      "m": 193,
-      "fac": 52,
-      "stat": 92
-     },
-     {
-      "m": 190,
-      "fac": 53,
-      "stat": 95
-     },
-     {
-      "m": 186,
-      "fac": 54,
-      "stat": 99
-     }
-    ],
-    "capped": true
-   }
-  },
-  {
-   "inputs": {
-    "kind": "nothing",
-    "nfr": -4,
-    "start": 999,
-    "spd": 256,
-    "stat": -8,
-    "term": 900,
-    "evt": 7,
-    "speed": 0,
-    "event": -1
+    "term": 100,
+    "evt": 0
    },
    "expect": {
     "kind": "attack",
@@ -2492,7 +1486,7 @@
     "spd": 256,
     "stat": 0,
     "term": 100,
-    "evt": 7,
+    "evt": 0,
     "bonus": 0,
     "fac": 100,
     "rt": 256,
@@ -2502,6 +1496,323 @@
      {
       "m": 2,
       "fac": 50,
+      "stat": 0
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "cast",
+    "nfr": 2,
+    "start": 1,
+    "spd": 512,
+    "stat": 0,
+    "term": 100,
+    "evt": 1
+   },
+   "expect": {
+    "kind": "cast",
+    "nfr": 2,
+    "start": 1,
+    "spd": 512,
+    "stat": 0,
+    "term": 0,
+    "evt": 1,
+    "bonus": 0,
+    "fac": 100,
+    "rt": 512,
+    "n": 2,
+    "fireAt": null,
+    "rows": [
+     {
+      "m": 2,
+      "fac": 100,
+      "stat": 0
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "attack",
+    "nfr": 144,
+    "start": 0,
+    "spd": 1024,
+    "stat": 2000,
+    "term": 100,
+    "evt": 100
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 144,
+    "start": 0,
+    "spd": 1024,
+    "stat": 2000,
+    "term": 100,
+    "evt": 100,
+    "bonus": 113,
+    "fac": 175,
+    "rt": 1792,
+    "n": 21,
+    "fireAt": 15,
+    "rows": [
+     {
+      "m": 21,
+      "fac": 172,
+      "stat": 180
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "attack",
+    "nfr": 100,
+    "start": 0,
+    "spd": 300,
+    "stat": 0,
+    "term": 100,
+    "evt": 7
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 100,
+    "start": 0,
+    "spd": 300,
+    "stat": 0,
+    "term": 100,
+    "evt": 7,
+    "bonus": 0,
+    "fac": 100,
+    "rt": 300,
+    "n": 86,
+    "fireAt": 6,
+    "rows": [
+     {
+      "m": 86,
+      "fac": 100,
+      "stat": 0
+     },
+     {
+      "m": 85,
+      "fac": 101,
+      "stat": 2
+     },
+     {
+      "m": 84,
+      "fac": 102,
+      "stat": 3
+     },
+     {
+      "m": 83,
+      "fac": 103,
+      "stat": 4
+     },
+     {
+      "m": 82,
+      "fac": 105,
+      "stat": 6
+     },
+     {
+      "m": 81,
+      "fac": 106,
+      "stat": 7
+     },
+     {
+      "m": 80,
+      "fac": 107,
+      "stat": 8
+     },
+     {
+      "m": 79,
+      "fac": 109,
+      "stat": 10
+     },
+     {
+      "m": 78,
+      "fac": 110,
+      "stat": 11
+     },
+     {
+      "m": 77,
+      "fac": 111,
+      "stat": 13
+     },
+     {
+      "m": 76,
+      "fac": 113,
+      "stat": 15
+     },
+     {
+      "m": 75,
+      "fac": 114,
+      "stat": 16
+     },
+     {
+      "m": 74,
+      "fac": 116,
+      "stat": 19
+     },
+     {
+      "m": 73,
+      "fac": 117,
+      "stat": 20
+     },
+     {
+      "m": 72,
+      "fac": 119,
+      "stat": 23
+     },
+     {
+      "m": 71,
+      "fac": 121,
+      "stat": 26
+     },
+     {
+      "m": 70,
+      "fac": 122,
+      "stat": 27
+     },
+     {
+      "m": 69,
+      "fac": 124,
+      "stat": 30
+     },
+     {
+      "m": 68,
+      "fac": 126,
+      "stat": 34
+     },
+     {
+      "m": 67,
+      "fac": 128,
+      "stat": 37
+     },
+     {
+      "m": 66,
+      "fac": 130,
+      "stat": 40
+     },
+     {
+      "m": 65,
+      "fac": 132,
+      "stat": 44
+     },
+     {
+      "m": 64,
+      "fac": 134,
+      "stat": 48
+     },
+     {
+      "m": 63,
+      "fac": 136,
+      "stat": 52
+     },
+     {
+      "m": 62,
+      "fac": 138,
+      "stat": 56
+     },
+     {
+      "m": 61,
+      "fac": 140,
+      "stat": 60
+     },
+     {
+      "m": 60,
+      "fac": 143,
+      "stat": 68
+     },
+     {
+      "m": 59,
+      "fac": 145,
+      "stat": 72
+     },
+     {
+      "m": 58,
+      "fac": 148,
+      "stat": 80
+     },
+     {
+      "m": 57,
+      "fac": 150,
+      "stat": 86
+     },
+     {
+      "m": 56,
+      "fac": 153,
+      "stat": 95
+     },
+     {
+      "m": 55,
+      "fac": 156,
+      "stat": 105
+     },
+     {
+      "m": 54,
+      "fac": 159,
+      "stat": 117
+     },
+     {
+      "m": 53,
+      "fac": 162,
+      "stat": 129
+     },
+     {
+      "m": 52,
+      "fac": 165,
+      "stat": 142
+     },
+     {
+      "m": 51,
+      "fac": 168,
+      "stat": 157
+     },
+     {
+      "m": 50,
+      "fac": 171,
+      "stat": 174
+     },
+     {
+      "m": 49,
+      "fac": 175,
+      "stat": 200
+     }
+    ],
+    "capped": false
+   }
+  },
+  {
+   "inputs": {
+    "kind": "nothing",
+    "nfr": -4,
+    "start": 999,
+    "spd": 0,
+    "stat": -8,
+    "term": 900,
+    "evt": -1
+   },
+   "expect": {
+    "kind": "attack",
+    "nfr": 1,
+    "start": 0,
+    "spd": 1,
+    "stat": 0,
+    "term": 250,
+    "evt": 0,
+    "bonus": 0,
+    "fac": 175,
+    "rt": 1,
+    "n": 256,
+    "fireAt": 1,
+    "rows": [
+     {
+      "m": 256,
+      "fac": 100,
       "stat": 0
      }
     ],

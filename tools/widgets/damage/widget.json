@@ -84,6 +84,6 @@
     "liveHead": "Physical damage",
     "liveFinal": "after reductions",
     "liveRaw": "before",
-    "note": "Computed by our model of the damage build and the reductions, not observed in the game. Critical strikes, elements, the monster-only terms and the other damage percents of the pages are not shown."
+    "note": "Computed by our model of the damage build and the reductions, not observed in the game. Not shown: critical and deadly strikes, the elemental fields, the monster-only fields, the mastery and the other damage percents of the build, the resistance bypass flags, sanctuary, and absorption (which the physical row does not have)."
   }
 }

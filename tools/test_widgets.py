@@ -117,7 +117,7 @@ def main():
             def lens(kind, nf, stats):
                 got = {c["inputs"]["stat"]: c["expect"]["n"] for c in fixture["cases"]
                        if c["inputs"]["kind"] == kind and c["inputs"]["nfr"] == nf and c["inputs"]["spd"] == 256
-                       and c["inputs"]["start"] == 0 and c["inputs"]["term"] == 0}
+                       and c["inputs"]["start"] == 0}
                 return [got.get(x) for x in stats]
             ok(lens("cast", 14, (0, 9, 20, 37, 63, 105, 200)) == [14, 13, 12, 11, 10, 9, 8],
                "breakpoints: timing K3's cast illustration (14 frames, speed 256)")

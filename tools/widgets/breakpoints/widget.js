@@ -29,9 +29,14 @@ function rateAt(kind, spd, fac) {
   return Math.min(Math.max(q, 0), 0x7fff);
 }
 
+// the steps of the schedule: 256 x (frames - start) over the rate, rounded up (0 when the rate is 0)
+function stepsOf(ticks, nf, start, rt) {
+  return rt === 0 ? 0 : ceilDiv(ticks * (nf - start), rt);
+}
+
 function lengthOf(ticks, nf, start, rt) {
   if (rt === 0) return 1;
-  return Math.max(2, ceilDiv(ticks * (nf - start), rt));
+  return Math.max(2, stepsOf(ticks, nf, start, rt));
 }
 
 // The pure part: no page access. inputs: { kind, nfr: nf, start, spd, stat, term, evt }; the parsed widget.json is
@@ -55,7 +60,8 @@ export function compute(inputs, data) {
   if (kind === "cast") fac = Math.min(fac, spec.hi);
   const rt = rateAt(kind, spd, fac);
   const n = lengthOf(rule.ticks, nf, start, rt);
-  const N = n - 1;
+  // the last step: one less than the steps, so an action of one step (the rate covers it whole) fires no event
+  const N = stepsOf(rule.ticks, nf, start, rt) - 1;
   let fireAt = null;
   if (evt >= start && rt > 0) {
     const f = Math.max(1, ceilDiv(rule.ticks * (evt - start), rt));

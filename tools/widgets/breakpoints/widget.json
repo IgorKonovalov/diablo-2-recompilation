@@ -75,8 +75,8 @@
     },
     "term": {
       "min": -100,
-      "max": 100,
-      "default": 0
+      "max": 250,
+      "default": 100
     },
     "evt": {
       "min": 0,
@@ -94,7 +94,7 @@
         "start": 0,
         "spd": 256,
         "stat": 0,
-        "term": 0,
+        "term": 100,
         "evt": 7
       },
       {
@@ -137,7 +137,7 @@
       "start": "Start frame",
       "spd": "Animation speed",
       "stat": "Item stat of the action's kind (faster attack, cast, hit recovery or block rate)",
-      "term": "Weapon speed term (attacks only)",
+      "term": "Stat 68 of the attacker: 100 on a new player, with the weapon's speed term (attacks only)",
       "evt": "Frame of the event to follow"
     },
     "kinds": {
@@ -146,7 +146,7 @@
         {
           "id": "attack",
           "name": "an attack",
-          "calc": "bonus + weapon term, clamped to 15 to 175"
+          "calc": "bonus + stat 68, clamped to 15 to 175"
         },
         {
           "id": "cast",
@@ -198,8 +198,8 @@
     "calc": {
       "bonus": "120 x stat / (120 + stat), toward zero",
       "pace": "speed x factor / 100",
-      "length": "the larger of 2 and 256 x (frames - start) / rate, rounded up",
-      "eventYes": "frame - start, times 256 over the rate, rounded up, at least 1; it fires if that is below the length",
+      "length": "the larger of 2 and 256 x (frames - start) / rate, rounded up; 1 when the rate is 0",
+      "eventYes": "frame - start, times 256 over the rate, rounded up, at least 1; it fires if that is below 256 x (frames - start) / rate, rounded up",
       "eventNo": "it would come at or after the end"
     },
     "unitFrames": "frames",
@@ -210,6 +210,6 @@
     "bpHead": "Breakpoints",
     "liveHead": "Length",
     "liveFactor": "factor",
-    "note": "Computed by our model of the rate and the schedule, not observed in the game. A stat is the item stat the page names for the action; modifiers other than the weapon term are not shown."
+    "note": "Computed by our model of the rate and the schedule, not observed in the game. A stat is the item stat the page names for the action. Not shown: the dual-wield and sequence terms of an attack, a shapeshifted attack's base, and the rates of movement, knockback and the other modes."
   }
 }

@@ -42,6 +42,7 @@
       "pct": "AR + AR x percent / 100",
       "swapDef": "defence below 0: it is added to the attack rating and the defence is 0",
       "swapAr": "attack rating below 0: it is added to the defence and the attack rating is 0",
+      "swapBoth": "both: the defence below 0 is added to the attack rating, which is still below 0 and is then added to the defence; the attack rating is 0",
       "swapNone": "neither is below 0",
       "first": "100 x AR / (AR + DEF), 100 when both are 0",
       "level": "chance x attacker level x 2 / (attacker level + defender level)",
@@ -53,6 +54,6 @@
     "liveHead": "Chance to hit",
     "liveAr": "attack rating",
     "liveDef": "defence",
-    "note": "Computed by our model of the hit test, not observed in the game. The hit chance is one draw on the attacker's seed; the draw itself is not shown here."
+    "note": "Computed by our model of the hit test, not observed in the game. The hit chance is one draw on the attacker's seed; the draw itself is not shown here, nor how the attack rating, its percent and the defence are made up."
   }
 }

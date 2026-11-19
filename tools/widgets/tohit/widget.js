@@ -55,7 +55,7 @@ export function compute(inputs, data) {
   if (ar < 0) {
     df = (df - ar) | 0;
     ar = 0;
-    swap = "ar";
+    swap = swap === "def" ? "both" : "ar";
   }
   if (df < 0) df = 0;
   const c1 = ar + df === 0 ? rule.percentBase : tdiv(Math.imul(rule.percentBase, ar), (ar + df) | 0);
@@ -140,7 +140,7 @@ export function mount(element, data) {
 
   function render() {
     const o = compute({ ar: ins.ar.value, pct: ins.pct.value, def: ins.def.value, alvl: ins.alvl.value, dlvl: ins.dlvl.value }, data);
-    const swapText = o.swap === "def" ? t.calc.swapDef : o.swap === "ar" ? t.calc.swapAr : t.calc.swapNone;
+    const swapText = o.swap === "def" ? t.calc.swapDef : o.swap === "ar" ? t.calc.swapAr : o.swap === "both" ? t.calc.swapBoth : t.calc.swapNone;
     const clampText = o.clamp === "low" ? t.calc.clampLow : o.clamp === "high" ? t.calc.clampHigh : t.calc.clampNone;
     const lines = [
       [t.steps.pct, t.calc.pct, o.ar + " -> " + o.ar3],
