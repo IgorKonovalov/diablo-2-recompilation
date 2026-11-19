@@ -11,8 +11,8 @@
   "seeds": { "rows": "toy", "items": [12648430, 12345, 1, 2147483647] },
   "acts": { "rows": "toy", "items": ["Act I", "Act II", "Act III", "Act IV", "Act V"] },
   "text": {
-    "intro": "Type a game seed (the value an override gives) and see the seeds that follow from it: the act seeds, one level's seed and that level's room seeds. The seed offered first is illustrative.",
-    "seedLabel": "Game seed N (an input of our own, 1 to 2147483647)",
+    "intro": "Type a seed N (the value an override gives) and see the seeds that follow from it: the act seeds, one level's seed and that level's room seeds. The seed offered first is illustrative.",
+    "seedLabel": "Seed N, as an override gives it (an input of our own, 1 to 2147483647)",
     "actLabel": "Act shown (0 is the first act)",
     "levelLabel": "Level id (a number of your own, added to the act's base)",
     "roomsLabel": "Rooms of that level to show",

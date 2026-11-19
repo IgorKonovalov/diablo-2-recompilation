@@ -12,6 +12,7 @@
     "pass": { "min": 1, "max": 60, "default": 1 }
   },
   "walls": { "rows": "toy", "items": ["7,1", "7,2", "7,3", "7,4", "7,5", "7,6", "7,7", "7,8"] },
+  "octant": { "zero": 6 },
   "tables": {
     "step": { "rows": "page", "items": [
       { "rows": "page", "items": [1, 0] }, { "rows": "page", "items": [1, 1] },
@@ -26,13 +27,7 @@
       { "rows": "page", "items": [6, 4, 3, 6, 1] },
       { "rows": "page", "items": [7, 7, 7, 7, 7] },
       { "rows": "page", "items": [0, 7, 7, 7, 7] },
-      { "rows": "page", "items": [0, 7, 2, 5, 7] } ] },
-    "octant": { "rows": "page", "items": [
-      { "rows": "page", "items": [5, 4, 4, 4, 3] },
-      { "rows": "page", "items": [6, 5, 4, 3, 2] },
-      { "rows": "page", "items": [6, 6, 6, 2, 2] },
-      { "rows": "page", "items": [6, 7, 0, 1, 2] },
-      { "rows": "page", "items": [7, 0, 0, 0, 1] } ] }
+      { "rows": "page", "items": [0, 7, 2, 5, 7] } ] }
   },
   "text": {
     "intro": "Click cells of the toy room to put walls up or take them down, move the start and the target, and set the bound the caller gives. The table lists each pass of the search; the grid shows the cells one pass has written. The room, its wall and the numbers offered first are illustrative.",

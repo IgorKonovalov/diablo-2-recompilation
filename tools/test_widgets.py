@@ -23,6 +23,7 @@ sys.path.insert(0, WIDGETS)
 import twins  # noqa: E402
 sys.path.insert(0, HERE)
 import export_check as ec  # noqa: E402
+import path_anim  # noqa: E402
 
 checks, failed = 0, []
 
@@ -40,6 +41,21 @@ def node_cmd(*reads):
 MUTATION = {"seedtree": ("(seedBase + level) >>> 0", "(seedBase + level + 1) >>> 0"),
             "path": ("const g = node.g + (nx !== node.pos[0] && ny !== node.pos[1] ? 3 : 2);",
                      "const g = node.g + (nx !== node.pos[0] && ny !== node.pos[1] ? 2 : 2);")}
+
+
+def octant_rule(zero):
+    """The path widget's octant of each of the 25 cells, restated: a term whose double is at most the other's size is
+    dropped, the step with the signs left is the direction, (0, 0) gives `zero`."""
+    out = []
+    for c in range(25):
+        dx, dy = c // 5 - 2, c % 5 - 2
+        if 2 * abs(dy) <= abs(dx):
+            dy = 0
+        elif 2 * abs(dx) <= abs(dy):
+            dx = 0
+        sg = ((dx > 0) - (dx < 0), (dy > 0) - (dy < 0))
+        out.append(zero if sg == (0, 0) else path_anim.STEP8.index(sg))
+    return out
 
 
 def bump(v):
@@ -124,6 +140,10 @@ def main():
             ok(any(not e["reached"] and e["passes"][-1]["ending"] in ("tries", "nodes") for e in ex) or any(not e["reached"] for e in ex),
                "path: a case where no chain reaches the target")
             ok(all(len(e["passes"]) <= 51 for e in ex), "path: at most 51 passes (search L2)")
+            ok(any(c["inputs"]["walls"] and any("." in w for w in c["inputs"]["walls"]) for c in fixture["cases"]),
+               "path: a case with wall texts that are not plain integers")
+            ok(octant_rule(data["octant"]["zero"]) == list(path_anim.DIR_OCTANT),
+               "path: the widget's octant rule gives the model's 25 octants")
         # X13 on the sources first: the gate catches a refused script at commit time, and node never runs one
         src = open(os.path.join(folder, "widget.js"), encoding="utf-8").read()
         xp = ec.js_problems(src, ec.git_identity()) + ec.json_problems(

@@ -49,11 +49,23 @@ def pt(p):
     return "%d,%d" % p
 
 
+def wall_num(text):
+    """A wall coordinate as the widget reads it: optional sign and ASCII digits only ("3.0", "1e0", "1_0" are not)."""
+    t = text.strip()
+    body = t[1:] if t[:1] in ("+", "-") else t
+    if not body or any(c not in "0123456789" for c in body):
+        raise ValueError(text)
+    return int(t)
+
+
 def parse_walls(items):
     out = set()
     for s in items:
+        parts = str(s).split(",")
         try:
-            x, y = (int(v) for v in str(s).split(","))
+            if len(parts) != 2:
+                raise ValueError(s)
+            x, y = wall_num(parts[0]), wall_num(parts[1])
         except ValueError:
             continue
         if 0 <= x < path_anim.GW and 0 <= y < path_anim.GH:
@@ -121,6 +133,8 @@ CASES = {
         {"walls": _WALL, "sx": 5, "sy": 5, "tx": 5, "ty": 6, "b1c": 33},
         {"walls": _WALL + ["2,4", "13,4", "99,99", "x,y", "-1,3"], "sx": 2, "sy": 4, "tx": 13, "ty": 4, "b1c": 33},
         {"walls": [], "sx": 99, "sy": -3, "tx": 2, "ty": 100, "b1c": 9999},
+        {"walls": ["7.0,4", "7,3.0", "1e0,4", "0x7,2", "1_0,4", "7,4,1", " 7 , 5 ", "+7,6", "-0,0"],
+         "sx": 2, "sy": 4, "tx": 13, "ty": 4, "b1c": 33},
         {"walls": ["1,1", "2,2", "3,3", "4,4", "5,5", "6,6", "9,2", "9,3", "9,4", "9,5", "10,5", "11,5"],
          "sx": 0, "sy": 8, "tx": 15, "ty": 0, "b1c": 120},
     ],

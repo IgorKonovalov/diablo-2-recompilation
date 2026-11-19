@@ -41,6 +41,29 @@ function dirCell(a, b) {
   return 5 * dx + dy + 12;
 }
 
+// The first direction of a cell (the octant): a term whose double is at most the other term's size is dropped, and the
+// step with the signs left is the direction; the cell with both terms 0 gives the rule's own value.
+function octantOf(c, steps, zero) {
+  let dx = Math.floor(c / 5) - 2;
+  let dy = (c % 5) - 2;
+  if (2 * Math.abs(dy) <= Math.abs(dx)) dy = 0;
+  else if (2 * Math.abs(dx) <= Math.abs(dy)) dx = 0;
+  const want = [Math.sign(dx), Math.sign(dy)];
+  if (want[0] === 0 && want[1] === 0) return zero;
+  return steps.findIndex((s) => s.at(0) === want[0] && s.at(1) === want[1]);
+}
+
+// A wall coordinate: optional sign and decimal digits only, so "3.0" or "1e0" is not a wall.
+function wallNum(text) {
+  const t = text.trim();
+  const from = t.startsWith("+") || t.startsWith("-") ? 1 : 0;
+  if (t.length === from) return NaN;
+  for (let i = from; i < t.length; i++) {
+    if (!"0123456789".includes(t.at(i))) return NaN;
+  }
+  return Number(t);
+}
+
 // The pure part: no page access. inputs: { walls, sx, sy, tx, ty, b1c }; walls is a list of "x,y" texts.
 export function compute(inputs, data) {
   const lim = data.inputs;
@@ -56,9 +79,9 @@ export function compute(inputs, data) {
   const wallSet = new Set();
   for (const w of inputs.walls) {
     const parts = String(w).split(",");
-    if (parts.length !== 2 || parts.at(0).trim() === "" || parts.at(1).trim() === "") continue;
-    const x = Number(parts.at(0));
-    const y = Number(parts.at(1));
+    if (parts.length !== 2) continue;
+    const x = wallNum(parts.at(0));
+    const y = wallNum(parts.at(1));
     if (!Number.isInteger(x) || !Number.isInteger(y)) continue;
     if (x >= 0 && x < gw && y >= 0 && y < gh) wallSet.add(x + "," + y);
   }
@@ -67,11 +90,7 @@ export function compute(inputs, data) {
   const walls = [...wallSet].sort();
   const steps = data.tables.step.items.map((r) => r.items);
   const fan = data.tables.fan.items.map((r) => r.items);
-  const octant = data.tables.octant.items.map((r) => r.items);
-  const dirOf = (a, b) => {
-    const c = dirCell(a, b);
-    return octant.at(Math.floor(c / 5)).at(c % 5);
-  };
+  const dirOf = (a, b) => octantOf(dirCell(a, b), steps, data.octant.zero);
   const turnAt = (row, ent) => {
     const e = fan.at(row).at(ent);
     return e === undefined ? 0 : e;

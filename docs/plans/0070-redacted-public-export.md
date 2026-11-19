@@ -2737,3 +2737,19 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
     not one expansion at a time (the model records no per-expansion trace and a trace would not fit the fixture); the wall
     parser accepts `3.0` where the twin's `int()` rejects it (no fixture case has one); styling of the grid buttons relies on
     the host's generic `.widget-host` styles only (marks are text, no colour).
+- 2026-11-19, architect, lane/x16c review (Tier A, Opus; ADR-0037). **Accept with fixes 4.** Read whole: both
+  `widget.js`, both `widget.json`, `twins_x16c.py`, `seedtree_anim.trace`, `path_anim.search`, the test changes, the
+  block drafts; checked against rng/seeds steps 1 to 5 and path/search §§ A1 to A3, L2, L3. Both computes follow the
+  spec and their twins (the fan's truncation to 5 entries for a child is safe: a sixth entry is read only on the try that
+  pops the node). Rulings on the lane's doubts: (1) **`rows: page` means the exported page prints the rows**; a link to
+  a table doc is not enough, and `docs/tables/` is outside the export, so the 25 octant values could not stay in
+  `widget.json` (nor be called `toy`). Fixed: the widget computes the octant by a rule (a term whose double is at most
+  the other's size is dropped, the step with the signs left, (0, 0) gives the `octant.zero` parameter 6), recomputed
+  25 of 25 against `path_anim.DIR_OCTANT` by a new test check; no spec states that rule yet, so **row 31's block is held
+  out of the cut** until spec-path/search § A2 does
+  ([backlog](../backlog/2026-11-19-architect-spec-writer-path-dir-octant-rule.md)). (2) The wall parser now takes an
+  optional sign and ASCII digits only, in the widget and the twin alike, with a fixture case of nine odd wall texts
+  (`3.0`, `1e0`, `0x7`, `1_0`, three parts, spaces, signs). (3) Per-pass final state is acceptable: neither the caption
+  nor the intro claims a step per expansion, and the candidate row's "watch the search" is met by the pass slider.
+  (4) The seedtree labels and caption called the typed N a "game seed", the name the table gives Init(N); now "seed N,
+  as an override gives it" (the caption in the block draft too). Tests 87 checks green, twins check clean, gate green.
