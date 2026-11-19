@@ -1,0 +1,41 @@
+{
+  "marker": "widget-only/1",
+  "name": "seedtree",
+  "rule": { "multiplier": "6AC690C5", "initHigh": 666, "tombBase": 66, "tombMod": 7, "tombAct": 1, "gateAct": 2 },
+  "inputs": {
+    "seed": { "min": 1, "max": 2147483647, "default": 12648430 },
+    "act": { "min": 0, "max": 4, "default": 0 },
+    "level": { "min": 0, "max": 255, "default": 1 },
+    "rooms": { "min": 1, "max": 8, "default": 3 }
+  },
+  "seeds": { "rows": "toy", "items": [12648430, 12345, 1, 2147483647] },
+  "acts": { "rows": "toy", "items": ["Act I", "Act II", "Act III", "Act IV", "Act V"] },
+  "text": {
+    "intro": "Type a seed N (the value an override gives) and see the seeds that follow from it: the act seeds, one level's seed and that level's room seeds. The seed offered first is illustrative.",
+    "seedLabel": "Seed N, as an override gives it (an input of our own, 1 to 2147483647)",
+    "actLabel": "Act shown (0 is the first act)",
+    "levelLabel": "Level id (a number of your own, added to the act's base)",
+    "roomsLabel": "Rooms of that level to show",
+    "presetLabel": "Illustrative seeds",
+    "presetNone": "choose one",
+    "columns": { "rows": "toy", "items": ["Step", "Seed", "Value (hex)", "How it is made"] },
+    "mapName": "Map seed",
+    "mapHow": "N itself, with an override",
+    "gameName": "Game seed",
+    "gameHow": "Init(N), no draw; it seeds the units, not the map",
+    "actName": "seed base",
+    "actHow": "Init(N), then one Step: the low word is the level seed base",
+    "tombsHow": "Then pairs of draws mod 7 until the two differ; tombs",
+    "gateHow": "Then one draw; the lowest bit is",
+    "levelName": "Level seed",
+    "levelHow": "Init(base + level id), a sum that wraps, no draw",
+    "roomDrawName": "Level draw",
+    "roomDrawHow": "Step the level seed once; the low word is",
+    "roomName": "Room seed",
+    "roomHow": "Init(that low word), then one Step",
+    "liveHead": "Seed",
+    "liveBase": "level seed base",
+    "liveLevel": "level seed",
+    "note": "Computed by our model of the seed tree, not observed in the game. The act link builder's later draws on the act seed, room activation and the units are not shown."
+  }
+}

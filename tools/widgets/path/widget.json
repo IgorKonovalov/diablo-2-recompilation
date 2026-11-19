@@ -1,0 +1,60 @@
+{
+  "marker": "widget-only/1",
+  "name": "path",
+  "grid": { "wide": 16, "high": 9 },
+  "limits": { "tryMax": 10000, "nodeMax": 900, "step": 5 },
+  "inputs": {
+    "sx": { "min": 0, "max": 15, "default": 2 },
+    "sy": { "min": 0, "max": 8, "default": 4 },
+    "tx": { "min": 0, "max": 15, "default": 13 },
+    "ty": { "min": 0, "max": 8, "default": 4 },
+    "b1c": { "min": 0, "max": 255, "default": 33 },
+    "pass": { "min": 1, "max": 60, "default": 1 }
+  },
+  "walls": { "rows": "toy", "items": ["7,1", "7,2", "7,3", "7,4", "7,5", "7,6", "7,7", "7,8"] },
+  "octant": { "zero": 6 },
+  "tables": {
+    "step": { "rows": "page", "items": [
+      { "rows": "page", "items": [1, 0] }, { "rows": "page", "items": [1, 1] },
+      { "rows": "page", "items": [0, 1] }, { "rows": "page", "items": [-1, 1] },
+      { "rows": "page", "items": [-1, 0] }, { "rows": "page", "items": [-1, -1] },
+      { "rows": "page", "items": [0, -1] }, { "rows": "page", "items": [1, -1] } ] },
+    "fan": { "rows": "page", "items": [
+      { "rows": "page", "items": [0, 1, 6, 3, 4, 5, 2, 7] },
+      { "rows": "page", "items": [0, 1, 6, 3, 1] },
+      { "rows": "page", "items": [0, 1, 1, 1, 1] },
+      { "rows": "page", "items": [1, 1, 1, 1, 1] },
+      { "rows": "page", "items": [6, 4, 3, 6, 1] },
+      { "rows": "page", "items": [7, 7, 7, 7, 7] },
+      { "rows": "page", "items": [0, 7, 7, 7, 7] },
+      { "rows": "page", "items": [0, 7, 2, 5, 7] } ] }
+  },
+  "text": {
+    "intro": "Click cells of the toy room to put walls up or take them down, move the start and the target, and set the bound the caller gives. The table lists each pass of the search; the grid shows the cells one pass has written. The room, its wall and the numbers offered first are illustrative.",
+    "sxLabel": "Start column (0 to 15)",
+    "syLabel": "Start row (0 to 8)",
+    "txLabel": "Target column (0 to 15)",
+    "tyLabel": "Target row (0 to 8)",
+    "bLabel": "Last bound the caller gives (the passes run while the bound stays below it)",
+    "passLabel": "Pass shown",
+    "clearLabel": "Clear the walls",
+    "resetLabel": "Put the example wall back",
+    "gridLabel": "Toy room, 16 by 9 subtiles; each cell is a button that toggles a wall",
+    "wallWord": "wall",
+    "freeWord": "free",
+    "columns": { "rows": "toy", "items": ["Pass", "Bound", "Tries", "Nodes", "Ended by"] },
+    "endings": { "rows": "toy", "items": ["target", "tries", "nodes", "exhausted"] },
+    "endNames": { "rows": "toy", "items": ["reached the target", "10000 tries", "900 nodes used", "every turn tried"] },
+    "keyLine": "S start, T target, # wall, * the pass's last chain of nodes, o a corner of the returned list, a number the least cost written to the cell, . never read.",
+    "liveHead": "Start",
+    "liveTarget": "target",
+    "liveH0": "unblocked cost",
+    "livePass": "pass",
+    "liveOf": "of",
+    "liveReached": "the chain reaches the target",
+    "liveNot": "no chain reaches the target",
+    "liveRoute": "corners returned",
+    "liveNone": "none (a route of one segment returns nothing)",
+    "note": "Computed by our model of the search on this toy room, not observed in the game. The room is a hand-drawn toy; real rooms, their collision and type 16's draws are not modelled."
+  }
+}

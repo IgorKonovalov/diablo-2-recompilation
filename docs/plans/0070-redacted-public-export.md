@@ -2707,3 +2707,49 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   named `sub_` anchors); the Pages run passed, and the randomness page, `widgets/rng-stepper/widget.js`,
   `spec-items/properties/`, `spec-rng/seeds/` and `world/levels/` answer 200. The site now serves 89 manifest pages,
   22 new animations and one widget.
+- 2026-11-19, archivist, lane/x16c (Phase 11 batch 3, rows 30 and 31: widgets `seedtree` and `path`). Delivered:
+  - **`tools/widgets/seedtree/`** (row 30): `compute` is the seed tree of rng/seeds steps 1 to 5 on BigInt words (map and
+    game seeds from N, five act seeds with Act II's tomb pairs and Act III's bit, one level's seed as a u32 sum, up to eight
+    rooms, each one level draw then one room step); `mount` has four number inputs, a seed preset and one table. `widget.json`:
+    multiplier, init word, the tomb constants, four toy seeds, five act labels. The twin reshapes `seedtree_anim.trace`
+    (the DRLG model's `Act` and `Seed`), no second copy of the rule. 10 fixture cases (seed 0xC0FFEE over every act, an
+    Act II seed whose pair draw rejects, both ends of the seed range, clamped inputs). Level and room numbers are plain
+    counters of our own, no level table is read. Fallback: row 2's `rng-seed-tree-c0ffee`.
+  - **`tools/widgets/path/`** (row 31): `compute` is search L2 and L3 for type 0 on the toy room of `tools/path_anim.py`
+    (the walk, the cell store kept across passes, the fan, Advance, Reduce); `mount` has start, target, bound and pass inputs,
+    a 16 by 9 grid of toggle buttons for the walls, a pass table and a live line. `widget.json` holds the stock step, fan and
+    direction-octant tables as nested `rows: page` objects (arrays may not nest, so each row is an object; the fan keeps the
+    entries the spec's L3 table lists, 8 for the root row and 5 for the others) and the eight toy wall cells. The twin is
+    `path_anim.search` (the model `tools/test_path_anim.py` compares with the emulation), no entry point was needed;
+    `tools/path.py` is the log comparer and has no search model of its own. 12 fixture cases (the spec's example wall with
+    bounds 33, 0 and 255, open lines, a sealed target, a start beside its target, clamped inputs, wall cells typed over the
+    start). The widget's input rules (clamping, walls kept in the room and off the start and target) are restated in the twin.
+  - **Registration and tests**: `tools/widgets/twins_x16c.py` (twins and cases, kept apart from `twins.py` so parallel lanes
+    do not collide; `twins.py` has three added lines), `tools/test_widgets.py` gains a generic first-integer fixture mutation
+    and a per-widget `MUTATION` table (it was rng-specific), and spec-derived checks for both widgets: 84 checks, green.
+    Both sources pass X13 (the allowlist of member names forced `lead`, `limit`, `ending`, `grid`, `pos`, `way`, `reached`
+    for the words `base`, `bound`, `end`, `cells`, `pt`, `face`, `found`; regular expressions do not lex, so wall text is
+    split by hand).
+  - **Blocks**: `workspace/phase11/blocks-batch3-x16c.md` (not in git): two `widget` blocks with their places and captions,
+    both with an illustration fallback already on the page.
+  - **Doubts for the review**: the octant table (25 values) is marked `rows: page` because PathDirTables lists it, but the
+    search page itself does not print it (it links there); the pass slider shows each pass's final cell store and its chain,
+    not one expansion at a time (the model records no per-expansion trace and a trace would not fit the fixture); the wall
+    parser accepts `3.0` where the twin's `int()` rejects it (no fixture case has one); styling of the grid buttons relies on
+    the host's generic `.widget-host` styles only (marks are text, no colour).
+- 2026-11-19, architect, lane/x16c review (Tier A, Opus; ADR-0037). **Accept with fixes 4.** Read whole: both
+  `widget.js`, both `widget.json`, `twins_x16c.py`, `seedtree_anim.trace`, `path_anim.search`, the test changes, the
+  block drafts; checked against rng/seeds steps 1 to 5 and path/search §§ A1 to A3, L2, L3. Both computes follow the
+  spec and their twins (the fan's truncation to 5 entries for a child is safe: a sixth entry is read only on the try that
+  pops the node). Rulings on the lane's doubts: (1) **`rows: page` means the exported page prints the rows**; a link to
+  a table doc is not enough, and `docs/tables/` is outside the export, so the 25 octant values could not stay in
+  `widget.json` (nor be called `toy`). Fixed: the widget computes the octant by a rule (a term whose double is at most
+  the other's size is dropped, the step with the signs left, (0, 0) gives the `octant.zero` parameter 6), recomputed
+  25 of 25 against `path_anim.DIR_OCTANT` by a new test check; no spec states that rule yet, so **row 31's block is held
+  out of the cut** until spec-path/search § A2 does
+  ([backlog](../backlog/2026-11-19-architect-spec-writer-path-dir-octant-rule.md)). (2) The wall parser now takes an
+  optional sign and ASCII digits only, in the widget and the twin alike, with a fixture case of nine odd wall texts
+  (`3.0`, `1e0`, `0x7`, `1_0`, three parts, spaces, signs). (3) Per-pass final state is acceptable: neither the caption
+  nor the intro claims a step per expansion, and the candidate row's "watch the search" is met by the pass slider.
+  (4) The seedtree labels and caption called the typed N a "game seed", the name the table gives Init(N); now "seed N,
+  as an override gives it" (the caption in the block draft too). Tests 87 checks green, twins check clean, gate green.

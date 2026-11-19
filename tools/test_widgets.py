@@ -23,6 +23,7 @@ sys.path.insert(0, WIDGETS)
 import twins  # noqa: E402
 sys.path.insert(0, HERE)
 import export_check as ec  # noqa: E402
+import path_anim  # noqa: E402
 
 checks, failed = 0, []
 
@@ -34,6 +35,39 @@ def node_cmd(*reads):
     dirs = dict.fromkeys(os.path.join(os.path.dirname(r) if os.path.isfile(r) else r, "") for r in (WIDGETS,) + reads)
     return [shutil.which("node"), "--permission"] + [f"--allow-fs-read={d}" for d in dirs] + [
         "--disallow-code-generation-from-strings"]
+
+
+# one change of widget.js per widget that the fixture must notice (a changed rule is a difference)
+MUTATION = {"seedtree": ("(seedBase + level) >>> 0", "(seedBase + level + 1) >>> 0"),
+            "path": ("const g = node.g + (nx !== node.pos[0] && ny !== node.pos[1] ? 3 : 2);",
+                     "const g = node.g + (nx !== node.pos[0] && ny !== node.pos[1] ? 2 : 2);")}
+
+
+def octant_rule(zero):
+    """The path widget's octant of each of the 25 cells, restated: a term whose double is at most the other's size is
+    dropped, the step with the signs left is the direction, (0, 0) gives `zero`."""
+    out = []
+    for c in range(25):
+        dx, dy = c // 5 - 2, c % 5 - 2
+        if 2 * abs(dy) <= abs(dx):
+            dy = 0
+        elif 2 * abs(dx) <= abs(dy):
+            dx = 0
+        sg = ((dx > 0) - (dx < 0), (dy > 0) - (dy < 0))
+        out.append(zero if sg == (0, 0) else path_anim.STEP8.index(sg))
+    return out
+
+
+def bump(v):
+    """Add 1 to the first integer found in an expected output (depth first); True when one was changed."""
+    items = list(v.items()) if isinstance(v, dict) else list(enumerate(v)) if isinstance(v, list) else []
+    for k, x in items:
+        if isinstance(x, int) and not isinstance(x, bool):
+            v[k] = x + 1
+            return True
+        if bump(x):
+            return True
+    return False
 
 
 def ok(cond, what):
@@ -90,6 +124,26 @@ def main():
             ok((r["result"], r["low"], r["high"]) == (87, 0x015B2E77, 0x0000141D),
                "rng: the first case is the randomness page's worked example")
             ok(any(c["inputs"]["n"] < 1 for c in fixture["cases"]), "rng: a case with n below 1 (no draw)")
+        if name == "seedtree":
+            ex = [c["expect"] for c in fixture["cases"]]
+            ok(all(len({a["lead"] for a in e["acts"]}) == 1 for e in ex), "seedtree: every act shares one level seed base (seeds step 3b)")
+            ok(all(e["levelSeed"]["sum"] == (e["levelSeed"]["lead"] + e["level"]) & 0xFFFFFFFF for e in ex),
+               "seedtree: a level's seed is the base plus the id, a u32 sum (seeds step 4)")
+            ok(all(e["acts"][1]["tombs"] is not None and e["acts"][1]["tombs"][0] != e["acts"][1]["tombs"][1] for e in ex),
+               "seedtree: Act II's two tomb numbers differ (seeds step 3c)")
+            ok(any(e["acts"][1]["draws"] > 3 for e in ex), "seedtree: a case where Act II's pair draw rejected at least once")
+        if name == "path":
+            ex = [c["expect"] for c in fixture["cases"]]
+            ok(ex[0]["reached"] and len(ex[0]["passes"]) == 3 and ex[0]["route"] == "3,4 7,0 11,0 13,2 13,4",
+               "path: the example wall needs three passes and returns five corners")
+            ok(any(e["reached"] and e["route"] == "" for e in ex), "path: a straight free line reaches the target but returns no list (search L2)")
+            ok(any(not e["reached"] and e["passes"][-1]["ending"] in ("tries", "nodes") for e in ex) or any(not e["reached"] for e in ex),
+               "path: a case where no chain reaches the target")
+            ok(all(len(e["passes"]) <= 51 for e in ex), "path: at most 51 passes (search L2)")
+            ok(any(c["inputs"]["walls"] and any("." in w for w in c["inputs"]["walls"]) for c in fixture["cases"]),
+               "path: a case with wall texts that are not plain integers")
+            ok(octant_rule(data["octant"]["zero"]) == list(path_anim.DIR_OCTANT),
+               "path: the widget's octant rule gives the model's 25 octants")
         # X13 on the sources first: the gate catches a refused script at commit time, and node never runs one
         src = open(os.path.join(folder, "widget.js"), encoding="utf-8").read()
         xp = ec.js_problems(src, ec.git_identity()) + ec.json_problems(
@@ -124,7 +178,7 @@ def main():
         tmp = tempfile.mkdtemp(prefix="widget-test-")
         try:
             bad = json.loads(json.dumps(fixture))
-            bad["cases"][0]["expect"]["rows"][0]["result"] += 1
+            bump(bad["cases"][0]["expect"])
             bp = os.path.join(tmp, "fixture.json")
             json.dump(bad, open(bp, "w"))
             o2, _ = node_run(folder, fixture_path=bp)
@@ -132,7 +186,9 @@ def main():
             # a widget that gives another answer is caught: the multiplier changed
             js = open(os.path.join(folder, "widget.js"), encoding="utf-8").read()
             jp = os.path.join(tmp, "w.js")
-            open(jp, "w", encoding="utf-8").write(js.replace("low % n", "(low + 1) % n"))
+            old, new = MUTATION.get(name, ("low % n", "(low + 1) % n"))
+            ok(old in js, f"{name}: the mutation's target text is in widget.js")
+            open(jp, "w", encoding="utf-8").write(js.replace(old, new))
             o3, _ = node_run(folder, js_path=jp)
             open(jp, "w", encoding="utf-8").write(js.replace('return make(document.createElement("td"), text);', "return td(text);"))
             bm = subprocess.run(node_cmd(tmp) + [os.path.join(WIDGETS, "smoke_mount.mjs"), jp, os.path.join(folder, "widget.json")],
