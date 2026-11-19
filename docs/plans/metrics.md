@@ -890,6 +890,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-19 | lane/x15i check | 0070 X4 identity | architect-check | 48 615 | 6 | 1 | — | accept (Sonnet) | — |
 | 2026-11-19 | lane/x16c | 0070 P11 batch 3 widgets | archivist | 157 536 | 40 | 7 | — | accept w/ fixes (Opus) | data/ADR rule 1, correctness 1, wording 2 |
 | 2026-11-19 | lane/x16c review | 0070 P11 batch 3 widgets | architect-review | 124 409 | 37 | 8 | — | accept w/ fixes (Opus) | data/ADR rule 1, correctness 1, wording 2 |
+| 2026-11-19 | lane/x16b | 0070 P11 batch 3 widgets | archivist | 198 806 | 62 | 10 | — | accept w/ fixes (Opus) | misread 1, omission 1 |
+| 2026-11-19 | lane/x16b review | 0070 P11 batch 3 widgets | architect-review | 146 017 | 57 | 6 | — | accept w/ fixes (Opus) | misread 1, omission 1 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

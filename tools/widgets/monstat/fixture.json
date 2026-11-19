@@ -1,0 +1,452 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "monster": 0,
+    "level": 7,
+    "difficulty": 0
+   },
+   "expect": {
+    "monster": 0,
+    "level": 7,
+    "diff": 0,
+    "row": 7,
+    "scaled": true,
+    "rowVals": [
+     53,
+     53,
+     37,
+     448
+    ],
+    "cell": [
+     70,
+     100,
+     80,
+     60
+    ],
+    "result": [
+     37,
+     53,
+     29,
+     268
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 0,
+    "level": 7,
+    "difficulty": 1
+   },
+   "expect": {
+    "monster": 0,
+    "level": 7,
+    "diff": 1,
+    "row": 7,
+    "scaled": true,
+    "rowVals": [
+     101,
+     101,
+     62,
+     848
+    ],
+    "cell": [
+     90,
+     130,
+     100,
+     90
+    ],
+    "result": [
+     90,
+     131,
+     62,
+     763
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 0,
+    "level": 7,
+    "difficulty": 2
+   },
+   "expect": {
+    "monster": 0,
+    "level": 7,
+    "diff": 2,
+    "row": 7,
+    "scaled": true,
+    "rowVals": [
+     151,
+     151,
+     88,
+     1255
+    ],
+    "cell": [
+     110,
+     160,
+     120,
+     130
+    ],
+    "result": [
+     166,
+     241,
+     105,
+     1631
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 1,
+    "level": 7,
+    "difficulty": 0
+   },
+   "expect": {
+    "monster": 1,
+    "level": 7,
+    "diff": 0,
+    "row": 7,
+    "scaled": false,
+    "rowVals": [
+     53,
+     53,
+     37,
+     448
+    ],
+    "cell": [
+     40,
+     48,
+     25,
+     33
+    ],
+    "result": [
+     40,
+     48,
+     25,
+     33
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 1,
+    "level": 19,
+    "difficulty": 2
+   },
+   "expect": {
+    "monster": 1,
+    "level": 19,
+    "diff": 2,
+    "row": 19,
+    "scaled": false,
+    "rowVals": [
+     379,
+     379,
+     220,
+     9055
+    ],
+    "cell": [
+     70,
+     82,
+     65,
+     99
+    ],
+    "result": [
+     70,
+     82,
+     65,
+     99
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 0,
+    "level": 0,
+    "difficulty": 0
+   },
+   "expect": {
+    "monster": 0,
+    "level": 0,
+    "diff": 0,
+    "row": 0,
+    "scaled": true,
+    "rowVals": [
+     4,
+     4,
+     2,
+     7
+    ],
+    "cell": [
+     70,
+     100,
+     80,
+     60
+    ],
+    "result": [
+     2,
+     4,
+     1,
+     4
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 0,
+    "level": 19,
+    "difficulty": 2
+   },
+   "expect": {
+    "monster": 0,
+    "level": 19,
+    "diff": 2,
+    "row": 19,
+    "scaled": true,
+    "rowVals": [
+     379,
+     379,
+     220,
+     9055
+    ],
+    "cell": [
+     110,
+     160,
+     120,
+     130
+    ],
+    "result": [
+     416,
+     606,
+     264,
+     11771
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 0,
+    "level": 99,
+    "difficulty": 1
+   },
+   "expect": {
+    "monster": 0,
+    "level": 99,
+    "diff": 1,
+    "row": 19,
+    "scaled": true,
+    "rowVals": [
+     257,
+     257,
+     158,
+     6152
+    ],
+    "cell": [
+     90,
+     130,
+     100,
+     90
+    ],
+    "result": [
+     231,
+     334,
+     158,
+     5536
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 0,
+    "level": -1,
+    "difficulty": 0
+   },
+   "expect": {
+    "monster": 0,
+    "level": -1,
+    "diff": 0,
+    "row": -1,
+    "scaled": true,
+    "rowVals": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "cell": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "result": [
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 0,
+    "level": -5,
+    "difficulty": 2
+   },
+   "expect": {
+    "monster": 0,
+    "level": -5,
+    "diff": 2,
+    "row": -1,
+    "scaled": true,
+    "rowVals": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "cell": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "result": [
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 0,
+    "level": 12,
+    "difficulty": -1
+   },
+   "expect": {
+    "monster": 0,
+    "level": 12,
+    "diff": 0,
+    "row": 12,
+    "scaled": true,
+    "rowVals": [
+     88,
+     88,
+     62,
+     1303
+    ],
+    "cell": [
+     70,
+     100,
+     80,
+     60
+    ],
+    "result": [
+     61,
+     88,
+     49,
+     781
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 1,
+    "level": 12,
+    "difficulty": 5
+   },
+   "expect": {
+    "monster": 1,
+    "level": 12,
+    "diff": 2,
+    "row": 12,
+    "scaled": false,
+    "rowVals": [
+     246,
+     246,
+     143,
+     3630
+    ],
+    "cell": [
+     70,
+     82,
+     65,
+     99
+    ],
+    "result": [
+     70,
+     82,
+     65,
+     99
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 0,
+    "level": 3,
+    "difficulty": 4
+   },
+   "expect": {
+    "monster": 0,
+    "level": 3,
+    "diff": 2,
+    "row": 3,
+    "scaled": true,
+    "rowVals": [
+     75,
+     75,
+     44,
+     255
+    ],
+    "cell": [
+     110,
+     160,
+     120,
+     130
+    ],
+    "result": [
+     82,
+     120,
+     52,
+     331
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "monster": 9,
+    "level": 500,
+    "difficulty": 0
+   },
+   "expect": {
+    "monster": 1,
+    "level": 99,
+    "diff": 0,
+    "row": 19,
+    "scaled": false,
+    "rowVals": [
+     137,
+     137,
+     97,
+     3256
+    ],
+    "cell": [
+     40,
+     48,
+     25,
+     33
+    ],
+    "result": [
+     40,
+     48,
+     25,
+     33
+    ]
+   }
+  }
+ ]
+}

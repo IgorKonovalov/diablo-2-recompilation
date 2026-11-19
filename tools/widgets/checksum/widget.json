@@ -1,0 +1,48 @@
+{
+ "marker": "widget-only/1",
+ "name": "checksum",
+ "rule": {
+  "skipFrom": 12,
+  "skipTo": 16,
+  "maxBytes": 32
+ },
+ "inputs": {
+  "typed": {
+   "default": "01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12"
+  }
+ },
+ "presets": {
+  "rows": "toy",
+  "items": [
+   "01 02 03",
+   "FF FF FF FF",
+   "80 00 00 00 00",
+   "01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12",
+   "00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF 01"
+  ]
+ },
+ "text": {
+  "intro": "Type up to 32 bytes in hex, separated by spaces or commas. The table shows the checksum sum growing one byte at a time. The bytes are toy bytes typed here, not anything read from a save, and the first ones offered are illustrative.",
+  "bytesLabel": "Bytes in hex (typed by hand)",
+  "presetLabel": "Illustrative bytes",
+  "presetNone": "choose one",
+  "columns": {
+   "rows": "toy",
+   "items": [
+    "Offset",
+    "Byte typed",
+    "Byte counted",
+    "Sum rotated left by 1 (hex)",
+    "Sum after adding the byte (hex)"
+   ]
+  },
+  "start": "start",
+  "startSum": "0",
+  "skipNote": "The four bytes at offsets 12 to 15 are the checksum field of a save and count as 0, whatever is typed there.",
+  "errBad": "A token is not one or two hex digits:",
+  "errLong": "More than 32 bytes were typed; the table shows none.",
+  "totalHead": "Checksum (hex):",
+  "liveCount": "bytes",
+  "note": "Computed by our model of the rule, not observed in the game."
+ }
+}

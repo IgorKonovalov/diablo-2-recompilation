@@ -2753,3 +2753,56 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   nor the intro claims a step per expansion, and the candidate row's "watch the search" is met by the pass slider.
   (4) The seedtree labels and caption called the typed N a "game seed", the name the table gives Init(N); now "seed N,
   as an override gives it" (the caption in the block draft too). Tests 87 checks green, twins check clean, gate green.
+- 2026-11-19, archivist, lane/x16b (Phase 11 batch 3: scripted widgets, rows 26 to 29; ADR-0037). Delivered four widgets in
+  `tools/widgets/<name>/` after rng's pattern (pure `compute`, DOM-only `mount`, `widget.json` of toy or page rows only,
+  `fixture.json` written by a twin in `twins.py` from the existing model, no second copy of a rule):
+  - **`monstat`** (row 26): the twin builds a `monstats.Tables` with no game data (20 invented level rows and two invented
+    monsters packed at the offsets the model reads) and calls `Model.monlvl_stats`; the widget restates stats § A (row
+    `min(level, last)`, none below 0, difficulty 0 below 1 and at most 2, `MulDiv(row, cell, 100)`, raw cells). 14 fixture cases.
+    `MulDiv` is the 32-bit branch only (the toy values never leave it).
+  - **`merc`** (row 27): the twin builds a `hirelings.Tables` with three invented band rows (the first band at level 6, so
+    levels below it give a negative `d`) and calls `set_level`; the widget shows the 12 stats of hirelings § G, skills left out
+    (the toy rows carry none). 14 cases (band edges, 1, 98, 99, clamped inputs).
+  - **`quality`** (row 28): the twin builds a `quality.Tables` of one invented item and the page's records 2 to 5 (the ratio
+    table of quality § Inputs, `"rows": "page"`) and calls `roll` with `range_b` forced to lose, so `trace` and `cf["pre"]`
+    list every test the roll reaches; the widget restates § C to § E (the magic-find factor, minimum, ratio word, `c`) and
+    adds the chance to win (about 128 in `c`) and the chain of results as exact rationals floored to parts per million (BigInt
+    in JS, `Fraction` in the twin). Item kinds: ordinary, never rare, always magic, always normal. 19 cases (MF -150 to 1000,
+    the diminishing edge at 10 and 11, ratio word 1024, `c` below 1, clamped inputs).
+  - **`checksum`** (row 29): the twin calls `d2s.checksum` on each prefix of the typed bytes (no game file, a text field of
+    at most 32 hex bytes; offsets 12 to 15 count as 0); the page's 8-digit hex values stay out of the fallback text (X1), which
+    is decimal. 12 cases (empty, the zeroed field, 32 and 33 bytes, bad tokens).
+  - **Shared files, additive**: `twins.py` (four twins, cases, fallbacks); `test_widgets.py` (a `MUTATIONS` entry per widget in
+    place of rng's one hard-coded text, a generic wrong-fixture bump, a `MOUNT_SHOWS` check per new widget); `smoke_mount.mjs`
+    sets rng's typed values only for rng. X13's allowlists forced renames of data and output keys (`stats`, `ratio`, `base`,
+    `raw`, `d`, `c`, `code`, `bytes`, `error`, `count`, `total` are browser member names): the keys are `result`, `scaled`,
+    `rowVals`, `plain`, `dlt`, `chance`, `rc`, `typed`, `fault`, `tally`, `whole`; and `Number.isNaN` and a hex-digit string
+    are out, `parseInt(ch, 16)` is in.
+  - **Blocks** for the spec-writer: `workspace/phase11/blocks-batch3-x16b.md` (ids `monstat-scaler`, `merc-stats`,
+    `quality-chances`, `checksum-stepper`, all with the text fallback; `quality-chances` on the quality spec page, as
+    moved at the review below). A scratch build of the four blocks (text fallbacks) dropped none and `check_cut` was clean.
+  - **Doubts**: no browser run (node stand-in DOM only; the CSP and the host were exercised for rng in x11w); the quality
+    widget's "about 128 in `c`" is the page's own phrase, the draw is `low mod c` and slightly non-uniform; the toy numbers
+    of rows 26, 27 and 29 are invented and say so in their intro line.
+- 2026-11-19, architect, review of lane/x16b (Tier A on Opus, ADR-0037). Read every `widget.js` and `widget.json`
+  whole, the four twins and the fixtures, against monsters/stats § A, hirelings § G, items/quality § A to § E and
+  save/d2s § B. Each widget computes only from its `widget.json`; monstat, merc and checksum rows are `toy`; the
+  compute matches the spec and its twin on every fixture case, the quality fixture holds the spec's worked examples 1
+  and 3 (`c` 50816 … 128; 27022, 9862, 5604, 1344, 1024, −2176), and a 1 600-case random sweep (400 per widget, out of
+  range inputs included) gives no difference from the twins. X13's script and data rules pass on all four
+  (`js_problems`, `json_problems`); gate green; `test_widgets.py` 141 checks. **Rulings:** (1) quality's records 2 to 5
+  are `page` rows only where the page shows them: the block draft put the widget on wiki/items.md, which shows no
+  ItemRatio row and no `*Min` value, so `"rows": "page"` did not hold there (ADR-0037, What it may read). The spec
+  page that row 28 names, spec-items/quality, shows records 0 to 5 and the four minimums in its Inputs and keeps them
+  in the cut; the block moves there, at the end of § E, with the text fallback (a scratch build placed it, wrote the
+  fallback table and the check had 0 failures). The four rows are a subset of a reviewed six-row table the same page
+  prints, so they are page text, not data lifted from the game files; ADR-0031 concerns constants of the code image and
+  is not engaged. (2) The item kinds are the three ItemTypes flags § A3, § D2 and § D3 test (`Normal`, `Rare`,
+  `Magic`); an always-magic kind with `Rare` set matches D3's note (rings, amulets). Supported. (3) merc below the first
+  band: hirelings § G states that negative `d` truncates and was logged down to −41, so levels 1 to 5 show real
+  behaviour and are not clamped. (4) monstat's 32-bit `MulDiv` branch: the inputs only pick among toy rows whose
+  largest values (row 9 055, cell 160) sit below both thresholds of § A1, so no input reaches the other branches; the
+  note says so. Browser run: still owed, at the redaction review of the cut that first carries these widgets
+  (ADR-0037, Review). **Verdict: accept with fixes 2** (misread 1: the quality block placed where its `page` rows are
+  not shown, moved to the spec page and the lane's log line corrected; omission 1: the quality caption left out the
+  always-normal kind the widget offers).

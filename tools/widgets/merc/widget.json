@@ -1,0 +1,128 @@
+{
+ "marker": "widget-only/1",
+ "name": "merc",
+ "rule": {
+  "maxLevel": 99
+ },
+ "inputs": {
+  "level": {
+   "min": 1,
+   "max": 99,
+   "default": 30
+  }
+ },
+ "bands": {
+  "rows": "toy",
+  "items": [
+   {
+    "lv": 6,
+    "hp": 40,
+    "hpl": 9,
+    "st": 60,
+    "stl": 9,
+    "dxl": 7,
+    "df": 30,
+    "dfl": 4,
+    "ar": 70,
+    "arl": 11,
+    "dmin": 4,
+    "dmax": 9,
+    "dml": 11,
+    "rs": 10,
+    "rsl": 5,
+    "dexb": 45,
+    "expl": 110
+   },
+   {
+    "lv": 21,
+    "hp": 170,
+    "hpl": 11,
+    "st": 130,
+    "stl": 10,
+    "dxl": 8,
+    "df": 90,
+    "dfl": 5,
+    "ar": 230,
+    "arl": 12,
+    "dmin": 22,
+    "dmax": 35,
+    "dml": 13,
+    "rs": 70,
+    "rsl": 3,
+    "dexb": 95,
+    "expl": 140
+   },
+   {
+    "lv": 45,
+    "hp": 420,
+    "hpl": 13,
+    "st": 190,
+    "stl": 11,
+    "dxl": 9,
+    "df": 210,
+    "dfl": 6,
+    "ar": 530,
+    "arl": 14,
+    "dmin": 50,
+    "dmax": 80,
+    "dml": 15,
+    "rs": 110,
+    "rsl": 2,
+    "dexb": 140,
+    "expl": 170
+   }
+  ]
+ },
+ "text": {
+  "intro": "Type a mercenary level; the table shows its stats from an invented hire table of three level bands. Every number in the bands is invented for this widget; none comes from the game's tables.",
+  "levelLabel": "Mercenary level (1 to 99)",
+  "columns": {
+   "rows": "toy",
+   "items": [
+    "Stat",
+    "Rule",
+    "Value"
+   ]
+  },
+  "names": {
+   "rows": "toy",
+   "items": [
+    "Level",
+    "Experience for the next level",
+    "Experience at this level",
+    "Strength",
+    "Dexterity",
+    "Life (in 1/256)",
+    "Defence",
+    "Attack rating",
+    "Minimum damage",
+    "Maximum damage",
+    "Resistances (fire, lightning, cold, poison)",
+    "Life regeneration (from life in 1/256)"
+   ]
+  },
+  "bandHead": "Band row (first level of the band)",
+  "dHead": "d = L - the band's level",
+  "liveHead": "Level",
+  "liveBand": "band",
+  "liveD": "d",
+  "note": "Divisions truncate toward zero, so a level below the first band (d below 0) rounds toward 0. Computed by our model of the rule, not observed in the game.",
+  "how": {
+   "rows": "toy",
+   "items": [
+    "the level typed",
+    "ExpForLevel(L + 1, Exp/Lvl), or 0 from level 98",
+    "ExpForLevel(L, Exp/Lvl)",
+    "Str + (Str/Lvl x d) / 8, at least 10",
+    "Dex + (Dex/Lvl x d) / 8, at least 10",
+    "(HP + HP/Lvl x d) x 256, at least 40 x 256",
+    "Defense + Def/Lvl x d, at least 0",
+    "AR + AR/Lvl x d, at least 0",
+    "Dmg-Min + (Dmg/Lvl x d) / 8, at least 0",
+    "Dmg-Max + (Dmg/Lvl x d) / 8, at least 1",
+    "Resist + (Resist/Lvl x d) / 4, at least 0, one value for all four",
+    "life / 2000"
+   ]
+  }
+ }
+}

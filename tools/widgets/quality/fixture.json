@@ -1,0 +1,1826 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 18,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 28594,
+      "min": 6400,
+      "word": 0,
+      "chance": 28594,
+      "noDraw": false,
+      "winPpm": 4476
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 10561,
+      "min": 5600,
+      "word": 0,
+      "chance": 10561,
+      "noDraw": false,
+      "winPpm": 12120
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 6296,
+      "min": 3200,
+      "word": 0,
+      "chance": 6296,
+      "noDraw": false,
+      "winPpm": 20330
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 1792,
+      "min": 192,
+      "word": 0,
+      "chance": 1792,
+      "noDraw": false,
+      "winPpm": 71428
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 1280,
+      "noDraw": false,
+      "winPpm": 100000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -896,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 4476
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 12065
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 19994
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 68818
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 89464
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 805180
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 0,
+    "record": 2,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 0,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 18,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 48896,
+      "min": 6400,
+      "word": 0,
+      "chance": 48896,
+      "noDraw": false,
+      "winPpm": 2617
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 19328,
+      "min": 5600,
+      "word": 0,
+      "chance": 19328,
+      "noDraw": false,
+      "winPpm": 6622
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 11648,
+      "min": 3200,
+      "word": 0,
+      "chance": 11648,
+      "noDraw": false,
+      "winPpm": 10989
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 3584,
+      "min": 192,
+      "word": 0,
+      "chance": 3584,
+      "noDraw": false,
+      "winPpm": 35714
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 1280,
+      "noDraw": false,
+      "winPpm": 100000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -896,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 2617
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 6605
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 10887
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 34996
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 94489
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 850403
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 10,
+    "record": 3,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 10,
+    "record": 3,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 18,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 44450,
+      "min": 6400,
+      "word": 0,
+      "chance": 44450,
+      "noDraw": false,
+      "winPpm": 2879
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 17570,
+      "min": 5600,
+      "word": 0,
+      "chance": 17570,
+      "noDraw": false,
+      "winPpm": 7285
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 10589,
+      "min": 3200,
+      "word": 0,
+      "chance": 10589,
+      "noDraw": false,
+      "winPpm": 12088
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 3258,
+      "min": 192,
+      "word": 0,
+      "chance": 3258,
+      "noDraw": false,
+      "winPpm": 39287
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 1280,
+      "noDraw": false,
+      "winPpm": 100000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -2176,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 2879
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 7264
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 11965
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 38419
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 93947
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 845524
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 11,
+    "record": 4,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 11,
+    "record": 4,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 18,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 27229,
+      "min": 6400,
+      "word": 0,
+      "chance": 27229,
+      "noDraw": false,
+      "winPpm": 4700
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 13265,
+      "min": 5600,
+      "word": 0,
+      "chance": 13265,
+      "noDraw": false,
+      "winPpm": 9649
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 8610,
+      "min": 3200,
+      "word": 0,
+      "chance": 8610,
+      "noDraw": false,
+      "winPpm": 14866
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 1614,
+      "min": 192,
+      "word": 0,
+      "chance": 1614,
+      "noDraw": false,
+      "winPpm": 79306
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 896,
+      "noDraw": false,
+      "winPpm": 142857
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -896,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 4700
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 9604
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 14653
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 77009
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 127718
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 766312
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 49,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 49,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 39,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 27022,
+      "min": 6400,
+      "word": 0,
+      "chance": 27022,
+      "noDraw": false,
+      "winPpm": 4736
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 9862,
+      "min": 5600,
+      "word": 0,
+      "chance": 9862,
+      "noDraw": false,
+      "winPpm": 12979
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 5604,
+      "min": 3200,
+      "word": 0,
+      "chance": 5604,
+      "noDraw": false,
+      "winPpm": 22840
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 1344,
+      "min": 192,
+      "word": 0,
+      "chance": 1344,
+      "noDraw": false,
+      "winPpm": 95238
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 1024,
+      "noDraw": false,
+      "winPpm": 125000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -2176,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 4736
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 12917
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 22437
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 91419
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 108561
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 759927
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 22,
+    "qlvl": 19,
+    "mf": 0,
+    "record": 2,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 22,
+    "qlvl": 19,
+    "mf": 0,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 3,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 50816,
+      "min": 6400,
+      "word": 0,
+      "chance": 50816,
+      "noDraw": false,
+      "winPpm": 2518
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 20352,
+      "min": 5600,
+      "word": 0,
+      "chance": 20352,
+      "noDraw": false,
+      "winPpm": 6289
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 12672,
+      "min": 3200,
+      "word": 0,
+      "chance": 12672,
+      "noDraw": false,
+      "winPpm": 10101
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 4224,
+      "min": 192,
+      "word": 0,
+      "chance": 4224,
+      "noDraw": false,
+      "winPpm": 30303
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 1536,
+      "noDraw": false,
+      "winPpm": 83333
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 128,
+      "noDraw": false,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 2518
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 6273
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 10012
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 29733
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 79288
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 872173
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": 300,
+    "record": 5,
+    "kind": 1,
+    "w0": 200,
+    "w1": 300,
+    "w2": 400,
+    "w3": 500
+   },
+   "expect": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": 300,
+    "record": 5,
+    "kind": 1,
+    "words": [
+     200,
+     300,
+     400,
+     500
+    ],
+    "gap": 20,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 12691,
+      "min": 6400,
+      "word": 500,
+      "chance": 6495,
+      "noDraw": false,
+      "winPpm": 19707
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 5084,
+      "min": 5600,
+      "word": 400,
+      "chance": 3413,
+      "noDraw": false,
+      "winPpm": 37503
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 448,
+      "min": 192,
+      "word": 200,
+      "chance": 361,
+      "noDraw": false,
+      "winPpm": 354570
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 896,
+      "noDraw": false,
+      "winPpm": 142857
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -2432,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 19707
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 36764
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 334547
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 86997
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 521983
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": 300,
+    "record": 5,
+    "kind": 2,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": 300,
+    "record": 5,
+    "kind": 2,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 20,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 12691,
+      "min": 6400,
+      "word": 0,
+      "chance": 12691,
+      "noDraw": false,
+      "winPpm": 10085
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 5084,
+      "min": 5600,
+      "word": 0,
+      "chance": 5600,
+      "noDraw": false,
+      "winPpm": 22857
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 3157,
+      "min": 3200,
+      "word": 0,
+      "chance": 3200,
+      "noDraw": false,
+      "winPpm": 40000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 10085
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 22626
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 38691
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 928596
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 3,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 3,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 20,
+    "steps": [],
+    "outcomes": [
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 1000000
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": -50,
+    "record": 2,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": -50,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 20,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 97280,
+      "min": 6400,
+      "word": 0,
+      "chance": 97280,
+      "noDraw": false,
+      "winPpm": 1315
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 38400,
+      "min": 5600,
+      "word": 0,
+      "chance": 38400,
+      "noDraw": false,
+      "winPpm": 3333
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 23040,
+      "min": 3200,
+      "word": 0,
+      "chance": 23040,
+      "noDraw": false,
+      "winPpm": 5555
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 7168,
+      "min": 192,
+      "word": 0,
+      "chance": 7168,
+      "noDraw": false,
+      "winPpm": 17857
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 1280,
+      "noDraw": false,
+      "winPpm": 100000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -1024,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 1315
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 3328
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 5529
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 17675
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 97215
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 874935
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": -99,
+    "record": 3,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": -99,
+    "record": 3,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 20,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 4864000,
+      "min": 6400,
+      "word": 0,
+      "chance": 4864000,
+      "noDraw": false,
+      "winPpm": 26
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 1920000,
+      "min": 5600,
+      "word": 0,
+      "chance": 1920000,
+      "noDraw": false,
+      "winPpm": 66
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 1152000,
+      "min": 3200,
+      "word": 0,
+      "chance": 1152000,
+      "noDraw": false,
+      "winPpm": 111
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 358400,
+      "min": 192,
+      "word": 0,
+      "chance": 358400,
+      "noDraw": false,
+      "winPpm": 357
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 1280,
+      "noDraw": false,
+      "winPpm": 100000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -2432,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 26
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 66
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 111
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 357
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 99943
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 899494
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": -100,
+    "record": 2,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": -100,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 20,
+    "steps": [
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 1280,
+      "noDraw": false,
+      "winPpm": 100000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -1024,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 100000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 900000
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": -150,
+    "record": 2,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 30,
+    "qlvl": 10,
+    "mf": -150,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 20,
+    "steps": [
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 1280,
+      "noDraw": false,
+      "winPpm": 100000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -1024,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 100000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 900000
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 255,
+    "qlvl": 0,
+    "mf": 0,
+    "record": 2,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 255,
+    "qlvl": 0,
+    "mf": 0,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 255,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 18560,
+      "min": 6400,
+      "word": 0,
+      "chance": 18560,
+      "noDraw": false,
+      "winPpm": 6896
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 4224,
+      "min": 5600,
+      "word": 0,
+      "chance": 5600,
+      "noDraw": false,
+      "winPpm": 22857
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": -3456,
+      "min": 3200,
+      "word": 0,
+      "chance": 3200,
+      "noDraw": false,
+      "winPpm": 40000
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": -6528,
+      "min": 192,
+      "word": 0,
+      "chance": 192,
+      "noDraw": false,
+      "winPpm": 666666
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": -2432,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 6896
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 22699
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 38816
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 621058
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 310529
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 0,
+    "qlvl": 255,
+    "mf": 1000,
+    "record": 4,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 0,
+    "qlvl": 255,
+    "mf": 1000,
+    "record": 4,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": -255,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 13866,
+      "min": 6400,
+      "word": 0,
+      "chance": 13866,
+      "noDraw": false,
+      "winPpm": 9231
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 6060,
+      "min": 5600,
+      "word": 0,
+      "chance": 6060,
+      "noDraw": false,
+      "winPpm": 21122
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 4446,
+      "min": 3200,
+      "word": 0,
+      "chance": 4446,
+      "noDraw": false,
+      "winPpm": 28789
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 686,
+      "min": 192,
+      "word": 0,
+      "chance": 686,
+      "noDraw": false,
+      "winPpm": 186588
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 5120,
+      "noDraw": false,
+      "winPpm": 25000
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 16512,
+      "noDraw": false,
+      "winPpm": 7751
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 9231
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 20927
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 27921
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 175751
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 19154
+     },
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 5790
+     },
+     {
+      "name": "low",
+      "rc": 1,
+      "ppm": 741223
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 1024
+   },
+   "expect": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     1024
+    ],
+    "gap": 18,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 28594,
+      "min": 6400,
+      "word": 1024,
+      "chance": 0,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 1000000
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 0,
+    "w0": 1024,
+    "w1": 512,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 28,
+    "qlvl": 10,
+    "mf": 100,
+    "record": 2,
+    "kind": 0,
+    "words": [
+     1024,
+     512,
+     0,
+     0
+    ],
+    "gap": 18,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 28594,
+      "min": 6400,
+      "word": 0,
+      "chance": 28594,
+      "noDraw": false,
+      "winPpm": 4476
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 10561,
+      "min": 5600,
+      "word": 0,
+      "chance": 10561,
+      "noDraw": false,
+      "winPpm": 12120
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 6296,
+      "min": 3200,
+      "word": 512,
+      "chance": 3148,
+      "noDraw": false,
+      "winPpm": 40660
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 1792,
+      "min": 192,
+      "word": 1024,
+      "chance": 0,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 4476
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 12065
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 39988
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 943469
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 100,
+    "qlvl": 1,
+    "mf": 0,
+    "record": 3,
+    "kind": 0,
+    "w0": 0,
+    "w1": 0,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 100,
+    "qlvl": 1,
+    "mf": 0,
+    "record": 3,
+    "kind": 0,
+    "words": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "gap": 99,
+    "steps": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "afterMf": 38528,
+      "min": 6400,
+      "word": 0,
+      "chance": 38528,
+      "noDraw": false,
+      "winPpm": 3322
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "afterMf": 14208,
+      "min": 5600,
+      "word": 0,
+      "chance": 14208,
+      "noDraw": false,
+      "winPpm": 9009
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "afterMf": 6528,
+      "min": 3200,
+      "word": 0,
+      "chance": 6528,
+      "noDraw": false,
+      "winPpm": 19607
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "afterMf": 128,
+      "min": 192,
+      "word": 0,
+      "chance": 192,
+      "noDraw": false,
+      "winPpm": 666666
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "afterMf": null,
+      "min": null,
+      "word": null,
+      "chance": 0,
+      "noDraw": true,
+      "winPpm": 1000000
+     }
+    ],
+    "outcomes": [
+     {
+      "name": "unique",
+      "rc": 7,
+      "ppm": 3322
+     },
+     {
+      "name": "set",
+      "rc": 5,
+      "ppm": 8979
+     },
+     {
+      "name": "rare",
+      "rc": 6,
+      "ppm": 19366
+     },
+     {
+      "name": "magic",
+      "rc": 4,
+      "ppm": 645554
+     },
+     {
+      "name": "superior",
+      "rc": 3,
+      "ppm": 322777
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "ilvl": 400,
+    "qlvl": -3,
+    "mf": 5000,
+    "record": 9,
+    "kind": 7,
+    "w0": 5000,
+    "w1": -1,
+    "w2": 0,
+    "w3": 0
+   },
+   "expect": {
+    "ilvl": 255,
+    "qlvl": 0,
+    "mf": 1000,
+    "record": 5,
+    "kind": 3,
+    "words": [
+     1024,
+     0,
+     0,
+     0
+    ],
+    "gap": 255,
+    "steps": [],
+    "outcomes": [
+     {
+      "name": "normal",
+      "rc": 2,
+      "ppm": 1000000
+     }
+    ]
+   }
+  }
+ ]
+}

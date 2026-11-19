@@ -1,0 +1,342 @@
+{
+ "marker": "widget-only/1",
+ "name": "monstat",
+ "inputs": {
+  "monster": {
+   "min": 0,
+   "max": 1,
+   "default": 0
+  },
+  "level": {
+   "min": -5,
+   "max": 99,
+   "default": 7
+  },
+  "difficulty": {
+   "min": -1,
+   "max": 5,
+   "default": 0
+  }
+ },
+ "levels": {
+  "rows": "toy",
+  "items": [
+   {
+    "lv": 0,
+    "hp0": 4,
+    "hp1": 10,
+    "hp2": 18,
+    "ac0": 2,
+    "ac1": 6,
+    "ac2": 11,
+    "xp0": 7,
+    "xp1": 15,
+    "xp2": 30
+   },
+   {
+    "lv": 1,
+    "hp0": 11,
+    "hp1": 23,
+    "hp2": 37,
+    "ac0": 7,
+    "ac1": 14,
+    "ac2": 22,
+    "xp0": 16,
+    "xp1": 32,
+    "xp2": 55
+   },
+   {
+    "lv": 2,
+    "hp0": 18,
+    "hp1": 36,
+    "hp2": 56,
+    "ac0": 12,
+    "ac1": 22,
+    "ac2": 33,
+    "xp0": 43,
+    "xp1": 83,
+    "xp2": 130
+   },
+   {
+    "lv": 3,
+    "hp0": 25,
+    "hp1": 49,
+    "hp2": 75,
+    "ac0": 17,
+    "ac1": 30,
+    "ac2": 44,
+    "xp0": 88,
+    "xp1": 168,
+    "xp2": 255
+   },
+   {
+    "lv": 4,
+    "hp0": 32,
+    "hp1": 62,
+    "hp2": 94,
+    "ac0": 22,
+    "ac1": 38,
+    "ac2": 55,
+    "xp0": 151,
+    "xp1": 287,
+    "xp2": 430
+   },
+   {
+    "lv": 5,
+    "hp0": 39,
+    "hp1": 75,
+    "hp2": 113,
+    "ac0": 27,
+    "ac1": 46,
+    "ac2": 66,
+    "xp0": 232,
+    "xp1": 440,
+    "xp2": 655
+   },
+   {
+    "lv": 6,
+    "hp0": 46,
+    "hp1": 88,
+    "hp2": 132,
+    "ac0": 32,
+    "ac1": 54,
+    "ac2": 77,
+    "xp0": 331,
+    "xp1": 627,
+    "xp2": 930
+   },
+   {
+    "lv": 7,
+    "hp0": 53,
+    "hp1": 101,
+    "hp2": 151,
+    "ac0": 37,
+    "ac1": 62,
+    "ac2": 88,
+    "xp0": 448,
+    "xp1": 848,
+    "xp2": 1255
+   },
+   {
+    "lv": 8,
+    "hp0": 60,
+    "hp1": 114,
+    "hp2": 170,
+    "ac0": 42,
+    "ac1": 70,
+    "ac2": 99,
+    "xp0": 583,
+    "xp1": 1103,
+    "xp2": 1630
+   },
+   {
+    "lv": 9,
+    "hp0": 67,
+    "hp1": 127,
+    "hp2": 189,
+    "ac0": 47,
+    "ac1": 78,
+    "ac2": 110,
+    "xp0": 736,
+    "xp1": 1392,
+    "xp2": 2055
+   },
+   {
+    "lv": 10,
+    "hp0": 74,
+    "hp1": 140,
+    "hp2": 208,
+    "ac0": 52,
+    "ac1": 86,
+    "ac2": 121,
+    "xp0": 907,
+    "xp1": 1715,
+    "xp2": 2530
+   },
+   {
+    "lv": 11,
+    "hp0": 81,
+    "hp1": 153,
+    "hp2": 227,
+    "ac0": 57,
+    "ac1": 94,
+    "ac2": 132,
+    "xp0": 1096,
+    "xp1": 2072,
+    "xp2": 3055
+   },
+   {
+    "lv": 12,
+    "hp0": 88,
+    "hp1": 166,
+    "hp2": 246,
+    "ac0": 62,
+    "ac1": 102,
+    "ac2": 143,
+    "xp0": 1303,
+    "xp1": 2463,
+    "xp2": 3630
+   },
+   {
+    "lv": 13,
+    "hp0": 95,
+    "hp1": 179,
+    "hp2": 265,
+    "ac0": 67,
+    "ac1": 110,
+    "ac2": 154,
+    "xp0": 1528,
+    "xp1": 2888,
+    "xp2": 4255
+   },
+   {
+    "lv": 14,
+    "hp0": 102,
+    "hp1": 192,
+    "hp2": 284,
+    "ac0": 72,
+    "ac1": 118,
+    "ac2": 165,
+    "xp0": 1771,
+    "xp1": 3347,
+    "xp2": 4930
+   },
+   {
+    "lv": 15,
+    "hp0": 109,
+    "hp1": 205,
+    "hp2": 303,
+    "ac0": 77,
+    "ac1": 126,
+    "ac2": 176,
+    "xp0": 2032,
+    "xp1": 3840,
+    "xp2": 5655
+   },
+   {
+    "lv": 16,
+    "hp0": 116,
+    "hp1": 218,
+    "hp2": 322,
+    "ac0": 82,
+    "ac1": 134,
+    "ac2": 187,
+    "xp0": 2311,
+    "xp1": 4367,
+    "xp2": 6430
+   },
+   {
+    "lv": 17,
+    "hp0": 123,
+    "hp1": 231,
+    "hp2": 341,
+    "ac0": 87,
+    "ac1": 142,
+    "ac2": 198,
+    "xp0": 2608,
+    "xp1": 4928,
+    "xp2": 7255
+   },
+   {
+    "lv": 18,
+    "hp0": 130,
+    "hp1": 244,
+    "hp2": 360,
+    "ac0": 92,
+    "ac1": 150,
+    "ac2": 209,
+    "xp0": 2923,
+    "xp1": 5523,
+    "xp2": 8130
+   },
+   {
+    "lv": 19,
+    "hp0": 137,
+    "hp1": 257,
+    "hp2": 379,
+    "ac0": 97,
+    "ac1": 158,
+    "ac2": 220,
+    "xp0": 3256,
+    "xp1": 6152,
+    "xp2": 9055
+   }
+  ]
+ },
+ "monsters": {
+  "rows": "toy",
+  "items": [
+   {
+    "name": "Toy scaled monster",
+    "mnhp0": 70,
+    "mnhp1": 90,
+    "mnhp2": 110,
+    "mxhp0": 100,
+    "mxhp1": 130,
+    "mxhp2": 160,
+    "ac0": 80,
+    "ac1": 100,
+    "ac2": 120,
+    "ex0": 60,
+    "ex1": 90,
+    "ex2": 130,
+    "plain": 0
+   },
+   {
+    "name": "Toy raw-cell monster",
+    "mnhp0": 40,
+    "mnhp1": 55,
+    "mnhp2": 70,
+    "mxhp0": 48,
+    "mxhp1": 65,
+    "mxhp2": 82,
+    "ac0": 25,
+    "ac1": 45,
+    "ac2": 65,
+    "ex0": 33,
+    "ex1": 66,
+    "ex2": 99,
+    "plain": 1
+   }
+  ]
+ },
+ "text": {
+  "intro": "Pick an invented monster, a monster level and a difficulty; the table scales the monster's cells by the level's row. Every number here is invented for this widget, none comes from the game's tables.",
+  "monsterLabel": "Toy monster",
+  "levelLabel": "Monster level (the toy table has rows 0 to 19; a higher level uses the last row)",
+  "diffLabel": "Difficulty",
+  "diffs": {
+   "rows": "toy",
+   "items": [
+    "0 Normal",
+    "1 Nightmare",
+    "2 Hell"
+   ]
+  },
+  "columns": {
+   "rows": "toy",
+   "items": [
+    "Stat",
+    "Level row value",
+    "Monster cell",
+    "Result"
+   ]
+  },
+  "statNames": {
+   "rows": "toy",
+   "items": [
+    "Minimum hit points",
+    "Maximum hit points",
+    "Defence",
+    "Experience"
+   ]
+  },
+  "scaled": "MulDiv(row, cell, 100)",
+  "plain": "the cell as it is (no scaling)",
+  "noRow": "no row, nothing is set",
+  "liveHead": "Level",
+  "liveRow": "row",
+  "liveOut": "gives",
+  "note": "Computed by our model of the rule, not observed in the game. The toy values stay in the 32-bit branch of MulDiv."
+ }
+}

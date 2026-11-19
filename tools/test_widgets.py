@@ -37,10 +37,17 @@ def node_cmd(*reads):
         "--disallow-code-generation-from-strings"]
 
 
-# one change of widget.js per widget that the fixture must notice (a changed rule is a difference)
-MUTATION = {"seedtree": ("(seedBase + level) >>> 0", "(seedBase + level + 1) >>> 0"),
-            "path": ("const g = node.g + (nx !== node.pos[0] && ny !== node.pos[1] ? 3 : 2);",
-                     "const g = node.g + (nx !== node.pos[0] && ny !== node.pos[1] ? 2 : 2);")}
+# one change per widget that gives another answer: the harness must see it (a mutation of the pure part)
+MUTATIONS = {
+    "rng": ("low % n", "(low + 1) % n"),
+    "monstat": ("Math.trunc(Math.imul(a, b) / c)", "Math.trunc(Math.imul(a, b) / c) + 1"),
+    "merc": ("Math.max(10, r.st + tdiv(i32(r.stl * dlt), 8))", "Math.max(10, r.st + tdiv(i32(r.stl * dlt), 4))"),
+    "quality": ("tdiv(Math.imul(word, c), rule.ratioScale)", "tdiv(Math.imul(word, c), rule.ratioScale + 1)"),
+    "checksum": ("((sum << 1) | (sum >>> 31)) >>> 0", "(sum << 1) >>> 0"),
+    "seedtree": ("(seedBase + level) >>> 0", "(seedBase + level + 1) >>> 0"),
+    "path": ("const g = node.g + (nx !== node.pos[0] && ny !== node.pos[1] ? 3 : 2);",
+             "const g = node.g + (nx !== node.pos[0] && ny !== node.pos[1] ? 2 : 2);"),
+}
 
 
 def octant_rule(zero):
@@ -58,14 +65,18 @@ def octant_rule(zero):
     return out
 
 
-def bump(v):
-    """Add 1 to the first integer found in an expected output (depth first); True when one was changed."""
-    items = list(v.items()) if isinstance(v, dict) else list(enumerate(v)) if isinstance(v, list) else []
+# strings the mounted widget shows for its default inputs (the first fixture case): a value of the twin's output
+MOUNT_SHOWS = {"monstat": ["268"], "merc": ["4305280", "68864"], "quality": ["28594", "1792"], "checksum": ["0007FCB4"]}
+
+
+def bump_first_number(v):
+    """Adds 1 to the first integer leaf of a fixture output (a wrong expected value); True when one was found."""
+    items = v.items() if isinstance(v, dict) else enumerate(v) if isinstance(v, list) else ()
     for k, x in items:
         if isinstance(x, int) and not isinstance(x, bool):
             v[k] = x + 1
             return True
-        if bump(x):
+        if bump_first_number(x):
             return True
     return False
 
@@ -174,11 +185,14 @@ def main():
                "rng: mount shows Init(seed) and the typed seed in the table")
             ok("87" in " ".join(res.get("rows", [])) and "87" in (res.get("live") or ""),
                "rng: typing seed 12345 and range 100 shows the worked example's first draw, 87")
+        for shown in MOUNT_SHOWS.get(name, []):
+            ok(shown in " ".join(res.get("rows", [])) + " " + (res.get("live") or ""),
+               f"{name}: mount shows {shown}, a value of the twin's first case")
         # the harness itself: a changed fixture is caught
         tmp = tempfile.mkdtemp(prefix="widget-test-")
         try:
             bad = json.loads(json.dumps(fixture))
-            bump(bad["cases"][0]["expect"])
+            bump_first_number(bad["cases"][0]["expect"])
             bp = os.path.join(tmp, "fixture.json")
             json.dump(bad, open(bp, "w"))
             o2, _ = node_run(folder, fixture_path=bp)
@@ -186,9 +200,9 @@ def main():
             # a widget that gives another answer is caught: the multiplier changed
             js = open(os.path.join(folder, "widget.js"), encoding="utf-8").read()
             jp = os.path.join(tmp, "w.js")
-            old, new = MUTATION.get(name, ("low % n", "(low + 1) % n"))
-            ok(old in js, f"{name}: the mutation's target text is in widget.js")
-            open(jp, "w", encoding="utf-8").write(js.replace(old, new))
+            old_text, new_text = MUTATIONS[name]
+            ok(old_text in js, f"{name}: the mutation's target text is in widget.js")
+            open(jp, "w", encoding="utf-8").write(js.replace(old_text, new_text))
             o3, _ = node_run(folder, js_path=jp)
             open(jp, "w", encoding="utf-8").write(js.replace('return make(document.createElement("td"), text);', "return td(text);"))
             bm = subprocess.run(node_cmd(tmp) + [os.path.join(WIDGETS, "smoke_mount.mjs"), jp, os.path.join(folder, "widget.json")],
