@@ -78,7 +78,8 @@ SCHEMATIC_TOOLS = ("maze_anim.py", "tc_anim.py", "rng_anim.py", "seedtree_anim.p
                    "combat_anim.py", "hire_anim.py", "affix_anim.py",
                    "quest_anim.py", "cube_anim.py", "collision_anim.py")
 ILLUS_KEYS = ("id", "tool", "args", "seed", "illustrates", "caption")
-ILLUS_VALUES = ("computed", "restated")   # optional `values:` key, default computed (review of lane/x11s)
+ILLUS_VALUES = ("computed", "restated", "recorded")   # optional `values:` key, default computed (review of lane/x11s;
+                                                      # recorded: review of lane/x17b)
 WIDGET_KEYS = ("id", "widget", "illustrates", "caption", "fallback")
 WIDGETS_SRC = os.path.join(HERE, "widgets")        # tools/widgets/<name>/: the reviewed sources (tests override)
 
@@ -893,9 +894,15 @@ def illustration_block(page, b, root, out, allow, heading, run=True):
     cap = caption_sentences(page, heading, d["caption"], allow)
     # seed: none, a generator with no draw; values: restated, frames that restate a spec's list with no model behind
     # them (only a few computed tests), where "computed by our model" would overclaim (review of lane/x11s)
-    cap.append(("The picture takes no seed. " if d["seed"].strip() == "none" else "Seed: illustrative, an input of our own. ")
-               + ("Every value shown is computed by our model, not observed in the game." if d["values"] == "computed"
-                  else "The picture restates the spec; nothing shown is observed in the game."))
+    # values: recorded, a model run on one recorded game's inputs (its seed among them), checked against that game's log:
+    # neither "an input of our own" nor "nothing shown is observed" holds (review of lane/x17b)
+    if d["values"] == "recorded":
+        cap.append("The inputs, the seed among them, come from one recorded game; every value after them is computed by our "
+                   "model, which reproduces each value that game logged.")
+    else:
+        cap.append(("The picture takes no seed. " if d["seed"].strip() == "none" else "Seed: illustrative, an input of our own. ")
+                   + ("Every value shown is computed by our model, not observed in the game." if d["values"] == "computed"
+                      else "The picture restates the spec; nothing shown is observed in the game."))
     blank = {"kind": "blank", "lines": [""]}
     return [{"kind": "para", "lines": [f"![Animation: {d['id']}]({root_abs})"], "illus": True}, blank,
             {"kind": "para", "lines": [f"[Step through {d['id']}]({base}index.html)"], "illus": True}, blank,

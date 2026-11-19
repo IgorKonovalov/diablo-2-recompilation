@@ -38,7 +38,7 @@ WHY = {"numinputs": "BY THE ITEM COUNT", "disabled": "AS DISABLED", "version": "
 HELP = """<li>The cube holds the items on the left of the first frame. The scan tries the CubeMain rows from record 0 and the first row whose header tests and inputs all fit is the recipe.</li>
 <li>Each input claims every cube item that fits it, not only its quantity; the count of claimed items must equal the quantity.</li>
 <li>The draws are listed in the order the game makes them: first the game seed, then the new item's unit seed and item seed.</li>
-<li>Every value is computed by our model from a recorded transmute's inputs, not observed in the game.</li>"""
+<li>The cube's items and the game seed come from one recorded transmute; every value after them is computed by our model, whose check reproduces each value that game logged.</li>"""
 
 
 def find_log(run):
@@ -100,8 +100,10 @@ def draw_label(T, seed, what, ngame):
         return "UNIT SEED (CREATION STEP)" if ngame["step"] % 2 == 0 else "ITEM SEED (SEED-INIT STEP)"
     if what.startswith("ItemInitStats"):
         return "BASE STATS (UNIT SEED)"
-    if what.startswith("PickMagicAffix") and "roll test" in what:
-        return "AFFIX PICK: ROLL TEST"
+    if what.startswith("PickMagicAffix magic") and "roll test" in what:   # "PickMagicAffix magic (mustRoll <0|1>): roll test"
+        # the magic builder picks the prefix, then the suffix (affixes D1-D2); a row forcing no prefix (< 0) has no stock case
+        side = ("PREFIX", "SUFFIX")[min(ngame["magic"], 1)]
+        return "%s PICK: ROLL TEST%s" % (side, ", MUST ROLL" if "(mustRoll 1)" in what else "")
     if what.startswith("property roll"):
         return "PROPERTY ROLL (PROP %s)" % what.split("prop ")[1].split(" ")[0]
     return what.upper()[:34]
@@ -199,14 +201,14 @@ def build(D, theme):
     rows_.append(("QUALITY: %s" % QNAME.get(o["q"], str(o["q"])), "txt"))
     forced = [p for p in o["pre"] if p] + [p for p in o["suf"] if p]
     if forced:
-        rows_.append(("FORCED AFFIX ROW(S): %s" % ", ".join(str(p) for p in forced), "txt"))
+        rows_.append(("FORCED AFFIX ID(S): %s" % ", ".join(str(p) for p in forced), "txt"))
     rows_.append(("LVL %d  PLVL %d  ILVL %d" % (o["lvl"], o["plvl"], o["ilvl"]), "dim"))
     rows_.append(("OUTPUT LEVEL V = %d%s" % (F["ilvl"], " (A FIXED LVL WINS)" if o["lvl"] else ""), "good"))
     for j, (s, col) in enumerate(rows_):
         k.text(20, 70 + j * 32, s, col, 2)
     put("Output A of row %d is %s with quality %s%s; its level v is %d%s (cube D, E)." % (
         row, ("an item of type " + type_code(T, o["index"]).lower()) if o["kind"] == 0xFD else "a " + kind,
-        QNAME.get(o["q"], "?").lower(), (" and the forced affix row %s" % ", ".join(str(p) for p in forced)) if forced else "",
+        QNAME.get(o["q"], "?").lower(), (" and the forced affix id %s" % ", ".join(str(p) for p in forced)) if forced else "",
         F["ilvl"], ", the row's fixed lvl, which wins" if o["lvl"] else ""),
         "Output A of row %d, with its level v = %d." % (row, F["ilvl"]),
         ["cube D: a fixed lvl wins; otherwise v = player level x plvl / 100 + input 1's ilvl x ilvl / 100, truncated, at least 1.",
@@ -215,7 +217,8 @@ def build(D, theme):
     # ---- the draws
     draws = [e for e in D["seq"] if e[0] == "draw"]
     shown = []
-    ngame = {"pick": 0, "step": 0}
+    ngame = {"pick": 0, "step": 0, "magic": 0}
+    assert not [p for p in F["o"]["pre"] if p < 0], "a row forcing no prefix: the prefix/suffix labels assume a prefix pick"
     low_seed = {"game": 0, "unit": 0, "item": 0}
     for e in draws:
         _, n, seed, bf, af, what, rg, r_ = e
@@ -224,6 +227,8 @@ def build(D, theme):
             ngame["pick"] += 1
         if what.startswith("game-seed step"):
             ngame["step"] += 1
+        if what.startswith("PickMagicAffix magic") and "roll test" in what:
+            ngame["magic"] += 1
         if r_.startswith("low "):                        # a step's result is its new low word (decimal, never hex)
             r_, rg = "LOW WORD %d" % af[0], "NO RANGE"
         shown.append((n, seed, lab, rg, r_, af))
@@ -279,8 +284,13 @@ def draw_text(T, seed, lab, rg, r_, n, af):
         return "Draw %d, on the game seed: the step that starts the new item's own seed (cube M)." % n
     if lab.startswith("BASE STATS"):
         return "Draw %d, on the unit seed: the new item's base stats, range %s, result %s (cube M, properties A)." % (n, rg, r_)
-    if lab.startswith("AFFIX PICK"):
-        return "Draw %d, on the item seed: the roll test of an affix pick, the low bit of the draw, %s (cube M, affixes C)." % (n, r_)
+    if " PICK: ROLL TEST" in lab:
+        side = lab.split()[0].lower()
+        if lab.endswith("MUST ROLL"):
+            return ("Draw %d, on the item seed: the roll test of the %s pick, the low bit of the draw, %s; the row forces a %s, "
+                    "so the pick rolls whatever the bit (cube M, affixes C2 and D1)." % (n, side, r_.split(" ")[0], side))
+        return ("Draw %d, on the item seed: the roll test of the %s pick, the low bit of the draw, %s; with a 0 and no "
+                "forced %s the item gets none (cube M, affixes C2 and D1)." % (n, side, r_, side))
     if lab.startswith("PROPERTY ROLL"):
         return "Draw %d, on the item seed: a property of the item rolled in its range %s, %s (cube M)." % (n, rg, r_)
     return "Draw %d, on the %s seed: %s, %s, %s." % (n, seed, lab.lower(), rg, r_)

@@ -451,7 +451,7 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   | 32 | spec-data/calc § B, D | A toy formula evaluated step by step | W | calc § B, § D | `widgets/calc`, twin `calc.py` | M | 4 |
   | 33 | items/inventory, Where an item can go | Toy items placed in a toy grid by the placement rule | W | inventory § Where an item can go | `widgets/grid`, twin `inventory.py` | M | 4 |
   | 34 | items/economy, Prices; spec-items/economy § A–C | A toy item's price, term by term | W | economy § A–C | `widgets/price`, twin `economy.py` | M | 4 |
-  | 35 | running/quests, A few quests, bit by bit; spec-quests/progression § A, D | A quest word's bits as events arrive | S | progression § A, § D; one quest the page walks | new `quest_anim.py` over `quests.py` | M | 4 |
+  | 35 | running/quests, A few quests, bit by bit; spec-quests/progression § A, D | A quest word's bits as events arrive | P (S at planning; review of lane/x17b) | progression § A, § D; one quest the page walks | new `quest_anim.py` over `quests.py` | M | 4 |
   | 36 | items/items-other-paths, The Horadric Cube; spec-items/cube § A, B, M | A recipe matched and its output built, with its draws | P | cube § A–B, § M; one recipe the page names | new `cube_anim.py` over `cube.py vector` | M | 4 |
   | 37 | world/levels, The collision grid; world/monsters, Placement | The four spawn tests on a toy room's subtiles | P | the levels and monsters sections; a toy room | new `collision_anim.py` over `collision.py` | M | 4 |
   | 38 | world/objects, The eight slots, Finding a spot | A room's object slots, the member pick, the spot search | P | objects § The eight slots, § Finding a spot; seed 0xC0FFEE | new `objects_anim.py` over `objects.py` | M | 4 |
@@ -2983,3 +2983,45 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   its caption passes `caption_sentences` with no drop. **Open for review:** the cube block's `restated` label (the values are
   the model's, on a recorded transmute); the cube tool reads a log by run name, so the export cut needs `workspace/logs`
   beside `workspace/merged`; the toy numbers of row 37 (WarpDist 100 as pack_anim's) are illustrative. Gate green.
+- 2026-11-19, architect, review of lane/x17b (Opus, Tier A): **accept with fixes**, 6: misread 2, omission 1, other 3.
+  Checked: every step and calc text of the three outputs and frames viewed in both themes (quest 8; cube 1, 3, 9, 12;
+  collision 4) against progression § A (A1–A4), § D7, word 41 and worked example 3 (0x8002, 0x8003, 0x8001, 0x2000,
+  0x2002, 0x8001, then 0x8002: equal), cube § A3, § B, § D, § J, § M and worked example 3, affixes C2 and D1–D2, and
+  collision § H, § I, the predicate order with monsters/spawn H1–H2 (the radius −1 probe tests the point itself once).
+  **Refactors preserve behaviour:** `collision.py check` over all 12 `workspace/logs/collision-*.log`, main against the
+  branch, byte-identical (dev-1's 92 collision mismatches are main's too); `cube.py check` over all 66 cube logs
+  identical; `cube.py vector` for every transmute of every cube log, 194 vectors, byte-identical; `quests.py check` over
+  the 54 s3a logs (57 660 checks, 0 mismatches) and the 61 `quests-*.log` identical, `test_quests` green. One output
+  changed: where `vector` refuses a transmute (cowopen 5, "the item seed goes back"), main printed the 14 draws before
+  the traceback and the branch printed none (fix 3). **Rulings.** (a) Row 35 as a 9-frame P: accepted. "Bits as events
+  arrive" is a sequence, which one frame cannot show, and the page's five-row table already is the static view; the
+  plan's row now reads P. (b) The cube tool reading a recorded transmute is within ADR-0036 and ADR-0034: the generator
+  reads the owner's files at cut time and only what a frame shows reaches the export. What the frames show is what the
+  spec's worked example 3 already gives (row 19, `kri`, the three input types, `pole`, magic, `pre=191` Savage, `lvl` 50,
+  `scy` of ten candidates), the page names the polearm recipe and its scythe of ten, plus the input codes and qualities,
+  the 20 row numbers of the scan and the eight draws: short illustrative rows, no table. Seeds in decimal words pass:
+  X1 and the hex allowance are about addresses in hex, a decimal seed word is neither, and no step text holds hex of 6+
+  digits; the `{hi:lo}` draw shape would also have passed. (c) Quest: `values: restated` stands (the start is the worked
+  example's, the writes the spec's rules). Cube: neither label was true, and `seed: none` printed "The picture takes no
+  seed" over a picture of seeds: a new `values: recorded` (fix 4). (d) The cut is ready: `export_build` runs a tool from
+  `tools/` with cwd the repository, and `cube_anim` reads `tools/../workspace/logs`, which the owner's checkout (and a
+  worktree's symlink) has; `export_publish` calls `export_build` the same way. A machine without the log drops the block
+  with a logged reason, not a failure: the orchestrator reads the cut's drop list at publish. **Fixes:** (1) misread
+  (`cube_anim.py`): the two affix-pick roll tests read "affix pick: roll test, result 0 -> roll" and "… 0 -> no affix",
+  the same bit with opposite outcomes; now "prefix pick: roll test, must roll" and "suffix pick", and the frame text says
+  the forced prefix makes the pick roll whatever the bit (affixes C2, D1); a test. (2) misread: "FORCED AFFIX ROW(S):
+  191": 191 is the `pre=` id, block row 190 (cube worked example 3); now "ID(S)". (3) other (`cube.py`): `vector_data`
+  attaches what it had to a `Mismatch` and `cmd_vector` prints it before re-raising, so the refused vectors print as on
+  main (194 of 194 equal again, tracebacks aside); a test. (4) other (`export_build.py`, `site_build.py`,
+  `test_export_build.py`, `pseudocode-conventions.md`'s key table): `values: recorded` appends "The inputs, the seed among
+  them, come from one recorded game; every value after them is computed by our model, which reproduces each value that
+  game logged." in place of the seed and values labels; the cube block takes `seed: recorded`, `values: recorded`, and
+  its help line says the same. (5) omission (row 37 caption): the four tests were one chain; NearWarpTest and the first
+  region test are the point pick's, the class-cell and collision tests the probe's, which tests the region again (spawn
+  H1–H2): said. (6) other (row 36 caption): the prefix's roll test now says why it rolls. **Cut:** the three blocks placed
+  for one build, `export_build.py --out workspace/export-x17b-review`: 89 pages, 0 dropped, the three folders built,
+  every caption sentence present with its label; `export_check` 0 failures; restored and removed. Tests green:
+  `test_quest_cube_collision_anim` (18), `test_export_build` (203), `test_export_check` (202), `test_site_build`,
+  `test_schematic_kit`, `test_quests`; gate green. **For the spec-writer:** place the three blocks as their Place lines
+  say, from `workspace/phase11/blocks-batch4-x17b.md` as corrected here. Ledger: verdict accept with fixes, 6 (misread
+  2, omission 1, other 3).

@@ -237,9 +237,22 @@ class Cube(unittest.TestCase):
         self.assertIn("result 192", st[4]["text"])
         self.assertIn("result 2", st[5]["text"])
         self.assertEqual(self.D["final"][0]["p"][0], 938)
+        # review of lane/x17b: the two roll tests name their side, and the forced prefix's must-roll
+        self.assertIn("prefix pick: roll test, must roll", st[9]["text"])
+        self.assertIn("suffix pick: roll test, low & 1, result 0 -> no affix", st[11]["text"])
         txt = " ".join(texts(out))
         self.assertIn("SCY q4 ilvl 50", txt)
         clean(self, out)
+
+    def test_vector_prints_the_draws_before_a_refusal(self):
+        # review of lane/x17b: before vector_data, `vector` printed the draws up to a refusal; it still does
+        buf = io.StringIO()
+        ns = type("NS", (), dict(excel=self.excel, log=self.ca.find_log("cowopen"), n=5))
+        with redirect_stdout(buf), self.assertRaises(self.cube.Mismatch):
+            self.cube.cmd_vector(ns)
+        printed = [ln for ln in buf.getvalue().splitlines() if re.match(r"^\d+\s+(game|unit|item)\s", ln)]
+        self.assertEqual(len(printed), 14)
+        self.assertNotIn("game seed at CUBX", buf.getvalue())
 
     def test_other_transmutes_build_and_refusals(self):
         import cube_anim
