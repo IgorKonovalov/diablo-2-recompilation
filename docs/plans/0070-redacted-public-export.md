@@ -2953,3 +2953,4 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   no page is wider than its viewport; `export_check` unchanged. ADR-0037's owed browser run for batch 3 is done.
   **Manifest:** `docs/export/reviewed-pages.txt` unchanged (no new page). Scratch builds and copies deleted. Gate
   green. Ledger: verdict accept with fixes, 1 (misread 1).
+- 2026-11-19 — **Phase 11 batch 3 served.** The owner pushed the export repository's `main` (cut commit 93f455a: the nine widgets of rows 23 to 31 and the narrow-screen style fix); the Pages run passed and the checksum widget's files are served.
