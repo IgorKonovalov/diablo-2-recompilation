@@ -219,7 +219,7 @@ function describe(row, data) {
     return w.readVar + " " + row.arg + (row.arg > 2 || row.arg < 0 ? " (" + w.readVarEmpty + ")" : "") + " -> " + peek;
   }
   if (op === 7 || op === 8 || op === 9) return w.push + " " + row.arg;
-  if (op === 1) return w.invoke + " " + row.arg + ": " + w.invokeNone;
+  if (op === 1) return w.invoke + " " + row.arg + ": " + w.callNone;
   if (op >= 0x0a && op <= 0x14) {
     const o = data.ops.items.at(op - 0x0a);
     return o.text + " (" + o.sym + "): " + w.binary + " " + peek;

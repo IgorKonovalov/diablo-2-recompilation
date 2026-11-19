@@ -77,6 +77,6 @@
   },
   "liveBuy": "Buy price",
   "liveSell": "sell price",
-  "note": "Computed by our model of the price core for modes 0 and 1, not observed in the game. Left out: the repair value and mode 3, items that are armour, tomes, quivers, ears, body parts or stacks, magic, rare, crafted, superior and tempered items (the per-stat terms of C5 and the staff-mod term), a quest group of the buyer, the quantity, durability and the gamble price. Items of those kinds are not priced by this table."
+  "note": "Computed by our model of the price core for modes 0 and 1, not observed in the game. Left out: the repair value and mode 3, items that are armour, tomes, quivers, ears, body parts or stacks, magic, rare, crafted, superior and tempered items (the per-stat terms of C5), the staff-mod term of any item with a single-skill stat (C1, C6), a unique with no record, the early exits (a starting item priced 1), a quest group of the buyer, the quantity, durability and the gamble price. Items of those kinds are not priced by this table."
  }
 }

@@ -449,14 +449,14 @@ the log): Phase 2 takes the narrowed rules, Phase 2b is new, Phase 3 adds the si
   | 30 | foundations/randomness, Two roots to Rooms | Type a game seed, expand the seed tree (fallback: row 2) | W | as row 2 | `widgets/seedtree`, twin `drlg.py` | M | 3 |
   | 31 | running/pathing; spec-path/search § L | Draw walls on a toy grid, watch the search (fallback: row 15) | W | as row 15 | `widgets/path`, twin `path.py` | L | 3 |
   | 32 | spec-data/calc § B, D | A toy formula evaluated step by step | W | calc § B, § D | `widgets/calc`, twin `calc.py` | M | 4 |
-  | 33 | items/inventory, Where an item can go | Toy items placed in a toy grid by the placement rule | W | inventory § Where an item can go | `widgets/grid`, twin `inventory.py` | M | 4 |
+  | 33 | items/inventory, Where an item can go | Toy items placed in a toy grid by the placement rule | W | inventory § Where an item can go | `widgets/grid`, twin `item_inventory.py` | M | 4 |
   | 34 | items/economy, Prices; spec-items/economy § A–C | A toy item's price, term by term | W | economy § A–C | `widgets/price`, twin `economy.py` | M | 4 |
   | 35 | running/quests, A few quests, bit by bit; spec-quests/progression § A, D | A quest word's bits as events arrive | S | progression § A, § D; one quest the page walks | new `quest_anim.py` over `quests.py` | M | 4 |
   | 36 | items/items-other-paths, The Horadric Cube; spec-items/cube § A, B, M | A recipe matched and its output built, with its draws | P | cube § A–B, § M; one recipe the page names | new `cube_anim.py` over `cube.py vector` | M | 4 |
   | 37 | world/levels, The collision grid; world/monsters, Placement | The four spawn tests on a toy room's subtiles | P | the levels and monsters sections; a toy room | new `collision_anim.py` over `collision.py` | M | 4 |
   | 38 | world/objects, The eight slots, Finding a spot | A room's object slots, the member pick, the spot search | P | objects § The eight slots, § Finding a spot; seed 0xC0FFEE | new `objects_anim.py` over `objects.py` | M | 4 |
   | 39 | spec-skills/missiles § D, E | A missile's per-frame step and its hit | P | missiles § B, § D–E; a toy missile | new `missile_anim.py` over `skills.py` | M | 4 |
-  | 40 | characters/stats-and-states, Regeneration | The regeneration accumulator over frames | W | stats-and-states § Regeneration; toy inputs | `widgets/regen`, twin `stats.py` | S | 4 |
+  | 40 | characters/stats-and-states, Regeneration | The regeneration tick applied frame by frame | W | stats-and-states § Regeneration; toy inputs | `widgets/regen`, twin `stats.py` | S | 4 |
 
   40 candidates and the kit: 24 P, 2 S (rows 14, 35), 14 W. Batch 1 is the kit and rows 1 to 8 (rows 3 and 4 are new
   blocks on existing tools); batch 2, rows 9 to 21 (13); batch 3, rows 22 to 31, the first 10 widgets; batch 4,
@@ -2992,3 +2992,41 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   - **Blocks** for the spec-writer in `workspace/phase11/blocks-batch4-x17a.md` (not in git): ids `calc-toy-formula` (spec-data/calc,
     end of § D), `grid-placement-toy` (wiki/inventory, end of "The placement search"), `price-toy-item` (wiki/economy, end of
     "Three values carried together"), `regen-toy-ticks` (wiki/stats-and-states, end of "Regeneration"); all `fallback: text`.
+- 2026-11-19, architect, review of lane/x17a (Tier A on Opus; ADR-0037's widget review: every `widget.js` and
+  `widget.json` read whole, `twins_x17a.py`, the model diffs, the block drafts). **Accept with fixes**, 6: error 2,
+  omission 3, other 1.
+  - **Checked.** Calc restates § B's byte table and § D steps 0 to 5 (operand cut at step 3, 4c past the table with the
+    arguments left, 4g's zero divisor and truncation, 4h by squaring with `imul`, equal mod 2^32 to the loop, 4j's
+    short ternary, 4k, 4l); grid restates inventory B1 to B4 (the four orders, `Fits`, `Score` with whole edges, a tie
+    keeps the earlier spot, a best of 0 fails); price restates economy § A, C1 to C8 and D3, D4 (`q` 1), D6, D7 for the
+    item it offers (the large form tested on `P` in `AddTerm` and on the sell multiplier for `S`); regen restates
+    states E2 to E4 in order. Every array is `toy` but calc's `ops`; a scratch cut (`export_build.py`, 89 pages, 0
+    dropped; removed) prints spec-data/calc § B's table and § D's pseudocode with 4g, 4h and 4j, so `rows: page` holds
+    on that page and row 32's block belongs there, as drafted. A sweep of my own, 600 calc cases (power left out) and
+    300 per other widget, out-of-range inputs and grades 3, 4, 6 included: 0 differences between node and the twins.
+    **Models:** re-ran on `main` (425f76a8) and the lane: `stats.py check` over `s1017-run.lst` (report and `--json`),
+    `economy.py check -v` over the 38 claim logs of both runs (0 mismatches), `calc.py check -v` over `calc-s3-*.log`
+    (44 529 evaluations, 0 mismatches) and `calc.py compile`: all four byte-identical. `regen_tick` is the old block
+    verbatim with the class read deferred as before. The `01` fix is § D step 3 as written ("an operand of op would
+    start at or past len: return 0") and the model's `04` to `09` already did it; no stock pool or logged evaluation
+    ends on `01`, as the identical outputs show. **Rulings:** (1) grid's twin is `item_inventory.py`: the row's
+    `inventory.py` was the architect's guess, which the row text leaves the lane to confirm; the row is corrected.
+    (2) Regen: states § E has no accumulator, every stat changes each frame; the row's word was wrong, now "the
+    regeneration tick applied frame by frame". (3) Calc's refusal of a partly cut operand is sound: step 3 speaks of
+    an operand that starts at or past the end, and what the evaluator reads past the buffer is on no page; the
+    refusal is now said in the note and the caption. Stopping at `INT32_MIN ÷ −1` follows 4g, which is `[I]`, so the
+    text now says "by a reading of the code". (4) The refusal walk stops at an end byte but not at a trap, so a cut
+    operand after `INT32_MIN ÷ −1` is refused though the run would stop first; the twin does the same, and a refusal
+    claims nothing; no fix.
+  - **Fixes (error).** (1) Calc's row for byte `01` read `text.word.invokeNone`, a key `widget.json` does not have (it
+    holds `callNone`): every function-byte row showed "undefined"; the mount test shows only the first case. (2) The
+    last calc case set `code=`, a key the widget does not read: it ran the default formula, so the wrap of
+    `lvl × par1 + par2` was not tested; now `formula=`, fixture rewritten.
+  - **Fixes (omission).** (3) Price's note and caption put the staff-mod term under magic items; C1 applies it to any
+    item with a single-skill stat; also left out unsaid: a unique with no record and the starting-item exit (B3). Both
+    now said. (4) Regen stated modes 2 and 6 and the bonus gain in mode 4 and the others as fact; states E3 has them
+    `[I]` (the wiki says "read from the code"): note and caption now say so, as the life floor already did. (5) Calc's
+    note and caption now state the cut-operand refusal (ruling 3).
+  - **Fix (other).** (6) Calc caption: "a division by 0 gives 0 and truncates toward zero" reworded; the plan rows 33
+    and 40 corrected (rulings 1, 2). Block drafts in `workspace/phase11/blocks-batch4-x17a.md` carry fixes 3 to 6.
+    Tests 509 checks green, twins check clean, gate green.

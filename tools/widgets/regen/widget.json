@@ -89,6 +89,6 @@
   "liveFrames": "frames: life",
   "liveStam": "stamina",
   "liveMana": "mana",
-  "note": "Computed by our model of the tick, not observed in the game. Left out: the check that the player is alive, the freeing of the potion lists at the maximum, and how the stats and the unit's mode are made up; the toy numbers do not change from frame to frame except by the tick itself."
+  "note": "Computed by our model of the tick, not observed in the game. The floor at 256, the stamina of modes 2 and 6, and the gain with a bonus of 1000 or more in mode 4 or a mode outside 1 to 6 follow a reading of the code, not a run. Left out: the check that the player is alive, the freeing of the potion lists at the maximum, and how the stats and the unit's mode are made up; the toy numbers do not change from frame to frame except by the tick itself."
  }
 }

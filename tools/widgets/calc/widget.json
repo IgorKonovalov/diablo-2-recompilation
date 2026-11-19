@@ -53,7 +53,7 @@
    "binary": "right operand popped, then left; push",
    "halt": "ends the evaluation: the value is the top of the stack, 0 when it is empty",
    "cut": "the operand starts at or past the end: the evaluation returns 0",
-   "trap": "the divide of the smallest 32-bit number by -1: the processor raises a divide error here, so nothing is returned",
+   "trap": "the divide of the smallest 32-bit number by -1: by a reading of the code the processor raises a divide error here, so nothing is returned",
    "past": "the bytes ran out: the evaluation returns 0, whatever is on the stack",
    "blank": "no bytes: the evaluation returns 0"
   },
@@ -61,6 +61,6 @@
   "errLong": "More than 40 bytes were typed; the table shows none.",
   "errCut": "An operand starts inside the bytes and runs past the last one; the table shows none.",
   "result": "Value returned",
-  "note": "Computed by our model of the evaluator, not observed in the game. Values are 32-bit integers that wrap; the stack holds 64 values. Left out: the compiler that turns formula text into bytes, the contexts and their variables and function tables, and the stock formulas themselves; the bytes are toy bytes typed here, not read from any file."
+  "note": "Computed by our model of the evaluator, not observed in the game. Values are 32-bit integers that wrap; the stack holds 64 values. An operand that starts inside the bytes and runs past the last one is refused: the page does not say what the evaluator reads there. Left out: the compiler that turns formula text into bytes, the contexts and their variables and function tables, and the stock formulas themselves; the bytes are toy bytes typed here, not read from any file."
  }
 }
