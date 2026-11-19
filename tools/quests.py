@@ -254,6 +254,44 @@ def deactivated_writes(qid, ev, e, word=None):
     return []
 
 
+# ---------------------------------------------------------------- the quest word, as pure functions (A1-A3)
+STEP_MASK = 0x0FFC           # ClearSteps: bits 2..11 (A2)
+
+
+def rec_load(w):
+    """The loader's rule on one saved word of quests 0..41 (A3): bits 13 and 14 cleared, bit 15 set when bit 1 is."""
+    w &= ~0x6000
+    return w | 0x8000 if w & 2 else w
+
+
+def rec_apply(w, tag, bit=None):
+    """One record write on a word: QS sets `bit`, QC clears it, QK is ClearSteps (A1, A2)."""
+    if tag == "QS":
+        return w | 1 << bit
+    if tag == "QC":
+        return w & ~(1 << bit)
+    return w & ~STEP_MASK
+
+
+# a reward message's writes to a second word (word, tag, bit, call site), merged with TALK_STEPS' rows by call site:
+# quest object 1 keeps word 41 as its second word and the message 0x4C of NPC 148 sets its bits 13 and 1 (the Hell
+# respec offer) between the clear of word 1 bit 1 and ClearSteps (progression, word 41)
+TALK_SECOND = {(148, 0x4C): [(41, "QS", 13, 0x0058FF2F), (41, "QS", 1, 0x0058FF3E)]}
+
+
+def talk_writes(rec, npc, msg):
+    """The record writes of one e11 NPC message, in call order, on the record before it (a list of words): [(word, tag,
+    bit, call site)] of the TALK_STEPS rows it fires and of TALK_SECOND, sorted by call site. A second word's write is
+    made only when its message's own row fires (quest object 1's reward needs word 1 bit 1)."""
+    out = []
+    for row in talk_fires(npc, msg, rec):
+        for t, b, a in row[4]:
+            out.append((row[0], t, b, a))
+        if row[0] == 1:
+            out += TALK_SECOND.get((npc, msg), [])
+    return sorted(out, key=lambda e: e[3])
+
+
 # ---------------------------------------------------------------- the NPC talk steps (part 2)
 # (word, NPC class or None for any, messages, condition on the word before, [(tag, bit, call site), ...]): the e11
 # rows of the per-quest bit tables of quests/0001 § 7-§ 10 whose trigger is one NPC message. A call site is the
@@ -1133,9 +1171,7 @@ class Checker:
             a, b = d2s.quest_words(fa.read()), d2s.quest_words(fb.read())
         self.ln = 0
 
-        def load(w):
-            w &= ~0x6000
-            return w | 0x8000 if w & 2 else w
+        load = rec_load
         loaded = [[load(w) if i < 42 else w for i, w in enumerate(a[dd])] for dd in range(3)]   # 42-47 copied
         if self.joinrec is None:
             self.ok(False, "saved words", "no join logged")
@@ -1156,12 +1192,7 @@ class Checker:
             if d["rec"] != recp:
                 self.hit("saved words: a write to another record (not modelled)")
                 continue
-            if tag == "QS":
-                pred[diff][d["w"]] |= 1 << d["b"]
-            elif tag == "QK":                # ClearSteps: bits 2-11
-                pred[diff][d["w"]] &= ~0x0FFC
-            else:
-                pred[diff][d["w"]] &= ~(1 << d["b"])
+            pred[diff][d["w"]] = rec_apply(pred[diff][d["w"]], tag, d.get("b"))
             nw += 1
         for dd in range(3):
             for w in range(len(b[dd])):

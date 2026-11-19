@@ -398,7 +398,8 @@ def main():
                                                       "path_anim.py", "runeword_anim.py", "move_anim.py",
                                                       "outdoor_anim.py",
                                                       "pack_anim.py", "pool_anim.py",
-                                                      "combat_anim.py", "hire_anim.py", "affix_anim.py"), "schematic tools only")
+                                                      "combat_anim.py", "hire_anim.py", "affix_anim.py",
+                                                      "quest_anim.py", "cube_anim.py", "collision_anim.py"), "schematic tools only")
     ok(eb.tool_has_schematic("maze_anim.py") and eb.tool_has_schematic("tc_anim.py")
        and not eb.tool_has_schematic("site_build.py") and not eb.tool_has_schematic("../x.py"), "tool_has_schematic")
     # end to end on a small docs tree

@@ -212,6 +212,14 @@ def or_block(cells, w, row, col, v):
                 cells[i] |= v
 
 
+def near_waypoint(px, py, wd, x, y):
+    """I1's second test: the type-11 point (tiles, both above 0) is near when (x - 5px)^2 + (y - 5py)^2 < WarpDist."""
+    if px <= 0 or py <= 0:
+        return False
+    dx, dy = x - 5 * px, y - 5 * py
+    return dx * dx + dy * dy < wd
+
+
 class World:
     """Collision state of one log, fed every collision event in line order."""
 
@@ -963,6 +971,13 @@ class World:
         lg = self.P["lg"].get(r)
         if lg is None:
             raise NotLogged("logic record of room %08x" % r)
+        return self.logic_id(lg, x, y)
+
+    @staticmethod
+    def logic_id(lg, x, y):
+        """G4 on one logic record (the part of LogicRegionIdAt after the room is found): a single-box record gives its
+        first box's id (-1 with none); else the box grid at (x / 5 - tx, y / 5 - ty), division truncating toward zero,
+        gives the box's id or -1. lg: {"fl", "first", "t": (tx, ty), "grid": (_, _, rows of ids or None)}."""
         if lg["fl"] & 1:
             return lg["first"] if lg["first"] is not None else -1
         tx, ty = lg["t"]
@@ -970,7 +985,7 @@ class World:
         gy = int(y / 5) - ty
         g = lg.get("grid")
         if g is None:
-            raise NotLogged("box grid of room %08x" % r)
+            raise NotLogged("box grid of room")
         v = g[2][gy][gx]
         return -1 if v is None else v
 
@@ -979,13 +994,20 @@ class World:
         b = t.m(cls, 0x02, "<h") if t.valid(cls) else -1
         if b == 298:
             self.hit("SpawnClassCellTest: BaseId 298 (vilemother1) passes with flag 1")
+        elif b in CLASS_CELL:
+            self.hit("SpawnClassCellTest: BaseId %d offset-cell tests" % b)
+        return self.class_cell_base(b, hint, x, y, flag)
+
+    def class_cell_base(self, b, hint, x, y, flag=1):
+        """H1 from the class's BaseId: 298 passes with flag 1, a BaseId not in the table passes, else the offset cell
+        is tested in its room with size 2 and the row's mask (a room none fails)."""
+        if b == 298:
             return 1 if flag else (1 if self.collision_test(hint, x, y, 2, 0x3C01) == 0 else 0)
         if b not in CLASS_CELL:
             return 1
         dx, dy, mask = CLASS_CELL[b]
         cx, cy = x + dx, y + dy
         r = self.room_at(hint, cx, cy)
-        self.hit("SpawnClassCellTest: BaseId %d offset-cell tests" % b)
         if not r:
             return 0
         return 1 if self.collision_test(r, cx, cy, 2, mask) == 0 else 0
@@ -1012,8 +1034,7 @@ class World:
         if q["x"] <= 0 or q["y"] <= 0:
             self.hit("NearWarpTest: no type-11 point")
             return 0
-        dx, dy = x - 5 * q["x"], y - 5 * q["y"]
-        if dx * dx + dy * dy < wd:
+        if near_waypoint(q["x"], q["y"], wd, x, y):
             self.hit("NearWarpTest: near the type-11 point")
             return 1
         return 0

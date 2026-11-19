@@ -2954,3 +2954,32 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   **Manifest:** `docs/export/reviewed-pages.txt` unchanged (no new page). Scratch builds and copies deleted. Gate
   green. Ledger: verdict accept with fixes, 1 (misread 1).
 - 2026-11-19 — **Phase 11 batch 3 served.** The owner pushed the export repository's `main` (cut commit 93f455a: the nine widgets of rows 23 to 31 and the narrow-screen style fix); the Pages run passed and the checksum widget's files are served.
+- 2026-11-19, archivist, lane/x17b (Phase 11 batch 4: rows 35, 36, 37). Three generators on the kit, each with
+  `--theme dark|light`, the data root first, `--schematic` accepted, in `SCHEMATIC_TOOLS` (and `test_export_build`'s
+  tuple, one line); tests in `tools/test_quest_cube_collision_anim.py` (17, light and dark through the export check).
+  Entry points added to the models, the tools call them and the existing checkers call them too (no second copy of a
+  rule): `tools/quests.py` `rec_load` (A3), `rec_apply` (A1, A2), `talk_writes` and `TALK_SECOND` (the reward message's
+  writes in call order, word 41's pair beside the word 1 row); `tools/cube.py` `vector_data` (what `vector` printed, as data;
+  `cmd_vector` prints from it, its output for the row 19 transmute byte-identical before and after) and `match_input`'s
+  optional `claims` list; `tools/collision.py` `World.logic_id` (G4 on one record), `World.class_cell_base` (H1 from a
+  BaseId) and `near_waypoint` (I1's second test), with `logic_region_id_at`, `spawn_class_cell_test` and `near_warp_test`
+  calling them (the checks of two collision logs and of `test_quests` unchanged). **Row 35, `tools/quest_anim.py`**
+  (a static-style picture, 9 frames): word 1 and word 41 through the spec's worked example 3, one write per frame, the
+  bits as two rows of 16 cells; the words come from the model, the start (0x0002, 0) is the example's; the block takes
+  `values: restated`. **Row 36, `tools/cube_anim.py --run kinds2 --n 4`** (13 frames): the Savage polearm transmute
+  (row 19, a Kri, a gem, a staff, a belt): the cube, the row scan (15 rows passed over by the count, 4 reach the
+  matcher, row 19 fits), the inputs with their claims, output A and its level, the eight draws one frame each, the cube
+  after. The transmute is a recorded one (`workspace/logs/cube-<run>-*.log`, exactly one file; `--n` the transmute),
+  because `vector` is the model's own check of a logged transmute and needs the cube's items and the press's game seed;
+  the match, the draws and the output are the model's, asserted equal to `cube.py vector`'s lines. Seeds are shown by
+  their low word in decimal (no hex of 6+ digits in a step text). Block `values: restated`; a log with no produced item
+  gives exit 2. **Row 37, `tools/collision_anim.py`** (9 frames): seven candidate points on a toy room (a wall, a block,
+  one warp point, one waypoint point, two logic regions), each through NearWarpTest, LogicRegionIdAt,
+  SpawnClassCellTest (`--base`, default 528) and CollisionTest in the predicate order, the later tests marked not
+  called after a failure; one point stands. The tests are `World.collision_test` on a one-room world, `logic_id`,
+  `class_cell_base`, `near_waypoint` and `spawn_place.near_point`; NearWarpTest's side effects are named, not drawn.
+  **Blocks:** `workspace/phase11/blocks-batch4-x17b.md` (quests.md, "A few quests, bit by bit"; items-other-paths.md,
+  "The Horadric Cube"; levels.md, "The collision grid and logic regions"); each parses with `export_build`'s parser and
+  its caption passes `caption_sentences` with no drop. **Open for review:** the cube block's `restated` label (the values are
+  the model's, on a recorded transmute); the cube tool reads a log by run name, so the export cut needs `workspace/logs`
+  beside `workspace/merged`; the toy numbers of row 37 (WarpDist 100 as pack_anim's) are illustrative. Gate green.
