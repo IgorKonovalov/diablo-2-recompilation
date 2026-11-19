@@ -279,7 +279,8 @@ cell. The walk tests cells against the room's [collision grid](../glossary.md)
   re-created when its room comes back, the marks were compared in a run and agree
   ([levels](levels.md#rooms-that-come-and-go-release-and-restore)).
 - The near-warp test can activate another room in the middle of the pass and, in some levels, step that level's
-  seed ([drlg/collision](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)).
+  seed ([drlg/collision](../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects)). The
+  [levels page](levels.md#the-collision-grid-and-logic-regions) steps a toy room through the four tests in their order.
 
 ```illustration
 id: monsters-pack-toy-room
