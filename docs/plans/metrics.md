@@ -886,6 +886,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-17 | lane/x14s | 0070 export residue | spec-writer | 95 228 | 48 | 10 | — | accept (Opus, orchestrator) | 0 |
 | 2026-11-17 | lane/x14a | 0070 builder sub names | archivist | 98 798 | 58 | 16 | — | accept w/ fixes (Opus) | miscount 1, omission 1, other 1 |
 | 2026-11-17 | lane/x14a review | 0070 builder sub names | architect | 114 311 | 56 | 13 | — | accept w/ fixes (Opus) | miscount 1, omission 1, other 1 |
+| 2026-11-19 | lane/x15i | 0070 X4 identity | archivist | 50 733 | 11 | 2 | — | accept (Sonnet) | — |
+| 2026-11-19 | lane/x15i check | 0070 X4 identity | architect-check | 48 615 | 6 | 1 | — | accept (Sonnet) | — |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not

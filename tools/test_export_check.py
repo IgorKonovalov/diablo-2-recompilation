@@ -327,6 +327,17 @@ def main():
         ok("external URL" not in ec.html_problems(txt, set()), f"html_problems passes text {txt!r}")
     for txt in ("ws://x", "wss://x", " ws:x", "see WS:x", "(https://x.y)", "ftp:x", "//cdn.example.com/a.js"):
         ok("external URL" in ec.html_problems(txt, set()), f"html_problems fails URL {txt!r}")
+    # identity strings: the repository's name and owner e-mail trip, a worktree folder's name does not (x15i)
+    rv = "origin\thttps://github.com/owner/some-repo-name.git (fetch)\n"
+    cd = "/home/owner/Work/main-checkout-dir/.git"
+    got = ec.identity_strings(rv, "me@example.org", cd)
+    for want in ("some-repo-name", "me@example.org", "main-checkout-dir", "main-checkout"):
+        ok(want in got, f"identity has {want!r}")
+    ok("base" not in ec.identity_strings(rv, "me@example.org", cd), "worktree folder name is not an identity")
+    ok("X4" in {h[0] for h in ec.check_text("built from some-repo-name", got)}, "X4 fails the repository's name")
+    ok("X4" in {h[0] for h in ec.check_text("mail me@example.org", got)}, "X4 fails the owner's e-mail")
+    ok("X4" not in {h[0] for h in ec.check_text("the base of the tree", got)}, "X4 passes a word that was a worktree name")
+    ok(ec.RE_HOME.search("/home/owner/Work/x") is not None, "home path still trips")
     print(f"TEST export_check: {checks} checks, {len(failed)} failed")
     return 1 if failed else 0
 
