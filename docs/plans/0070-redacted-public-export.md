@@ -2954,3 +2954,24 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   **Manifest:** `docs/export/reviewed-pages.txt` unchanged (no new page). Scratch builds and copies deleted. Gate
   green. Ledger: verdict accept with fixes, 1 (misread 1).
 - 2026-11-19 — **Phase 11 batch 3 served.** The owner pushed the export repository's `main` (cut commit 93f455a: the nine widgets of rows 23 to 31 and the narrow-screen style fix); the Pages run passed and the checksum widget's files are served.
+- 2026-11-19, archivist, lane/x17c (Phase 11 batch 4: rows 38, 39). Two generators on the kit, each with `--theme`, in
+  `SCHEMATIC_TOOLS` (two new lines in `export_build.py` and its assertion). **`tools/objects_anim.py`** (row 38, 14 frames
+  at the default seeds): a toy level with three used slots, three groups, PopulateFn 3 members and one 48 by 40 room with a
+  toy wall and pillar; the eight slot rolls on the room seed (objects D1), each pick's PROB walk, handler 3's count and
+  one frame per placer attempt (F1: two draws, the margin, the box test, the accepted spot marking the grid). Room seed
+  0xC0FFEE, object-region seed 12345 (`--oseed`), both labelled illustrative. **`tools/missile_anim.py`** (row 39, 11
+  frames): a toy row at level 10: the creation numbers (B1), frame 1 in detail, the fifth-step acceleration and the cap
+  (D4), the first frame past the activate mark, the frame that finds the unit (D3), E1's filters and the owner's to-hit
+  roll, the result for a hit and for a miss. **Models:** `objects.py` and `skills.py` are log checkers with no forward
+  function (the x12e case), so each tool writes the cited rules out with a trace and the tests feed it to the model:
+  `objects.solve` over the toy slot loop (exactly one solution, same picks and end seed, nine seed pairs), a replay of
+  every placer call on `objects.Seed` with a separately written box test, and `skills.Checker.mf` on each frame's
+  velocity state, position and frames left (0 mismatches, eight seeds), the roll against `combat.rng_range`. No model file
+  changed. **Toy departures, stated in the docstrings and the captions:** row 38 reads cells outside the toy room as free
+  (collision § E has the real rule); row 39 tests the cell a frame ends in, not the cells of the step, takes the
+  to-hit chance (70 percent) as an input, and shows neither the missile's seed, the damage draws, the knockback nor the
+  town tests. No table is read and no game file opened; frames show only toy numbers (ADR-0009 risk 3 does not arise).
+  Tests: `test_objects_anim` (6), `test_missile_anim` (7), `test_export_build`, `test_export_check`, `test_schematic_kit`,
+  `test_anim_schematic`; gate green. Frames viewed in both themes (objects 0, 3, 7, 8, 13; missile 1, 3, 4, 6, 7, 9),
+  overlaps fixed; the missile rows assert their two texts never meet. Blocks: `workspace/phase11/blocks-batch4-x17c.md`
+  (row 38 in wiki/objects.md "Finding a spot", row 39 in wiki/skills.md "Missiles: the hit").
