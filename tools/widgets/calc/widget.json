@@ -1,0 +1,66 @@
+{
+ "marker": "widget-only/1",
+ "name": "calc",
+ "rule": { "maxBytes": 40, "stackLimit": 64, "intMin": -2147483648 },
+ "inputs": {
+  "formula": { "default": "04 00 07 05 0A 04 00 04 00 07 03 12 04 01 11 16 00" },
+  "lvl": { "min": -2147483648, "max": 2147483647, "default": 3 },
+  "par1": { "min": -2147483648, "max": 2147483647, "default": 4 },
+  "par2": { "min": -2147483648, "max": 2147483647, "default": 0 }
+ },
+ "ops": {
+  "rows": "page",
+  "items": [
+   { "sym": "<", "text": "less than" },
+   { "sym": ">", "text": "greater than" },
+   { "sym": "<=", "text": "less or equal" },
+   { "sym": ">=", "text": "greater or equal" },
+   { "sym": "==", "text": "equal" },
+   { "sym": "!=", "text": "not equal" },
+   { "sym": "+", "text": "add" },
+   { "sym": "-", "text": "subtract" },
+   { "sym": "x", "text": "multiply" },
+   { "sym": "/", "text": "divide, truncating toward zero; 0 when the divisor is 0" },
+   { "sym": "^", "text": "power: 1 when the exponent is 0 or less, else the base multiplied by itself exponent minus 1 times" },
+   { "sym": "-", "text": "negate" },
+   { "sym": "?:", "text": "condition, then and else: the then-value when the condition is not 0" }
+  ]
+ },
+ "presets": {
+  "rows": "toy",
+  "items": [
+   { "name": "a condition: (lvl < 5) ? lvl : lvl x 3 - par1", "formula": "04 00 07 05 0A 04 00 04 00 07 03 12 04 01 11 16 00" },
+   { "name": "a sum scaled: (par1 + par2) x 2", "formula": "04 01 04 02 10 07 02 12 00" },
+   { "name": "a division: lvl / 3 + 2", "formula": "04 00 07 03 13 07 02 10 00" },
+   { "name": "a power: 2 ^ lvl", "formula": "07 02 04 00 14 00" },
+   { "name": "a function call with no table: 5, 3, then function 0", "formula": "07 05 07 03 01 00 00" }
+  ]
+ },
+ "text": {
+  "intro": "Type a toy formula as bytes in hex, up to 40, apart by spaces or commas, and the three numbers it may read: variable 0 is lvl, 1 is par1, 2 is par2, and any other variable reads 0. The table runs the evaluator one byte at a time. The bytes and numbers offered first are illustrative; no formula of the game is read.",
+  "formulaLabel": "Formula bytes in hex (typed by hand)",
+  "caps": { "lvl": "lvl (variable 0)", "par1": "par1 (variable 1)", "par2": "par2 (variable 2)" },
+  "presetLabel": "Illustrative formulas",
+  "presetNone": "choose one",
+  "columns": { "rows": "toy", "items": ["Step", "Bytes", "What happens", "Stack after (bottom first)"] },
+  "word": {
+   "readVar": "read variable",
+   "readVarEmpty": "no such variable here: reads 0",
+   "push": "push the constant",
+   "invoke": "call function",
+   "callNone": "this widget has no function table: pushes 0 and the arguments stay",
+   "negate": "negate the top",
+   "binary": "right operand popped, then left; push",
+   "halt": "ends the evaluation: the value is the top of the stack, 0 when it is empty",
+   "cut": "the operand starts at or past the end: the evaluation returns 0",
+   "trap": "the divide of the smallest 32-bit number by -1: the processor raises a divide error here, so nothing is returned",
+   "past": "the bytes ran out: the evaluation returns 0, whatever is on the stack",
+   "blank": "no bytes: the evaluation returns 0"
+  },
+  "errBad": "A token is not one or two hex digits:",
+  "errLong": "More than 40 bytes were typed; the table shows none.",
+  "errCut": "An operand starts inside the bytes and runs past the last one; the table shows none.",
+  "result": "Value returned",
+  "note": "Computed by our model of the evaluator, not observed in the game. Values are 32-bit integers that wrap; the stack holds 64 values. Left out: the compiler that turns formula text into bytes, the contexts and their variables and function tables, and the stock formulas themselves; the bytes are toy bytes typed here, not read from any file."
+ }
+}

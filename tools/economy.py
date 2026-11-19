@@ -462,11 +462,17 @@ class Model:
             P, S, R = w32(P + tdiv(dP, n)), w32(S + tdiv(dS, n)), w32(R + tdiv(dR, n))
             if magicplus:
                 P, S, R = self.staff_mods(it, P, S, R, n)
+            if trace is not None:
+                trace.append(("added", P, S, R))
         for c in it.d.get("ch", []):
             h = tdiv(s32(T.base(c), 0xE0), 2)
             P, S, R = w32(P + h), w32(S + h), w32(R + h)
+        if trace is not None:
+            trace.append(("sockets", P, S, R))
         if self.ethereal(it):
             S = tdiv(S, 4)
+        if trace is not None:
+            trace.append(("ethereal", P, S, R))
         if T.own_type(it.c)[0x21] < 7:
             S = tdiv(S, 4)
         if trace is not None:

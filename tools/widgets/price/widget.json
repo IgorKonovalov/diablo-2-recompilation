@@ -1,0 +1,82 @@
+{
+ "marker": "widget-only/1",
+ "name": "price",
+ "rule": { "unit": 1024, "large": 65535, "quarter": 4, "half": 2, "pct": 100, "floor": 1 },
+ "inputs": {
+  "cost": { "min": 0, "max": 2000000, "default": 1000 },
+  "grade": { "min": 1, "max": 7, "default": 2 },
+  "ident": { "min": 0, "max": 1, "default": 1 },
+  "recMult": { "min": -3000000, "max": 3000000, "default": 0 },
+  "recAdd": { "min": -3000000, "max": 3000000, "default": 0 },
+  "auto": { "min": 0, "max": 1, "default": 0 },
+  "autoMult": { "min": -3000000, "max": 3000000, "default": 0 },
+  "autoAdd": { "min": -3000000, "max": 3000000, "default": 0 },
+  "sockets": { "min": 0, "max": 6, "default": 0 },
+  "gem": { "min": 0, "max": 1000000, "default": 0 },
+  "eth": { "min": 0, "max": 1, "default": 0 },
+  "kind": { "min": 0, "max": 1, "default": 0 },
+  "sell": { "min": 0, "max": 100000, "default": 1024 },
+  "buy": { "min": 0, "max": 100000, "default": 512 },
+  "maxbuy": { "min": 0, "max": 100000000, "default": 100000 },
+  "reduce": { "min": 0, "max": 99, "default": 0 }
+ },
+ "presets": {
+  "rows": "toy",
+  "items": [
+   { "name": "a plain item", "cost": 1000, "grade": 2, "ident": 1, "recMult": 0, "recAdd": 0, "auto": 0, "autoMult": 0, "autoAdd": 0, "sockets": 0, "gem": 0, "eth": 0, "kind": 0, "sell": 1024, "buy": 512, "maxbuy": 100000, "reduce": 0 },
+   { "name": "a low quality item", "cost": 1000, "grade": 1, "ident": 1, "recMult": 0, "recAdd": 0, "auto": 0, "autoMult": 0, "autoAdd": 0, "sockets": 0, "gem": 0, "eth": 0, "kind": 0, "sell": 1024, "buy": 512, "maxbuy": 100000, "reduce": 0 },
+   { "name": "a unique with a record and two sockets", "cost": 4000, "grade": 7, "ident": 1, "recMult": 3000, "recAdd": 250, "auto": 0, "autoMult": 0, "autoAdd": 0, "sockets": 2, "gem": 1400, "eth": 0, "kind": 0, "sell": 1600, "buy": 512, "maxbuy": 100000, "reduce": 0 },
+   { "name": "an ethereal class item with an automagic term", "cost": 6000, "grade": 2, "ident": 1, "recMult": 0, "recAdd": 0, "auto": 1, "autoMult": 512, "autoAdd": 40, "sockets": 0, "gem": 0, "eth": 1, "kind": 1, "sell": 1024, "buy": 512, "maxbuy": 100000, "reduce": 0 },
+   { "name": "a large value at a capped buyer", "cost": 100000, "grade": 5, "ident": 1, "recMult": 4096, "recAdd": 999, "auto": 0, "autoMult": 0, "autoAdd": 0, "sockets": 0, "gem": 0, "eth": 0, "kind": 0, "sell": 1600, "buy": 600, "maxbuy": 150000, "reduce": 20 }
+  ]
+ },
+ "text": {
+  "intro": "Type a toy item and a toy buyer; the table walks the buy and the sell value step by step. The numbers offered first are illustrative.",
+  "caps": {
+   "cost": "Base cost of the item",
+   "grade": "Quality: 1 low, 2 normal, 5 set, 7 unique (any other number reads as normal)",
+   "ident": "Identified: yes (1) or no (0)",
+   "recMult": "Set or unique record: cost multiplier",
+   "recAdd": "Set or unique record: cost add",
+   "auto": "Has an automagic affix: yes (1) or no (0)",
+   "autoMult": "Automagic affix: multiplier",
+   "autoAdd": "Automagic affix: add",
+   "sockets": "Socketed children",
+   "gem": "Base cost of each child",
+   "eth": "Ethereal: yes (1) or no (0)",
+   "kind": "Class item (own type class below 7): yes (1) or no (0)",
+   "sell": "Buyer: sell multiplier (price paid by the player)",
+   "buy": "Buyer: buy multiplier (value paid to the player)",
+   "maxbuy": "Buyer: largest sell value",
+   "reduce": "Reduced prices of the player, 0 to 99"
+  },
+  "presetLabel": "Illustrative items",
+  "presetNone": "choose one",
+  "columns": { "rows": "toy", "items": ["Step", "Computation", "Buy value", "Sell value"] },
+  "steps": {
+   "first": "Base value",
+   "terms": "Terms of the automagic affix and the quality",
+   "added": "Values with the terms added",
+   "sockets": "After the sockets",
+   "ethereal": "After the ethereal quarter",
+   "value": "After the class-item quarter",
+   "npc": "After the buyer's multipliers",
+   "ceiling": "Sell value after the cap",
+   "price": "Price"
+  },
+  "calc": {
+   "first": "the cost, for both",
+   "terms": "each term is (m x value) / 1024 + a, divided first when the buy value is above 65535; a low item gets minus half of each value instead; none when not identified",
+   "added": "value plus its terms",
+   "sockets": "plus half the cost of each child",
+   "ethereal": "sell value / 4 when ethereal",
+   "value": "sell value / 4 again for a class item",
+   "npc": "each value scaled by its multiplier over 1024, divided first above 65535",
+   "ceiling": "the sell value is at most the buyer's largest",
+   "price": "buy value less its reduction; each at least 1"
+  },
+  "liveBuy": "Buy price",
+  "liveSell": "sell price",
+  "note": "Computed by our model of the price core for modes 0 and 1, not observed in the game. Left out: the repair value and mode 3, items that are armour, tomes, quivers, ears, body parts or stacks, magic, rare, crafted, superior and tempered items (the per-stat terms of C5 and the staff-mod term), a quest group of the buyer, the quantity, durability and the gamble price. Items of those kinds are not priced by this table."
+ }
+}

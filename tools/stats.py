@@ -543,6 +543,72 @@ class Model:
         return old or 0, v
 
 
+def regen_tick(st, m, state85, mana_regen):
+    """One player regeneration tick (stats/0002 § 6; docs/specs/stats/states.md E2 to E4). `st(k)` reads the full stat k,
+    `m` is the unit's mode, `state85` whether state 85 (no mana regeneration) is on, `mana_regen()` the class's CharStats
+    ManaRegen (read only when the state is off). Returns {6: (life, why), 10: (stamina, why), 8: (mana, why)}."""
+    out = {}
+    # life, sub_00580610_LifeRegenTick (0x0058061B-0x0058066E)
+    r = st(74)
+    hp = st(6)
+    if r:
+        n = s32(hp + r)
+        mx = st(7)
+        why = "life +74" if r > 0 else "life -74"
+        if n > mx:
+            n, why = mx, "life capped"
+        if n < 256:
+            n, why = 256, "life floored at 256"
+        out[6] = (n, why)
+    else:
+        out[6] = (hp, "life no 74")
+    # stamina, PLAYER_StaminaRegenTick (jump table 0x005805B8 by mode)
+    s, b = st(10), st(28)
+    shift, go = 8, True
+    if m in (1, 5):
+        shift = 8
+    elif m == 6:
+        shift = 9
+    elif m == 2:
+        shift = 9
+        if s < 256:
+            go = False
+    else:
+        go = b >= 1000
+    why = "stamina mode %d" % m
+    if go:
+        mx = st(11)
+        if s < mx:
+            dd = mx >> shift
+            if b:
+                t = dd * b
+                dd += abs(t) // 100 * (1 if t >= 0 else -1)
+            s = min(s + dd, mx)
+            why += " +%d" % dd
+        else:
+            why += " full"
+    else:
+        why += " none"
+    out[10] = (s, why)
+    # mana, PLAYER_ManaRegenTick (0x005806F0-0x005807EB)
+    cur, mx = st(8), st(9)
+    dm = 0
+    if not state85:
+        k = mana_regen() * 25 or 7500
+        dm = int(mx / k) if mx >= 0 else -int(-mx / k)
+        if dm < 1:
+            dm = 1
+        dm = muldiv(dm, st(27) + 100, 100)
+        why = "mana regen"
+    else:
+        why = "mana state 85"
+    dm += st(26)
+    dm = min(dm, mx - cur)
+    dm = max(dm, -cur)
+    out[8] = (cur + dm, why)
+    return out
+
+
 class Checker:
     def __init__(self, tables, verbose=False):
         self.t = tables
@@ -1263,65 +1329,8 @@ class Checker:
         if not hasattr(self, "tick_cases"):
             self.tick_cases = collections.Counter()
         st = lambda k: M.unit_stat(M.plr, k)
-        out = {}
-        # life, sub_00580610_LifeRegenTick (0x0058061B-0x0058066E)
-        r = st(74)
-        hp = st(6)
-        if r:
-            n = s32(hp + r)
-            mx = st(7)
-            why = "life +74" if r > 0 else "life -74"
-            if n > mx:
-                n, why = mx, "life capped"
-            if n < 256:
-                n, why = 256, "life floored at 256"
-            out[6] = (n, why)
-        else:
-            out[6] = (hp, "life no 74")
-        # stamina, PLAYER_StaminaRegenTick (jump table 0x005805B8 by mode)
-        s, b, m = st(10), st(28), d["m"]
-        shift, go = 8, True
-        if m in (1, 5):
-            shift = 8
-        elif m == 6:
-            shift = 9
-        elif m == 2:
-            shift = 9
-            if s < 256:
-                go = False
-        else:
-            go = b >= 1000
-        why = "stamina mode %d" % m
-        if go:
-            mx = st(11)
-            if s < mx:
-                dd = mx >> shift
-                if b:
-                    t = dd * b
-                    dd += abs(t) // 100 * (1 if t >= 0 else -1)
-                s = min(s + dd, mx)
-                why += " +%d" % dd
-            else:
-                why += " full"
-        else:
-            why += " none"
-        out[10] = (s, why)
-        # mana, PLAYER_ManaRegenTick (0x005806F0-0x005807EB)
-        cur, mx = st(8), st(9)
-        dm = 0
-        if 85 not in d.get("sb", []):
-            k = int(self.t.charstats[M.unit_class.get(M.plr, 0)]["ManaRegen"] or 0) * 25 or 7500
-            dm = int(mx / k) if mx >= 0 else -int(-mx / k)
-            if dm < 1:
-                dm = 1
-            dm = muldiv(dm, st(27) + 100, 100)
-            why = "mana regen"
-        else:
-            why = "mana state 85"
-        dm += st(26)
-        dm = min(dm, mx - cur)
-        dm = max(dm, -cur)
-        out[8] = (cur + dm, why)
+        mana_regen = lambda: int(self.t.charstats[M.unit_class.get(M.plr, 0)]["ManaRegen"] or 0)
+        out = regen_tick(st, d["m"], 85 in d.get("sb", []), mana_regen)
         return out
 
     def seed_open(self, stack, kind, d):

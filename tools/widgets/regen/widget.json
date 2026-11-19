@@ -1,0 +1,94 @@
+{
+ "marker": "widget-only/1",
+ "name": "regen",
+ "rule": {
+  "lifeFloor": 256,
+  "walkMin": 256,
+  "shiftSlow": 8,
+  "shiftFast": 9,
+  "bonusLimit": 1000,
+  "manaUnit": 25,
+  "manaDefault": 7500,
+  "percentBase": 100
+ },
+ "inputs": {
+  "life": { "min": 0, "max": 100000000, "default": 10000 },
+  "lifeMax": { "min": 0, "max": 100000000, "default": 30000 },
+  "lifeReg": { "min": -1000000, "max": 100000000, "default": 400 },
+  "stam": { "min": 0, "max": 16777215, "default": 2000 },
+  "stamMax": { "min": 0, "max": 16777215, "default": 25600 },
+  "stamBonus": { "min": -100, "max": 30000, "default": 0 },
+  "mode": { "min": 0, "max": 20, "default": 1 },
+  "mana": { "min": 0, "max": 16777215, "default": 3000 },
+  "manaMax": { "min": 0, "max": 16777215, "default": 10000 },
+  "manaK": { "min": 0, "max": 255, "default": 1 },
+  "manaBonus": { "min": -1000, "max": 1000, "default": 0 },
+  "manaFlat": { "min": -1000000, "max": 1000000, "default": 0 },
+  "noMana": { "min": 0, "max": 1, "default": 0 },
+  "ticks": { "min": 1, "max": 40, "default": 10 }
+ },
+ "presets": {
+  "rows": "toy",
+  "items": [
+   { "name": "defaults", "life": 10000, "lifeMax": 30000, "lifeReg": 400, "stam": 2000, "stamMax": 25600, "stamBonus": 0, "mode": 1, "mana": 3000, "manaMax": 10000, "manaK": 1, "manaBonus": 0, "manaFlat": 0, "noMana": 0, "ticks": 10 },
+   { "name": "poisoned, life near the floor", "life": 1000, "lifeMax": 30000, "lifeReg": -300, "stam": 20000, "stamMax": 25600, "stamBonus": 0, "mode": 1, "mana": 3000, "manaMax": 10000, "manaK": 1, "manaBonus": 0, "manaFlat": 0, "noMana": 0, "ticks": 8 },
+   { "name": "walking with a stamina bonus", "life": 30000, "lifeMax": 30000, "lifeReg": 0, "stam": 5000, "stamMax": 25600, "stamBonus": 250, "mode": 2, "mana": 3000, "manaMax": 10000, "manaK": 1, "manaBonus": 0, "manaFlat": 0, "noMana": 0, "ticks": 10 },
+   { "name": "mana regeneration off", "life": 30000, "lifeMax": 30000, "lifeReg": 0, "stam": 25600, "stamMax": 25600, "stamBonus": 0, "mode": 1, "mana": 3000, "manaMax": 10000, "manaK": 1, "manaBonus": 100, "manaFlat": 30, "noMana": 1, "ticks": 6 }
+  ]
+ },
+ "text": {
+  "intro": "Type toy stat values and a number of frames; the table applies the regeneration tick once per frame, life, then stamina, then mana. The numbers offered first are illustrative, raw stat values, and the player is taken as alive.",
+  "caps": {
+   "life": "Life now (stat 6)",
+   "lifeMax": "Maximum life (stat 7)",
+   "lifeReg": "Life regeneration per frame (stat 74)",
+   "stam": "Stamina now (stat 10)",
+   "stamMax": "Maximum stamina (stat 11)",
+   "stamBonus": "Stamina recovery bonus (stat 28)",
+   "mode": "Unit mode, as a number",
+   "mana": "Mana now (stat 8)",
+   "manaMax": "Maximum mana (stat 9)",
+   "manaK": "Mana regeneration of the class (k is this times 25, or 7500 when 0)",
+   "manaBonus": "Mana recovery bonus (stat 27)",
+   "manaFlat": "Mana recovery (stat 26)",
+   "noMana": "No mana regeneration: state 85 on (1) or off (0)",
+   "ticks": "Frames to run"
+  },
+  "presetLabel": "Illustrative inputs",
+  "presetNone": "choose one",
+  "columns": { "rows": "toy", "items": ["Frame", "Life", "Stamina", "Mana"] },
+  "whyLife": {
+   "rows": "toy",
+   "items": [
+    { "cause": "start", "text": "" },
+    { "cause": "up", "text": "plus stat 74" },
+    { "cause": "down", "text": "stat 74 below 0" },
+    { "cause": "cap", "text": "held at the maximum" },
+    { "cause": "floor", "text": "held at 256" },
+    { "cause": "none", "text": "stat 74 is 0" }
+   ]
+  },
+  "whyStam": {
+   "rows": "toy",
+   "items": [
+    { "cause": "start", "text": "" },
+    { "cause": "gain", "text": "gains" },
+    { "cause": "full", "text": "full" },
+    { "cause": "none", "text": "no gain in this mode with these values" }
+   ]
+  },
+  "whyMana": {
+   "rows": "toy",
+   "items": [
+    { "cause": "start", "text": "" },
+    { "cause": "regen", "text": "regenerates" },
+    { "cause": "state", "text": "state 85: recovery only" }
+   ]
+  },
+  "liveHead": "After",
+  "liveFrames": "frames: life",
+  "liveStam": "stamina",
+  "liveMana": "mana",
+  "note": "Computed by our model of the tick, not observed in the game. Left out: the check that the player is alive, the freeing of the potion lists at the maximum, and how the stats and the unit's mode are made up; the toy numbers do not change from frame to frame except by the tick itself."
+ }
+}

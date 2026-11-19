@@ -1,0 +1,1417 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "1x1 1x1 1x1 1x1 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 3,
+      "score": 2
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 2,
+      "score": 2
+     },
+     {
+      "num": 3,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 1,
+      "score": 2
+     },
+     {
+      "num": 4,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 0,
+      "score": 3
+     },
+     {
+      "num": 5,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 8,
+      "row": 3,
+      "score": 2
+     }
+    ],
+    "grid": [
+     ".........D",
+     ".........C",
+     ".........B",
+     "........EA"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 1,
+    "shapes": "1x1 1x1 1x1 1x1 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 10,
+    "gh": 4,
+    "owner": 1,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 1,
+      "score": -1
+     },
+     {
+      "num": 3,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 2,
+      "score": -1
+     },
+     {
+      "num": 4,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 3,
+      "score": -1
+     },
+     {
+      "num": 5,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 8,
+      "row": 0,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "........EA",
+     ".........B",
+     ".........C",
+     ".........D"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "2x2 1x1 1x3 2x1 1x2 3x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": 4
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 3,
+      "score": 2
+     },
+     {
+      "num": 3,
+      "wd": 1,
+      "ht": 3,
+      "placed": true,
+      "col": 9,
+      "row": 0,
+      "score": 5
+     },
+     {
+      "num": 4,
+      "wd": 2,
+      "ht": 1,
+      "placed": true,
+      "col": 7,
+      "row": 3,
+      "score": 3
+     },
+     {
+      "num": 5,
+      "wd": 1,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 2,
+      "score": 4
+     },
+     {
+      "num": 6,
+      "wd": 3,
+      "ht": 1,
+      "placed": true,
+      "col": 6,
+      "row": 0,
+      "score": 4
+     }
+    ],
+    "grid": [
+     "AA....FFFC",
+     "AA.......C",
+     "E........C",
+     "E......DDB"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 1,
+    "shapes": "2x2 1x1 1x3 2x1 1x2 3x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 10,
+    "gh": 4,
+    "owner": 1,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 3,
+      "wd": 1,
+      "ht": 3,
+      "placed": true,
+      "col": 2,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 4,
+      "wd": 2,
+      "ht": 1,
+      "placed": true,
+      "col": 8,
+      "row": 1,
+      "score": -1
+     },
+     {
+      "num": 5,
+      "wd": 1,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 2,
+      "score": -1
+     },
+     {
+      "num": 6,
+      "wd": 3,
+      "ht": 1,
+      "placed": true,
+      "col": 7,
+      "row": 2,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "AAC......B",
+     "AAC.....DD",
+     "E.C....FFF",
+     "E........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 6,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "2x2 2x2 2x2 2x2 2x2 2x2 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 6,
+    "gh": 4,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": 4
+     },
+     {
+      "num": 2,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 2,
+      "score": 6
+     },
+     {
+      "num": 3,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 2,
+      "row": 0,
+      "score": 4
+     },
+     {
+      "num": 4,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 4,
+      "row": 0,
+      "score": 6
+     },
+     {
+      "num": 5,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 2,
+      "row": 2,
+      "score": 6
+     },
+     {
+      "num": 6,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 4,
+      "row": 2,
+      "score": 255
+     },
+     {
+      "num": 7,
+      "wd": 1,
+      "ht": 1,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "AACCDD",
+     "AACCDD",
+     "BBEEFF",
+     "BBEEFF"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 6,
+    "gh": 4,
+    "owner": 1,
+    "shapes": "2x2 2x2 2x2 2x2 2x2 2x2 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 6,
+    "gh": 4,
+    "owner": 1,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 2,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 2,
+      "score": -1
+     },
+     {
+      "num": 3,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 2,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 4,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 2,
+      "row": 2,
+      "score": -1
+     },
+     {
+      "num": 5,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 4,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 6,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 4,
+      "row": 2,
+      "score": -1
+     },
+     {
+      "num": 7,
+      "wd": 1,
+      "ht": 1,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "AACCEE",
+     "AACCEE",
+     "BBDDFF",
+     "BBDDFF"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 3,
+    "gh": 3,
+    "owner": 0,
+    "shapes": "1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 3,
+    "gh": 3,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 2,
+      "row": 2,
+      "score": 2
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 2,
+      "row": 1,
+      "score": 2
+     },
+     {
+      "num": 3,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 2,
+      "row": 0,
+      "score": 3
+     },
+     {
+      "num": 4,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 1,
+      "row": 2,
+      "score": 2
+     },
+     {
+      "num": 5,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 0,
+      "row": 2,
+      "score": 3
+     },
+     {
+      "num": 6,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 1,
+      "row": 1,
+      "score": 2
+     },
+     {
+      "num": 7,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 1,
+      "row": 0,
+      "score": 3
+     },
+     {
+      "num": 8,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 0,
+      "row": 1,
+      "score": 3
+     },
+     {
+      "num": 9,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": 255
+     },
+     {
+      "num": 10,
+      "wd": 1,
+      "ht": 1,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     },
+     {
+      "num": 11,
+      "wd": 1,
+      "ht": 1,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "IGC",
+     "HFB",
+     "EDA"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 3,
+    "gh": 3,
+    "owner": 0,
+    "shapes": "4x1 1x4 3x3 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 3,
+    "gh": 3,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 4,
+      "ht": 1,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 4,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     },
+     {
+      "num": 3,
+      "wd": 3,
+      "ht": 3,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": 255
+     },
+     {
+      "num": 4,
+      "wd": 1,
+      "ht": 1,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "CCC",
+     "CCC",
+     "CCC"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 1,
+    "gh": 1,
+    "owner": 0,
+    "shapes": "1x1 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 1,
+    "gh": 1,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": 255
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 1,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "A"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 1,
+    "gh": 8,
+    "owner": 0,
+    "shapes": "1x3 1x3 1x3"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 1,
+    "gh": 8,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 1,
+      "ht": 3,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": 7
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 3,
+      "placed": true,
+      "col": 0,
+      "row": 3,
+      "score": 7
+     },
+     {
+      "num": 3,
+      "wd": 1,
+      "ht": 3,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "A",
+     "A",
+     "A",
+     "B",
+     "B",
+     "B",
+     ".",
+     "."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 1,
+    "owner": 0,
+    "shapes": "2x1 2x1 4x4 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 10,
+    "gh": 1,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 2,
+      "ht": 1,
+      "placed": true,
+      "col": 8,
+      "row": 0,
+      "score": 5
+     },
+     {
+      "num": 2,
+      "wd": 2,
+      "ht": 1,
+      "placed": true,
+      "col": 6,
+      "row": 0,
+      "score": 5
+     },
+     {
+      "num": 3,
+      "wd": 4,
+      "ht": 4,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     },
+     {
+      "num": 4,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 5,
+      "row": 0,
+      "score": 3
+     }
+    ],
+    "grid": [
+     ".....DBBAA"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 4,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "2x4 1X2 2x1,1x1 3x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 4,
+    "gh": 4,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 2,
+      "ht": 4,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": 8
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 2,
+      "placed": true,
+      "col": 2,
+      "row": 0,
+      "score": 3
+     },
+     {
+      "num": 3,
+      "wd": 2,
+      "ht": 1,
+      "placed": true,
+      "col": 2,
+      "row": 3,
+      "score": 4
+     },
+     {
+      "num": 4,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 3,
+      "row": 0,
+      "score": 3
+     },
+     {
+      "num": 5,
+      "wd": 3,
+      "ht": 1,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "AABD",
+     "AAB.",
+     "AA..",
+     "AACC"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 5,
+    "gh": 5,
+    "owner": 0,
+    "shapes": "3x2 2x3 2x2 1x1 1x1 1x1 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 5,
+    "gh": 5,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 3,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": 5
+     },
+     {
+      "num": 2,
+      "wd": 2,
+      "ht": 3,
+      "placed": true,
+      "col": 3,
+      "row": 0,
+      "score": 7
+     },
+     {
+      "num": 3,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 3,
+      "row": 3,
+      "score": 6
+     },
+     {
+      "num": 4,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 2,
+      "row": 4,
+      "score": 2
+     },
+     {
+      "num": 5,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 2,
+      "row": 3,
+      "score": 2
+     },
+     {
+      "num": 6,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 2,
+      "row": 2,
+      "score": 3
+     },
+     {
+      "num": 7,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 1,
+      "row": 4,
+      "score": 2
+     }
+    ],
+    "grid": [
+     "AAABB",
+     "AAABB",
+     "..FBB",
+     "..ECC",
+     ".GDCC"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 5,
+    "gh": 5,
+    "owner": 1,
+    "shapes": "3x2 2x3 2x2 1x1 1x1 1x1 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 5,
+    "gh": 5,
+    "owner": 1,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 3,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 2,
+      "wd": 2,
+      "ht": 3,
+      "placed": true,
+      "col": 0,
+      "row": 2,
+      "score": -1
+     },
+     {
+      "num": 3,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 2,
+      "row": 2,
+      "score": -1
+     },
+     {
+      "num": 4,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 4,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 5,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 4,
+      "row": 1,
+      "score": -1
+     },
+     {
+      "num": 6,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 4,
+      "row": 2,
+      "score": -1
+     },
+     {
+      "num": 7,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 4,
+      "row": 3,
+      "score": -1
+     }
+    ],
+    "grid": [
+     "AAA.D",
+     "AAA.E",
+     "BBCCF",
+     "BBCCG",
+     "BB..."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": ""
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [],
+    "grid": [
+     "..........",
+     "..........",
+     "..........",
+     ".........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 3,
+      "score": 2
+     },
+     {
+      "num": 2,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 2,
+      "score": 2
+     },
+     {
+      "num": 3,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 1,
+      "score": 2
+     },
+     {
+      "num": 4,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 0,
+      "score": 3
+     },
+     {
+      "num": 5,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 8,
+      "row": 3,
+      "score": 2
+     },
+     {
+      "num": 6,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 8,
+      "row": 2,
+      "score": 2
+     },
+     {
+      "num": 7,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 8,
+      "row": 1,
+      "score": 2
+     },
+     {
+      "num": 8,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 8,
+      "row": 0,
+      "score": 3
+     },
+     {
+      "num": 9,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 7,
+      "row": 3,
+      "score": 2
+     },
+     {
+      "num": 10,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 7,
+      "row": 2,
+      "score": 2
+     },
+     {
+      "num": 11,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 7,
+      "row": 1,
+      "score": 2
+     },
+     {
+      "num": 12,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 7,
+      "row": 0,
+      "score": 3
+     }
+    ],
+    "grid": [
+     ".......LHD",
+     ".......KGC",
+     ".......JFB",
+     ".......IEA"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1 1x1"
+   },
+   "expect": {
+    "fault": 2,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [],
+    "grid": [
+     "..........",
+     "..........",
+     "..........",
+     ".........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "1x1 5x1"
+   },
+   "expect": {
+    "fault": 1,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [],
+    "grid": [
+     "..........",
+     "..........",
+     "..........",
+     ".........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "1x1 0x1"
+   },
+   "expect": {
+    "fault": 1,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [],
+    "grid": [
+     "..........",
+     "..........",
+     "..........",
+     ".........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "1 x 1"
+   },
+   "expect": {
+    "fault": 1,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [],
+    "grid": [
+     "..........",
+     "..........",
+     "..........",
+     ".........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "11x1"
+   },
+   "expect": {
+    "fault": 1,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [],
+    "grid": [
+     "..........",
+     "..........",
+     "..........",
+     ".........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "1x1\t1x1"
+   },
+   "expect": {
+    "fault": 1,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [],
+    "grid": [
+     "..........",
+     "..........",
+     "..........",
+     ".........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "1x1;1x1"
+   },
+   "expect": {
+    "fault": 1,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [],
+    "grid": [
+     "..........",
+     "..........",
+     "..........",
+     ".........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": "1y1"
+   },
+   "expect": {
+    "fault": 1,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [],
+    "grid": [
+     "..........",
+     "..........",
+     "..........",
+     ".........."
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "shapes": " 1x1 ,, 2x2 "
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 10,
+    "gh": 4,
+    "owner": 0,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 3,
+      "score": 2
+     },
+     {
+      "num": 2,
+      "wd": 2,
+      "ht": 2,
+      "placed": true,
+      "col": 0,
+      "row": 0,
+      "score": 4
+     }
+    ],
+    "grid": [
+     "BB........",
+     "BB........",
+     "..........",
+     ".........A"
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "gw": 99,
+    "gh": -4,
+    "owner": 7,
+    "shapes": "1x1 2x2"
+   },
+   "expect": {
+    "fault": 0,
+    "gw": 10,
+    "gh": 1,
+    "owner": 1,
+    "rows": [
+     {
+      "num": 1,
+      "wd": 1,
+      "ht": 1,
+      "placed": true,
+      "col": 9,
+      "row": 0,
+      "score": -1
+     },
+     {
+      "num": 2,
+      "wd": 2,
+      "ht": 2,
+      "placed": false,
+      "col": -1,
+      "row": -1,
+      "score": -1
+     }
+    ],
+    "grid": [
+     ".........A"
+    ]
+   }
+  }
+ ]
+}

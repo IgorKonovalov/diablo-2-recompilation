@@ -1,0 +1,3413 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "formula": "04 00 07 05 0A 04 00 04 00 07 03 12 04 01 11 16 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 17,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       3
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       3,
+       5
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 10,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       10
+      ],
+      "stack": [
+       1
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       1,
+       3
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       1,
+       3,
+       3
+      ]
+     },
+     {
+      "pos": 9,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       1,
+       3,
+       3,
+       3
+      ]
+     },
+     {
+      "pos": 11,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       1,
+       3,
+       9
+      ]
+     },
+     {
+      "pos": 12,
+      "op": 4,
+      "arg": 1,
+      "size": 2,
+      "octs": [
+       4,
+       1
+      ],
+      "stack": [
+       1,
+       3,
+       9,
+       4
+      ]
+     },
+     {
+      "pos": 14,
+      "op": 17,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       17
+      ],
+      "stack": [
+       1,
+       3,
+       5
+      ]
+     },
+     {
+      "pos": 15,
+      "op": 22,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       22
+      ],
+      "stack": [
+       3
+      ]
+     },
+     {
+      "pos": 16,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 3
+   }
+  },
+  {
+   "inputs": {
+    "formula": "04 00 07 05 0A 04 00 04 00 07 03 12 04 01 11 16 00",
+    "lvl": 7,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 17,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       7
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       7,
+       5
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 10,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       10
+      ],
+      "stack": [
+       0
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       0,
+       7
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       0,
+       7,
+       7
+      ]
+     },
+     {
+      "pos": 9,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       0,
+       7,
+       7,
+       3
+      ]
+     },
+     {
+      "pos": 11,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       0,
+       7,
+       21
+      ]
+     },
+     {
+      "pos": 12,
+      "op": 4,
+      "arg": 1,
+      "size": 2,
+      "octs": [
+       4,
+       1
+      ],
+      "stack": [
+       0,
+       7,
+       21,
+       4
+      ]
+     },
+     {
+      "pos": 14,
+      "op": 17,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       17
+      ],
+      "stack": [
+       0,
+       7,
+       17
+      ]
+     },
+     {
+      "pos": 15,
+      "op": 22,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       22
+      ],
+      "stack": [
+       17
+      ]
+     },
+     {
+      "pos": 16,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 17
+   }
+  },
+  {
+   "inputs": {
+    "formula": "04 00 07 05 0A 04 00 04 00 07 03 12 04 01 11 16 00",
+    "lvl": 5,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 17,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       5
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       5,
+       5
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 10,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       10
+      ],
+      "stack": [
+       0
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       0,
+       5
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       0,
+       5,
+       5
+      ]
+     },
+     {
+      "pos": 9,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       0,
+       5,
+       5,
+       3
+      ]
+     },
+     {
+      "pos": 11,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       0,
+       5,
+       15
+      ]
+     },
+     {
+      "pos": 12,
+      "op": 4,
+      "arg": 1,
+      "size": 2,
+      "octs": [
+       4,
+       1
+      ],
+      "stack": [
+       0,
+       5,
+       15,
+       4
+      ]
+     },
+     {
+      "pos": 14,
+      "op": 17,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       17
+      ],
+      "stack": [
+       0,
+       5,
+       11
+      ]
+     },
+     {
+      "pos": 15,
+      "op": 22,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       22
+      ],
+      "stack": [
+       11
+      ]
+     },
+     {
+      "pos": 16,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 11
+   }
+  },
+  {
+   "inputs": {
+    "formula": "04 01 04 02 10 07 02 12 00",
+    "lvl": 3,
+    "par1": 6,
+    "par2": -9
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 9,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 4,
+      "arg": 1,
+      "size": 2,
+      "octs": [
+       4,
+       1
+      ],
+      "stack": [
+       6
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 4,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       4,
+       2
+      ],
+      "stack": [
+       6,
+       -9
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 16,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       16
+      ],
+      "stack": [
+       -3
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       -3,
+       2
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       -6
+      ]
+     },
+     {
+      "pos": 8,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": -6
+   }
+  },
+  {
+   "inputs": {
+    "formula": "04 00 07 03 13 07 02 10 00",
+    "lvl": 100,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 9,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       100
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       100,
+       3
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 19,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       19
+      ],
+      "stack": [
+       33
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       33,
+       2
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 16,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       16
+      ],
+      "stack": [
+       35
+      ]
+     },
+     {
+      "pos": 8,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 35
+   }
+  },
+  {
+   "inputs": {
+    "formula": "04 00 07 03 13 07 02 10 00",
+    "lvl": -100,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 9,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       -100
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       -100,
+       3
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 19,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       19
+      ],
+      "stack": [
+       -33
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       -33,
+       2
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 16,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       16
+      ],
+      "stack": [
+       -31
+      ]
+     },
+     {
+      "pos": 8,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": -31
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 05 07 03 01 00 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 7,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       5
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       5,
+       3
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 1,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       1,
+       0
+      ],
+      "stack": [
+       5,
+       3,
+       0
+      ]
+     },
+     {
+      "pos": 6,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": [
+       5,
+       3
+      ]
+     }
+    ],
+    "how": "end",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 02 04 00 14 00",
+    "lvl": 10,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 6,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       2
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       2,
+       10
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 20,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       20
+      ],
+      "stack": [
+       1024
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 1024
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 02 04 00 14 00",
+    "lvl": 0,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 6,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       2
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       2,
+       0
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 20,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       20
+      ],
+      "stack": [
+       1
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 1
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 02 07 00 14 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 6,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       2
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       7,
+       0
+      ],
+      "stack": [
+       2,
+       0
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 20,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       20
+      ],
+      "stack": [
+       1
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 1
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 03 07 04 16 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 6,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       3
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 4,
+      "size": 2,
+      "octs": [
+       7,
+       4
+      ],
+      "stack": [
+       3,
+       4
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 22,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       22
+      ],
+      "stack": [
+       4
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 4
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 03 16 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 4,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       3
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 22,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       22
+      ],
+      "stack": [
+       3
+      ]
+     },
+     {
+      "pos": 3,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 3
+   }
+  },
+  {
+   "inputs": {
+    "formula": "16",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 1,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 22,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       22
+      ],
+      "stack": [
+       0
+      ]
+     }
+    ],
+    "how": "past",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 1,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "02 07 05",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 3,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 2,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       2
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 05 03 07 06",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 5,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       5
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 3,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       3
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 5
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 05 17 07 06",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 5,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       5
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 23,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       23
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 5
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 05 07 03 0A 07 05 07 03 0B 07 05 07 05 0C 07 05 07 05 0D 07 05 07 05 0E 07 05 07 05 0F",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 30,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       5
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       5,
+       3
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 10,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       10
+      ],
+      "stack": [
+       0
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       0,
+       5
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       0,
+       5,
+       3
+      ]
+     },
+     {
+      "pos": 9,
+      "op": 11,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       11
+      ],
+      "stack": [
+       0,
+       1
+      ]
+     },
+     {
+      "pos": 10,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       0,
+       1,
+       5
+      ]
+     },
+     {
+      "pos": 12,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       0,
+       1,
+       5,
+       5
+      ]
+     },
+     {
+      "pos": 14,
+      "op": 12,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       12
+      ],
+      "stack": [
+       0,
+       1,
+       1
+      ]
+     },
+     {
+      "pos": 15,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       0,
+       1,
+       1,
+       5
+      ]
+     },
+     {
+      "pos": 17,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       0,
+       1,
+       1,
+       5,
+       5
+      ]
+     },
+     {
+      "pos": 19,
+      "op": 13,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       13
+      ],
+      "stack": [
+       0,
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "pos": 20,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       0,
+       1,
+       1,
+       1,
+       5
+      ]
+     },
+     {
+      "pos": 22,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       0,
+       1,
+       1,
+       1,
+       5,
+       5
+      ]
+     },
+     {
+      "pos": 24,
+      "op": 14,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       14
+      ],
+      "stack": [
+       0,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "pos": 25,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       0,
+       1,
+       1,
+       1,
+       1,
+       5
+      ]
+     },
+     {
+      "pos": 27,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       0,
+       1,
+       1,
+       1,
+       1,
+       5,
+       5
+      ]
+     },
+     {
+      "pos": 29,
+      "op": 15,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       15
+      ],
+      "stack": [
+       0,
+       1,
+       1,
+       1,
+       1,
+       0
+      ]
+     }
+    ],
+    "how": "past",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 07 07 02 13 07 07 07 00 13 15 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 12,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 7,
+      "size": 2,
+      "octs": [
+       7,
+       7
+      ],
+      "stack": [
+       7
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       7,
+       2
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 19,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       19
+      ],
+      "stack": [
+       3
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 7,
+      "arg": 7,
+      "size": 2,
+      "octs": [
+       7,
+       7
+      ],
+      "stack": [
+       3,
+       7
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 7,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       7,
+       0
+      ],
+      "stack": [
+       3,
+       7,
+       0
+      ]
+     },
+     {
+      "pos": 9,
+      "op": 19,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       19
+      ],
+      "stack": [
+       3,
+       0
+      ]
+     },
+     {
+      "pos": 10,
+      "op": 21,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       21
+      ],
+      "stack": [
+       3,
+       0
+      ]
+     },
+     {
+      "pos": 11,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": [
+       3
+      ]
+     }
+    ],
+    "how": "end",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "08 FF 7F 08 02 00 12 08 00 80 12 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 12,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 8,
+      "arg": 32767,
+      "size": 3,
+      "octs": [
+       8,
+       255,
+       127
+      ],
+      "stack": [
+       32767
+      ]
+     },
+     {
+      "pos": 3,
+      "op": 8,
+      "arg": 2,
+      "size": 3,
+      "octs": [
+       8,
+       2,
+       0
+      ],
+      "stack": [
+       32767,
+       2
+      ]
+     },
+     {
+      "pos": 6,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       65534
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 8,
+      "arg": -32768,
+      "size": 3,
+      "octs": [
+       8,
+       0,
+       128
+      ],
+      "stack": [
+       65534,
+       -32768
+      ]
+     },
+     {
+      "pos": 10,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       -2147418112
+      ]
+     },
+     {
+      "pos": 11,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": -2147418112
+   }
+  },
+  {
+   "inputs": {
+    "formula": "09 00 00 00 80 07 FF 13 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 9,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 9,
+      "arg": -2147483648,
+      "size": 5,
+      "octs": [
+       9,
+       0,
+       0,
+       0,
+       128
+      ],
+      "stack": [
+       -2147483648
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 7,
+      "arg": -1,
+      "size": 2,
+      "octs": [
+       7,
+       255
+      ],
+      "stack": [
+       -2147483648,
+       -1
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 19,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       19
+      ],
+      "stack": []
+     }
+    ],
+    "how": "trap",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "08 00 80 09 00 00 01 00 12 07 FF 13 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 13,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 8,
+      "arg": -32768,
+      "size": 3,
+      "octs": [
+       8,
+       0,
+       128
+      ],
+      "stack": [
+       -32768
+      ]
+     },
+     {
+      "pos": 3,
+      "op": 9,
+      "arg": 65536,
+      "size": 5,
+      "octs": [
+       9,
+       0,
+       0,
+       1,
+       0
+      ],
+      "stack": [
+       -32768,
+       65536
+      ]
+     },
+     {
+      "pos": 8,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       -2147483648
+      ]
+     },
+     {
+      "pos": 9,
+      "op": 7,
+      "arg": -1,
+      "size": 2,
+      "octs": [
+       7,
+       255
+      ],
+      "stack": [
+       -2147483648,
+       -1
+      ]
+     },
+     {
+      "pos": 11,
+      "op": 19,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       19
+      ],
+      "stack": []
+     }
+    ],
+    "how": "trap",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "08 00 80 09 00 00 01 00 12 07 FF 12 07 FF 13 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 16,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 8,
+      "arg": -32768,
+      "size": 3,
+      "octs": [
+       8,
+       0,
+       128
+      ],
+      "stack": [
+       -32768
+      ]
+     },
+     {
+      "pos": 3,
+      "op": 9,
+      "arg": 65536,
+      "size": 5,
+      "octs": [
+       9,
+       0,
+       0,
+       1,
+       0
+      ],
+      "stack": [
+       -32768,
+       65536
+      ]
+     },
+     {
+      "pos": 8,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       -2147483648
+      ]
+     },
+     {
+      "pos": 9,
+      "op": 7,
+      "arg": -1,
+      "size": 2,
+      "octs": [
+       7,
+       255
+      ],
+      "stack": [
+       -2147483648,
+       -1
+      ]
+     },
+     {
+      "pos": 11,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       -2147483648
+      ]
+     },
+     {
+      "pos": 12,
+      "op": 7,
+      "arg": -1,
+      "size": 2,
+      "octs": [
+       7,
+       255
+      ],
+      "stack": [
+       -2147483648,
+       -1
+      ]
+     },
+     {
+      "pos": 14,
+      "op": 19,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       19
+      ],
+      "stack": []
+     }
+    ],
+    "how": "trap",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "09 FF FF FF 7F 07 02 12 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 9,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 9,
+      "arg": 2147483647,
+      "size": 5,
+      "octs": [
+       9,
+       255,
+       255,
+       255,
+       127
+      ],
+      "stack": [
+       2147483647
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       2147483647,
+       2
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       -2
+      ]
+     },
+     {
+      "pos": 8,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": -2
+   }
+  },
+  {
+   "inputs": {
+    "formula": "05 01 00 06 02 00 00 00 04 09 10 10 00",
+    "lvl": 1,
+    "par1": 2,
+    "par2": 3
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 13,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 5,
+      "arg": 1,
+      "size": 3,
+      "octs": [
+       5,
+       1,
+       0
+      ],
+      "stack": [
+       2
+      ]
+     },
+     {
+      "pos": 3,
+      "op": 6,
+      "arg": 2,
+      "size": 5,
+      "octs": [
+       6,
+       2,
+       0,
+       0,
+       0
+      ],
+      "stack": [
+       2,
+       3
+      ]
+     },
+     {
+      "pos": 8,
+      "op": 4,
+      "arg": 9,
+      "size": 2,
+      "octs": [
+       4,
+       9
+      ],
+      "stack": [
+       2,
+       3,
+       0
+      ]
+     },
+     {
+      "pos": 10,
+      "op": 16,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       16
+      ],
+      "stack": [
+       2,
+       3
+      ]
+     },
+     {
+      "pos": 11,
+      "op": 16,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       16
+      ],
+      "stack": [
+       5
+      ]
+     },
+     {
+      "pos": 12,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 5
+   }
+  },
+  {
+   "inputs": {
+    "formula": "08 01 00 05 05 00 10 00",
+    "lvl": 1,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 8,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 8,
+      "arg": 1,
+      "size": 3,
+      "octs": [
+       8,
+       1,
+       0
+      ],
+      "stack": [
+       1
+      ]
+     },
+     {
+      "pos": 3,
+      "op": 5,
+      "arg": 5,
+      "size": 3,
+      "octs": [
+       5,
+       5,
+       0
+      ],
+      "stack": [
+       1,
+       0
+      ]
+     },
+     {
+      "pos": 6,
+      "op": 16,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       16
+      ],
+      "stack": [
+       1
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 1
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 07 07 02 15 14 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 7,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 7,
+      "size": 2,
+      "octs": [
+       7,
+       7
+      ],
+      "stack": [
+       7
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       7,
+       2
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 21,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       21
+      ],
+      "stack": [
+       7,
+       -2
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 20,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       20
+      ],
+      "stack": [
+       1
+      ]
+     },
+     {
+      "pos": 6,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 1
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 02 08 70 11 14 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 7,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       2
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 8,
+      "arg": 4464,
+      "size": 3,
+      "octs": [
+       8,
+       112,
+       17
+      ],
+      "stack": [
+       2,
+       4464
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 20,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       20
+      ],
+      "stack": [
+       0
+      ]
+     },
+     {
+      "pos": 6,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "08 70 11 08 01 00 14 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 8,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 8,
+      "arg": 4464,
+      "size": 3,
+      "octs": [
+       8,
+       112,
+       17
+      ],
+      "stack": [
+       4464
+      ]
+     },
+     {
+      "pos": 3,
+      "op": 8,
+      "arg": 1,
+      "size": 3,
+      "octs": [
+       8,
+       1,
+       0
+      ],
+      "stack": [
+       4464,
+       1
+      ]
+     },
+     {
+      "pos": 6,
+      "op": 20,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       20
+      ],
+      "stack": [
+       4464
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 4464
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 01 07 02 07 03 07 04 07 05 07 06 07 07 07 08 07 09 07 0A 07 0B 07 0C 07 0D 07 0E 07 0F 07 10 07 11 07 12 07 13 07 14",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 40,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 1,
+      "size": 2,
+      "octs": [
+       7,
+       1
+      ],
+      "stack": [
+       1
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 2,
+      "size": 2,
+      "octs": [
+       7,
+       2
+      ],
+      "stack": [
+       1,
+       2
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       1,
+       2,
+       3
+      ]
+     },
+     {
+      "pos": 6,
+      "op": 7,
+      "arg": 4,
+      "size": 2,
+      "octs": [
+       7,
+       4
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     {
+      "pos": 8,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5
+      ]
+     },
+     {
+      "pos": 10,
+      "op": 7,
+      "arg": 6,
+      "size": 2,
+      "octs": [
+       7,
+       6
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6
+      ]
+     },
+     {
+      "pos": 12,
+      "op": 7,
+      "arg": 7,
+      "size": 2,
+      "octs": [
+       7,
+       7
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7
+      ]
+     },
+     {
+      "pos": 14,
+      "op": 7,
+      "arg": 8,
+      "size": 2,
+      "octs": [
+       7,
+       8
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+      ]
+     },
+     {
+      "pos": 16,
+      "op": 7,
+      "arg": 9,
+      "size": 2,
+      "octs": [
+       7,
+       9
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9
+      ]
+     },
+     {
+      "pos": 18,
+      "op": 7,
+      "arg": 10,
+      "size": 2,
+      "octs": [
+       7,
+       10
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10
+      ]
+     },
+     {
+      "pos": 20,
+      "op": 7,
+      "arg": 11,
+      "size": 2,
+      "octs": [
+       7,
+       11
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11
+      ]
+     },
+     {
+      "pos": 22,
+      "op": 7,
+      "arg": 12,
+      "size": 2,
+      "octs": [
+       7,
+       12
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12
+      ]
+     },
+     {
+      "pos": 24,
+      "op": 7,
+      "arg": 13,
+      "size": 2,
+      "octs": [
+       7,
+       13
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13
+      ]
+     },
+     {
+      "pos": 26,
+      "op": 7,
+      "arg": 14,
+      "size": 2,
+      "octs": [
+       7,
+       14
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14
+      ]
+     },
+     {
+      "pos": 28,
+      "op": 7,
+      "arg": 15,
+      "size": 2,
+      "octs": [
+       7,
+       15
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15
+      ]
+     },
+     {
+      "pos": 30,
+      "op": 7,
+      "arg": 16,
+      "size": 2,
+      "octs": [
+       7,
+       16
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16
+      ]
+     },
+     {
+      "pos": 32,
+      "op": 7,
+      "arg": 17,
+      "size": 2,
+      "octs": [
+       7,
+       17
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17
+      ]
+     },
+     {
+      "pos": 34,
+      "op": 7,
+      "arg": 18,
+      "size": 2,
+      "octs": [
+       7,
+       18
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18
+      ]
+     },
+     {
+      "pos": 36,
+      "op": 7,
+      "arg": 19,
+      "size": 2,
+      "octs": [
+       7,
+       19
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19
+      ]
+     },
+     {
+      "pos": 38,
+      "op": 7,
+      "arg": 20,
+      "size": 2,
+      "octs": [
+       7,
+       20
+      ],
+      "stack": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20
+      ]
+     }
+    ],
+    "how": "past",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "08",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 1,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 8,
+      "arg": null,
+      "size": 3,
+      "octs": [
+       8
+      ],
+      "stack": []
+     }
+    ],
+    "how": "cut",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "09 01 02",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 3,
+    "tally": 0,
+    "rows": [],
+    "how": "empty",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 05 08 01",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 3,
+    "tally": 0,
+    "rows": [],
+    "how": "empty",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "04",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 1,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 4,
+      "arg": null,
+      "size": 2,
+      "octs": [
+       4
+      ],
+      "stack": []
+     }
+    ],
+    "how": "cut",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "01",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 1,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 1,
+      "arg": null,
+      "size": 2,
+      "octs": [
+       1
+      ],
+      "stack": []
+     }
+    ],
+    "how": "cut",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 0,
+    "rows": [],
+    "how": "empty",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "zz",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 1,
+    "tally": 0,
+    "rows": [],
+    "how": "empty",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "123",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 1,
+    "tally": 0,
+    "rows": [],
+    "how": "empty",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07\t05",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 1,
+    "tally": 0,
+    "rows": [],
+    "how": "empty",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 05, 07 06,,10 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 6,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       5
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 6,
+      "size": 2,
+      "octs": [
+       7,
+       6
+      ],
+      "stack": [
+       5,
+       6
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 16,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       16
+      ],
+      "stack": [
+       11
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": 11
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 07 05 10 00",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 2,
+    "tally": 0,
+    "rows": [],
+    "how": "empty",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 07 ",
+    "lvl": 3,
+    "par1": 4,
+    "par2": 0
+   },
+   "expect": {
+    "fault": 2,
+    "tally": 0,
+    "rows": [],
+    "how": "empty",
+    "result": 0
+   }
+  },
+  {
+   "inputs": {
+    "formula": "04 00 07 05 0A 04 00 04 00 07 03 12 04 01 11 16 00",
+    "lvl": 99999999999,
+    "par1": -99999999999,
+    "par2": 3000000000,
+    "code": "04 00 04 01 12 04 02 10 00"
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 17,
+    "rows": [
+     {
+      "pos": 0,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       2147483647
+      ]
+     },
+     {
+      "pos": 2,
+      "op": 7,
+      "arg": 5,
+      "size": 2,
+      "octs": [
+       7,
+       5
+      ],
+      "stack": [
+       2147483647,
+       5
+      ]
+     },
+     {
+      "pos": 4,
+      "op": 10,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       10
+      ],
+      "stack": [
+       0
+      ]
+     },
+     {
+      "pos": 5,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       0,
+       2147483647
+      ]
+     },
+     {
+      "pos": 7,
+      "op": 4,
+      "arg": 0,
+      "size": 2,
+      "octs": [
+       4,
+       0
+      ],
+      "stack": [
+       0,
+       2147483647,
+       2147483647
+      ]
+     },
+     {
+      "pos": 9,
+      "op": 7,
+      "arg": 3,
+      "size": 2,
+      "octs": [
+       7,
+       3
+      ],
+      "stack": [
+       0,
+       2147483647,
+       2147483647,
+       3
+      ]
+     },
+     {
+      "pos": 11,
+      "op": 18,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       18
+      ],
+      "stack": [
+       0,
+       2147483647,
+       2147483645
+      ]
+     },
+     {
+      "pos": 12,
+      "op": 4,
+      "arg": 1,
+      "size": 2,
+      "octs": [
+       4,
+       1
+      ],
+      "stack": [
+       0,
+       2147483647,
+       2147483645,
+       -2147483648
+      ]
+     },
+     {
+      "pos": 14,
+      "op": 17,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       17
+      ],
+      "stack": [
+       0,
+       2147483647,
+       -3
+      ]
+     },
+     {
+      "pos": 15,
+      "op": 22,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       22
+      ],
+      "stack": [
+       -3
+      ]
+     },
+     {
+      "pos": 16,
+      "op": 0,
+      "arg": null,
+      "size": 1,
+      "octs": [
+       0
+      ],
+      "stack": []
+     }
+    ],
+    "how": "end",
+    "result": -3
+   }
+  }
+ ]
+}

@@ -2954,3 +2954,41 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   **Manifest:** `docs/export/reviewed-pages.txt` unchanged (no new page). Scratch builds and copies deleted. Gate
   green. Ledger: verdict accept with fixes, 1 (misread 1).
 - 2026-11-19 — **Phase 11 batch 3 served.** The owner pushed the export repository's `main` (cut commit 93f455a: the nine widgets of rows 23 to 31 and the narrow-screen style fix); the Pages run passed and the checksum widget's files are served.
+- 2026-11-19, archivist, lane/x17a (Phase 11 batch 4: rows 32, 33, 34 and 40; ADR-0037). Delivered four widgets in
+  `tools/widgets/<name>/` after rng's pattern (pure `compute`, DOM-only `mount`, `widget.json` of rule parameters, toy
+  presets and text, `fixture.json` written by a twin), twins and cases in `tools/widgets/twins_x17a.py` (registered by
+  three lines in `twins.py`):
+  - **`calc`** (row 32): calc § B, § D over bytes typed in hex (up to 40) and three toy variables (lvl, par1, par2; no
+    function table). Twin: `calc.evaluate`'s new `steps` list reshaped into rows; 43 cases (the spec's both-branches reading,
+    division, power, the 4c call past the table, the 4j short ternary, 02/03/above-0x16 ends, the cut operand, the
+    divide-by-minus-one trap, wraps, nine bad texts). The block is `rows: page` for the 13 operator names only, so it goes on
+    spec-data/calc § D. Two input rules not in the model: a partly cut operand is refused (the game reads past the buffer there,
+    which the page leaves open), and INT32_MIN / -1 stops the table (D 4g is `[I]`).
+  - **`grid`** (row 33): inventory § B1 to B4 on a toy page (10 x 8 at most) with up to 12 typed sizes of 1 to 4 each way,
+    player or other owner. Twin: `item_inventory.spot_find` and `InvGrid.score`; 25 cases, the wiki's worked case among them.
+    **The row named `inventory.py` as the twin; that file is the inventory-table printer, the placement model is
+    `tools/item_inventory.py`.**
+  - **`price`** (row 34): economy § A, C3 to C8, D3, D6, D7 for a toy non-armour item of quality low, normal, set or unique,
+    modes 0 and 1. Twin: `economy.Model.price` over `economy.Tables` built from the inputs (no game data), 34 cases (the
+    large forms, 32-bit wraps, clamped inputs). Left out and said so in the note: magic, rare, crafted, superior and tempered
+    items (the C5 stat terms), armour, tomes, quivers, ears, body parts, stacks, the repair value, quest groups.
+  - **`regen`** (row 40): states § E2 to E4 applied once per frame. Twin: `stats.regen_tick`; 40 cases (floor 256, the
+    bonus 1000 exception in mode 3, modes 2 and 6, state 85, a bonus below 0, clamped inputs). The page has no separate
+    accumulator: the tick adds every frame, so the widget shows that.
+  - **Entry points added to the models** (behaviour unchanged, checked on the kept logs): `tools/stats.py` gains
+    `regen_tick`, lifted out of `Checker.predict_tick` (`stats.py check` over the 18 logs of `s1017-run.lst`: report and
+    JSON byte-identical before and after, 54 719 ticks); `tools/economy.py`'s `price` trace gains `added`, `sockets` and
+    `ethereal` entries (`economy.py check -v` over the 38 claim logs of both runs: output byte-identical, 0 mismatches);
+    `tools/calc.py`'s `evaluate` gains an optional `steps` list, and its `01` byte now returns 0 when its operand starts at
+    the end (section D step 3; it raised `IndexError`): `calc.py check -v` over `calc-s3-*.log` (44 529 evaluations) and
+    `calc.py compile` byte-identical.
+  - **Tests**: `tools/test_widgets.py` gains a mutation per widget, `MOUNT_SHOWS` for the four, and spec checks (calc 4a, 4j,
+    4k, 4l, step 3, 4g, 4c; grid B1 and the wiki's worked case; price C2, C4, C7, C8 and the large form; regen E2, E3, E4).
+    A scratch sweep of 400 random cases per widget, out-of-range inputs included, gives no difference between node and the
+    twins (a power byte left out of the sweep: the model's loop would run 2^31 times). X13 passes on all four.
+  - **X13 lessons added**: refused names met this time: `frames`, `code`, `end`, `stop`, `raw`, `base`, `top`, `scale`, `quality`,
+    `percent`, `cap`, `call`, `empty`, `sizes`, `item`, `w` as bare names, keys or members; a string's letter by `"ABC".at(k)`
+    (`fromCharCode` is banned); a flat array with `fill(v, i, i + 1)` for a write by index.
+  - **Blocks** for the spec-writer in `workspace/phase11/blocks-batch4-x17a.md` (not in git): ids `calc-toy-formula` (spec-data/calc,
+    end of § D), `grid-placement-toy` (wiki/inventory, end of "The placement search"), `price-toy-item` (wiki/economy, end of
+    "Three values carried together"), `regen-toy-ticks` (wiki/stats-and-states, end of "Regeneration"); all `fallback: text`.
