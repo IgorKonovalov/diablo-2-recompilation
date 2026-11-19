@@ -367,6 +367,24 @@ Step notes:
 - 4k. [C] `02` ends the evaluation with the top of the stack: Fire Wall's unclosed `(` returned at `02` in 100
   logged evaluations, the `00` after it never reached. (0x006C1148, run:2026-10-16-calc)
 
+```widget
+id: calc-toy-formula
+widget: calc
+fallback: text
+illustrates: calc.md#d-the-evaluator--calc_eval
+caption: Type a toy formula as bytes in hex, with three numbers it may read, and watch the evaluator run it one byte
+  at a time. Each variable byte reads its number at that byte and each constant byte pushes one; an operator pops
+  the right operand and then the left; the condition byte pops the else-value, the then-value and the condition and
+  keeps the then-value when the condition is not 0, so both branches of a condition are read; a division truncates
+  toward zero and gives 0 for a divisor of 0; a power gives 1 for an exponent of 0 or less; a function byte beyond the function
+  table pushes 0 and leaves its arguments; the bytes 0, 2, 3 and those above 0x16 end the evaluation with the top of
+  the stack, and running out of bytes returns 0; values are 32-bit and wrap (calc § B, § D, steps 3 to 5 and notes
+  4a, 4c, 4g, 4j). The smallest 32-bit value divided by -1 is not evaluated: by a reading of the code the processor
+  faults there. Bytes whose last operand starts inside them and runs past the end are refused, as the page does not
+  say what is read there. Not shown: the compiler from formula text, the contexts with their variables and function
+  tables, and the stock formulas.
+```
+
 ### E. Contexts
 
 ```mermaid

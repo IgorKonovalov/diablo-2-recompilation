@@ -620,6 +620,26 @@ missile uses one and flies on (130); otherwise it ends at the unit when its row 
 code. One stock row (a Royal Strike chain lightning) holds a function number that is negative when read as a signed
 16-bit value, so it behaves as a row with no hit function: read from the code.
 
+```illustration
+id: missile-life-toy
+tool: missile_anim.py
+args: --seed 0xc0ffee
+seed: illustrative
+illustrates: ../specs/skills/missiles.md#b-creation ../specs/skills/missiles.md#d-each-frame ../specs/skills/missiles.md#e-the-hit
+caption: One invented missile of an invented row, cast at level 10, every number a toy input. Creation sets the velocity
+  to ((VelLev x level) / 8 + Vel) << 8 and then 75 / 100 of it, the range to LevRange x level + Range with the frames
+  left equal to it, and the activate mark to the range less Activate (missiles § B). Each frame the do function steps
+  the velocity (every fifth step adds Accel, a sum above the cap sets the velocity to it and stops the acceleration),
+  moves the position by the step on both axes and takes one off the frames left (§ D, D3 and D4). Only once the frames
+  left are at or below the activate mark does a non-zero word of the missile's cell start the search for a unit; a unit
+  found there is hit. The hit records the unit as the
+  last one hit before the filters, and a row with a to-hit rolls on the owner's seed, the owner's next draw low mod
+  100: below the chance the damage is built and applied and, with CollideKill, the missile ends there; otherwise the
+  missile is freed at that unit with no damage built (§ E). Not shown: the missile's own seed, the damage draws, the
+  knockback roll, the defender's rolls, the town tests, the direction table, and the cells a step crosses (the toy tests the cell the frame
+  ends in).
+```
+
 ## Seeds a missile is given: the re-seed sites
 
 A missile's seed is private: only the missile draws on it, except where the code that creates it sets it from the

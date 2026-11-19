@@ -3154,3 +3154,79 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `test_schematic_kit`, `test_quests`; gate green. **For the spec-writer:** place the three blocks as their Place lines
   say, from `workspace/phase11/blocks-batch4-x17b.md` as corrected here. Ledger: verdict accept with fixes, 6 (misread
   2, omission 1, other 3).
+- 2026-11-19, spec-writer, lane/x17s (Phase 11 batch 4 placed). **Blocks** (from
+  `workspace/phase11/blocks-batch4-x17a.md`, `-x17b.md`, `-x17c.md` as their reviews corrected them; text, `seed`,
+  `values`, `fallback` and `args` kept), each at its Place line:
+
+  | Row | Block id | Page | Section, place |
+  |---|---|---|---|
+  | 32 | `calc-toy-formula` | spec-data/calc | end of § D, after note 4k, before "### E. Contexts" |
+  | 33 | `grid-placement-toy` | wiki/inventory | "The placement search", end of section, before "### Moving between places" |
+  | 34 | `price-toy-item` | wiki/economy | "Three values carried together", after the crafted-items paragraph, before "### Selling: the lower of two prices" |
+  | 35 | `quests-word1-word41-reward` | wiki/quests | "Akara's reward and the Hell respec", right after the five-row table |
+  | 36 | `items-cube-polearm-transmute` | wiki/items-other-paths | "The Horadric Cube", after the **Finishing** paragraph, before "### Crafted items" |
+  | 37 | `levels-spawn-tests-toy-room` | wiki/levels | after the **Side effects of the warp test** paragraph, before "## Rooms that come and go" |
+  | 38 | `objects-room-toy` | wiki/objects | "Finding a spot", end of section, before "## Hand-placed objects and the pseudo-objects" |
+  | 39 | `missile-life-toy` | wiki/skills | "Missiles: the hit", end of section, before "## Seeds a missile is given" |
+  | 40 | `regen-toy-ticks` | wiki/stats-and-states | "Regeneration", end of section, before "## Auras" |
+
+  **Caption changes:** none; no sentence was dropped. One key change: row 32's `illustrates` made page-relative
+  (`calc.md#d-the-evaluator--calc_eval`), as the drafted `../specs/data/calc.md#…` does not resolve from the spec page
+  (gate E19), the form rows 28 and 31 use. No `based_on` date or count needed a change (no spec text touched; the gate
+  asked for none). Row 37's optional pointer from wiki/monsters ("Placement") not added: the Place line makes it
+  optional; the reviewer may ask for it.
+  **Cut:** `export_build.py --out workspace/export-x17s`: 89 pages, 0 dropped; 14 widget folders (the 4 new among
+  them), the 5 new illustration folders built (the cube block from `workspace/logs`); fenced blocks kept equal to
+  fenced blocks on every touched page (calc 10/10, inventory 9/9, economy 3/3, stats-and-states 4/4, quests 9/9,
+  items-other-paths 4/4, levels 6/6, objects 3/3, skills 3/3); every sentence of the nine captions found whole in its
+  cut page by a script; text fallback tables for rows 32 to 34 and 40. `export_check workspace/export-x17s --repo
+  workspace/export-repo/` **0 failures**, 1 084 warnings (the batch 3 count), none on a new caption. The folder was
+  removed. Gate green.
+  **Open for the review:** (1) row 38's `illustrates` links collision § E, which wiki/objects' `based_on` does not
+  list (the gate does not ask; the caption cites it as the toy's departure). (2) No browser run (ADR-0037's owed run
+  at the redaction review).
+- 2026-11-19, architect, review of lane/x17s (Opus, Tier A) and **the redaction review of the cut it makes** (Phase 11
+  batch 4's four widgets and five illustrations; ADR-0037). **Tier A: accept with fixes**, 2: omission 2.
+  - **Checked.** Each of the nine blocks compared by script with its corrected draft in `workspace/phase11/blocks-batch4-x17{a,b,c}.md`:
+    eight byte-identical, row 32 differing only in `illustrates` made page-relative (`calc.md#…`, as rows 28 and 31; the
+    `../specs/data/` form does not resolve from the spec page). Each sits where its Place line says (the diff context
+    shows the named paragraph before and the named heading after). Rulings held: the only `rows: page` array of the batch
+    is calc's `ops` (13 operator names), and the block is on spec-data/calc, which prints § B's table and § D's steps;
+    grid, price and regen are all `toy` and take `fallback: text`, built by the builder itself, so no picture fallback has
+    to precede them. No caption was changed; no `based_on` date moved (no spec touched).
+  - **Rulings.** (1) wiki/objects' `based_on` gains `docs/specs/drlg/collision.md 2026-11-17`: row 38's caption states
+    a collision claim of its own (a box past the room's edge is read in the neighbouring room, a cell in no room is
+    refused, § E), and ADR-0012 lists every spec a page's statements rest on, whether or not the gate asks. (2) The
+    row 37 pointer is added: one sentence after the near-warp bullet of wiki/monsters "Placement" links the levels
+    page's section; a link, no new claim. (3) The browser run is done (below). (4) The cube block's sentence renders as
+    `values: recorded` writes it, after the caption and in place of the seed and values labels: "The inputs, the seed
+    among them, come from one recorded game; every value after them is computed by our model, which reproduces each
+    value that game logged." It is true as the x17b review checked it (194 of 194 vectors equal, the tool asserting
+    its lines against `cube.py vector`); it stands. The other labels render as keyed (quest: no seed, restated;
+    collision: no seed, computed; objects and missile: illustrative, computed).
+  - **Fixes (omission).** (1) wiki/objects `based_on` (ruling 1). (2) wiki/monsters pointer (ruling 2). Commit f471385e.
+  **Redaction review: pass; this cut's blocks may be published** (`tools/export_publish.py --push`, the owner's), with
+  no change to `workspace/export-repo/`. Cut (lane head, then again with the fixes): `export_build.py --out
+  workspace/export-x17s-review`, 89 pages, 0 dropped, 14 widget folders (the 4 new) and 30 illustration folders (the 5
+  new); `export_check … --repo workspace/export-repo/` **0 failures, 1 084 warnings** both times, none naming a word of
+  the new captions. Every sentence of the nine captions found whole in its cut page by a script (46 sentences). New
+  folders scanned (`widget.js`, `widget.json`, `widget.list.json`, `steps.json`, `schematic.json`, `index.html`): no
+  paths, tool words, `fn:`, `run:` or `sub_` tokens, no log or file names; hex of 6+ digits only `0x10000` and
+  `0x100000` (the widgets' clamp bounds, as batch 3); short hex are calc's byte values, the quest words of worked
+  example 3, the masks `0x3C01` and `0x0184` and the refusal `0x27`, all on their spec pages. The cube folder's
+  `schematic.json` carries the block's args (`--run kinds2 --n 4`): a session label, no path, date or file name,
+  the same class as the other blocks' args; it passes. No table dump: calc's `ops` are 13 operator names, the
+  cube frames show the short rows worked example 3 already gives. Frames opened: cube 3, objects 8.
+  **Real site build** in a scratch copy of the export checkout (its `node_modules`, then `workspace/export-repo/` and
+  the cut copied over, the Astro cache removed): `SITE_BASE=/arpg-1-14d-notes/ npm run build` 90 pages;
+  `check-site-links.mjs dist` 12 040 links in 120 pages, all resolve. **Chromium headless** (Playwright 1.63, served
+  under the base): the four widget pages (spec-data/calc, items/inventory, items/economy, characters/stats-and-states)
+  and the five illustration pages (running/quests, items/items-other-paths, world/levels, world/objects,
+  characters/skills), each in dark and light at 1280 px and dark at 375 px (27 loads): the CSP meta (`connect-src
+  'none'`, `form-action 'none'`) on each, the theme applied, no console error or warning, no failed request or 4xx,
+  every image loads, no page wider than its viewport; every widget mounts (calc 5 inputs, grid 5, price 17, regen 15)
+  and its output changes when a number input changes (calc's lvl 3 to 10 takes the default formula's else branch,
+  26; grid's page height; price's base cost; regen's first stat). At 375 px the price, regen and calc tables scroll
+  inside their own box (Starlight's table overflow), as batch 3's checksum table does on the served site; no fix.
+  ADR-0037's owed browser run for batch 4 is done. **Manifest:** `docs/export/reviewed-pages.txt` unchanged (no new
+  page). Scratch builds and copies deleted. Gate green. Ledger: verdict accept with fixes, 2 (omission 2).

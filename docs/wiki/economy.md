@@ -86,6 +86,24 @@ Crafted items are priced like rare ones. The run that confirmed this used items 
 crafted, with affixes, but without the extra properties a cube recipe adds), so it covers the price formula, not a
 crafted item exactly as the cube makes it.
 
+```widget
+id: price-toy-item
+widget: price
+fallback: text
+illustrates: ../specs/items/economy.md#c-the-value-terms-modes-0-1-3
+caption: Type a toy item and a toy buyer and see the buy and the sell value carried together, step by step. The value
+  starts at the base cost; an identified item adds its terms, each (multiplier x value) / 1024 plus an add, the
+  division taken first when the buy value is above 65535 (economy § A, C3 to C6); a low item gets minus half of each
+  value instead; each socketed child adds half its own base cost; an ethereal item and a class item each divide the
+  sell value by 4; the buyer's multipliers scale each value over 1024, the one named sell multiplier scaling what the
+  player pays and the one named buy multiplier what the buyer pays; the sell value is capped at the buyer's largest
+  and each price is at least 1, the buy price after the player's reduction (C7, C8, D3, D6, D7). Not shown: the repair
+  value, armour, tomes, quivers, ears, body parts and stacks, magic, rare, crafted, superior and tempered items (the
+  per-stat terms), the staff-mod term of an item with a single-skill stat, a unique with no record, the early exits
+  (a starting item is priced 1), the buyer's quest groups, the quantity and the gamble price; items of those kinds are
+  not priced here.
+```
+
 ### Selling: the lower of two prices
 
 When you sell an item, the NPC normally puts a copy of it in the store. That copy is repaired and priced again, and

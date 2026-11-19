@@ -282,6 +282,24 @@ and anything larger at (0, 0). That search reproduced all 100 logged placements.
 cube never meets an output, since the inputs are destroyed first. If nothing was produced, the cube stays as it was:
 nothing produced, nothing consumed.
 
+```illustration
+id: items-cube-polearm-transmute
+tool: cube_anim.py
+args: --run kinds2 --n 4
+seed: recorded
+values: recorded
+illustrates: ../specs/items/cube.md#a-the-transmute-and-the-row-scan--cube_transmute ../specs/items/cube.md#b-the-inputs--sub_005658c0_cubematchinputs-and-cube_matchinput ../specs/items/cube.md#j-a-random-item-of-a-type--sub_00565930_cubepickitemoftype ../specs/items/cube.md#m-draws-per-output-kind
+caption: One transmute of the polearm recipe, row 19 of the CubeMain table, taken from a game: a Kri, a gem, a staff and a
+  belt in the cube. The scan passes over the 15 of the first 20 rows whose count of inputs is not 4, four more rows
+  reach the matcher and fail an input, and row 19 fits, so the scan stops there (cube § A). Each input claims every cube
+  item that fits it, here one item each, and the count must equal the quantity (§ B). Output A is an item of a type, a
+  polearm of magic quality, and the row's fixed level of 50 wins (§ D, E). The pick of the base draws twice on the game
+  seed, a start and one of the ten candidates, which gave a scythe (§ J). The creation then steps the game seed twice,
+  draws the base stats on the unit seed, and on the item seed makes the magic builder's draws: the roll test of the
+  prefix pick, which rolls whatever its bit because the row forces the prefix Savage, so no weighted draw follows, the
+  prefix's property roll, and the roll test of the suffix pick, whose 0 gave no suffix (§ M, worked example 3). The cube then holds the scythe, identified (§ G).
+```
+
 ### Crafted items
 
 A crafted item is built by the crafted builder

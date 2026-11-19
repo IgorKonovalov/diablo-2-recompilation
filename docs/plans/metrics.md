@@ -902,6 +902,8 @@ gave, and holds the fixes only when its lane's row is not in the export.
 | 2026-11-19 | lane/x17a review | 0070 P11 batch 4 | architect-review | 173 029 | 51 | 9 | — | accept w/ fixes (Opus) | error 2, omission 3, other 1 |
 | 2026-11-19 | lane/x17b | 0070 P11 batch 4 | archivist | 289 349 | 104 | 16 | — | accept w/ fixes (Opus) | misread 2, omission 1, other 3 |
 | 2026-11-19 | lane/x17b review | 0070 P11 batch 4 | architect-review | 203 688 | 98 | 16 | — | accept w/ fixes (Opus) | misread 2, omission 1, other 3 |
+| 2026-11-19 | lane/x17s | 0070 P11 batch 4 placed | spec-writer | 91 947 | 33 | 6 | — | accept w/ fixes (Opus) | omission 2 |
+| 2026-11-19 | lane/x17s review | 0070 P11 batch 4 placed | architect-review | 123 387 | 74 | 11 | — | accept w/ fixes (Opus) | omission 2 |
 
 **Totals over the seed (61 rows, 32 reviews):** 135 fixes. overclaim 32, misread 32,
 omission 26, miscount 12, stale cross-reference 10, other 8, under-claim 5, wrong anchor 4, tool not
