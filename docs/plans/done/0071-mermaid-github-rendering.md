@@ -1,7 +1,7 @@
 # 0071 — Mermaid blocks that pass gate rule E17 but GitHub refuses to draw
 
-> **Status:** approved (owner, 2026-11-19: "2 approved"). Phase 1 is the owner's and comes first; no lane
-> starts before its results are recorded.
+> **Status:** done (closed 2026-11-19 after Phase 1 under H3: the unchanged page draws on GitHub; approved by the
+> owner 2026-11-19)
 > **Created:** 2026-11-18
 > **Owner skill(s):** human (Phase 1), archivist (Phase 2), spec-writer (Phase 3a), reverser (Phase 3b),
 > archivist (Phase 3c)
@@ -11,7 +11,7 @@
 
 **Question:** why does GitHub show "Unable to render rich display" for Mermaid blocks that gate rule E17 passes,
 and what has to change, in the blocks or in E17, so that the gate fails on what GitHub refuses? The owner reported
-it on 2026-11-18, with the first block of [`docs/wiki/levels.md`](../wiki/levels.md) (a `flowchart TD`) as the
+it on 2026-11-18, with the first block of [`docs/wiki/levels.md`](../../wiki/levels.md) (a `flowchart TD`) as the
 example. E17 (`tools/mermaid_render.mjs`, `tools/mermaid_lint.py`) draws each block as GitHub would, with GitHub's
 Mermaid version pinned. It passes that block. Either the gate's model of GitHub has drifted or the fault is outside
 the repository.
@@ -131,7 +131,9 @@ Order: the owner's observation first (no agent can see GitHub's frame), then the
 
 ## Phase 1 results
 
-_(the owner fills this in: the error text, the browser checks, the failing pages)_
+- 2026-11-19, the owner: every diagram on the pushed `docs/wiki/levels.md` now draws on GitHub. The file is the one
+  that failed on 2026-11-18 (no commit since has touched it), so the refusal was GitHub's frame, not the blocks.
+  No error text was captured.
 
 ## Implementation log
 
@@ -139,3 +141,6 @@ _(the owner fills this in: the error text, the browser checks, the failing pages
   template by the architect the same day: one owner per phase, Phase 3 split by doc owner, the gate note moved to
   the spec-writer's diagram conventions, the scale counted, and the 13.x path explanation marked unverified.
 - 2026-11-19 — approved by the owner ("2 approved"); recorded by the main session. Waiting on Phase 1.
+- 2026-11-19 — Phase 1 settles H3: the same bytes draw a day later. H1, H2 and H4 fall (each predicts a lasting
+  failure on unchanged blocks). Closed per Phase 1's H3 rule: one line added to `pseudocode-conventions.md`
+  § Diagrams; Phases 2 and 3 not run. The pin-drift gap stays an open question in this plan, with no poller.
