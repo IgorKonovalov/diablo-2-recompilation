@@ -725,6 +725,23 @@ The fan, as offsets from `d`, the parent's direction when the child was made (fo
 - L3. [C] A node has one child slot, kept across a backtrack, so the allocated count is the deepest chain of the pass + 1. Reaching a node outside the rectangle returns a route one step outside it, short of the target. (0x0067A8E6–0x0067A938, 0x0067A796–0x0067A7C0, family `corr`)
 - L3. [C] The first try keeps the parent's direction in rows 0, 1, 2, 6 and 7 (entry 0 is 0 in those rows): under the non-drawing types the walk runs straight until the bound or a wall turns it; under type 16 the turn adds a draw (step 18). (data:g_PathSearchTurnRows@0x006F17D8, [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o))
 
+```widget
+id: path-search-toy-grid
+widget: path
+fallback: path-search-toy-room
+illustrates: search.md#l-the-search-types-0-and-16 search.md#a-what-the-planners-share
+caption: The search of type 0 on a toy room of 16 by 9 subtiles: click cells to put up or take down walls, and move
+  the start, the target and the last bound. The first bound is the octile length h0 and the walk runs again at bounds
+  5 higher while they stay below the last bound given (§ L2). Each pass is a depth-first walk in which a node takes
+  the first direction of the fan that passes the tests (the fan table above, over the eight steps of the Tables under
+  Inputs), a straight step costs 2 and a diagonal 3, and a cell that already holds a lower cost is not entered again,
+  the cell store being kept from one pass to the next (§ L3). The direction toward the target that picks the root's
+  direction and each child's row of the fan is the octant, which § A2 states cell by cell: a term whose double is at most the other's size counts as 0, and a target on the
+  node itself gives direction 6. The list returned keeps the corner points, with the start not among them, and a route
+  of one segment returns nothing (§ L2). A cell with no room around it is blocked (§ A1). Not shown: type 16's draws,
+  real rooms and their masks.
+```
+
 #### L4. Type 16's draws
 
 ```mermaid
