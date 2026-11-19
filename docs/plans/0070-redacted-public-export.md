@@ -2733,8 +2733,30 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
     `rowVals`, `plain`, `dlt`, `chance`, `rc`, `typed`, `fault`, `tally`, `whole`; and `Number.isNaN` and a hex-digit string
     are out, `parseInt(ch, 16)` is in.
   - **Blocks** for the spec-writer: `workspace/phase11/blocks-batch3-x16b.md` (ids `monstat-scaler`, `merc-stats`,
-    `quality-chances` with fallback `items-quality-lsd-mf200`, `checksum-stepper`). A scratch build of the four blocks
-    (text fallbacks) dropped none and `check_cut` was clean; the quality block's real fallback is the page's illustration.
+    `quality-chances`, `checksum-stepper`, all with the text fallback; `quality-chances` on the quality spec page, as
+    moved at the review below). A scratch build of the four blocks (text fallbacks) dropped none and `check_cut` was clean.
   - **Doubts**: no browser run (node stand-in DOM only; the CSP and the host were exercised for rng in x11w); the quality
     widget's "about 128 in `c`" is the page's own phrase, the draw is `low mod c` and slightly non-uniform; the toy numbers
     of rows 26, 27 and 29 are invented and say so in their intro line.
+- 2026-11-19, architect, review of lane/x16b (Tier A on Opus, ADR-0037). Read every `widget.js` and `widget.json`
+  whole, the four twins and the fixtures, against monsters/stats § A, hirelings § G, items/quality § A to § E and
+  save/d2s § B. Each widget computes only from its `widget.json`; monstat, merc and checksum rows are `toy`; the
+  compute matches the spec and its twin on every fixture case, the quality fixture holds the spec's worked examples 1
+  and 3 (`c` 50816 … 128; 27022, 9862, 5604, 1344, 1024, −2176), and a 1 600-case random sweep (400 per widget, out of
+  range inputs included) gives no difference from the twins. X13's script and data rules pass on all four
+  (`js_problems`, `json_problems`); gate green; `test_widgets.py` 141 checks. **Rulings:** (1) quality's records 2 to 5
+  are `page` rows only where the page shows them: the block draft put the widget on wiki/items.md, which shows no
+  ItemRatio row and no `*Min` value, so `"rows": "page"` did not hold there (ADR-0037, What it may read). The spec
+  page that row 28 names, spec-items/quality, shows records 0 to 5 and the four minimums in its Inputs and keeps them
+  in the cut; the block moves there, at the end of § E, with the text fallback (a scratch build placed it, wrote the
+  fallback table and the check had 0 failures). The four rows are a subset of a reviewed six-row table the same page
+  prints, so they are page text, not data lifted from the game files; ADR-0031 concerns constants of the code image and
+  is not engaged. (2) The item kinds are the three ItemTypes flags § A3, § D2 and § D3 test (`Normal`, `Rare`,
+  `Magic`); an always-magic kind with `Rare` set matches D3's note (rings, amulets). Supported. (3) merc below the first
+  band: hirelings § G states that negative `d` truncates and was logged down to −41, so levels 1 to 5 show real
+  behaviour and are not clamped. (4) monstat's 32-bit `MulDiv` branch: the inputs only pick among toy rows whose
+  largest values (row 9 055, cell 160) sit below both thresholds of § A1, so no input reaches the other branches; the
+  note says so. Browser run: still owed, at the redaction review of the cut that first carries these widgets
+  (ADR-0037, Review). **Verdict: accept with fixes 2** (misread 1: the quality block placed where its `page` rows are
+  not shown, moved to the spec page and the lane's log line corrected; omission 1: the quality caption left out the
+  always-normal kind the widget offers).
