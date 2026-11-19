@@ -1,7 +1,7 @@
 # 0071 — Mermaid blocks that pass gate rule E17 but GitHub refuses to draw
 
-> **Status:** draft: not approved. The queue is limited to plans 0066 and 0070 (owner, 2026-11-16: token
-> budget), so no lane starts before the owner's go. Phase 1 is the owner's and can be done at any time.
+> **Status:** approved (owner, 2026-11-19: "2 approved"). Phase 1 is the owner's and comes first; no lane
+> starts before its results are recorded.
 > **Created:** 2026-11-18
 > **Owner skill(s):** human (Phase 1), archivist (Phase 2), spec-writer (Phase 3a), reverser (Phase 3b),
 > archivist (Phase 3c)
@@ -138,3 +138,4 @@ _(the owner fills this in: the error text, the browser checks, the failing pages
 - 2026-11-18 — drafted by the main session from the owner's report and observations 1–4. Re-cut to the plan
   template by the architect the same day: one owner per phase, Phase 3 split by doc owner, the gate note moved to
   the spec-writer's diagram conventions, the scale counted, and the 13.x path explanation marked unverified.
+- 2026-11-19 — approved by the owner ("2 approved"); recorded by the main session. Waiting on Phase 1.
