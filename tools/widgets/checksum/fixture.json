@@ -1,0 +1,760 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "typed": "01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12"
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 18,
+    "steps": [
+     {
+      "i": 0,
+      "byte": 1,
+      "used": 1,
+      "rot": 0,
+      "sum": 1
+     },
+     {
+      "i": 1,
+      "byte": 2,
+      "used": 2,
+      "rot": 2,
+      "sum": 4
+     },
+     {
+      "i": 2,
+      "byte": 3,
+      "used": 3,
+      "rot": 8,
+      "sum": 11
+     },
+     {
+      "i": 3,
+      "byte": 4,
+      "used": 4,
+      "rot": 22,
+      "sum": 26
+     },
+     {
+      "i": 4,
+      "byte": 5,
+      "used": 5,
+      "rot": 52,
+      "sum": 57
+     },
+     {
+      "i": 5,
+      "byte": 6,
+      "used": 6,
+      "rot": 114,
+      "sum": 120
+     },
+     {
+      "i": 6,
+      "byte": 7,
+      "used": 7,
+      "rot": 240,
+      "sum": 247
+     },
+     {
+      "i": 7,
+      "byte": 8,
+      "used": 8,
+      "rot": 494,
+      "sum": 502
+     },
+     {
+      "i": 8,
+      "byte": 9,
+      "used": 9,
+      "rot": 1004,
+      "sum": 1013
+     },
+     {
+      "i": 9,
+      "byte": 10,
+      "used": 10,
+      "rot": 2026,
+      "sum": 2036
+     },
+     {
+      "i": 10,
+      "byte": 11,
+      "used": 11,
+      "rot": 4072,
+      "sum": 4083
+     },
+     {
+      "i": 11,
+      "byte": 12,
+      "used": 12,
+      "rot": 8166,
+      "sum": 8178
+     },
+     {
+      "i": 12,
+      "byte": 13,
+      "used": 0,
+      "rot": 16356,
+      "sum": 16356
+     },
+     {
+      "i": 13,
+      "byte": 14,
+      "used": 0,
+      "rot": 32712,
+      "sum": 32712
+     },
+     {
+      "i": 14,
+      "byte": 15,
+      "used": 0,
+      "rot": 65424,
+      "sum": 65424
+     },
+     {
+      "i": 15,
+      "byte": 16,
+      "used": 0,
+      "rot": 130848,
+      "sum": 130848
+     },
+     {
+      "i": 16,
+      "byte": 17,
+      "used": 17,
+      "rot": 261696,
+      "sum": 261713
+     },
+     {
+      "i": 17,
+      "byte": 18,
+      "used": 18,
+      "rot": 523426,
+      "sum": 523444
+     }
+    ],
+    "whole": 523444
+   }
+  },
+  {
+   "inputs": {
+    "typed": "01 02 03"
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 3,
+    "steps": [
+     {
+      "i": 0,
+      "byte": 1,
+      "used": 1,
+      "rot": 0,
+      "sum": 1
+     },
+     {
+      "i": 1,
+      "byte": 2,
+      "used": 2,
+      "rot": 2,
+      "sum": 4
+     },
+     {
+      "i": 2,
+      "byte": 3,
+      "used": 3,
+      "rot": 8,
+      "sum": 11
+     }
+    ],
+    "whole": 11
+   }
+  },
+  {
+   "inputs": {
+    "typed": "FF FF FF FF"
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 4,
+    "steps": [
+     {
+      "i": 0,
+      "byte": 255,
+      "used": 255,
+      "rot": 0,
+      "sum": 255
+     },
+     {
+      "i": 1,
+      "byte": 255,
+      "used": 255,
+      "rot": 510,
+      "sum": 765
+     },
+     {
+      "i": 2,
+      "byte": 255,
+      "used": 255,
+      "rot": 1530,
+      "sum": 1785
+     },
+     {
+      "i": 3,
+      "byte": 255,
+      "used": 255,
+      "rot": 3570,
+      "sum": 3825
+     }
+    ],
+    "whole": 3825
+   }
+  },
+  {
+   "inputs": {
+    "typed": "80 00 00 00 00"
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 5,
+    "steps": [
+     {
+      "i": 0,
+      "byte": 128,
+      "used": 128,
+      "rot": 0,
+      "sum": 128
+     },
+     {
+      "i": 1,
+      "byte": 0,
+      "used": 0,
+      "rot": 256,
+      "sum": 256
+     },
+     {
+      "i": 2,
+      "byte": 0,
+      "used": 0,
+      "rot": 512,
+      "sum": 512
+     },
+     {
+      "i": 3,
+      "byte": 0,
+      "used": 0,
+      "rot": 1024,
+      "sum": 1024
+     },
+     {
+      "i": 4,
+      "byte": 0,
+      "used": 0,
+      "rot": 2048,
+      "sum": 2048
+     }
+    ],
+    "whole": 2048
+   }
+  },
+  {
+   "inputs": {
+    "typed": ""
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 0,
+    "steps": [],
+    "whole": 0
+   }
+  },
+  {
+   "inputs": {
+    "typed": "0,1,2"
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 3,
+    "steps": [
+     {
+      "i": 0,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 1,
+      "byte": 1,
+      "used": 1,
+      "rot": 0,
+      "sum": 1
+     },
+     {
+      "i": 2,
+      "byte": 2,
+      "used": 2,
+      "rot": 2,
+      "sum": 4
+     }
+    ],
+    "whole": 4
+   }
+  },
+  {
+   "inputs": {
+    "typed": "00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF 01"
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 17,
+    "steps": [
+     {
+      "i": 0,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 1,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 2,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 3,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 4,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 5,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 6,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 7,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 8,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 9,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 10,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 11,
+      "byte": 0,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 12,
+      "byte": 255,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 13,
+      "byte": 255,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 14,
+      "byte": 255,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 15,
+      "byte": 255,
+      "used": 0,
+      "rot": 0,
+      "sum": 0
+     },
+     {
+      "i": 16,
+      "byte": 1,
+      "used": 1,
+      "rot": 0,
+      "sum": 1
+     }
+    ],
+    "whole": 1
+   }
+  },
+  {
+   "inputs": {
+    "typed": "FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF "
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 32,
+    "steps": [
+     {
+      "i": 0,
+      "byte": 255,
+      "used": 255,
+      "rot": 0,
+      "sum": 255
+     },
+     {
+      "i": 1,
+      "byte": 255,
+      "used": 255,
+      "rot": 510,
+      "sum": 765
+     },
+     {
+      "i": 2,
+      "byte": 255,
+      "used": 255,
+      "rot": 1530,
+      "sum": 1785
+     },
+     {
+      "i": 3,
+      "byte": 255,
+      "used": 255,
+      "rot": 3570,
+      "sum": 3825
+     },
+     {
+      "i": 4,
+      "byte": 255,
+      "used": 255,
+      "rot": 7650,
+      "sum": 7905
+     },
+     {
+      "i": 5,
+      "byte": 255,
+      "used": 255,
+      "rot": 15810,
+      "sum": 16065
+     },
+     {
+      "i": 6,
+      "byte": 255,
+      "used": 255,
+      "rot": 32130,
+      "sum": 32385
+     },
+     {
+      "i": 7,
+      "byte": 255,
+      "used": 255,
+      "rot": 64770,
+      "sum": 65025
+     },
+     {
+      "i": 8,
+      "byte": 255,
+      "used": 255,
+      "rot": 130050,
+      "sum": 130305
+     },
+     {
+      "i": 9,
+      "byte": 255,
+      "used": 255,
+      "rot": 260610,
+      "sum": 260865
+     },
+     {
+      "i": 10,
+      "byte": 255,
+      "used": 255,
+      "rot": 521730,
+      "sum": 521985
+     },
+     {
+      "i": 11,
+      "byte": 255,
+      "used": 255,
+      "rot": 1043970,
+      "sum": 1044225
+     },
+     {
+      "i": 12,
+      "byte": 255,
+      "used": 0,
+      "rot": 2088450,
+      "sum": 2088450
+     },
+     {
+      "i": 13,
+      "byte": 255,
+      "used": 0,
+      "rot": 4176900,
+      "sum": 4176900
+     },
+     {
+      "i": 14,
+      "byte": 255,
+      "used": 0,
+      "rot": 8353800,
+      "sum": 8353800
+     },
+     {
+      "i": 15,
+      "byte": 255,
+      "used": 0,
+      "rot": 16707600,
+      "sum": 16707600
+     },
+     {
+      "i": 16,
+      "byte": 255,
+      "used": 255,
+      "rot": 33415200,
+      "sum": 33415455
+     },
+     {
+      "i": 17,
+      "byte": 255,
+      "used": 255,
+      "rot": 66830910,
+      "sum": 66831165
+     },
+     {
+      "i": 18,
+      "byte": 255,
+      "used": 255,
+      "rot": 133662330,
+      "sum": 133662585
+     },
+     {
+      "i": 19,
+      "byte": 255,
+      "used": 255,
+      "rot": 267325170,
+      "sum": 267325425
+     },
+     {
+      "i": 20,
+      "byte": 255,
+      "used": 255,
+      "rot": 534650850,
+      "sum": 534651105
+     },
+     {
+      "i": 21,
+      "byte": 255,
+      "used": 255,
+      "rot": 1069302210,
+      "sum": 1069302465
+     },
+     {
+      "i": 22,
+      "byte": 255,
+      "used": 255,
+      "rot": 2138604930,
+      "sum": 2138605185
+     },
+     {
+      "i": 23,
+      "byte": 255,
+      "used": 255,
+      "rot": 4277210370,
+      "sum": 4277210625
+     },
+     {
+      "i": 24,
+      "byte": 255,
+      "used": 255,
+      "rot": 4259453955,
+      "sum": 4259454210
+     },
+     {
+      "i": 25,
+      "byte": 255,
+      "used": 255,
+      "rot": 4223941125,
+      "sum": 4223941380
+     },
+     {
+      "i": 26,
+      "byte": 255,
+      "used": 255,
+      "rot": 4152915465,
+      "sum": 4152915720
+     },
+     {
+      "i": 27,
+      "byte": 255,
+      "used": 255,
+      "rot": 4010864145,
+      "sum": 4010864400
+     },
+     {
+      "i": 28,
+      "byte": 255,
+      "used": 255,
+      "rot": 3726761505,
+      "sum": 3726761760
+     },
+     {
+      "i": 29,
+      "byte": 255,
+      "used": 255,
+      "rot": 3158556225,
+      "sum": 3158556480
+     },
+     {
+      "i": 30,
+      "byte": 255,
+      "used": 255,
+      "rot": 2022145665,
+      "sum": 2022145920
+     },
+     {
+      "i": 31,
+      "byte": 255,
+      "used": 255,
+      "rot": 4044291840,
+      "sum": 4044292095
+     }
+    ],
+    "whole": 4044292095
+   }
+  },
+  {
+   "inputs": {
+    "typed": "FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF "
+   },
+   "expect": {
+    "fault": 2,
+    "tally": 0,
+    "steps": [],
+    "whole": 0
+   }
+  },
+  {
+   "inputs": {
+    "typed": "0102"
+   },
+   "expect": {
+    "fault": 1,
+    "tally": 0,
+    "steps": [],
+    "whole": 0
+   }
+  },
+  {
+   "inputs": {
+    "typed": "zz 01"
+   },
+   "expect": {
+    "fault": 1,
+    "tally": 0,
+    "steps": [],
+    "whole": 0
+   }
+  },
+  {
+   "inputs": {
+    "typed": "1 2 3 a b c"
+   },
+   "expect": {
+    "fault": 0,
+    "tally": 6,
+    "steps": [
+     {
+      "i": 0,
+      "byte": 1,
+      "used": 1,
+      "rot": 0,
+      "sum": 1
+     },
+     {
+      "i": 1,
+      "byte": 2,
+      "used": 2,
+      "rot": 2,
+      "sum": 4
+     },
+     {
+      "i": 2,
+      "byte": 3,
+      "used": 3,
+      "rot": 8,
+      "sum": 11
+     },
+     {
+      "i": 3,
+      "byte": 10,
+      "used": 10,
+      "rot": 22,
+      "sum": 32
+     },
+     {
+      "i": 4,
+      "byte": 11,
+      "used": 11,
+      "rot": 64,
+      "sum": 75
+     },
+     {
+      "i": 5,
+      "byte": 12,
+      "used": 12,
+      "rot": 150,
+      "sum": 162
+     }
+    ],
+    "whole": 162
+   }
+  }
+ ]
+}

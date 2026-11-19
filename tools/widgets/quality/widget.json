@@ -1,0 +1,157 @@
+{
+ "marker": "widget-only/1",
+ "name": "quality",
+ "rule": {
+  "uniqueMin": 6400,
+  "setMin": 5600,
+  "rareMin": 3200,
+  "magicMin": 192,
+  "uniqueK": 250,
+  "setK": 500,
+  "rareK": 600,
+  "drawWin": 128,
+  "ratioScale": 1024
+ },
+ "inputs": {
+  "ilvl": {
+   "min": 0,
+   "max": 255,
+   "default": 28
+  },
+  "qlvl": {
+   "min": 0,
+   "max": 255,
+   "default": 10
+  },
+  "mf": {
+   "min": -150,
+   "max": 1000,
+   "default": 100
+  },
+  "record": {
+   "min": 2,
+   "max": 5,
+   "default": 2
+  },
+  "kind": {
+   "min": 0,
+   "max": 3,
+   "default": 0
+  },
+  "word": {
+   "min": 0,
+   "max": 1024,
+   "default": 0
+  }
+ },
+ "records": {
+  "rows": "page",
+  "items": [
+   {
+    "rec": 2,
+    "uni": 400,
+    "uniDiv": 1,
+    "set": 160,
+    "setDiv": 2,
+    "rare": 100,
+    "rareDiv": 2,
+    "mag": 34,
+    "magDiv": 3,
+    "hi": 12,
+    "hiDiv": 8,
+    "nor": 2,
+    "norDiv": 2
+   },
+   {
+    "rec": 3,
+    "uni": 400,
+    "uniDiv": 1,
+    "set": 160,
+    "setDiv": 2,
+    "rare": 100,
+    "rareDiv": 2,
+    "mag": 34,
+    "magDiv": 3,
+    "hi": 12,
+    "hiDiv": 8,
+    "nor": 1,
+    "norDiv": 1
+   },
+   {
+    "rec": 4,
+    "uni": 240,
+    "uniDiv": 3,
+    "set": 120,
+    "setDiv": 3,
+    "rare": 80,
+    "rareDiv": 3,
+    "mag": 17,
+    "magDiv": 6,
+    "hi": 9,
+    "hiDiv": 8,
+    "nor": 2,
+    "norDiv": 2
+   },
+   {
+    "rec": 5,
+    "uni": 240,
+    "uniDiv": 3,
+    "set": 120,
+    "setDiv": 3,
+    "rare": 80,
+    "rareDiv": 3,
+    "mag": 17,
+    "magDiv": 6,
+    "hi": 9,
+    "hiDiv": 8,
+    "nor": 1,
+    "norDiv": 1
+   }
+  ]
+ },
+ "text": {
+  "intro": "Type an item level, a base item's quality level and a magic find; the table lists each quality test in order with its chance c and the chance to win it. The four ratio words are inputs of our own and the first values offered are illustrative. The row values are those of the records on the page.",
+  "ilvlLabel": "Item level",
+  "qlvlLabel": "Base item quality level",
+  "mfLabel": "Magic find (the killer's, with its owner's added)",
+  "recordLabel": "Item ratio record (2 to 5 are the ones a drop reaches)",
+  "kindLabel": "Item type",
+  "kinds": {
+   "rows": "toy",
+   "items": [
+    "An ordinary type: rare allowed, not always magic",
+    "A type that never rolls rare",
+    "An always-magic type",
+    "An always-normal type"
+   ]
+  },
+  "ratioLabels": {
+   "rows": "toy",
+   "items": [
+    "Magic ratio word",
+    "Rare ratio word",
+    "Set ratio word",
+    "Unique ratio word"
+   ]
+  },
+  "columns": {
+   "rows": "toy",
+   "items": [
+    "Test",
+    "c after magic find",
+    "Row minimum",
+    "c after the ratio word",
+    "Chance to win when reached (percent)",
+    "Chance of this result (percent)"
+   ]
+  },
+  "resultHead": "Result",
+  "magicType": "magic (the type is always magic)",
+  "normalType": "normal (the type is always normal, no test)",
+  "noDraw": "win, no draw",
+  "none": "-",
+  "dHead": "d = item level - quality level =",
+  "liveHead": "Results (percent):",
+  "note": "Chances are about 128 in c for a draw from 0 to c - 1 that wins below 128, and a test with c below 1 wins with no draw. Computed by our model of the rule, not observed in the game."
+ }
+}

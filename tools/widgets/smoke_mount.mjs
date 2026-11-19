@@ -37,9 +37,11 @@ if (!host.dataset.mounted) throw new Error("the module did not mount into its fi
 const found = [];
 walkAll(host, (n) => found.push(n));
 const inputs = found.filter((n) => n.tag === "input");
-inputs[0].value = "12345";
-inputs[1].value = "100";
-inputs[2].value = "2";
+if (JSON.parse(host.dataset.widgetData).name === "rng") {
+  inputs[0].value = "12345";
+  inputs[1].value = "100";
+  inputs[2].value = "2";
+}
 for (const i of inputs) i.fire("input");
 const rows = [];
 walkAll(host, (n) => { if (n.tag === "tr") rows.push(n.textContent); });

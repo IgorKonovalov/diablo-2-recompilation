@@ -2707,3 +2707,34 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   named `sub_` anchors); the Pages run passed, and the randomness page, `widgets/rng-stepper/widget.js`,
   `spec-items/properties/`, `spec-rng/seeds/` and `world/levels/` answer 200. The site now serves 89 manifest pages,
   22 new animations and one widget.
+- 2026-11-19, archivist, lane/x16b (Phase 11 batch 3: scripted widgets, rows 26 to 29; ADR-0037). Delivered four widgets in
+  `tools/widgets/<name>/` after rng's pattern (pure `compute`, DOM-only `mount`, `widget.json` of toy or page rows only,
+  `fixture.json` written by a twin in `twins.py` from the existing model, no second copy of a rule):
+  - **`monstat`** (row 26): the twin builds a `monstats.Tables` with no game data (20 invented level rows and two invented
+    monsters packed at the offsets the model reads) and calls `Model.monlvl_stats`; the widget restates stats § A (row
+    `min(level, last)`, none below 0, difficulty 0 below 1 and at most 2, `MulDiv(row, cell, 100)`, raw cells). 14 fixture cases.
+    `MulDiv` is the 32-bit branch only (the toy values never leave it).
+  - **`merc`** (row 27): the twin builds a `hirelings.Tables` with three invented band rows (the first band at level 6, so
+    levels below it give a negative `d`) and calls `set_level`; the widget shows the 12 stats of hirelings § G, skills left out
+    (the toy rows carry none). 14 cases (band edges, 1, 98, 99, clamped inputs).
+  - **`quality`** (row 28): the twin builds a `quality.Tables` of one invented item and the page's records 2 to 5 (the ratio
+    table of quality § Inputs, `"rows": "page"`) and calls `roll` with `range_b` forced to lose, so `trace` and `cf["pre"]`
+    list every test the roll reaches; the widget restates § C to § E (the magic-find factor, minimum, ratio word, `c`) and
+    adds the chance to win (about 128 in `c`) and the chain of results as exact rationals floored to parts per million (BigInt
+    in JS, `Fraction` in the twin). Item kinds: ordinary, never rare, always magic, always normal. 19 cases (MF -150 to 1000,
+    the diminishing edge at 10 and 11, ratio word 1024, `c` below 1, clamped inputs).
+  - **`checksum`** (row 29): the twin calls `d2s.checksum` on each prefix of the typed bytes (no game file, a text field of
+    at most 32 hex bytes; offsets 12 to 15 count as 0); the page's 8-digit hex values stay out of the fallback text (X1), which
+    is decimal. 12 cases (empty, the zeroed field, 32 and 33 bytes, bad tokens).
+  - **Shared files, additive**: `twins.py` (four twins, cases, fallbacks); `test_widgets.py` (a `MUTATIONS` entry per widget in
+    place of rng's one hard-coded text, a generic wrong-fixture bump, a `MOUNT_SHOWS` check per new widget); `smoke_mount.mjs`
+    sets rng's typed values only for rng. X13's allowlists forced renames of data and output keys (`stats`, `ratio`, `base`,
+    `raw`, `d`, `c`, `code`, `bytes`, `error`, `count`, `total` are browser member names): the keys are `result`, `scaled`,
+    `rowVals`, `plain`, `dlt`, `chance`, `rc`, `typed`, `fault`, `tally`, `whole`; and `Number.isNaN` and a hex-digit string
+    are out, `parseInt(ch, 16)` is in.
+  - **Blocks** for the spec-writer: `workspace/phase11/blocks-batch3-x16b.md` (ids `monstat-scaler`, `merc-stats`,
+    `quality-chances` with fallback `items-quality-lsd-mf200`, `checksum-stepper`). A scratch build of the four blocks
+    (text fallbacks) dropped none and `check_cut` was clean; the quality block's real fallback is the page's illustration.
+  - **Doubts**: no browser run (node stand-in DOM only; the CSP and the host were exercised for rng in x11w); the quality
+    widget's "about 128 in `c`" is the page's own phrase, the draw is `low mod c` and slightly non-uniform; the toy numbers
+    of rows 26, 27 and 29 are invented and say so in their intro line.
