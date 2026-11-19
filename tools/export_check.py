@@ -202,24 +202,30 @@ def _run_git(*args):
         return ""
 
 
-@functools.lru_cache(maxsize=1)
-def git_identity():
-    """Identity strings of this machine and working repository, read from git at run time (never stored)."""
+def identity_strings(remote_v, email, common_dir):
+    """Identity strings from `git remote -v` text, the owner's e-mail and the absolute git common dir. The
+    repository's own name comes from the remote URLs and from the main checkout's folder (the parent of the
+    common dir), never from the current worktree's folder: a worktree may be named any ordinary word."""
     ids = set()
-    for line in _run_git("remote", "-v").splitlines():
+    for line in remote_v.splitlines():
         parts = line.split()
         if len(parts) >= 2:
             url = parts[1]
             ids.add(url)
-            name = re.sub(r"\.git$", "", url.rstrip("/").rsplit("/", 1)[-1])
-            ids.add(name)
-    ids.add(_run_git("config", "user.email"))
-    for d in (_run_git("rev-parse", "--show-toplevel"),
-              os.path.dirname(_run_git("rev-parse", "--path-format=absolute", "--git-common-dir"))):
-        if d:
-            ids.add(os.path.basename(d.rstrip("/")))
-            ids.add(re.sub(r"-[a-z0-9]+$", "", os.path.basename(d.rstrip("/"))))
+            ids.add(re.sub(r"\.git$", "", url.rstrip("/").rsplit("/", 1)[-1]))
+    ids.add(email)
+    if common_dir:
+        main = os.path.basename(os.path.dirname(common_dir.rstrip("/")))
+        ids.add(main)
+        ids.add(re.sub(r"-[a-z0-9]+$", "", main))
     return tuple(sorted(i for i in ids if len(i) >= 4))
+
+
+@functools.lru_cache(maxsize=1)
+def git_identity():
+    """Identity strings of this machine and working repository, read from git at run time (never stored)."""
+    return identity_strings(_run_git("remote", "-v"), _run_git("config", "user.email"),
+                            _run_git("rev-parse", "--path-format=absolute", "--git-common-dir"))
 
 
 # ---------------------------------------------------------------- the hex allowance (owner decision, 2026-11-17)
