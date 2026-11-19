@@ -1,0 +1,89 @@
+{
+  "marker": "widget-only/1",
+  "name": "damage",
+  "rule": {
+    "multiplier": "6AC690C5",
+    "initHigh": 666,
+    "shift": 8,
+    "edFloor": -90,
+    "percentBase": 100,
+    "playerPhysicalCap": 50,
+    "immune": 100
+  },
+  "inputs": {
+    "wmin": { "min": 0, "max": 2000, "default": 10 },
+    "wmax": { "min": 0, "max": 2000, "default": 25 },
+    "add": { "min": 0, "max": 2000, "default": 0 },
+    "ed": { "min": -100, "max": 1000, "default": 0 },
+    "str": { "min": 0, "max": 1000, "default": 100 },
+    "strBonus": { "min": 0, "max": 200, "default": 100 },
+    "dex": { "min": 0, "max": 1000, "default": 50 },
+    "dexBonus": { "min": 0, "max": 200, "default": 0 },
+    "seed": { "min": 0, "max": 4294967295, "default": 12345 },
+    "flat": { "min": 0, "max": 2000, "default": 0 },
+    "resist": { "min": -200, "max": 300, "default": 0 },
+    "pct": { "min": 1, "max": 1000, "default": 100 },
+    "kind": { "rows": "toy", "items": ["monster", "player"], "default": "monster" }
+  },
+  "presets": {
+    "rows": "toy",
+    "items": [
+      { "name": "plain sword", "wmin": 10, "wmax": 25, "add": 0, "ed": 0, "str": 100, "strBonus": 100, "dex": 50, "dexBonus": 0, "flat": 0, "resist": 0, "pct": 100, "kind": "monster" },
+      { "name": "enhanced, strong", "wmin": 20, "wmax": 40, "add": 5, "ed": 120, "str": 200, "strBonus": 100, "dex": 80, "dexBonus": 0, "flat": 0, "resist": 0, "pct": 100, "kind": "monster" },
+      { "name": "resistant monster", "wmin": 20, "wmax": 40, "add": 0, "ed": 50, "str": 100, "strBonus": 100, "dex": 50, "dexBonus": 0, "flat": 0, "resist": 60, "pct": 100, "kind": "monster" },
+      { "name": "player target", "wmin": 20, "wmax": 40, "add": 0, "ed": 50, "str": 100, "strBonus": 100, "dex": 50, "dexBonus": 0, "flat": 8, "resist": 70, "pct": 17, "kind": "player" }
+    ]
+  },
+  "text": {
+    "intro": "Type a toy weapon and a defender; the table builds the physical damage step by step, then reduces it. Damage is counted in 256ths of a point, shown with the points beside it. The numbers offered first are illustrative.",
+    "caps": {
+      "wmin": "Weapon damage, minimum",
+      "wmax": "Weapon damage, maximum",
+      "add": "Flat damage added to both",
+      "ed": "Enhanced damage percent",
+      "str": "Strength",
+      "strBonus": "Weapon strength bonus percent",
+      "dex": "Dexterity",
+      "dexBonus": "Weapon dexterity bonus percent",
+      "seed": "Attacker seed (low word; the high word is 666, as after Init)",
+      "flat": "Defender's flat damage reduction",
+      "resist": "Defender's physical resistance percent",
+      "pct": "Damage percent P of the pair",
+      "kind": "Defender"
+    },
+    "kinds": { "rows": "toy", "items": [ { "id": "monster", "name": "a monster" }, { "id": "player", "name": "a player" } ] },
+    "presetLabel": "Illustrative inputs",
+    "presetNone": "choose one",
+    "columns": { "rows": "toy", "items": ["Step", "Computation", "Value"] },
+    "steps": {
+      "first": "Minimum and maximum",
+      "ed": "Enhanced damage percent",
+      "bounds": "Lowest and highest",
+      "draw": "The draw",
+      "roll": "Physical damage",
+      "pscaled": "Scaled by P",
+      "flat": "After the flat reduction",
+      "resist": "Resistance used",
+      "final": "After the resistance"
+    },
+    "calc": {
+      "first": "(weapon + flat added) x 256, each floored by the page's rules",
+      "ed": "percent + strength x bonus / 100 + dexterity x bonus / 100, never below -90",
+      "bounds": "bound + bound x percent / 100",
+      "drawYes": "lowest + one draw below (highest - lowest) on the attacker's seed",
+      "drawNo": "highest is not above lowest: no draw",
+      "roll": "never below 0",
+      "scaleSame": "P is 100: unchanged",
+      "scaleDo": "damage x P / 100",
+      "flat": "damage - reduction x 256; the resistance is skipped when this is 0 or less",
+      "resistMonster": "a monster's resistance is neither penalised nor capped",
+      "resistPlayer": "a player's physical resistance is capped at 50",
+      "final": "damage x (100 - resistance) / 100, resistance at most 100"
+    },
+    "unitPts": "points",
+    "liveHead": "Physical damage",
+    "liveFinal": "after reductions",
+    "liveRaw": "before",
+    "note": "Computed by our model of the damage build and the reductions, not observed in the game. Not shown: critical and deadly strikes, the elemental fields, the monster-only fields, the mastery and the other damage percents of the build, the resistance bypass flags, sanctuary, and absorption (which the physical row does not have)."
+  }
+}

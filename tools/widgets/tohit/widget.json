@@ -1,0 +1,59 @@
+{
+  "marker": "widget-only/1",
+  "name": "tohit",
+  "rule": { "percentBase": 100, "levelFactor": 2, "clampLow": 5, "clampHigh": 95, "rollRange": 100 },
+  "inputs": {
+    "ar": { "min": -100000, "max": 1500000, "default": 500 },
+    "pct": { "min": -100, "max": 1000, "default": 0 },
+    "def": { "min": -100000, "max": 1500000, "default": 300 },
+    "alvl": { "min": 1, "max": 255, "default": 30 },
+    "dlvl": { "min": 0, "max": 255, "default": 30 }
+  },
+  "presets": {
+    "rows": "toy",
+    "items": [
+      { "name": "even", "ar": 500, "pct": 0, "def": 500, "alvl": 30, "dlvl": 30 },
+      { "name": "weak attacker", "ar": 100, "pct": 0, "def": 900, "alvl": 20, "dlvl": 60 },
+      { "name": "strong attacker", "ar": 6000, "pct": 50, "def": 800, "alvl": 85, "dlvl": 40 },
+      { "name": "negative defence", "ar": 400, "pct": 0, "def": -250, "alvl": 30, "dlvl": 30 }
+    ]
+  },
+  "text": {
+    "intro": "Type an attack rating, a percent, a defence and the two levels; the table walks the chance to hit step by step. The numbers offered first are illustrative.",
+    "caps": {
+      "ar": "Attack rating before the percent",
+      "pct": "Attack rating percent",
+      "def": "Defence of the target",
+      "alvl": "Attacker level",
+      "dlvl": "Defender level"
+    },
+    "presetLabel": "Illustrative inputs",
+    "presetNone": "choose one",
+    "columns": { "rows": "toy", "items": ["Step", "Computation", "Value"] },
+    "steps": {
+      "pct": "Attack rating after the percent",
+      "swap": "Swaps when one side is negative",
+      "first": "Chance before the levels",
+      "level": "Chance after the level factor",
+      "clamp": "Chance after the clamp",
+      "roll": "A roll of 0 to 99 hits when it is below the chance"
+    },
+    "calc": {
+      "pct": "AR + AR x percent / 100",
+      "swapDef": "defence below 0: it is added to the attack rating and the defence is 0",
+      "swapAr": "attack rating below 0: it is added to the defence and the attack rating is 0",
+      "swapBoth": "both: the defence below 0 is added to the attack rating, which is still below 0 and is then added to the defence; the attack rating is 0",
+      "swapNone": "neither is below 0",
+      "first": "100 x AR / (AR + DEF), 100 when both are 0",
+      "level": "chance x attacker level x 2 / (attacker level + defender level)",
+      "clampLow": "raised to 5",
+      "clampHigh": "lowered to 95",
+      "clampNone": "inside 5 to 95",
+      "roll": "hits in this many of 100"
+    },
+    "liveHead": "Chance to hit",
+    "liveAr": "attack rating",
+    "liveDef": "defence",
+    "note": "Computed by our model of the hit test, not observed in the game. The hit chance is one draw on the attacker's seed; the draw itself is not shown here, nor how the attack rating, its percent and the defence are made up."
+  }
+}

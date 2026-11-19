@@ -2806,3 +2806,55 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   (ADR-0037, Review). **Verdict: accept with fixes 2** (misread 1: the quality block placed where its `page` rows are
   not shown, moved to the spec page and the lane's log line corrected; omission 1: the quality caption left out the
   always-normal kind the widget offers).
+- 2026-11-19, archivist, lane/x16a (Phase 11 batch 3: rows 23, 24, 25). Delivered:
+  - **Widgets** `tools/widgets/tohit/` (to-hit § A3 to A5: the percent, the swaps, `100 AR / (AR + DEF)`, the level factor,
+    the 5..95 clamp; 15 fixture cases), `damage/` (damage § B and reductions § A, B1, B2 for the physical field: bounds in
+    256ths, the enhanced-damage percent with both shares, the one draw on a seed typed as Init(seed), P, the flat reduction,
+    the resistance with a player's cap of 50; 20 cases, the damage page's worked example `lo 41369, hi 112473` among them)
+    and `breakpoints/` (timing J1, J2, K1 to K3 for five kinds: attack, cast, get-hit, block, block under Holy Shield;
+    length, event frame, the breakpoint rows with least factor and least stat, capped at 40 rows; 27 cases, K3's two
+    stock illustrations among them, 14 to 8 frames for the cast and 10 to 4 for the get-hit). Each follows rng's pattern:
+    pure `compute`, DOM-only `mount`, `widget.json` of rule parameters, toy presets and text only, `fixture.json` written
+    by a twin in `tools/widgets/twins.py`.
+  - **Entry points added to the models** (the twin calls what the log checker calls, one copy of each rule):
+    `tools/combat.py` gains `tohit_chance`, `phys_ed`, `phys_bounds`, `reduce_value`, `resist_final`, `resist_cap_default` and
+    `percent_scale`, lifted out of `Checker.tohit`, the physical roll, `resist_for`, `reduce` and `reductions` (the checker
+    now calls them; `combat.py check` on `c37p2-cls-h-plains.log` gives the same output as before, `SUMMARY mismatches=0
+    events=1035`, and `test_combat_items_anim.py` 21 tests are green). The breakpoints twin uses `tools/anim_rates.py`
+    (`bonus`, `rate_*`, `closed_len`, `sched_len`, `least_x`, `least_stat`), which `anim.py` itself imports as `AR`; the
+    row named `anim.py`, but the rate and breakpoint functions live in `anim_rates.py`.
+  - **Harness**: `test_widgets.py` takes a per-widget mutation (`MUTATIONS`) and bumps the first number of a case instead of
+    reading rng's `rows[0].result`; `smoke_mount.mjs` types rng's values only into rng. Both additive.
+  - **X13 lessons** (for the next widget lanes): the allowlist refuses `x[k]` for a variable `k` (use `.at(i)`, or fixed
+    member names), `Object`, an array literal whose first item is a string, and any member or key that a browser object
+    also has and the list does not name (`count`, `speed`, `event`, `offset`, `range`, `labels`, `scale`, `points`, `rate`,
+    `x`, `r`, `c`); bare `frames`, `base`, `event` are refused as names. Fixed names for the inputs and `Array.find` over
+    `items` objects (`rows: toy`) replaced the keyed lookups.
+  - **Blocks** drafted for the spec-writer in `workspace/phase11/blocks-batch3-x16a.md` (row 23 `fallback: text`, row 24
+    the `combat-melee-hit-toy` illustration, row 25 `anim-schedule-cast-fcr20`); no spec or wiki page edited.
+  - **Open**: the damage widget leaves out the criticals, the elemental and monster-only fields, absorption and the bypass
+    flags, and says so in its note; the to-hit widget takes AR and the percent as typed numbers (no player or monster
+    composition); the breakpoint rows start at the current length and go down.
+- 2026-11-19, architect, review of lane/x16a (Opus, Tier A; ADR-0037's widget review: every `widget.js` read whole,
+  every `widget.json`, the twins). **Accept with fixes**, 6: error 3, omission 2, other 1.
+  - **Checked.** No widget reads anything but its `widget.json`; every array is `toy`, no row comes from a game table,
+    the one hex value is the multiplier `allow-hex.txt` admits. To-hit A3–A5, damage B1, reductions A1, B1 and B2 (the
+    physical row) and timing J1, J2, K1–K3 are restated as written, `MulDiv`'s branches as monsters/stats A1. The
+    `combat.py` refactor keeps behaviour: `check -v` over all 77 logs in `workspace/logs/combat/` gives byte-identical
+    output before and after (`c37p2-cls-h-plains.log`: `SUMMARY mismatches=0 events=1035`). X13 and E21 pass; gate green.
+  - **Fixes (error).** (1) Breakpoints' fixture called `bcase` with `event=` and `speed=`, the names X13 made the lane
+    drop: 12 of 27 cases kept the default event 7 and speed 256, so "a slow speed with a rate of 0", "an event that does
+    not fire" and the speed-200 and speed-1024 cases tested nothing they named; now `evt=` and `spd=`, with a rate-0 case
+    that reaches 0. (2) The event frame used K1's `N = n − 1`, which fires frame S in a one-step action
+    (`r ≥ 256 (F − S)`), where E2 and E1's loop fire none; the widget now takes `N = ⌈256 (F − S) / r⌉ − 1`, the twin
+    reads the event from `anim_rates.sched_len` (E1's loop, not the closed form), and two one-step cases are added.
+    Backlog entry `2026-11-19-architect-spec-writer-timing-k1-no-step-event` asks the spec-writer to align K1 with E2.
+    (3) To-hit showed one swap when both of A4's ran (a negative defence that leaves the attack rating negative); the
+    widget and the twin now say `both`, with a case.
+  - **Fixes (omission).** (4) The attack's "weapon term" defaulted to 0, so the default attack sat on the factor floor
+    15 (108 frames for 16); J2's term is stat 68, 100 on a new player (J5): the input is labelled so, defaults to 100,
+    and the caption says so. (5) The damage note named neither the bypass flags, sanctuary, the mastery nor absorption;
+    it now lists them, with absorption stated as the physical row's absence. The to-hit note now says the make-up of
+    AR, its percent and DEF is not shown.
+  - **Fix (other).** (6) Breakpoints' length text says 1 when the rate is 0, and the event text gives E2's bound. The
+    block drafts in `workspace/phase11/blocks-batch3-x16a.md` carry fixes 4 and 5 in the row 24 and 25 captions.
