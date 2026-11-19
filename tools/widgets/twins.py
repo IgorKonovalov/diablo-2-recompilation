@@ -60,6 +60,11 @@ CASES = {"rng": [
     {"seed": 12345, "n": -99, "draws": 0},
 ]}
 
+sys.path.insert(0, HERE)
+import twins_x16c  # noqa: E402  (the seedtree and path twins)
+TWINS.update(twins_x16c.TWINS)
+CASES.update(twins_x16c.CASES)
+
 
 def fixture(name, data):
     return {"cases": [{"inputs": c, "expect": TWINS[name](c, data)} for c in CASES[name]]}

@@ -1,0 +1,965 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "seed": 12648430,
+    "act": 0,
+    "level": 1,
+    "rooms": 3
+   },
+   "expect": {
+    "seed": 12648430,
+    "act": 0,
+    "level": 1,
+    "rooms": 3,
+    "game": {
+     "low": 12648430,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 2727269568,
+      "draws": 3,
+      "tombs": [
+       70,
+       69
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 2727269568,
+      "draws": 2,
+      "tombs": null,
+      "bit": 1
+     },
+     {
+      "idx": 3,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 2727269568,
+     "id": 1,
+     "sum": 2727269569,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 3873196831,
+      "levelHigh": 1137523325,
+      "roomLow": 2176926069,
+      "roomHigh": 1615480842
+     },
+     {
+      "k": 2,
+      "levelLow": 3314448728,
+      "levelHigh": 1615480842,
+      "roomLow": 1962206034,
+      "roomHigh": 1382431272
+     },
+     {
+      "k": 3,
+      "levelLow": 3577686210,
+      "levelHigh": 1382431272,
+      "roomLow": 2056486884,
+      "roomHigh": 1492225617
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12648430,
+    "act": 1,
+    "level": 66,
+    "rooms": 3
+   },
+   "expect": {
+    "seed": 12648430,
+    "act": 1,
+    "level": 66,
+    "rooms": 3,
+    "game": {
+     "low": 12648430,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 2727269568,
+      "draws": 3,
+      "tombs": [
+       70,
+       69
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 2727269568,
+      "draws": 2,
+      "tombs": null,
+      "bit": 1
+     },
+     {
+      "idx": 3,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 2727269568,
+     "id": 66,
+     "sum": 2727269634,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 54988068,
+      "levelHigh": 1137523353,
+      "roomLow": 2397658958,
+      "roomHigh": 22935103
+     },
+     {
+      "k": 2,
+      "levelLow": 3535181645,
+      "levelHigh": 22935103,
+      "roomLow": 3274424539,
+      "roomHigh": 1474497287
+     },
+     {
+      "k": 3,
+      "levelLow": 3297358976,
+      "levelHigh": 1474497287,
+      "roomLow": 1317005594,
+      "roomHigh": 1375303267
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12648430,
+    "act": 2,
+    "level": 80,
+    "rooms": 2
+   },
+   "expect": {
+    "seed": 12648430,
+    "act": 2,
+    "level": 80,
+    "rooms": 2,
+    "game": {
+     "low": 12648430,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 2727269568,
+      "draws": 3,
+      "tombs": [
+       70,
+       69
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 2727269568,
+      "draws": 2,
+      "tombs": null,
+      "bit": 1
+     },
+     {
+      "idx": 3,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 2727269568,
+     "id": 80,
+     "sum": 2727269648,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 3659724778,
+      "levelHigh": 1137523358,
+      "roomLow": 727214508,
+      "roomHigh": 1526443278
+     },
+     {
+      "k": 2,
+      "levelLow": 1864737200,
+      "levelHigh": 1526443278,
+      "roomLow": 2701684490,
+      "roomHigh": 777767656
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12648430,
+    "act": 3,
+    "level": 255,
+    "rooms": 8
+   },
+   "expect": {
+    "seed": 12648430,
+    "act": 3,
+    "level": 255,
+    "rooms": 8,
+    "game": {
+     "low": 12648430,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 2727269568,
+      "draws": 3,
+      "tombs": [
+       70,
+       69
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 2727269568,
+      "draws": 2,
+      "tombs": null,
+      "bit": 1
+     },
+     {
+      "idx": 3,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 2727269568,
+     "id": 255,
+     "sum": 2727269823,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 3621777045,
+      "levelHigh": 1137523431,
+      "roomLow": 1321495363,
+      "roomHigh": 1510615568
+     },
+     {
+      "k": 2,
+      "levelLow": 2459018128,
+      "levelHigh": 1510615568,
+      "roomLow": 3614695530,
+      "roomHigh": 1025637696
+     },
+     {
+      "k": 3,
+      "levelLow": 830343136,
+      "levelHigh": 1025637697,
+      "roomLow": 3517583866,
+      "roomHigh": 346329785
+     },
+     {
+      "k": 4,
+      "levelLow": 248253601,
+      "levelHigh": 346329786,
+      "roomLow": 2561034879,
+      "roomHigh": 103544682
+     },
+     {
+      "k": 5,
+      "levelLow": 2907363999,
+      "levelHigh": 103544682,
+      "roomLow": 1653452533,
+      "roomHigh": 1212639338
+     },
+     {
+      "k": 6,
+      "levelLow": 1756996549,
+      "levelHigh": 1212639338,
+      "roomLow": 1062721843,
+      "roomHigh": 732829853
+     },
+     {
+      "k": 7,
+      "levelLow": 2275360515,
+      "levelHigh": 732829853,
+      "roomLow": 3947835369,
+      "roomHigh": 949035507
+     },
+     {
+      "k": 8,
+      "levelLow": 385697260,
+      "levelHigh": 949035508,
+      "roomLow": 4106457398,
+      "roomHigh": 160871383
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12648430,
+    "act": 4,
+    "level": 0,
+    "rooms": 1
+   },
+   "expect": {
+    "seed": 12648430,
+    "act": 4,
+    "level": 0,
+    "rooms": 1,
+    "game": {
+     "low": 12648430,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 2727269568,
+      "draws": 3,
+      "tombs": [
+       70,
+       69
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 2727269568,
+      "draws": 2,
+      "tombs": null,
+      "bit": 1
+     },
+     {
+      "idx": 3,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 2727269568,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 2727269568,
+     "id": 0,
+     "sum": 2727269568,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 2081798746,
+      "levelHigh": 1137523325,
+      "roomLow": 455543260,
+      "roomHigh": 868302371
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 12345,
+    "act": 0,
+    "level": 1,
+    "rooms": 5
+   },
+   "expect": {
+    "seed": 12345,
+    "act": 0,
+    "level": 1,
+    "rooms": 5,
+    "game": {
+     "low": 12345,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 22752887,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 22752887,
+      "draws": 5,
+      "tombs": [
+       72,
+       71
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 22752887,
+      "draws": 2,
+      "tombs": null,
+      "bit": 0
+     },
+     {
+      "idx": 3,
+      "lead": 22752887,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 22752887,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 22752887,
+     "id": 1,
+     "sum": 22752888,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 4129178866,
+      "levelHigh": 9490055,
+      "roomLow": 4081004756,
+      "roomHigh": 1722248995
+     },
+     {
+      "k": 2,
+      "levelLow": 4090494145,
+      "levelHigh": 1722248995,
+      "roomLow": 75502367,
+      "roomHigh": 1706113894
+     },
+     {
+      "k": 3,
+      "levelLow": 1797750696,
+      "levelHigh": 1706113894,
+      "roomLow": 4179869410,
+      "roomHigh": 749828096
+     },
+     {
+      "k": 4,
+      "levelLow": 1591015342,
+      "levelHigh": 749828097,
+      "roomLow": 1640528768,
+      "roomHigh": 663600358
+     },
+     {
+      "k": 5,
+      "levelLow": 2390356199,
+      "levelHigh": 663600358,
+      "roomLow": 872567901,
+      "roomHigh": 996999330
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 1,
+    "act": 1,
+    "level": 67,
+    "rooms": 4
+   },
+   "expect": {
+    "seed": 1,
+    "act": 1,
+    "level": 67,
+    "rooms": 4,
+    "game": {
+     "low": 1,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 1791398751,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 1791398751,
+      "draws": 3,
+      "tombs": [
+       67,
+       70
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 1791398751,
+      "draws": 2,
+      "tombs": null,
+      "bit": 1
+     },
+     {
+      "idx": 3,
+      "lead": 1791398751,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 1791398751,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 1791398751,
+     "id": 67,
+     "sum": 1791398818,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 556187204,
+      "levelHigh": 747178777,
+      "roomLow": 2658053358,
+      "roomHigh": 231981438
+     },
+     {
+      "k": 2,
+      "levelLow": 3405231469,
+      "levelHigh": 231981438,
+      "roomLow": 4210683771,
+      "roomHigh": 1420296060
+     },
+     {
+      "k": 3,
+      "levelLow": 147697247,
+      "levelHigh": 1420296061,
+      "roomLow": 2882970037,
+      "roomHigh": 61603394
+     },
+     {
+      "k": 4,
+      "levelLow": 8298136,
+      "levelHigh": 61603395,
+      "roomLow": 875924882,
+      "roomHigh": 3461089
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 2147483647,
+    "act": 2,
+    "level": 255,
+    "rooms": 8
+   },
+   "expect": {
+    "seed": 2147483647,
+    "act": 2,
+    "level": 255,
+    "rooms": 8,
+    "game": {
+     "low": 2147483647,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 356086229,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 356086229,
+      "draws": 3,
+      "tombs": [
+       71,
+       72
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 356086229,
+      "draws": 2,
+      "tombs": null,
+      "bit": 1
+     },
+     {
+      "idx": 3,
+      "lead": 356086229,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 356086229,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 356086229,
+     "id": 255,
+     "sum": 356086484,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 1036296126,
+      "levelHigh": 148520955,
+      "roomLow": 1528680400,
+      "roomHigh": 432231206
+     },
+     {
+      "k": 2,
+      "levelLow": 1677200689,
+      "levelHigh": 432231206,
+      "roomLow": 4080253263,
+      "roomHigh": 699547608
+     },
+     {
+      "k": 3,
+      "levelLow": 217516507,
+      "levelHigh": 699547609,
+      "roomLow": 1023920161,
+      "roomHigh": 90724475
+     },
+     {
+      "k": 4,
+      "levelLow": 1723467104,
+      "levelHigh": 90724475,
+      "roomLow": 2557224314,
+      "roomHigh": 718844977
+     },
+     {
+      "k": 5,
+      "levelLow": 2647948123,
+      "levelHigh": 718844977,
+      "roomLow": 273162145,
+      "roomHigh": 1104438956
+     },
+     {
+      "k": 6,
+      "levelLow": 992006456,
+      "levelHigh": 1104438956,
+      "roomLow": 4148200114,
+      "roomHigh": 413758322
+     },
+     {
+      "k": 7,
+      "levelLow": 957671108,
+      "levelHigh": 413758323,
+      "roomLow": 1383847790,
+      "roomHigh": 399437311
+     },
+     {
+      "k": 8,
+      "levelLow": 1797605447,
+      "levelHigh": 399437311,
+      "roomLow": 3108147517,
+      "roomHigh": 749767514
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 4294967295,
+    "act": 9,
+    "level": -4,
+    "rooms": 99
+   },
+   "expect": {
+    "seed": 2147483647,
+    "act": 4,
+    "level": 0,
+    "rooms": 8,
+    "game": {
+     "low": 2147483647,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 356086229,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 356086229,
+      "draws": 3,
+      "tombs": [
+       71,
+       72
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 356086229,
+      "draws": 2,
+      "tombs": null,
+      "bit": 1
+     },
+     {
+      "idx": 3,
+      "lead": 356086229,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 356086229,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 356086229,
+     "id": 0,
+     "sum": 356086229,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 3791285123,
+      "levelHigh": 148520848,
+      "roomLow": 662728297,
+      "roomHigh": 1581316094
+     },
+     {
+      "k": 2,
+      "levelLow": 811248479,
+      "levelHigh": 1581316094,
+      "roomLow": 396710581,
+      "roomHigh": 338365550
+     },
+     {
+      "k": 3,
+      "levelLow": 1978026009,
+      "levelHigh": 338365550,
+      "roomLow": 1612287447,
+      "roomHigh": 825019554
+     },
+     {
+      "k": 4,
+      "levelLow": 1950652331,
+      "levelHigh": 825019554,
+      "roomLow": 710601009,
+      "roomHigh": 813602202
+     },
+     {
+      "k": 5,
+      "levelLow": 1535619897,
+      "levelHigh": 813602202,
+      "roomLow": 4233297271,
+      "roomHigh": 640495340
+     },
+     {
+      "k": 6,
+      "levelLow": 751931511,
+      "levelHigh": 640495341,
+      "roomLow": 1620123181,
+      "roomHigh": 313624895
+     },
+     {
+      "k": 7,
+      "levelLow": 2260617856,
+      "levelHigh": 313624895,
+      "roomLow": 1498896154,
+      "roomHigh": 942886457
+     },
+     {
+      "k": 8,
+      "levelLow": 1812520383,
+      "levelHigh": 942886457,
+      "roomLow": 3074954901,
+      "roomHigh": 755988420
+     }
+    ]
+   }
+  },
+  {
+   "inputs": {
+    "seed": 0,
+    "act": -1,
+    "level": 3,
+    "rooms": 0
+   },
+   "expect": {
+    "seed": 1,
+    "act": 0,
+    "level": 3,
+    "rooms": 1,
+    "game": {
+     "low": 1,
+     "high": 666
+    },
+    "acts": [
+     {
+      "idx": 0,
+      "lead": 1791398751,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 1,
+      "lead": 1791398751,
+      "draws": 3,
+      "tombs": [
+       67,
+       70
+      ],
+      "bit": null
+     },
+     {
+      "idx": 2,
+      "lead": 1791398751,
+      "draws": 2,
+      "tombs": null,
+      "bit": 1
+     },
+     {
+      "idx": 3,
+      "lead": 1791398751,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     },
+     {
+      "idx": 4,
+      "lead": 1791398751,
+      "draws": 1,
+      "tombs": null,
+      "bit": null
+     }
+    ],
+    "levelSeed": {
+     "lead": 1791398751,
+     "id": 3,
+     "sum": 1791398754,
+     "high": 666
+    },
+    "roomRows": [
+     {
+      "k": 1,
+      "levelLow": 1870826756,
+      "levelHigh": 747178750,
+      "roomLow": 4158703278,
+      "roomHigh": 780307563
+     }
+    ]
+   }
+  }
+ ]
+}
