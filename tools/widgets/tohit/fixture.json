@@ -1,0 +1,364 @@
+{
+ "cases": [
+  {
+   "inputs": {
+    "ar": 500,
+    "pct": 0,
+    "def": 300,
+    "alvl": 30,
+    "dlvl": 30
+   },
+   "expect": {
+    "ar": 500,
+    "pct": 0,
+    "def": 300,
+    "alvl": 30,
+    "dlvl": 30,
+    "ar3": 500,
+    "swap": "none",
+    "arAfter": 500,
+    "defAfter": 300,
+    "c1": 62,
+    "c2": 62,
+    "chance": 62,
+    "clamp": "none"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 500,
+    "pct": 0,
+    "def": 500,
+    "alvl": 30,
+    "dlvl": 30
+   },
+   "expect": {
+    "ar": 500,
+    "pct": 0,
+    "def": 500,
+    "alvl": 30,
+    "dlvl": 30,
+    "ar3": 500,
+    "swap": "none",
+    "arAfter": 500,
+    "defAfter": 500,
+    "c1": 50,
+    "c2": 50,
+    "chance": 50,
+    "clamp": "none"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 100,
+    "pct": 0,
+    "def": 900,
+    "alvl": 20,
+    "dlvl": 60
+   },
+   "expect": {
+    "ar": 100,
+    "pct": 0,
+    "def": 900,
+    "alvl": 20,
+    "dlvl": 60,
+    "ar3": 100,
+    "swap": "none",
+    "arAfter": 100,
+    "defAfter": 900,
+    "c1": 10,
+    "c2": 5,
+    "chance": 5,
+    "clamp": "low"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 6000,
+    "pct": 50,
+    "def": 800,
+    "alvl": 85,
+    "dlvl": 40
+   },
+   "expect": {
+    "ar": 6000,
+    "pct": 50,
+    "def": 800,
+    "alvl": 85,
+    "dlvl": 40,
+    "ar3": 9000,
+    "swap": "none",
+    "arAfter": 9000,
+    "defAfter": 800,
+    "c1": 91,
+    "c2": 123,
+    "chance": 95,
+    "clamp": "high"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 400,
+    "pct": 0,
+    "def": -250,
+    "alvl": 30,
+    "dlvl": 30
+   },
+   "expect": {
+    "ar": 400,
+    "pct": 0,
+    "def": -250,
+    "alvl": 30,
+    "dlvl": 30,
+    "ar3": 400,
+    "swap": "def",
+    "arAfter": 650,
+    "defAfter": 0,
+    "c1": 100,
+    "c2": 100,
+    "chance": 95,
+    "clamp": "high"
+   }
+  },
+  {
+   "inputs": {
+    "ar": -300,
+    "pct": 0,
+    "def": 200,
+    "alvl": 30,
+    "dlvl": 30
+   },
+   "expect": {
+    "ar": -300,
+    "pct": 0,
+    "def": 200,
+    "alvl": 30,
+    "dlvl": 30,
+    "ar3": -300,
+    "swap": "ar",
+    "arAfter": 0,
+    "defAfter": 500,
+    "c1": 0,
+    "c2": 0,
+    "chance": 5,
+    "clamp": "low"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 500,
+    "pct": -100,
+    "def": 200,
+    "alvl": 30,
+    "dlvl": 30
+   },
+   "expect": {
+    "ar": 500,
+    "pct": -100,
+    "def": 200,
+    "alvl": 30,
+    "dlvl": 30,
+    "ar3": 0,
+    "swap": "none",
+    "arAfter": 0,
+    "defAfter": 200,
+    "c1": 0,
+    "c2": 0,
+    "chance": 5,
+    "clamp": "low"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 0,
+    "pct": 0,
+    "def": 0,
+    "alvl": 1,
+    "dlvl": 0
+   },
+   "expect": {
+    "ar": 0,
+    "pct": 0,
+    "def": 0,
+    "alvl": 1,
+    "dlvl": 0,
+    "ar3": 0,
+    "swap": "none",
+    "arAfter": 0,
+    "defAfter": 0,
+    "c1": 100,
+    "c2": 200,
+    "chance": 95,
+    "clamp": "high"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 100000,
+    "pct": 0,
+    "def": 10,
+    "alvl": 99,
+    "dlvl": 1
+   },
+   "expect": {
+    "ar": 100000,
+    "pct": 0,
+    "def": 10,
+    "alvl": 99,
+    "dlvl": 1,
+    "ar3": 100000,
+    "swap": "none",
+    "arAfter": 100000,
+    "defAfter": 10,
+    "c1": 99,
+    "c2": 196,
+    "chance": 95,
+    "clamp": "high"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 10,
+    "pct": 0,
+    "def": 100000,
+    "alvl": 1,
+    "dlvl": 99
+   },
+   "expect": {
+    "ar": 10,
+    "pct": 0,
+    "def": 100000,
+    "alvl": 1,
+    "dlvl": 99,
+    "ar3": 10,
+    "swap": "none",
+    "arAfter": 10,
+    "defAfter": 100000,
+    "c1": 0,
+    "c2": 0,
+    "chance": 5,
+    "clamp": "low"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 1500000,
+    "pct": 1000,
+    "def": 0,
+    "alvl": 99,
+    "dlvl": 99
+   },
+   "expect": {
+    "ar": 1500000,
+    "pct": 1000,
+    "def": 0,
+    "alvl": 99,
+    "dlvl": 99,
+    "ar3": 16500000,
+    "swap": "none",
+    "arAfter": 16500000,
+    "defAfter": 0,
+    "c1": 100,
+    "c2": 100,
+    "chance": 95,
+    "clamp": "high"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 1200000,
+    "pct": 100,
+    "def": 1500000,
+    "alvl": 255,
+    "dlvl": 255
+   },
+   "expect": {
+    "ar": 1200000,
+    "pct": 100,
+    "def": 1500000,
+    "alvl": 255,
+    "dlvl": 255,
+    "ar3": 2400000,
+    "swap": "none",
+    "arAfter": 2400000,
+    "defAfter": 1500000,
+    "c1": 61,
+    "c2": 61,
+    "chance": 61,
+    "clamp": "none"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 1200000,
+    "pct": 7,
+    "def": 99999,
+    "alvl": 50,
+    "dlvl": 0
+   },
+   "expect": {
+    "ar": 1200000,
+    "pct": 7,
+    "def": 99999,
+    "alvl": 50,
+    "dlvl": 0,
+    "ar3": 1284000,
+    "swap": "none",
+    "arAfter": 1284000,
+    "defAfter": 99999,
+    "c1": 92,
+    "c2": 184,
+    "chance": 95,
+    "clamp": "high"
+   }
+  },
+  {
+   "inputs": {
+    "ar": 301,
+    "pct": 33,
+    "def": 77,
+    "alvl": 12,
+    "dlvl": 29
+   },
+   "expect": {
+    "ar": 301,
+    "pct": 33,
+    "def": 77,
+    "alvl": 12,
+    "dlvl": 29,
+    "ar3": 400,
+    "swap": "none",
+    "arAfter": 400,
+    "defAfter": 77,
+    "c1": 83,
+    "c2": 48,
+    "chance": 48,
+    "clamp": "none"
+   }
+  },
+  {
+   "inputs": {
+    "ar": -5000000,
+    "pct": 5000,
+    "def": 9999999999,
+    "alvl": 0,
+    "dlvl": -4
+   },
+   "expect": {
+    "ar": -100000,
+    "pct": 1000,
+    "def": 1500000,
+    "alvl": 1,
+    "dlvl": 0,
+    "ar3": -1100000,
+    "swap": "ar",
+    "arAfter": 0,
+    "defAfter": 2600000,
+    "c1": 0,
+    "c2": 0,
+    "chance": 5,
+    "clamp": "low"
+   }
+  }
+ ]
+}

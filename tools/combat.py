@@ -100,6 +100,86 @@ def sar7(v):
     return tdiv(s32(v), 128)
 
 
+def tohit_chance(ar, df, pct, alvl, dlvl):
+    """to-hit A3-A5 (combat/to-hit): the attack rating after the percent, the swaps, c = 100 AR / (AR + DEF), the level
+    factor and the 5..95 clamp. -> dict: ar3 (after the percent), ar and df (after A4's swaps), c1 (before the level
+    factor), c2 (after it), c (clamped)."""
+    ar = s32(ar + muldiv(ar, pct, 100))
+    ar3 = ar
+    if df < 0:
+        ar, df = s32(ar - df), 0
+    if ar < 0:
+        df, ar = s32(df - ar), 0
+    if df < 0:
+        df = 0
+    c1 = 100 if ar + df == 0 else tdiv(s32(100 * ar), s32(ar + df))
+    c2 = tdiv(s32(c1 * alvl * 2), s32(alvl + dlvl))
+    c = 5 if c2 <= 5 else (95 if c2 >= 95 else c2)
+    return {"ar3": ar3, "ar": ar, "df": df, "c1": c1, "c2": c2, "c": c}
+
+
+def phys_ed(ed_pct, s25, weapon, st, dx, sb=0, db=0, mastery=0):
+    """damage B1: the enhanced-damage percent of the physical roll (the floor of -90 included)."""
+    ed = ed_pct + s25
+    if weapon:
+        if sb:
+            ed += tdiv(s32(st * sb), 100)
+        if db:
+            ed += tdiv(s32(dx * db), 100)
+        ed += mastery
+    else:
+        ed += st
+    return max(ed, -90)
+
+
+def phys_bounds(mn, mx, add, ed, s18, s17):
+    """damage B1: mn, mx and add already shifted left by 8 -> (mn, mx, lo, hi) after the floors."""
+    mx = s32(mx + add)
+    mn = s32(mn + add)
+    if mn < 1:
+        mn = 256
+    if mx <= mn:
+        mx = mn + 256
+    lo = s32(mn + muldiv(mn, s32(s18 + ed), 100))
+    hi = s32(mx + muldiv(mx, s32(s17 + ed), 100))
+    return mn, mx, lo, hi
+
+
+def reduce_value(v, flat, r, bypass):
+    """reductions B1 for a field v > 0: the flat reduction, then the resistance r (bypass: none, and r above 0 is 0)."""
+    if bypass:
+        dd = v
+        if r > 0:
+            r = 0
+    else:
+        dd = s32(v - flat)
+    if dd > 0 and r != 0:
+        r = min(r, 100)
+        dd = muldiv(dd, 100 - r, 100)
+    return dd
+
+
+def resist_cap_default(res_stat):
+    """reductions B2: a player's cap when the row has no maximum stat (physical 50, else 75)."""
+    return 50 if res_stat == 36 else 75
+
+
+def percent_scale(v, pct):
+    """reductions A1: a field above 0 scaled by the percent P when P is not 100."""
+    return muldiv(v, pct, 100) if pct != 100 and v > 0 else v
+
+
+def resist_final(r, def_mon, cap):
+    """reductions B2's tail: the floor of -100, a monster's value as it stands, a player's capped. -> (r, cap or None)."""
+    if r <= 0:
+        return (-100 if r <= -100 else r), None
+    if def_mon:
+        return r, None
+    if r >= cap:
+        return cap, cap
+    return r, cap
+
+
 class Tables:
     def __init__(self, excel=DEFAULT_EXCEL, exe=drlg.DEFAULT_EXE):
         def rb(name):
@@ -299,16 +379,8 @@ class Checker:
         self.eq("THV alvl", thv["al"], stat(a, 12))
         self.eq("THV dlvl", thv["dl"], stat(d, 12))
         alvl, dlvl = stat(a, 12), stat(d, 12)
-        ar = s32(ar + muldiv(ar, pct, 100))
-        if df < 0:
-            ar, df = s32(ar - df), 0
-        if ar < 0:
-            df, ar = s32(df - ar), 0
-        if df < 0:
-            df = 0
-        c = 100 if ar + df == 0 else tdiv(s32(100 * ar), s32(ar + df))
-        c = tdiv(s32(c * alvl * 2), s32(alvl + dlvl))
-        c = 5 if c <= 5 else (95 if c >= 95 else c)
+        tc = tohit_chance(ar, df, pct, alvl, dlvl)
+        c = tc["c"]
         r, sa = rng_range(sa, 100)
         self.eq("THR c", thr["c"], c)
         self.eq("THR r", thr["r"], r)
@@ -483,36 +555,22 @@ class Checker:
                 mx = 2 if mx <= 1 else mx
                 mn, mx = s32(mn << 8), s32(mx << 8)
             add = s32(stat(a, 111) << 8)
-            mx = s32(mx + add)
-            mn = s32(mn + add)
-            if mn < 1:
-                mn = 256
-            if mx <= mn:
-                mx = mn + 256
+            mn, mx, _, _ = phys_bounds(mn, mx, add, 0, 0, 0)
             self.eq("RPE min", rpe["min"], mn)
             self.eq("RPE max", rpe["max"], mx)
-            ed = pget(p, F_ED) + stat(a, 25)
             if w is not None:
                 wr = T.weapon(w)
                 if wr is None:
                     self.fail("weapon class %r not in weapons.bin" % w)
-                if T.undead(d["c"]) if d["t"] == 1 else False:
-                    pass
-                if wr["sb"]:
-                    ed += tdiv(s32(stat(a, 0) * wr["sb"]), 100)
-                if wr["db"]:
-                    ed += tdiv(s32(stat(a, 2) * wr["db"]), 100)
                 if rpm is None:
                     self.fail("no RPM")
-                ed += rpm["v"]
-            else:
-                ed += stat(a, 0)
-            ed = max(ed, -90)
+            ed = phys_ed(pget(p, F_ED), stat(a, 25), w is not None, stat(a, 0), stat(a, 2),
+                         wr["sb"] if w is not None else 0, wr["db"] if w is not None else 0,
+                         rpm["v"] if w is not None else 0)
             self.eq("RPE ed", rpe["ed"], ed)
             self.eq("RPE stat 18", rpe["s18"], stat(a, 18))
             self.eq("RPE stat 17", rpe["s17"], stat(a, 17))
-            lo = s32(mn + muldiv(mn, s32(stat(a, 18) + ed), 100))
-            hi = s32(mx + muldiv(mx, s32(stat(a, 17) + ed), 100))
+            _, _, lo, hi = phys_bounds(mn, mx, 0, ed, stat(a, 18), stat(a, 17))
             v = s32(rpe["phys"] + lo)
             if hi > lo:
                 r, sa = rng_range(sa, s32(hi - lo))
@@ -715,17 +773,13 @@ class Checker:
             else:
                 pen = T.dl32(g["diff"], 0)
             r = s32(r + pen)
-        if r <= 0:
-            return (-100 if r <= -100 else r), None
-        if def_mon:
-            return r, None
+        if r <= 0 or def_mon:
+            return resist_final(r, def_mon, 0)
         if row["max"] != -1:
             cap = min(75 + stat(d, row["max"]), 95)
         else:
-            cap = 50 if row["res"] == 36 else 75
-        if max(r, -100) >= cap:
-            return cap, cap
-        return r, cap
+            cap = resist_cap_default(row["res"])
+        return resist_final(r, def_mon, cap)
 
     def reduce(self, a, d, p, g, bypass, red, absorb_log):
         T = self.T
@@ -748,17 +802,9 @@ class Checker:
                     self.case("resist application %s at cap" % name)
             if k == 0:
                 self.case("resist application physical")
-            if bypass:
-                dd = v
-                if r > 0:
-                    r = 0
-            else:
-                dd = s32(v - red[row["slot"]])
-                if red[row["slot"]] > 0:
-                    self.case("flat reduction (DR or MDR) non-zero")
-            if dd > 0 and r != 0:
-                r = min(r, 100)
-                dd = muldiv(dd, 100 - r, 100)
+            if not bypass and red[row["slot"]] > 0:
+                self.case("flat reduction (DR or MDR) non-zero")
+            dd = reduce_value(v, red[row["slot"]], r, bypass)
             if not bypass and row["absp"] != -1:
                 pa = stat(d, row["absp"])
                 if pa >= 40:
@@ -806,7 +852,7 @@ class Checker:
         if P != 100:
             for row in T.rows:
                 if row["scaled"] and pget(p, row["off"]) > 0:
-                    pset(p, row["off"], muldiv(pget(p, row["off"]), P, 100))
+                    pset(p, row["off"], percent_scale(pget(p, row["off"]), P))
         if lines[i][0] == "EVH":
             self.fail("event 11 (absorbdamage) handler ran: not modelled")
         # COMBAT_LengthImmunities

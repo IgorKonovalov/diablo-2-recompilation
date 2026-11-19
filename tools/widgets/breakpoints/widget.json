@@ -1,0 +1,215 @@
+{
+  "marker": "widget-only/1",
+  "name": "breakpoints",
+  "rule": {
+    "k": 120,
+    "ticks": 256,
+    "kinds": {
+      "rows": "toy",
+      "items": [
+        {
+          "id": "attack",
+          "plus": 0,
+          "lo": 15,
+          "hi": 175
+        },
+        {
+          "id": "cast",
+          "plus": 100,
+          "lo": 100,
+          "hi": 175
+        },
+        {
+          "id": "gethit",
+          "plus": 50,
+          "lo": 50,
+          "hi": 169
+        },
+        {
+          "id": "block",
+          "plus": 50,
+          "lo": 50,
+          "hi": 169
+        },
+        {
+          "id": "blockhs",
+          "plus": 100,
+          "lo": 100,
+          "hi": 219
+        }
+      ]
+    },
+    "maxRows": 40
+  },
+  "inputs": {
+    "kind": {
+      "rows": "toy",
+      "items": [
+        "attack",
+        "cast",
+        "gethit",
+        "block",
+        "blockhs"
+      ],
+      "default": "attack"
+    },
+    "nfr": {
+      "min": 1,
+      "max": 144,
+      "default": 16
+    },
+    "start": {
+      "min": 0,
+      "max": 143,
+      "default": 0
+    },
+    "spd": {
+      "min": 1,
+      "max": 1024,
+      "default": 256
+    },
+    "stat": {
+      "min": 0,
+      "max": 2000,
+      "default": 0
+    },
+    "term": {
+      "min": -100,
+      "max": 100,
+      "default": 0
+    },
+    "evt": {
+      "min": 0,
+      "max": 143,
+      "default": 7
+    }
+  },
+  "presets": {
+    "rows": "toy",
+    "items": [
+      {
+        "name": "toy attack",
+        "kind": "attack",
+        "nfr": 16,
+        "start": 0,
+        "spd": 256,
+        "stat": 0,
+        "term": 0,
+        "evt": 7
+      },
+      {
+        "name": "toy cast",
+        "kind": "cast",
+        "nfr": 14,
+        "start": 0,
+        "spd": 256,
+        "stat": 0,
+        "term": 0,
+        "evt": 7
+      },
+      {
+        "name": "toy get-hit",
+        "kind": "gethit",
+        "nfr": 5,
+        "start": 0,
+        "spd": 256,
+        "stat": 0,
+        "term": 0,
+        "evt": 0
+      },
+      {
+        "name": "toy block",
+        "kind": "block",
+        "nfr": 6,
+        "start": 0,
+        "spd": 256,
+        "stat": 0,
+        "term": 0,
+        "evt": 0
+      }
+    ]
+  },
+  "text": {
+    "intro": "Choose an action and type a frame count, a start frame, the animation's speed and the item stat; the table gives the action's length in frames and the breakpoints, the stat each shorter length needs. The numbers offered first are illustrative.",
+    "caps": {
+      "kind": "Action",
+      "nfr": "Frames in the animation",
+      "start": "Start frame",
+      "spd": "Animation speed",
+      "stat": "Item stat of the action's kind (faster attack, cast, hit recovery or block rate)",
+      "term": "Weapon speed term (attacks only)",
+      "evt": "Frame of the event to follow"
+    },
+    "kinds": {
+      "rows": "toy",
+      "items": [
+        {
+          "id": "attack",
+          "name": "an attack",
+          "calc": "bonus + weapon term, clamped to 15 to 175"
+        },
+        {
+          "id": "cast",
+          "name": "a cast",
+          "calc": "100 + bonus, at most 175"
+        },
+        {
+          "id": "gethit",
+          "name": "a get-hit",
+          "calc": "50 + bonus"
+        },
+        {
+          "id": "block",
+          "name": "a block",
+          "calc": "50 + bonus"
+        },
+        {
+          "id": "blockhs",
+          "name": "a block under Holy Shield",
+          "calc": "100 + bonus"
+        }
+      ]
+    },
+    "presetLabel": "Illustrative inputs",
+    "presetNone": "choose one",
+    "columns": {
+      "rows": "toy",
+      "items": [
+        "Step",
+        "Computation",
+        "Value"
+      ]
+    },
+    "bpColumns": {
+      "rows": "toy",
+      "items": [
+        "Length in frames",
+        "Least factor",
+        "Least item stat"
+      ]
+    },
+    "steps": {
+      "bonus": "Bonus from the item stat",
+      "factor": "Factor",
+      "pace": "Rate",
+      "length": "Length of the action",
+      "evt": "The event frame fires"
+    },
+    "calc": {
+      "bonus": "120 x stat / (120 + stat), toward zero",
+      "pace": "speed x factor / 100",
+      "length": "the larger of 2 and 256 x (frames - start) / rate, rounded up",
+      "eventYes": "frame - start, times 256 over the rate, rounded up, at least 1; it fires if that is below the length",
+      "eventNo": "it would come at or after the end"
+    },
+    "unitFrames": "frames",
+    "unitFrame": "frame",
+    "none": "no stat needed",
+    "never": "not reachable",
+    "more": "Longer lists are cut after this many rows.",
+    "bpHead": "Breakpoints",
+    "liveHead": "Length",
+    "liveFactor": "factor",
+    "note": "Computed by our model of the rate and the schedule, not observed in the game. A stat is the item stat the page names for the action; modifiers other than the weapon term are not shown."
+  }
+}

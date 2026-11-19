@@ -36,6 +36,27 @@ def node_cmd(*reads):
         "--disallow-code-generation-from-strings"]
 
 
+# one change of each widget.js the harness must see as a different answer (the rule's own text, once in the file)
+MUTATIONS = {
+    "rng": ("low % n", "(low + 1) % n"),
+    "tohit": ("tdiv(Math.imul(rule.percentBase, ar), (ar + df) | 0)", "tdiv(Math.imul(rule.percentBase, ar), (ar + df + 1) | 0)"),
+    "damage": ("draw = low % gapLen;", "draw = (low + 1) % gapLen;"),
+    "breakpoints": ("let q = Math.floor((spd * fac) / 100);", "let q = Math.floor((spd * fac) / 101);"),
+}
+
+
+def bump_first_number(v):
+    """Adds 1 to the first number found in a fixture output (depth first); True when one was changed."""
+    items = v.items() if isinstance(v, dict) else enumerate(v)
+    for k, x in list(items):
+        if isinstance(x, (int, float)) and not isinstance(x, bool):
+            v[k] = x + 1
+            return True
+        if isinstance(x, (dict, list)) and bump_first_number(x):
+            return True
+    return False
+
+
 def ok(cond, what):
     global checks
     checks += 1
@@ -90,6 +111,22 @@ def main():
             ok((r["result"], r["low"], r["high"]) == (87, 0x015B2E77, 0x0000141D),
                "rng: the first case is the randomness page's worked example")
             ok(any(c["inputs"]["n"] < 1 for c in fixture["cases"]), "rng: a case with n below 1 (no draw)")
+        if name == "breakpoints":
+            # timing K3's illustrations: a 14-frame cast at speed 256 at the cast rates 0, 9, 20, 37, 63, 105 and 200
+            # lasts 14, 13, 12, 11, 10, 9 and 8 frames; a 5-frame get-hit at 0, 7, 15, 27, 48, 86 and 200 lasts 10 to 4
+            def lens(kind, nf, stats):
+                got = {c["inputs"]["stat"]: c["expect"]["n"] for c in fixture["cases"]
+                       if c["inputs"]["kind"] == kind and c["inputs"]["nfr"] == nf and c["inputs"]["spd"] == 256
+                       and c["inputs"]["start"] == 0 and c["inputs"]["term"] == 0}
+                return [got.get(x) for x in stats]
+            ok(lens("cast", 14, (0, 9, 20, 37, 63, 105, 200)) == [14, 13, 12, 11, 10, 9, 8],
+               "breakpoints: timing K3's cast illustration (14 frames, speed 256)")
+            ok(lens("gethit", 5, (0, 7, 15, 27, 48, 86, 200)) == [10, 9, 8, 7, 6, 5, 4],
+               "breakpoints: timing K3's get-hit illustration (5 frames, speed 256)")
+        if name == "damage":
+            # damage's worked example: min 32 and max 87 with enhanced damage 405 give 41369 and 112473
+            w = next((c["expect"] for c in fixture["cases"] if c["inputs"]["wmin"] == 32 and c["inputs"]["wmax"] == 87), {})
+            ok((w.get("lo"), w.get("hi")) == (41369, 112473), "damage: the damage page's worked example, lo 41369 and hi 112473")
         # X13 on the sources first: the gate catches a refused script at commit time, and node never runs one
         src = open(os.path.join(folder, "widget.js"), encoding="utf-8").read()
         xp = ec.js_problems(src, ec.git_identity()) + ec.json_problems(
@@ -124,7 +161,7 @@ def main():
         tmp = tempfile.mkdtemp(prefix="widget-test-")
         try:
             bad = json.loads(json.dumps(fixture))
-            bad["cases"][0]["expect"]["rows"][0]["result"] += 1
+            bump_first_number(bad["cases"][0]["expect"])
             bp = os.path.join(tmp, "fixture.json")
             json.dump(bad, open(bp, "w"))
             o2, _ = node_run(folder, fixture_path=bp)
@@ -132,7 +169,9 @@ def main():
             # a widget that gives another answer is caught: the multiplier changed
             js = open(os.path.join(folder, "widget.js"), encoding="utf-8").read()
             jp = os.path.join(tmp, "w.js")
-            open(jp, "w", encoding="utf-8").write(js.replace("low % n", "(low + 1) % n"))
+            mut = MUTATIONS[name]
+            ok(js.count(mut[0]) == 1, f"{name}: the mutation target occurs once in widget.js")
+            open(jp, "w", encoding="utf-8").write(js.replace(*mut))
             o3, _ = node_run(folder, js_path=jp)
             open(jp, "w", encoding="utf-8").write(js.replace('return make(document.createElement("td"), text);', "return td(text);"))
             bm = subprocess.run(node_cmd(tmp) + [os.path.join(WIDGETS, "smoke_mount.mjs"), jp, os.path.join(folder, "widget.json")],

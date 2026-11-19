@@ -2707,3 +2707,32 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   named `sub_` anchors); the Pages run passed, and the randomness page, `widgets/rng-stepper/widget.js`,
   `spec-items/properties/`, `spec-rng/seeds/` and `world/levels/` answer 200. The site now serves 89 manifest pages,
   22 new animations and one widget.
+- 2026-11-19, archivist, lane/x16a (Phase 11 batch 3: rows 23, 24, 25). Delivered:
+  - **Widgets** `tools/widgets/tohit/` (to-hit § A3 to A5: the percent, the swaps, `100 AR / (AR + DEF)`, the level factor,
+    the 5..95 clamp; 15 fixture cases), `damage/` (damage § B and reductions § A, B1, B2 for the physical field: bounds in
+    256ths, the enhanced-damage percent with both shares, the one draw on a seed typed as Init(seed), P, the flat reduction,
+    the resistance with a player's cap of 50; 20 cases, the damage page's worked example `lo 41369, hi 112473` among them)
+    and `breakpoints/` (timing J1, J2, K1 to K3 for five kinds: attack, cast, get-hit, block, block under Holy Shield;
+    length, event frame, the breakpoint rows with least factor and least stat, capped at 40 rows; 27 cases, K3's two
+    stock illustrations among them, 14 to 8 frames for the cast and 10 to 4 for the get-hit). Each follows rng's pattern:
+    pure `compute`, DOM-only `mount`, `widget.json` of rule parameters, toy presets and text only, `fixture.json` written
+    by a twin in `tools/widgets/twins.py`.
+  - **Entry points added to the models** (the twin calls what the log checker calls, one copy of each rule):
+    `tools/combat.py` gains `tohit_chance`, `phys_ed`, `phys_bounds`, `reduce_value`, `resist_final`, `resist_cap_default` and
+    `percent_scale`, lifted out of `Checker.tohit`, the physical roll, `resist_for`, `reduce` and `reductions` (the checker
+    now calls them; `combat.py check` on `c37p2-cls-h-plains.log` gives the same output as before, `SUMMARY mismatches=0
+    events=1035`, and `test_combat_items_anim.py` 21 tests are green). The breakpoints twin uses `tools/anim_rates.py`
+    (`bonus`, `rate_*`, `closed_len`, `sched_len`, `least_x`, `least_stat`), which `anim.py` itself imports as `AR`; the
+    row named `anim.py`, but the rate and breakpoint functions live in `anim_rates.py`.
+  - **Harness**: `test_widgets.py` takes a per-widget mutation (`MUTATIONS`) and bumps the first number of a case instead of
+    reading rng's `rows[0].result`; `smoke_mount.mjs` types rng's values only into rng. Both additive.
+  - **X13 lessons** (for the next widget lanes): the allowlist refuses `x[k]` for a variable `k` (use `.at(i)`, or fixed
+    member names), `Object`, an array literal whose first item is a string, and any member or key that a browser object
+    also has and the list does not name (`count`, `speed`, `event`, `offset`, `range`, `labels`, `scale`, `points`, `rate`,
+    `x`, `r`, `c`); bare `frames`, `base`, `event` are refused as names. Fixed names for the inputs and `Array.find` over
+    `items` objects (`rows: toy`) replaced the keyed lookups.
+  - **Blocks** drafted for the spec-writer in `workspace/phase11/blocks-batch3-x16a.md` (row 23 `fallback: text`, row 24
+    the `combat-melee-hit-toy` illustration, row 25 `anim-schedule-cast-fcr20`); no spec or wiki page edited.
+  - **Open**: the damage widget leaves out the criticals, the elemental and monster-only fields, absorption and the bypass
+    flags, and says so in its note; the to-hit widget takes AR and the percent as typed numbers (no player or monster
+    composition); the breakpoint rows start at the current length and go down.
