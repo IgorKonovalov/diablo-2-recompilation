@@ -3230,3 +3230,4 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   inside their own box (Starlight's table overflow), as batch 3's checksum table does on the served site; no fix.
   ADR-0037's owed browser run for batch 4 is done. **Manifest:** `docs/export/reviewed-pages.txt` unchanged (no new
   page). Scratch builds and copies deleted. Gate green. Ledger: verdict accept with fixes, 2 (omission 2).
+- 2026-11-19 — **Phase 11 batch 4 served.** The owner pushed the export repository's `main` (cut commit 75c49ad: rows 32 to 40, four widgets and five illustrations); the Pages run passed and the calc and regen widget files are served. Every Phase 11 candidate row is now built.
