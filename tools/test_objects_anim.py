@@ -130,6 +130,49 @@ class Objects(unittest.TestCase):
         self.assertGreater(placed_any, 5)
         self.assertGreater(rejected, 3)                    # the rejection branches run
 
+    def test_handler_3_equals_the_models_own_handler(self):
+        """objects.Checker.pop_3 (with its place_random, in_bounds and cnt_of) run on the toy room: the model's handler 3,
+        not a copy, with only the grid lookup (whtest) and the creation stubbed by the toy's grid; the same spots, the
+        same attempts and the same object-region seed after, for every seed pair."""
+        rx, ry, rw, rh = A.RECT
+
+        class Stub(objects.Checker):
+            def __init__(self, o, walls):
+                self.rect, self.O, self.lid = A.RECT, objects.Seed((o, 666), "O"), 0
+                self.t = type("T", (), {"objs": {c: {"SizeX": sx, "SizeY": sy} for c, (sx, sy) in A.SIZES.items()}})()
+                self.grid, self.made, self.tests = set(walls), [], 0
+
+            def hit(self, k, n=1):
+                pass
+
+            def covk(self, k, item):
+                pass
+
+            def whtest(self, site, x, y, w, h, m):
+                self.tests += 1
+                l, t = x - (w >> 1), y - (h >> 1)                 # drlg/collision E6; cells past the edge free (the toy)
+                return int(any((cx, cy) in self.grid for cx in range(l, l + w) for cy in range(t, t + h)))
+
+            def create(self, cls, x, y, fl, mode, preset=False):
+                sx, sy = A.SIZES[cls]
+                self.made.append((cls, x, y))
+                for cx in range(x - (sx >> 1), x - (sx >> 1) + sx):
+                    for cy in range(y - (sy >> 1), y - (sy >> 1) + sy):
+                        self.grid.add((cx, cy))
+                return (cls, x, y)
+
+        for s, o in SEEDS:
+            tr = A.run(s, o)
+            st = Stub(o, tr["walls"])
+            for sl in tr["slots"]:
+                if sl.get("cls") is not None:
+                    st.pop_3(sl["cls"], sl["dens"])
+            want = [(c["cls"],) + c["spot"] for c in tr["places"] if c["spot"]]
+            self.assertEqual(st.made, want, (s, o))
+            self.assertEqual(st.O.s, tr["O"], (s, o))
+            self.assertEqual(st.tests, sum(1 for c in tr["places"] for a in c["attempts"] if a["inside"]))
+            self.assertEqual(st.grid, tr["blocked"])
+
     def test_no_seed_is_drawn_by_the_other_side(self):
         for s, o in SEEDS:
             tr = A.run(s, o)

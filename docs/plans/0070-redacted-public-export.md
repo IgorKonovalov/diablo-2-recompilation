@@ -2975,3 +2975,35 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `test_anim_schematic`; gate green. Frames viewed in both themes (objects 0, 3, 7, 8, 13; missile 1, 3, 4, 6, 7, 9),
   overlaps fixed; the missile rows assert their two texts never meet. Blocks: `workspace/phase11/blocks-batch4-x17c.md`
   (row 38 in wiki/objects.md "Finding a spot", row 39 in wiki/skills.md "Missiles: the hit").
+- 2026-11-19, architect, review of lane/x17c (Opus, Tier A): **accept with fixes**, 9: misread 1, overclaim 2, omission
+  3, other 3. Checked: every frame and step text of both tools against objects § D1–D4, § E (handler 3, the notation),
+  § F1 and F6 with drlg/collision § E4–E6, and missiles § B1, D2–D4 and E1 (with to-hit § C); frames viewed in both
+  themes (objects 1, 2, 4, 10, 13; missile 0, 4, 5, 6, 8). **Model binding:** the slot loop goes through
+  `objects.solve` (kept); the placement test was a third copy of F1, while `objects.Checker.pop_3` with its
+  `place_random`, `in_bounds` and `cnt_of` is a forward handler 3: a new test runs the model's own method on a stub
+  whose only parts are the toy grid lookup and the creation, and asserts the same spots, test count, end seed and grid
+  for nine seed pairs. The creation numbers were recomputed by hand; a new test feeds them to `skills.Checker.mc` as an
+  MC0/MC1 pair with a stub row (velocity, accel and cap, range, frames left, activate: one pass each, no mismatch). The
+  frame test through `Checker.mf` and the roll through `combat.rng_range` are kept. **Toy departures:** row 39's (end
+  cell only, the chance as an input, the omitted seed, damage, knockback, town and direction) are in the docstring and
+  the caption, and the wiki's own text says the crossed cells are tested: honest. Row 38's outside-the-room rule was
+  not in the caption, and it decides the default run: two of its three accepted spots have a box past the room's top or
+  right edge, which in the game reads the neighbouring room's cells, or gives `0x27` (a refusal) with no room there.
+  **Fixes** (`tools/objects_anim.py`, `tools/missile_anim.py`, their tests): (1) omission: such an attempt is now
+  marked PAST THE EDGE on its row, the legend and the frame caption say the toy reads those cells free, the calc cites
+  collision E4's rule; the block caption says it and `illustrates:` adds collision § E. (2) overclaim: the summary gave
+  the object-region draws as the always-passing roll and two per attempt; G3 and H let a creation draw on it between
+  placer calls (an `InitFn`, the `PreOperate` roll): the frame and calc say the toy classes make none, and the docstring
+  and block caption say real ones may. (3) overclaim: "the object marks its cells" holds only when its mode has
+  collision (G4): the calc says so, the caption says every toy object has collision. (4) other: the `pop_3` test
+  above. (5) misread: "the cell word of the missile's own cell is read only once the frames left are at the activate
+  mark"; D3 reads it every frame (bits 0 or 2 free the missile before the activate test); the mark gates the unit
+  search: frame text, caption, step text and block caption. (6) omission: E1's roll needs `row.ToHit`, absent from the
+  toy row and its input frame: `ToHit 1` added. (7) other: frame 12's cell line ran under the mini map, the fifth-step
+  note past its panel, "3 PICKS" for three pick rolls of which two picked. (8) other: the `Checker.mc` test above.
+  (9) omission: the block's Not shown lacked the defender's rolls of E3. **Data:** the classes 174–180 and groups 33,
+  34, 38 are toy labels in an invented level; no table row is shown. **Cut:** both blocks placed in the lane's
+  `objects.md` and `skills.md` for one build (restored after): 89 pages, 0 dropped, both folders built; `export_check`
+  0 failures, 1 084 warnings, none on the new captions; the folder removed. Tests green: `test_objects_anim` (7),
+  `test_missile_anim` (8), `test_export_build`, `test_export_check`, `test_schematic_kit`, `test_anim_schematic`; gate
+  green. **For the spec-writer:** place the two blocks as their Place lines say, from the corrected draft.

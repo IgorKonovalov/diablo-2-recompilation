@@ -38,7 +38,7 @@ CAP_Y = 436
 HIGH = 666
 # the toy row: Missiles columns as inputs, and the cast
 ROW = dict(Vel=24, VelLev=8, Range=8, LevRange=1, Activate=12, Accel=1024, MaxVel=32, CollideType=3, CollideKill=1,
-           Explosion=0, NextHit=0, LastCollide=0, Pierce=0)
+           Explosion=0, NextHit=0, LastCollide=0, Pierce=0, ToHit=1)
 LVL = 10
 DIR = (3547, 2048)            # the toy direction vector (4096 is 1.0): about 30 degrees
 START = (100, 100)            # the toy start subtile
@@ -173,7 +173,8 @@ def build(seed, theme):
     k.text(20, 90, "THE ROW (TOY INPUTS, NOT TABLE VALUES)", "txt", 2, True)
     for i, ln in enumerate(("VEL %d, VELLEV %d, RANGE %d, LEVRANGE %d" % (ROW["Vel"], ROW["VelLev"], ROW["Range"], ROW["LevRange"]),
                             "ACTIVATE %d, ACCEL %d, MAXVEL %d" % (ROW["Activate"], ROW["Accel"], ROW["MaxVel"]),
-                            "COLLIDETYPE %d, COLLIDEKILL %d, EXPLOSION 0" % (ROW["CollideType"], ROW["CollideKill"]),
+                            "COLLIDETYPE %d, COLLIDEKILL %d, EXPLOSION 0, TOHIT %d" % (ROW["CollideType"], ROW["CollideKill"],
+                                                                                     ROW["ToHit"]),
                             "THE SKILL LEVEL IS %d" % LVL)):
         k.text(40, 120 + i * 28, ln, "txt", 2)
     k.text(20, 250, "THE OWNER", "txt", 2, True)
@@ -187,9 +188,9 @@ def build(seed, theme):
     caps.append(dict(
         text="A toy missile of level %d is created, steps frame by frame and hits a toy monster; the owner's seed is {%d:%d} (illustrative)." % (
             LVL, seed, HIGH),
-        calc=["Toy row (illustrative): Vel %d, VelLev %d, Range %d, LevRange %d, Activate %d, Accel %d, MaxVel %d, CollideType %d, CollideKill %d, Explosion 0." % (
+        calc=["Toy row (illustrative): Vel %d, VelLev %d, Range %d, LevRange %d, Activate %d, Accel %d, MaxVel %d, CollideType %d, CollideKill %d, Explosion 0, ToHit %d." % (
             ROW["Vel"], ROW["VelLev"], ROW["Range"], ROW["LevRange"], ROW["Activate"], ROW["Accel"], ROW["MaxVel"],
-            ROW["CollideType"], ROW["CollideKill"]),
+            ROW["CollideType"], ROW["CollideKill"], ROW["ToHit"]),
               "Toy direction vector (illustrative, 4096 is 1.0): (%d, %d); start subtile (%d, %d); to-hit chance %d percent." % (
                   DIR[0], DIR[1], START[0], START[1], HIT_CHANCE)]))
 
@@ -267,7 +268,7 @@ def build(seed, theme):
         if f["capped"]:
             note = "CAPPED, ACCEL 0"
         elif f["fifth"]:
-            note = "FIFTH STEP: V + %d" % ROW["Accel"]
+            note = "FIFTH STEP: +%d" % ROW["Accel"]
         k.rect(20, yy, 540, 22, "cur" if (f["fifth"] or f["capped"]) else "panel")
         k.text(26, yy + 4, "%d" % f["n"], "txt", 2)
         k.text(116, yy + 4, "%d" % d1["cnt"], "txt", 2)
@@ -295,15 +296,17 @@ def build(seed, theme):
                   ("ACTIVATE MARK", "%d" % cr["activate"]),
                   ("LEFT > ACTIVATE?", "NO: THE CELL IS TESTED")], 560)
     free = not t0["unit"]
-    k.text(20, y + 8, "THE CELL (%d, %d): %s" % (t0["cell"][0], t0["cell"][1],
-                                                  "FREE, THE CELL WORD IS 0: KEEP" if free else "HOLDS THE MONSTER"), "txt", 2, True)
+    k.text(20, y + 8, "THE CELL (%d, %d)" % t0["cell"], "txt", 2, True)
+    k.text(20, y + 36, "FREE, THE CELL WORD IS 0: KEEP" if free else "HOLDS THE MONSTER", "txt", 2, True)
+    k.text(20, y + 74, "THE WORD IS READ EVERY FRAME;", "dim", 2)
+    k.text(20, y + 100, "FROM NOW ON, NOT 0 STARTS A UNIT SEARCH", "dim", 2)
     minimap(t0["n"])
-    k.caption("The cell word of the missile's own cell is read only once the frames left are at the activate mark; a word of 0 "
-              "keeps the missile (D3).", CAP_Y, 76)
+    k.caption("From the activate mark on, a non-zero word of the missile's own cell starts the unit search; a word of 0 "
+              "keeps it (D3).", CAP_Y, 76)
     frames.append(k.done())
     caps.append(dict(
-        text="Frame %d leaves %d frames, at the activate mark %d, so the cell is read%s." % (
-            t0["n"], t0["left"], cr["activate"], "; it is free and the missile is kept" if free else ""),
+        text="Frame %d leaves %d frames, at the activate mark %d, so a non-zero cell word would start the unit search%s." % (
+            t0["n"], t0["left"], cr["activate"], "; the word is 0 and the missile is kept" if free else ""),
         calc=["missiles.md D3: left = %d - 1 = %d; mode (CollideType) = %d is not 0 and not 6; c = PathCellCollision = %s; "
               "left > activate is %d > %d, false." % (t0["left"] + 1, t0["left"], ROW["CollideType"],
                                                        "0, so the call returns 1 (keep)" if free else "nonzero", t0["left"], cr["activate"])]))

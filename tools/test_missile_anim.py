@@ -57,6 +57,28 @@ class Missile(unittest.TestCase):
         self.assertEqual((cr["range"], cr["left"], cr["activate"]), (1 * 10 + 8, 18, 18 - 12))
         self.assertEqual((cr["accel"], cr["maxv"]), (1024, 32 << 8))
 
+    def test_creation_equals_the_models_creation_check(self):
+        """skills.Checker.mc, fed the toy's creation as an MC0/MC1 pair with a stub row: velocity, accel and cap, range,
+        frames left and activate as the model computes them from the row and the level (B1)."""
+        import struct
+        cr = M.run(0xC0FFEE)["cr"]
+        row = dict(vellev=M.ROW["VelLev"], vel=M.ROW["Vel"], canslow=0, accel=M.ROW["Accel"], maxvel=M.ROW["MaxVel"],
+                   levrange=M.ROW["LevRange"], range=M.ROW["Range"], subloop=0, substop=0, substart=0,
+                   activate=M.ROW["Activate"], skill=0, mskill=0, srcdmg=0, srcmiss=0, pierce=0)
+        ck = skills.Checker(type("T", (), {"mrec": lambda self, c: row})())
+        blk = bytearray(0x5C)
+        struct.pack_into("<i", blk, 0x30, M.LVL)
+        pre = (0x1234, 0x29A)
+        post = skills.step(pre)
+        m = {"path": {"v": cr["v"], "a": cr["accel"], "mx": cr["maxv"]},
+             "md": {"rng": cr["range"], "act": cr["activate"], "rem": cr["left"], "sk": 0, "lv": M.LVL},
+             "s": skills.sd_fmt((post[0], skills.INIT_HIGH))}
+        inner = [("SU0", {"pre": skills.sd_fmt(pre)}), ("SU1", {"post": skills.sd_fmt(post)})]
+        self.assertEqual(ck.mc("toy", {"n": 1, "p": bytes(blk).hex()}, {"m": m}, inner), cr["v"])
+        self.assertEqual(dict(ck.bad), {}, ck.miss)
+        for kind in ("MC.vel", "MC.accel", "MC.range", "MC.left"):
+            self.assertEqual(ck.ok[kind], 1, kind)
+
     def test_every_frame_equals_the_models_frame_check(self):
         for seed in SEEDS:
             tr = M.run(seed)

@@ -17,8 +17,10 @@ The toy: a level with three used slots, three object groups of two or three memb
 scatter handler), and one 48 by 40 subtile room with a toy wall and pillar; every number is an illustrative input (no
 table is read). Shown: the eight slot rolls on the room seed, each member pick (the PROB walk), the handler's count, and
 each placer call's attempts on the object-region seed (two draws, the margin, the box test), with the spots accepted
-marking the grid for the later ones. Not shown: the gate and the theme roll, the unit creation (the game-seed step of G),
-the handlers other than 3, and the real grid (a toy wall and pillar stand in for it; cells outside the room read as free).
+marking the grid for the later ones. Not shown: the gate and the theme roll, the unit creation (the game-seed step of G;
+the toy classes make no InitFn or PreOperate draw on the object-region seed, which real ones may, G3 and H), the Gore
+test, the handlers other than 3, and the real grid (a toy wall and pillar stand in for it; cells past the room's edge read
+as free, where the game reads the neighbouring room's cells, or refuses with 0x27 when there is none: collision E4).
 
 Model (ADR-0014 boundary): tools/objects.py is a checker of event logs with no function that runs a room forward; the
 rules of the sections above are written out here with a trace, using the model's generator step (objects.step), and the
@@ -120,8 +122,10 @@ def run(seed, oseed):
                         x, y = rx + vx, ry + vy
                         inside = x != 0 and y != 0 and rx + 1 <= x < rx + rw - 1 and ry + 1 <= y < ry + rh - 1
                         res = whtest(blocked, x, y, sx + 6, sy + 6) if inside else None
+                        bl, bt = x - ((sx + 6) >> 1), y - ((sy + 6) >> 1)
+                        edge = inside and (bl < rx or bt < ry or bl + sx + 6 > rx + rw or bt + sy + 6 > ry + rh)
                         call["attempts"].append(dict(a=a + 1, vx=vx, vy=vy, x=x, y=y, inside=inside, res=res,
-                                                     n=tr["o_draws"]))
+                                                     edge=edge, n=tr["o_draws"]))
                         if inside and res == 0:
                             call["spot"] = (x, y)
                             break
@@ -342,6 +346,8 @@ def build(seed, oseed, theme):
                     k.rect(20, y, 520, 50, "cur" if cur else "panel")
                     k.text(28, y + 5, "ATTEMPT %d: O%d = %d, O%d = %d" % (b["a"], b["n"] - 1, b["vx"], b["n"], b["vy"]), "txt", 2, cur)
                     k.text(28, y + 28, "SPOT (%d, %d)" % (b["x"], b["y"]), "dim" if not cur else "txt", 2)
+                    if b["edge"]:
+                        k.text(532 - K.text_w("PAST THE EDGE", 2), y + 5, "PAST THE EDGE", "acc" if cur else "dim", 2)
                     if not b["inside"]:
                         k.text(250, y + 28, "OUT OF THE MARGIN", "bad", 2, cur)
                     elif b["res"]:
@@ -353,13 +359,18 @@ def build(seed, oseed, theme):
                     k.text(20, y + 6, "5 ATTEMPTS, NO SPOT: NOTHING IS MADE", "bad", 2, True)
                 elif upto == n:
                     k.text(20, y + 6, "ACCEPTED: THE OBJECT MARKS ITS CELLS", "good", 2, True)
-                k.text(20, 404, "GREY WALL, BLUE MARK, GREEN KEPT, RED NOT", "dim", 2)
+
+                k.text(20, 378, "GREY WALL, BLUE MARK, GREEN KEPT, RED NOT", "dim", 2)
+                k.text(20, 404, "PAST THE EDGE: TOY CELLS READ FREE", "dim", 2)
                 room(call["marks"], tr["walls"], call, upto)
                 if not at["inside"]:
                     cap = "Attempt %d lands outside the one-subtile margin, so it is dropped without a box test (objects F1)." % at["a"]
                 elif at["res"]:
                     cap = ("Attempt %d: the box of the object's size plus 6 holds a marked cell, so it is rejected (objects F1, F6)."
                            % at["a"])
+                elif at["edge"]:
+                    cap = ("Attempt %d: margin and box hold, so the object is made (objects F1, F6); the box reaches past "
+                           "the room's edge, read as free in the toy." % at["a"])
                 else:
                     cap = "Attempt %d: the margin holds and the box is free, so the object is made there (objects F1, F6)." % at["a"]
                 if upto == n and not call["spot"]:
@@ -375,8 +386,14 @@ def build(seed, oseed, theme):
                     calc.append("objects/README.md F1: (%d, %d) is inside the margin; COLL_WHTest(room, x, y, %d, %d, mask) = %s on the toy grid (illustrative)%s." % (
                         at["x"], at["y"], call["sx"] + 6, call["sy"] + 6, "nonzero" if at["res"] else "0",
                         ": rejected" if at["res"] else ": accepted, the object is created there"))
+                    if at["edge"]:
+                        calc.append("drlg/collision.md E4: the box reaches past the room's edge; the game reads those cells in the "
+                                    "neighbouring room, and a cell in no room gives 0x27, a refusal. The toy reads them as free.")
                 if upto == n and not call["spot"]:
                     calc.append("objects/README.md F1: five attempts made, no fallback: no object is created.")
+                elif upto == n:
+                    calc.append("objects/README.md G4: an object marks its SizeX by SizeY cells when its mode has collision; "
+                                "every toy object does.")
                 caps.append(dict(
                     text="Slot %d, call %d, attempt %d: spot (%d, %d) %s." % (
                         sl["k"], call["j"], at["a"], at["x"], at["y"],
@@ -388,7 +405,7 @@ def build(seed, oseed, theme):
     stepper(3)
     npl = sum(1 for c in tr["places"] if c["spot"])
     k.text(20, 90, "ROOM SEED S: %d DRAWS" % tr["s_draws"], "txt", 2, True)
-    k.text(40, 118, "8 SLOT ROLLS AND %d PICKS" % sum(1 for s in tr["slots"] if s["passes"]), "dim", 2)
+    k.text(40, 118, "8 SLOT ROLLS AND %d PICK ROLLS" % sum(1 for s in tr["slots"] if s["passes"]), "dim", 2)
     k.text(20, 160, "OBJECT-REGION SEED O: %d DRAWS" % tr["o_draws"], "txt", 2, True)
     k.text(40, 188, "%d P100, %d ATTEMPTS OF 2" % (sum(1 for s in tr["slots"] if s["pick"] is not None),
                                                    sum(len(c["attempts"]) for c in tr["places"])), "dim", 2)
@@ -396,6 +413,7 @@ def build(seed, oseed, theme):
     k.text(20, 270, "S ENDS AT %s" % sd(tr["S"]), "dim", 2)
     k.text(20, 296, "O ENDS AT %s" % sd(tr["O"]), "dim", 2)
     k.text(20, 322, "GAME SEED: 1 STEP PER OBJECT, NOT SHOWN", "dim", 2)
+    k.text(20, 348, "TOY CREATION: NO DRAW ON O (G, H MAY)", "dim", 2)
     room(tr["blocked"], tr["walls"])
     k.caption("The room seed drew once per slot and once per pick; the object-region seed drew the always-passing roll and "
               "two draws per attempt (objects D1, E, F1).", CAP_Y, 76)
@@ -403,7 +421,9 @@ def build(seed, oseed, theme):
     caps.append(dict(
         text="The room seed drew %d times and the object-region seed %d times; %d of %d placer calls found a spot." % (
             tr["s_draws"], tr["o_draws"], npl, len(tr["places"])),
-        calc=["room seed after = {%d:%d}; object-region seed after = {%d:%d}." % (tr["S"] + tr["O"])]))
+        calc=["room seed after = {%d:%d}; object-region seed after = {%d:%d}." % (tr["S"] + tr["O"]),
+              "objects/README.md G3, H: the toy's objects draw nothing on the object-region seed when created; in the game "
+              "an InitFn or the PreOperate roll may draw on it between two placer calls."]))
     return frames, caps, k.pal, tr
 
 
