@@ -4,8 +4,8 @@ status: reviewed
 target: Diablo II LoD 1.14d, Game.exe sha256 631066c1649c4ea9…
 depends_on: [rng, drlg/collision, anim/movement, path/overview]
 consumed_by: [path/overview, anim/movement, skills/overview, skills/missiles, skills/catalogue, monsters/ai]
-tags: {C: 117, I: 27, L: 4}
-updated: 2026-11-17
+tags: {C: 118, I: 27, L: 4}
+updated: 2026-11-19
 ---
 
 # The planners: search, greedy, type 1, type 15, random walk, spiral and the rest
@@ -128,6 +128,18 @@ PathDirOctant(a, b) ← the first of them                            [C] (fn:sub
 ```
 
 - A2. [C] `g_DirOctant` holds 0..7 only (75 dwords, read with a second tool), so the assert 0x4C of a third direction 255 cannot fire from these callers. (data:g_DirOctant@0x006F1518, 0x006794BC, [path/0001 § 17](../../findings/path/0001-pathplan-register.md#17-plan-0066-batch-s7f-constants-tables-and-mask-pairs-with-a-second-tool-2026-11-16-lanen66o))
+
+- A2. [C] **The octant by cases.** `PathDirOctant(a, b)` equals the following description on all 25 cells, compared
+  element by element with column 0 of `g_DirOctant` as the image holds it (25 of 25): with `dx'` and `dy'` the cell's
+  two terms after the cut and clamp of `PathDirCell` (each −2..2), a term whose double is at most the other term's size
+  is set to 0; the octant is then the index of the step of `g_PathSearchStep8` whose `(dx, dy)` has the signs of what
+  is left, in the steps' order under Inputs (0 for `(1,0)`, 1 for `(1,1)`, on to 7 for `(1,−1)`); the cell `(0, 0)`
+  gives 6. So `(±2, ±1)` and `(±1, ±2)` take the straight direction (at 2 : 1 the straight
+  step wins), and `(±1, ±1)` and `(±2, ±2)` the diagonal. The equality holds on the image's elements and says nothing
+  of how the table was made; the table stays listed, and columns 1 and 2 (the other two directions of `PathDirRow`)
+  are not described here. (data:g_DirOctant@0x006F1518, fn:sub_00678D10_PathDirOctant@0x00678D10,
+  run:2026-11-03-path-emu-2, [PathDirTables](../../tables/PathDirTables.md#g_diroctant--0x006f1518),
+  [ADR-0031](../../adrs/0031-constants-of-the-code-image.md))
 
 #### A3. Distances
 

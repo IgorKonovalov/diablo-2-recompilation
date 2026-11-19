@@ -201,6 +201,20 @@ caption: The seed tree for an illustrative seed N given as an override. The map 
   act link builder's later draws on the act seed, room activation, and the units.
 ```
 
+```widget
+id: seedtree-expander
+widget: seedtree
+fallback: rng-seed-tree-c0ffee
+illustrates: ../specs/rng/seeds.md#algorithm
+caption: Type a seed N, as an override gives it, and see its seed tree: the map seed is N and the game seed is
+  Init(N) with no draw (seeds § step 1). Each act's seed starts from the map seed, steps once and keeps that low word as
+  the level seed base, the same for all five acts; Act II then draws pairs mod 7 until they differ, Act III takes one
+  more draw and keeps its lowest bit (§ step 3). The level id you type is only a number added to the base: a level's
+  seed is that sum, with no draw (§ step 4). Each room of the level takes one draw on the level's seed, starts its own
+  seed from the result and steps once (§ step 5). Not shown: the act link builder's later draws on the act seed, room
+  activation, and the units.
+```
+
 ## Units: the game seed, in call order
 
 Every unit the server creates, except players, takes one draw from the game seed and is initialised with it

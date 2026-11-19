@@ -1,7 +1,7 @@
 ---
 based_on:
   - docs/specs/path/README.md 2026-11-17
-  - docs/specs/path/search.md 2026-11-17
+  - docs/specs/path/search.md 2026-11-19
   - docs/specs/drlg/collision.md 2026-11-17
 ---
 
@@ -374,6 +374,23 @@ caption: One search of type 0 on a toy room of 16 by 9 subtiles with a wall that
   the wall through its gap, and the route is reduced to five corner points with the start not among them (§ L2). The
   toy has one room, and its target is a point with no unit, so the near-target stop (§ L3 step 20) ends no walk
   short of the target. Not shown: type 16's draws and a real room's masks.
+```
+
+```widget
+id: path-search-toy-grid
+widget: path
+fallback: path-search-toy-room
+illustrates: ../specs/path/search.md#l-the-search-types-0-and-16 ../specs/path/search.md#a-what-the-planners-share
+caption: The search of type 0 on a toy room of 16 by 9 subtiles: click cells to put up or take down walls, and move
+  the start, the target and the last bound. The first bound is the octile length h0 and the walk runs again at bounds
+  5 higher while they stay below the last bound given (search § L2). Each pass is a depth-first walk in which a node
+  takes the first direction of the fan that passes the tests, a straight step costs 2 and a diagonal 3, and a cell
+  that already holds a lower cost is not entered again, the cell store being kept from one pass to the next (§ L3).
+  The direction toward the target that picks the root's direction and each child's row of the fan is the octant, which
+  search § A2 states cell by cell: a term whose double is at most the other's size counts as 0, and a target on the
+  node itself gives direction 6. The list returned keeps the corner points, with the start not among them, and a route
+  of one segment returns nothing (§ L2). A cell with no room around it is blocked (§ A1). Not shown: type 16's draws,
+  real rooms and their masks.
 ```
 
 - The rectangle it searches is not the true union of the two rooms: a target room with a smaller far end can shrink it below
