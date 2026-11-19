@@ -3154,3 +3154,34 @@ All five were answered on 2026-11-16; see *The owner's decisions*.
   `test_schematic_kit`, `test_quests`; gate green. **For the spec-writer:** place the three blocks as their Place lines
   say, from `workspace/phase11/blocks-batch4-x17b.md` as corrected here. Ledger: verdict accept with fixes, 6 (misread
   2, omission 1, other 3).
+- 2026-11-19, spec-writer, lane/x17s (Phase 11 batch 4 placed). **Blocks** (from
+  `workspace/phase11/blocks-batch4-x17a.md`, `-x17b.md`, `-x17c.md` as their reviews corrected them; text, `seed`,
+  `values`, `fallback` and `args` kept), each at its Place line:
+
+  | Row | Block id | Page | Section, place |
+  |---|---|---|---|
+  | 32 | `calc-toy-formula` | spec-data/calc | end of § D, after note 4k, before "### E. Contexts" |
+  | 33 | `grid-placement-toy` | wiki/inventory | "The placement search", end of section, before "### Moving between places" |
+  | 34 | `price-toy-item` | wiki/economy | "Three values carried together", after the crafted-items paragraph, before "### Selling: the lower of two prices" |
+  | 35 | `quests-word1-word41-reward` | wiki/quests | "Akara's reward and the Hell respec", right after the five-row table |
+  | 36 | `items-cube-polearm-transmute` | wiki/items-other-paths | "The Horadric Cube", after the **Finishing** paragraph, before "### Crafted items" |
+  | 37 | `levels-spawn-tests-toy-room` | wiki/levels | after the **Side effects of the warp test** paragraph, before "## Rooms that come and go" |
+  | 38 | `objects-room-toy` | wiki/objects | "Finding a spot", end of section, before "## Hand-placed objects and the pseudo-objects" |
+  | 39 | `missile-life-toy` | wiki/skills | "Missiles: the hit", end of section, before "## Seeds a missile is given" |
+  | 40 | `regen-toy-ticks` | wiki/stats-and-states | "Regeneration", end of section, before "## Auras" |
+
+  **Caption changes:** none; no sentence was dropped. One key change: row 32's `illustrates` made page-relative
+  (`calc.md#d-the-evaluator--calc_eval`), as the drafted `../specs/data/calc.md#…` does not resolve from the spec page
+  (gate E19), the form rows 28 and 31 use. No `based_on` date or count needed a change (no spec text touched; the gate
+  asked for none). Row 37's optional pointer from wiki/monsters ("Placement") not added: the Place line makes it
+  optional; the reviewer may ask for it.
+  **Cut:** `export_build.py --out workspace/export-x17s`: 89 pages, 0 dropped; 14 widget folders (the 4 new among
+  them), the 5 new illustration folders built (the cube block from `workspace/logs`); fenced blocks kept equal to
+  fenced blocks on every touched page (calc 10/10, inventory 9/9, economy 3/3, stats-and-states 4/4, quests 9/9,
+  items-other-paths 4/4, levels 6/6, objects 3/3, skills 3/3); every sentence of the nine captions found whole in its
+  cut page by a script; text fallback tables for rows 32 to 34 and 40. `export_check workspace/export-x17s --repo
+  workspace/export-repo/` **0 failures**, 1 084 warnings (the batch 3 count), none on a new caption. The folder was
+  removed. Gate green.
+  **Open for the review:** (1) row 38's `illustrates` links collision § E, which wiki/objects' `based_on` does not
+  list (the gate does not ask; the caption cites it as the toy's departure). (2) No browser run (ADR-0037's owed run
+  at the redaction review).

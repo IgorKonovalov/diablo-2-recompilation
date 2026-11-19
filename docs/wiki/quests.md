@@ -232,6 +232,23 @@ The spec's third worked example follows one save through this
 | written at Save and Exit | bits 15, 0 | bits 13, 1 |
 | loaded again | bits 15, 0 | bits 15, 1 |
 
+```illustration
+id: quests-word1-word41-reward
+tool: quest_anim.py
+args:
+seed: none
+values: restated
+illustrates: ../specs/quests/progression.md#a-the-quest-record ../specs/quests/progression.md#d-shared-shapes-of-the-quest-scripts ../specs/quests/progression.md#worked-example
+caption: Word 1 and word 41 as the table above follows them, one bit at a time. The save holds word 1 with only bit 1 set
+  and word 41 empty. The load clears bits 13 and 14 and sets bit 15 where bit 1 is set, so word 1 gains bit 15
+  (progression § A, A3). Akara's reward message with bit 1 of word 1 set then writes, in this order, bit 0 of word 1,
+  the clearing of its bit 1, bits 13 and 1 of word 41 (the offer of a free skill reset in Hell) and the clearing of the log
+  steps, bits 2 to 11 of word 1, which changes nothing here because none is set (§ D7, the word 1 and word 41 tables).
+  Save and Exit writes each word as it stands, and the next load turns off bit 13 of word 41 and sets its bit 15 from its
+  bit 1 (§ A, A3, A4). The starting words are those of the spec's worked example; the picture leaves out the first join's
+  switch-off of the quest and the game record.
+```
+
 The respec itself, taken from an NPC menu in Hell, is read from the code.
 
 ### Cain, the cairn stones and Tristram (word 4)

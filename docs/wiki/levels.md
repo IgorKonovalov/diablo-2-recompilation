@@ -586,6 +586,23 @@ had exactly one match, so the draw's range for two or more matches is read from 
 calls its tests is fixed, and a test that fails skips the later ones
 ([collision § The predicate order](../specs/drlg/collision.md#the-predicate-order-in-the-population-pass)).
 
+```illustration
+id: levels-spawn-tests-toy-room
+tool: collision_anim.py
+args:
+seed: none
+illustrates: ../specs/drlg/collision.md#the-predicate-order-in-the-population-pass ../specs/drlg/collision.md#e-collisiontest-by-size ../specs/drlg/collision.md#h-spawnclasscelltestclass-room-x-y-flag ../specs/drlg/collision.md#i-nearwarptestgame-room-x-y-and-its-side-effects
+caption: The four spawn tests on seven candidate points of a toy room of 40 by 30 subtiles with a long wall, a block, one
+  warp point, one waypoint point, a WarpDist of 100 and two logic regions, region 1 being the box's. The tests run in the
+  predicate order: the point pick makes NearWarpTest, against the warp points and then the level's waypoint point, then
+  LogicRegionIdAt against the box's id; the probe at the point then tests the region again, then SpawnClassCellTest, here for a class that tests the cell two to the right and four
+  below its point with the mask 0x3C01 (BaseId 528, § H), then CollisionTest, the plus of a size-2 footprint against
+  the mask 0x3C01 (§ E). A test that fails skips the later ones, so the points show one refusal each: a warp point, the
+  waypoint point, another region, the class's cell, the point itself a wall, a wall touching the plus; the seventh point
+  passes all four. The waypoint lookup runs only when no warp point is near, and its side effects, the room activation
+  and the level-seed step, are not drawn (§ I).
+```
+
 ## Rooms that come and go: release and restore
 
 A level is built once, but its rooms are not kept active all the time. The server activates the rooms around each

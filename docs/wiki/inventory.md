@@ -229,6 +229,20 @@ When an item is put on a page without a cell, the server searches the grid ([§ 
   call that follows (800 cases), and the search as its caller uses it up to that put (500 cases); what comes after is read. A scroll or tome placed on a page other than the stash adds its skill quantity; one placed in the stash adds
   nothing (read from the code).
 
+```widget
+id: grid-placement-toy
+widget: grid
+fallback: text
+illustrates: ../specs/items/inventory.md#b-the-placement-search
+caption: Type the sizes of up to twelve toy items and the size of a toy page, and see where the search puts each one,
+  in turn. For a player, an item one cell high takes the free spot scored best, columns from the right and each from
+  the bottom, and a taller item the best by rows from the top, each from the left; the score counts the filled
+  neighbouring cells, an edge of the page counting as filled, and a tie keeps the earlier spot. For any other owner
+  the first spot that fits wins, one cell high by columns from the right and each from the top, otherwise by columns
+  from the left (inventory § B1 to B4). Not shown: the size an item really has, pages that already hold items, the
+  other pages, and what follows once the spot is chosen.
+```
+
 ### Moving between places
 
 The client's requests that move an item ([§ D](../specs/items/inventory.md#d-the-requests)) ran under emulation up to

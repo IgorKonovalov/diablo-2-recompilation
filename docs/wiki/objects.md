@@ -177,6 +177,26 @@ attempts**, two draws each, and there is no fallback: if none is free, the objec
 accepted spots fell at attempts 1 to 5 (153, 87, 67, 51 and 29 times), and 911 placer calls found no spot. An
 object already placed marks the grid when its mode has collision, so it blocks later objects; all 5859 position tests of the run were predicted.
 
+```illustration
+id: objects-room-toy
+tool: objects_anim.py
+args: --seed 0xc0ffee --oseed 12345
+seed: illustrative
+illustrates: ../specs/objects/README.md#d-the-slot-loop-and-the-member-pick ../specs/objects/README.md#e-the-populatefn-handlers ../specs/objects/README.md#f-placement-and-the-position-tests ../specs/drlg/collision.md#e-collisiontest-by-size
+caption: One invented room of 48 by 40 subtiles on an invented level with three used slots, every number a toy input
+  and the toy wall and pillar standing in for the collision grid. The eight slots each cost one draw on the room seed,
+  group 0 included, and a slot passes when its roll is at most its chance. A passing slot costs a second draw for the
+  member pick: the members' PROB values are added up as the walk goes, and the first member whose running sum is above
+  the roll is the pick; when the sum never rises above the roll nothing is placed (objects § D). The scatter handler
+  turns the member's DENSITY into a count, ((area >> 7) x DENSITY) >> 8, after a roll against 100 that always passes, and
+  makes that many placer calls on the object-region seed (§ E). Each call makes at most five attempts of two draws; an
+  attempt is kept only inside the one-subtile margin and with no marked cell in the box of the object's size plus 6,
+  and there is no fallback (§ F). A spot accepted marks the cells for the later calls (every toy object has collision).
+  Where a box reaches past the room's edge the toy reads the cells as free; the game reads them in the neighbouring
+  room, and refuses a cell in no room (collision § E). Not shown: the gate, the theme roll, the unit creation (the toy objects make no
+  draw on the object-region seed when created; real ones may) and the other handlers.
+```
+
 ## Hand-placed objects and the pseudo-objects
 
 Objects placed in a map piece go straight to creation in their stored mode, with no room-seed draw (unless the
